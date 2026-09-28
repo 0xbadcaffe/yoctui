@@ -176,3 +176,36 @@ fn hardware_pdf_presentation_uses_capability_and_close_preserves_selection() {
         HardwarePresentation::Page
     );
 }
+
+#[test]
+fn hardware_pdf_without_readable_text_selects_raster_page_fallback() {
+    let mut app = App::new(100, 100_000);
+    update(
+        &mut app,
+        Action::Hardware(HardwareAction::Install(vec![document(
+            "board",
+            HardwareCategory::Board,
+        )])),
+    );
+    update(&mut app, Action::Hardware(HardwareAction::OpenSelected));
+    update(
+        &mut app,
+        Action::Hardware(HardwareAction::PreviewLoaded {
+            generation: 1,
+            page_count: 71,
+            preview: HardwarePreview::Raster(HardwareRaster {
+                width: 1,
+                height: 1,
+                pixels: vec![HardwareRgb {
+                    red: 255,
+                    green: 255,
+                    blue: 255,
+                }],
+            }),
+            searchable_text: Vec::new(),
+        }),
+    );
+    let viewer = app.hardware.viewer.as_ref().unwrap();
+    assert_eq!(viewer.presentation, HardwarePresentation::Page);
+    assert_eq!(viewer.page_count, 71);
+}

@@ -27,6 +27,16 @@ fn hardware_browser_returns_only_supported_regular_non_symlink_entries() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn pdf_text_rejects_private_use_glyphs_and_keeps_readable_content() {
+    assert!(readable_pdf_lines("\u{f084}\u{f020}\n\u{c}").is_empty());
+    assert!(readable_pdf_lines("──── ◇ ────").is_empty());
+    assert_eq!(
+        readable_pdf_lines("Board \u{f084} user guide\nPage 1"),
+        vec!["Board  user guide", "Page 1"]
+    );
+}
+
 #[tokio::test]
 async fn hardware_loader_decodes_bounded_raster_and_rejects_symlink() {
     let root = fixture_root("raster");

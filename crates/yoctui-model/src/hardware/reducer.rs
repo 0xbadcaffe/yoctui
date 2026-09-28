@@ -229,6 +229,13 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
             });
             viewer.page_count = page_count.max(1);
             viewer.page = viewer.page.min(viewer.page_count).max(1);
+            if viewer.document.kind == HardwareDocumentKind::Pdf
+                && viewer.presentation == HardwarePresentation::Text
+                && searchable_text.is_empty()
+                && matches!(&preview, HardwarePreview::Raster(_))
+            {
+                viewer.presentation = HardwarePresentation::Page;
+            }
             viewer.preview = Some(preview);
             viewer.searchable_text = searchable_text;
             viewer.loading = false;

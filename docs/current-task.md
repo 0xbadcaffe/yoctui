@@ -1,23 +1,22 @@
 # Current Task
 
-**ID:** HARDWARE-PDF-FALLBACK-001
-**Title:** Render readable non-native PDFs and restore library return
+**ID:** HARDWARE-PDF-FALLBACK-RELEASE-001
+**Title:** Release readable Hardware PDF fallback
 **Status:** IN_PROGRESS
 
-Reject control/private-use and symbol-only PDF extraction, open those PDFs in a
-fit-width raster presentation on terminals without native graphics, and map both
-Escape and Backspace to the typed close-viewer action while retaining the
-Hardware category and selection.
+Bump to v0.1.246, run focused strict checks, build and install the optimized
+binary, validate the reported 71-page PDF with native graphics forced off,
+restart the initialized Romulus daemon, commit, and push.
 
 ```bash
-cargo test -p yoctui-model hardware
-cargo test -p yoctui-app hardware
-cargo test -p yoctui-ui hardware
-cargo test -p yoctui --bin yoctui hardware
 cargo fmt --all --check
+cargo clippy -p yoctui-model --all-features -- -D warnings
+cargo clippy -p yoctui-app --all-features -- -D warnings
+cargo clippy -p yoctui-ui --all-features -- -D warnings
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
 ```
 
-Full workspace tests remain deferred at the user's request. After this focused
-task, release v0.1.246, install it, validate the reported document live, restart
-the initialized Romulus daemon, commit, and push.
+Full workspace tests remain deferred at the user's request.

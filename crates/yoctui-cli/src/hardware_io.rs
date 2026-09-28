@@ -197,7 +197,7 @@ async fn load_pdf(path: &Path, page: usize) -> Result<(usize, HardwarePreview, V
     let page_count = pdf_page_count(path).await.unwrap_or(1).max(1);
     let page = page.clamp(1, page_count);
     let text = pdf_text(path, page).await.unwrap_or_default();
-    let searchable = bounded_lines(&text);
+    let searchable = readable_pdf_lines(&text);
     if !program_exists("pdftoppm") {
         return Ok((
             page_count,
@@ -376,6 +376,26 @@ fn bounded_lines(text: &str) -> Vec<String> {
         })
         .map(str::to_owned)
         .collect()
+}
+
+fn readable_pdf_lines(text: &str) -> Vec<String> {
+    let cleaned = text
+        .chars()
+        .filter(|character| {
+            matches!(character, '\n' | '\t')
+                || (!character.is_control()
+                    && !is_private_use(*character)
+                    && *character != '\u{fffd}')
+        })
+        .collect::<String>();
+    if !cleaned.chars().any(char::is_alphanumeric) {
+        return Vec::new();
+    }
+    bounded_lines(&cleaned)
+}
+
+fn is_private_use(character: char) -> bool {
+    matches!(character as u32, 0xe000..=0xf8ff | 0xf0000..=0xffffd | 0x100000..=0x10fffd)
 }
 
 async fn decode_raster(path: PathBuf) -> Result<HardwareRaster> {

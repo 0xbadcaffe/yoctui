@@ -521,7 +521,7 @@ impl InteractiveRuntime {
 fn hardware_route_owns_input(app: &App, input: Input) -> bool {
     app.screen == Screen::Hardware
         && (app.focus == yoctui_model::FocusTarget::Workspace
-            || (input == Input::Esc && app.hardware.viewer.is_some()))
+            || (matches!(input, Input::Esc | Input::Backspace) && app.hardware.viewer.is_some()))
 }
 
 #[cfg(test)]
@@ -559,8 +559,9 @@ mod tests {
             error: None,
         });
         assert!(hardware_route_owns_input(&app, Input::Esc));
+        assert!(hardware_route_owns_input(&app, Input::Backspace));
         assert!(!hardware_route_owns_input(&app, Input::Enter));
-        let action = yoctui_app::hardware_workspace_action(&app, Input::Esc).unwrap();
+        let action = yoctui_app::hardware_workspace_action(&app, Input::Backspace).unwrap();
         let _ = compatibility_workspace_action(&mut app, action);
         assert!(app.hardware.viewer.is_none());
         assert_eq!(app.hardware.selection, 0);

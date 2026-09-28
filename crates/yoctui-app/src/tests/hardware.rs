@@ -50,6 +50,10 @@ fn hardware_library_browser_and_viewer_have_typed_controls() {
         Some(Action::Hardware(HardwareAction::TogglePresentation))
     );
     assert_eq!(
+        hardware_workspace_action(&app, Input::Backspace),
+        Some(Action::Hardware(HardwareAction::CloseViewer))
+    );
+    assert_eq!(
         focus_action_for_app(&app, Input::Tab),
         Some(Action::CycleFocus { backwards: false })
     );

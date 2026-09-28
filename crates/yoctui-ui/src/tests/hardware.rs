@@ -78,7 +78,7 @@ fn hardware_viewer_keeps_navigator_and_shows_search_tools() {
 }
 
 #[test]
-fn hardware_raster_fit_uses_the_viewport_then_zoom_resamples_the_source() {
+fn hardware_pdf_raster_fallback_fits_width_then_zoom_resamples_the_source() {
     let mut app = App::new(100, 100_000);
     app.hardware.viewer = Some(HardwareViewerState {
         document: document(),
@@ -109,8 +109,8 @@ fn hardware_raster_fit_uses_the_viewport_then_zoom_resamples_the_source() {
         app.hardware.viewer.as_ref().unwrap(),
         &raster,
     );
-    assert_eq!((fit.target_width, fit.target_height), (72, 96));
-    assert_eq!((fit.offset_x, fit.offset_y), (64, 0));
+    assert_eq!((fit.target_width, fit.target_height), (200, 267));
+    assert_eq!((fit.offset_x, fit.offset_y), (0, 0));
 
     app.hardware.viewer.as_mut().unwrap().zoom_percent = 400;
     let zoomed = crate::hardware_raster_render::raster_geometry(
@@ -118,7 +118,7 @@ fn hardware_raster_fit_uses_the_viewport_then_zoom_resamples_the_source() {
         app.hardware.viewer.as_ref().unwrap(),
         &raster,
     );
-    assert_eq!((zoomed.target_width, zoomed.target_height), (288, 384));
+    assert_eq!((zoomed.target_width, zoomed.target_height), (800, 1067));
     assert_eq!((zoomed.offset_x, zoomed.offset_y), (0, 0));
 }
 
@@ -157,9 +157,10 @@ fn hardware_pdf_uses_crisp_text_without_native_graphics_and_projects_sixel_area(
     assert!(fallback.contains("Text"), "{fallback}");
     assert!(fallback.contains("SMARC carrier user guide"), "{fallback}");
     assert!(
-        fallback.contains("Native terminal graphics unavailable"),
+        !fallback.contains("Native terminal graphics unavailable"),
         "{fallback}"
     );
+    assert!(fallback.contains("Esc/Backspace library"), "{fallback}");
 
     app.hardware.graphics_capability = yoctui_model::HardwareGraphicsCapability::Sixel;
     app.hardware.viewer.as_mut().unwrap().presentation = HardwarePresentation::Page;

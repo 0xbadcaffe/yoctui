@@ -10014,18 +10014,18 @@ notes = "DONE in v0.1.245. Focused model/app/BitBake/CLI tests, formatting, stri
 id = "HARDWARE-PDF-FALLBACK-001"
 milestone = "M93"
 title = "Render readable non-native PDFs and restore library return"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3110
 required = true
 depends_on = ["PLATFORM-INSPECTION-SNAPSHOT-RELEASE-001"]
 verify = ["cargo test -p yoctui-model hardware", "cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Reject control/private-use and symbol-only PDF extraction, select raster fallback automatically, fit unsupported-terminal PDF pages to width at 100%, and close the viewer with Escape or Backspace while retaining library selection. Update spec, architecture, status, and registry."
+notes = "DONE. PDF extraction removes controls, replacement characters, and private-use code points, then rejects text without letters or numbers. Non-native PDFs with unusable text select their raster page automatically and fit it to the available width at 100%; readable text remains available without the obsolete warning. Escape and Backspace close the viewer from either pane while preserving the library selection. Five model, two app, four UI, and seven focused CLI Hardware tests pass with formatting and roadmap validation."
 
 [[task]]
 id = "HARDWARE-PDF-FALLBACK-RELEASE-001"
 milestone = "M93"
 title = "Release readable Hardware PDF fallback"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3111
 required = true
 depends_on = ["HARDWARE-PDF-FALLBACK-001"]

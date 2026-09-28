@@ -4373,6 +4373,15 @@ policy, roadmap validation, and optimized build pass. Binary SHA-256 is
 embedded source is `9cc3fe902518`, and daemon PID 3899600 is running. Full
 workspace tests remain deferred at the user's request.
 
+HARDWARE-PDF-FALLBACK-001 is DONE. PDF text sanitization rejects the reported
+private-use-only extraction, the reducer selects the raster page fallback, and
+the unsupported-terminal renderer fits PDF width at 100% with vertical pan.
+Readable extracted text no longer carries the obsolete native-graphics warning.
+Escape and Backspace both return from either visible pane to the retained
+library row. Five model, two app, four UI, and seven focused CLI Hardware tests,
+formatting, and roadmap validation pass. Release v0.1.246 is in progress; the
+full workspace suite remains deferred at the user's request.
+
 M93 is IN_PROGRESS from the reported Hardware PDF fallback. The document's
 embedded text extraction contains only private-use glyphs, so the current
 non-native path mistakes unreadable font codes for crisp text; its complete-page

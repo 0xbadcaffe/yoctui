@@ -23,7 +23,7 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
             };
         }
         return match input {
-            Input::Esc => hardware(HardwareAction::CloseViewer),
+            Input::Esc | Input::Backspace => hardware(HardwareAction::CloseViewer),
             Input::PageUp | Input::Char('[') => hardware(HardwareAction::ChangePage { delta: -1 }),
             Input::PageDown | Input::Char(']') => hardware(HardwareAction::ChangePage { delta: 1 }),
             Input::Home => hardware(HardwareAction::FirstPage),
