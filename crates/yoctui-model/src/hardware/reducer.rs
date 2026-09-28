@@ -165,13 +165,6 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
         HardwareAction::CancelBrowser => state.browser = None,
         HardwareAction::OpenSelected => {
             let document = state.selected_document()?.clone();
-            let presentation = if document.kind == HardwareDocumentKind::Pdf
-                && state.graphics_capability != HardwareGraphicsCapability::Sixel
-            {
-                HardwarePresentation::Text
-            } else {
-                HardwarePresentation::Page
-            };
             let generation = state
                 .viewer
                 .as_ref()
@@ -182,7 +175,7 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
                 page: 1,
                 page_count: 1,
                 zoom_percent: 100,
-                presentation,
+                presentation: HardwarePresentation::Page,
                 pan_x: 0,
                 pan_y: 0,
                 loading: true,
@@ -229,13 +222,6 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
             });
             viewer.page_count = page_count.max(1);
             viewer.page = viewer.page.min(viewer.page_count).max(1);
-            if viewer.document.kind == HardwareDocumentKind::Pdf
-                && viewer.presentation == HardwarePresentation::Text
-                && searchable_text.is_empty()
-                && matches!(&preview, HardwarePreview::Raster(_))
-            {
-                viewer.presentation = HardwarePresentation::Page;
-            }
             viewer.preview = Some(preview);
             viewer.searchable_text = searchable_text;
             viewer.loading = false;
@@ -288,7 +274,10 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
             let viewer = state.viewer.as_mut()?;
             if viewer.document.kind == HardwareDocumentKind::Pdf {
                 viewer.presentation = match viewer.presentation {
-                    HardwarePresentation::Page => HardwarePresentation::Text,
+                    HardwarePresentation::Page if !viewer.searchable_text.is_empty() => {
+                        HardwarePresentation::Text
+                    }
+                    HardwarePresentation::Page => HardwarePresentation::Page,
                     HardwarePresentation::Text => HardwarePresentation::Page,
                 };
                 viewer.pan_x = 0;

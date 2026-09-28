@@ -109,7 +109,7 @@ fn hardware_pdf_raster_fallback_fits_width_then_zoom_resamples_the_source() {
         app.hardware.viewer.as_ref().unwrap(),
         &raster,
     );
-    assert_eq!((fit.target_width, fit.target_height), (200, 267));
+    assert_eq!((fit.target_width, fit.target_height), (400, 533));
     assert_eq!((fit.offset_x, fit.offset_y), (0, 0));
 
     app.hardware.viewer.as_mut().unwrap().zoom_percent = 400;
@@ -118,8 +118,72 @@ fn hardware_pdf_raster_fallback_fits_width_then_zoom_resamples_the_source() {
         app.hardware.viewer.as_ref().unwrap(),
         &raster,
     );
-    assert_eq!((zoomed.target_width, zoomed.target_height), (800, 1067));
+    assert_eq!((zoomed.target_width, zoomed.target_height), (1600, 2133));
     assert_eq!((zoomed.offset_x, zoomed.offset_y), (0, 0));
+}
+
+#[test]
+fn hardware_image_raster_keeps_complete_page_half_block_fit() {
+    let mut app = App::new(100, 100_000);
+    app.hardware.viewer = Some(HardwareViewerState {
+        document: HardwareDocument {
+            path: PathBuf::from("/tmp/board.png"),
+            category: HardwareCategory::Board,
+            kind: HardwareDocumentKind::Raster,
+        },
+        generation: 1,
+        page: 1,
+        page_count: 1,
+        zoom_percent: 100,
+        presentation: HardwarePresentation::Page,
+        pan_x: 0,
+        pan_y: 0,
+        loading: false,
+        preview: None,
+        searchable_text: Vec::new(),
+        query: String::new(),
+        searching: false,
+        matches: Vec::new(),
+        match_selection: 0,
+        error: None,
+    });
+    let raster = yoctui_model::HardwareRaster {
+        width: 900,
+        height: 1200,
+        pixels: Vec::new(),
+    };
+    let fit = crate::hardware_raster_render::raster_geometry(
+        Rect::new(0, 0, 200, 48),
+        app.hardware.viewer.as_ref().unwrap(),
+        &raster,
+    );
+    assert_eq!((fit.target_width, fit.target_height), (72, 96));
+    assert_eq!((fit.offset_x, fit.offset_y), (64, 0));
+}
+
+#[test]
+fn hardware_pdf_braille_cells_preserve_two_by_four_detail_and_uniform_space() {
+    let white = yoctui_model::HardwareRgb {
+        red: 255,
+        green: 255,
+        blue: 255,
+    };
+    let black = yoctui_model::HardwareRgb {
+        red: 0,
+        green: 0,
+        blue: 0,
+    };
+    let mut samples = [Some(white); 8];
+    samples[0] = Some(black);
+    samples[7] = Some(black);
+    let detailed = crate::hardware_raster_render::pdf_braille_span(samples);
+    assert_eq!(detailed.content.as_ref(), "⢁");
+    assert_eq!(detailed.style.fg, Some(Color::Rgb(0, 0, 0)));
+    assert_eq!(detailed.style.bg, Some(Color::Rgb(255, 255, 255)));
+
+    let uniform = crate::hardware_raster_render::pdf_braille_span([Some(white); 8]);
+    assert_eq!(uniform.content.as_ref(), " ");
+    assert_eq!(uniform.style.bg, Some(Color::Rgb(255, 255, 255)));
 }
 
 #[test]

@@ -302,7 +302,7 @@ fn presentation_label(app: &App, viewer: &yoctui_model::HardwareViewerState) -> 
         {
             "Native page"
         }
-        yoctui_model::HardwarePresentation::Page => "Page preview · fit width",
+        yoctui_model::HardwarePresentation::Page => "Terminal page · fit width",
     }
 }
 

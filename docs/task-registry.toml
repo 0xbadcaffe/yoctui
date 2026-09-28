@@ -10036,18 +10036,18 @@ notes = "DONE in v0.1.246. Focused Hardware model/app/UI/CLI tests, formatting, 
 id = "HARDWARE-PDF-DETAIL-001"
 milestone = "M94"
 title = "Open PDFs as pages with detailed terminal projection"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3120
 required = true
 depends_on = ["HARDWARE-PDF-FALLBACK-RELEASE-001"]
 verify = ["cargo test -p yoctui-model hardware", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "Manual: convert all pages of every PDF under ~/projects/smarc and open each document with graphics forced off"]
-notes = "Make PDF open page-first while retaining v text view. Render unsupported-terminal PDFs with colored 2x4 Braille cells and preserve existing half-block rendering for raster images. Cover geometry, Braille mapping, uniform cells, reducer presentation, and all five live PDFs."
+notes = "DONE. Every PDF initializes in Page presentation; v exposes Text only after readable extraction is loaded. Unsupported terminals render PDF rasters with allocation-free colored 2x4 Braille cells, fit-width subcell geometry, averaged foreground/background colors, and solid low-contrast regions. Raster images retain complete-page 1x2 half-block fitting. Five model, six UI, and seven focused CLI Hardware tests pass. Poppler converted all 92 pages across the five ~/projects/smarc PDFs without diagnostics, and every document opened page-first in a forced-non-native 160x45 live session."
 
 [[task]]
 id = "HARDWARE-PDF-DETAIL-RELEASE-001"
 milestone = "M94"
 title = "Release detailed page-first PDF viewing"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3121
 required = true
 depends_on = ["HARDWARE-PDF-DETAIL-001"]

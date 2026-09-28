@@ -4346,6 +4346,16 @@ correction makes PDFs page-first and replaces that PDF fallback with a colored
 2×4-dot projection. Release v0.1.247 will follow focused and live checks. Full
 workspace tests remain deferred at the user's request.
 
+HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
+offer extracted Text with `v` only when readable text exists. The non-native PDF
+renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell
+geometry and solid low-contrast backgrounds; ordinary raster images retain the
+1×2 half-block fit. Five model, six UI, and seven focused CLI Hardware tests
+pass. Poppler converted all 92 pages of the five `~/projects/smarc` PDFs without
+diagnostics, and every document opened page-first in a forced-fallback 160×45
+live session. Release v0.1.247 is in progress; the full workspace suite remains
+deferred at the user's request.
+
 HARDWARE-NATIVE-GRAPHICS-001 is DONE. A read-only device-attributes query
 requires the exact SIXEL capability before native bytes are emitted. The CLI
 presenter uses bounded viewport geometry, physical cell sizing, fixed palette,

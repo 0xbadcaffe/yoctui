@@ -150,7 +150,7 @@ fn hardware_pdf_presentation_uses_capability_and_close_preserves_selection() {
     update(&mut app, Action::Hardware(HardwareAction::OpenSelected));
     assert_eq!(
         app.hardware.viewer.as_ref().unwrap().presentation,
-        HardwarePresentation::Text
+        HardwarePresentation::Page
     );
     update(
         &mut app,
@@ -178,7 +178,7 @@ fn hardware_pdf_presentation_uses_capability_and_close_preserves_selection() {
 }
 
 #[test]
-fn hardware_pdf_without_readable_text_selects_raster_page_fallback() {
+fn hardware_pdf_opens_as_page_and_enables_text_only_after_readable_text_loads() {
     let mut app = App::new(100, 100_000);
     update(
         &mut app,
@@ -208,4 +208,32 @@ fn hardware_pdf_without_readable_text_selects_raster_page_fallback() {
     let viewer = app.hardware.viewer.as_ref().unwrap();
     assert_eq!(viewer.presentation, HardwarePresentation::Page);
     assert_eq!(viewer.page_count, 71);
+    update(
+        &mut app,
+        Action::Hardware(HardwareAction::TogglePresentation),
+    );
+    assert_eq!(
+        app.hardware.viewer.as_ref().unwrap().presentation,
+        HardwarePresentation::Page
+    );
+    update(
+        &mut app,
+        Action::Hardware(HardwareAction::PreviewLoaded {
+            generation: 1,
+            page_count: 71,
+            preview: HardwarePreview::Text {
+                lines: vec!["Board guide".into()],
+                limitation: None,
+            },
+            searchable_text: vec!["Board guide".into()],
+        }),
+    );
+    update(
+        &mut app,
+        Action::Hardware(HardwareAction::TogglePresentation),
+    );
+    assert_eq!(
+        app.hardware.viewer.as_ref().unwrap().presentation,
+        HardwarePresentation::Text
+    );
 }

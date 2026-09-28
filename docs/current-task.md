@@ -1,22 +1,21 @@
 # Current Task
 
-**ID:** HARDWARE-PDF-DETAIL-001
-**Title:** Open PDFs as pages with detailed terminal projection
+**ID:** HARDWARE-PDF-DETAIL-RELEASE-001
+**Title:** Release detailed page-first PDF viewing
 **Status:** IN_PROGRESS
 
-Make every PDF open in Page presentation while keeping `v` text view. Replace
-the unsupported-terminal PDF half-block projection with colored 2×4 Braille
-cells, retain the existing raster-image renderer, and validate all 92 pages of
-the five PDFs under `~/projects/smarc`.
+Bump to v0.1.247, run focused strict checks, build and install the optimized
+binary, validate all five PDFs with native graphics forced off, restart the
+initialized Romulus daemon, commit, and push.
 
 ```bash
-cargo test -p yoctui-model hardware
-cargo test -p yoctui-ui hardware
-cargo test -p yoctui --bin yoctui hardware
 cargo fmt --all --check
+cargo clippy -p yoctui-model --all-features -- -D warnings
+cargo clippy -p yoctui-ui --all-features -- -D warnings
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
 ```
 
-Full workspace tests remain deferred at the user's request. After the focused
-task, release v0.1.247, install it, restart the initialized Romulus daemon, and
-push the coherent commits.
+Full workspace tests remain deferred at the user's request.
