@@ -1,22 +1,23 @@
 # Current Task
 
-**ID:** MENUCONFIG-UBOOT-LIVE-001
-**Title:** Validate U-Boot interaction after provider ncurses build repair
-**Status:** BLOCKED
+**ID:** HARDWARE-PDF-FALLBACK-001
+**Title:** Render readable non-native PDFs and restore library return
+**Status:** IN_PROGRESS
 
-M92 snapshot-independent platform inspection and v0.1.245 are complete. Full
-workspace tests remain deferred at the user's request.
-
-External dependency: `u-boot-aspeed-sdk` v2019.04+git fails its ncurses compile
-check in `scripts/kconfig/dochecklxdialog`, before an interactive frontend is
-available. Repair the provider's compiler/sysroot check, then verify arrows,
-Enter, search, Ctrl+G out/back and client restart in Content > U-Boot.
+Reject control/private-use and symbol-only PDF extraction, open those PDFs in a
+fit-width raster presentation on terminals without native graphics, and map both
+Escape and Backspace to the typed close-viewer action while retaining the
+Hardware category and selection.
 
 ```bash
-cargo test -p yoctui-model platform_menuconfig
-cargo test -p yoctui --bin yoctui menuconfig
-cargo test -p yoctui-ui menuconfig
+cargo test -p yoctui-model hardware
+cargo test -p yoctui-app hardware
+cargo test -p yoctui-ui hardware
+cargo test -p yoctui --bin yoctui hardware
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```
 
-M67-LIVE-EVIDENCE-001 independently requires a new current-source real-Poky
-performance capture. No unblocked implementation task is eligible.
+Full workspace tests remain deferred at the user's request. After this focused
+task, release v0.1.246, install it, validate the reported document live, restart
+the initialized Romulus daemon, commit, and push.

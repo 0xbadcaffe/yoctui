@@ -4667,6 +4667,19 @@ an explicit platform-inspection scope that authorizes only variable lookup and
 recipe metadata. Build, cancellation, event, server-socket, and every other
 BitBake API remain unavailable without daemon compatibility authority.
 
+## M93 Hardware PDF fallback
+
+`yoctui-cli` validates converter text before placing it in typed Hardware state.
+It removes terminal controls and private-use code points and treats extraction
+without any letters or numbers as unavailable. `yoctui-model` selects the raster
+page presentation when a non-native PDF has no usable searchable text.
+
+`yoctui-ui` owns only projection of the bounded raster. Its unsupported-terminal
+PDF transform uses available viewport width as the 100% baseline and exposes
+vertical pan over the resulting page height. Input remains typed: application
+mapping emits the existing close-viewer action for both Escape and Backspace,
+and the reducer retains the selected library record.
+
 `yoctui` CLI owns local filesystem access and optional document tools. It
 validates regular non-symlink files, lists bounded browser entries, extracts
 bounded PDF/source search text, and converts one requested page or image into a

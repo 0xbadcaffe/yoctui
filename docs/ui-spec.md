@@ -166,6 +166,24 @@ not produce a `No current environment capability snapshot` notice for these
 inspection actions. Menuconfig, builds, and other daemon-owned operations keep
 their existing current-authority requirements.
 
+### M93 readable PDF fallback and library return
+
+PDF extracted text is used only when it contains readable letters or numbers
+after control and private-use glyphs are removed. A PDF whose embedded font map
+produces empty or symbol-only extraction opens directly in its page preview; it
+must never expose private-use replacement glyphs as document content.
+
+On terminals without native graphics, the PDF page preview fits the page width
+at 100% and scrolls vertically. Zoom continues from that fit-width baseline, so
+document text receives the available terminal columns instead of being reduced
+to a complete but unreadable page thumbnail. The viewer identifies this bounded
+cell preview without claiming native graphics are available.
+
+`Esc` and `Backspace` close an open Hardware document from either Navigator or
+Workspace focus and restore the same category and selected library row. The
+viewer footer always advertises the return action. Closing a document does not
+remove it from the persistent library.
+
 ---
 
 ## 2. Persistent application shell

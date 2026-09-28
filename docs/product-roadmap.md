@@ -2131,3 +2131,11 @@ refreshing. Menuconfig, builds, cancellation, events, and server control retain
 daemon authority. Installed U-Boot inspection remained active with Braille
 progress during an initialized Romulus daemon refresh and showed no
 missing-snapshot notice. Full workspace tests remain deferred until requested.
+
+## M93 — Readable Hardware PDF fallback
+
+Reject unusable private-use PDF text extraction, make the non-native page
+preview fit width for readable terminal rendering, and provide an explicit
+Escape/Backspace return to the persistent Hardware library. Release the focused
+correction as v0.1.246 after model, app, UI, CLI, and live reported-document
+checks. Full workspace tests remain deferred until requested.

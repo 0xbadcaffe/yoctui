@@ -4372,3 +4372,12 @@ policy, roadmap validation, and optimized build pass. Binary SHA-256 is
 `caf2c01442db8a2b894b6a92a545c255a186cad07e83e70e71ebaab104120149`,
 embedded source is `9cc3fe902518`, and daemon PID 3899600 is running. Full
 workspace tests remain deferred at the user's request.
+
+M93 is IN_PROGRESS from the reported Hardware PDF fallback. The document's
+embedded text extraction contains only private-use glyphs, so the current
+non-native path mistakes unreadable font codes for crisp text; its complete-page
+cell fit also leaves document text too small. The focused correction validates
+extracted text, opens unusable extraction as a fit-width page preview, and makes
+both Escape and Backspace return to the retained Hardware library. Release
+v0.1.246 will follow focused Hardware and live reported-document checks. Full
+workspace tests remain deferred at the user's request.
