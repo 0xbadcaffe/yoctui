@@ -2179,3 +2179,9 @@ when the current terminal lacks graphics. Select a readable scalable font and
 useful starting grid while preserving the initialized environment and daemon
 attachment. Release v0.1.249 after focused CLI, Hardware UI, and live XTerm
 checks. Full workspace tests remain deferred until requested.
+
+M96 is DONE in v0.1.249. `yoctui attach` now performs its own guarded handoff
+from a terminal without native graphics to a readable 140x40 XTerm VT340 client.
+The initialized environment, daemon attachment, working directory, and exact
+arguments are preserved without a shell. Full workspace tests remain deferred
+at the user's request.

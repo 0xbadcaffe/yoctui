@@ -4393,6 +4393,16 @@ focused CLI command test, Hardware UI test, formatting, and roadmap gate pass.
 A live handoff opened the attached Hardware library at a readable 140x40 grid.
 Release v0.1.249 is in progress.
 
+HARDWARE-PDF-AUTO-XTERM-RELEASE-001 is DONE in v0.1.249. Focused graphics
+capability, handoff, and Hardware UI tests, formatting, strict UI/CLI Clippy,
+version policy, roadmap validation, and the optimized build pass. A real
+unsupported-terminal invocation opened the release client through XTerm and
+showed the attached Hardware library at readable scale. Release and installed
+binaries match SHA-256
+`d1a8ec3e9aee6e72aea3ff68347126db9127675019df1b124baa37f31b485cc2`.
+The initialized Romulus daemon runs as PID 4080772. Full workspace tests remain
+deferred at the user's request.
+
 HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
 offer extracted Text with `v` only when readable text exists. The non-native PDF
 renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell
