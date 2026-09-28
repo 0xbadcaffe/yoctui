@@ -1,22 +1,25 @@
 # Current Task
 
-**ID:** HARDWARE-PDF-FALLBACK-RELEASE-001
-**Title:** Release readable Hardware PDF fallback
-**Status:** IN_PROGRESS
+**ID:** MENUCONFIG-UBOOT-LIVE-001
+**Title:** Validate U-Boot interaction after provider ncurses probe repair
+**Status:** BLOCKED
 
-Bump to v0.1.246, run focused strict checks, build and install the optimized
-binary, validate the reported 71-page PDF with native graphics forced off,
-restart the initialized Romulus daemon, commit, and push.
+M93 Hardware PDF fallback and v0.1.246 are complete. Full workspace tests remain
+deferred at the user's request.
+
+External dependency: `u-boot-aspeed-sdk` v2019.04+git uses the legacy
+`scripts/kconfig/lxdialog/check-lxdialog.sh` probe `main() {}`. Current host GCC
+rejects that missing return type before linking, but the script hides the
+compiler diagnostic and prints its generic ncurses-package message. The same
+Yocto native-sysroot include/library flags pass with
+`int main(void) { return 0; }`. Add that provider recipe patch, then verify
+arrows, Enter, search, Ctrl+G out/back, and client restart in Content > U-Boot.
 
 ```bash
-cargo fmt --all --check
-cargo clippy -p yoctui-model --all-features -- -D warnings
-cargo clippy -p yoctui-app --all-features -- -D warnings
-cargo clippy -p yoctui-ui --all-features -- -D warnings
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-python3 scripts/check-version-bump.py
-./scripts/verify-roadmap.sh
-cargo build --release -p yoctui --bin yoctui
+cargo test -p yoctui-model platform_menuconfig
+cargo test -p yoctui --bin yoctui menuconfig
+cargo test -p yoctui-ui menuconfig
 ```
 
-Full workspace tests remain deferred at the user's request.
+M67-LIVE-EVIDENCE-001 independently requires a new current-source real-Poky
+performance capture. No unblocked implementation task is eligible.

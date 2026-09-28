@@ -4325,6 +4325,18 @@ switching, and an `Esc` route that closes the viewer even after focus moves to
 Navigator. Release v0.1.244 follows focused checks and live validation; the
 full workspace suite remains deferred at the user's request.
 
+HARDWARE-PDF-FALLBACK-RELEASE-001 is DONE in v0.1.246. The exact reported
+71-page PDF was opened with terminal graphics forced off: its private-use-only
+extraction was rejected, the raster page occupied the full viewer width, and
+neither the odd glyph nor obsolete native-graphics warning appeared. Backspace
+returned to the retained PDF row; reopening and Escape returned successfully as
+well. Focused tests, formatting, strict focused Clippy, version policy, roadmap
+validation, and the optimized build pass. Release and installed binary SHA-256
+is `8da7ae9ddc096a18b0b22df901fc6ae6e487d813821f0789983a141883091af5`,
+with embedded source `449490926585`. The initialized Romulus daemon runs as PID
+3953640 with its build directory restored. Full workspace tests remain deferred
+at the user's request.
+
 HARDWARE-NATIVE-GRAPHICS-001 is DONE. A read-only device-attributes query
 requires the exact SIXEL capability before native bytes are emitted. The CLI
 presenter uses bounded viewport geometry, physical cell sizing, fixed palette,

@@ -2139,3 +2139,9 @@ preview fit width for readable terminal rendering, and provide an explicit
 Escape/Backspace return to the persistent Hardware library. Release the focused
 correction as v0.1.246 after model, app, UI, CLI, and live reported-document
 checks. Full workspace tests remain deferred until requested.
+
+M93 is DONE in v0.1.246. Unreadable extracted font codes no longer reach the
+viewer, non-native PDF pages use a fit-width scrolling raster, and Escape or
+Backspace returns to the retained Hardware library row. The reported document
+passed live forced-fallback validation. Full workspace tests remain deferred
+until requested.
