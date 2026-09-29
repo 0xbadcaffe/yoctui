@@ -70,3 +70,51 @@ fn hardware_remove_confirmation_traps_unrelated_input() {
         Some(Action::Hardware(HardwareAction::CancelRemove))
     );
 }
+
+#[test]
+fn hardware_pdf_mouse_wheel_selects_pages_instead_of_panning() {
+    let mut app = hardware_app();
+    app.focus = FocusTarget::Workspace;
+    let _ = update(&mut app, Action::Hardware(HardwareAction::OpenSelected));
+    let _ = update(
+        &mut app,
+        Action::Hardware(HardwareAction::PreviewLoaded {
+            generation: 1,
+            page_count: 3,
+            preview: yoctui_model::HardwarePreview::Text {
+                lines: vec!["page one".into()],
+                limitation: None,
+            },
+            searchable_text: Vec::new(),
+        }),
+    );
+
+    let wheel_down = mouse_action_for_app(
+        MouseInput {
+            kind: MouseKind::ScrollDown,
+            column: 40,
+            row: 12,
+        },
+        &app,
+        160,
+        50,
+    );
+    let wheel_up = mouse_action_for_app(
+        MouseInput {
+            kind: MouseKind::ScrollUp,
+            column: 40,
+            row: 12,
+        },
+        &app,
+        160,
+        50,
+    );
+    assert_eq!(
+        wheel_down,
+        Some(Action::Hardware(HardwareAction::ChangePage { delta: 1 }))
+    );
+    assert_eq!(
+        wheel_up,
+        Some(Action::Hardware(HardwareAction::ChangePage { delta: -1 }))
+    );
+}

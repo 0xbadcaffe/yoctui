@@ -55,6 +55,9 @@ impl InteractiveRuntime {
                     )
                     .await;
                 }
+                Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::Load(_))) => {
+                    runtime.hardware_io.submit(effect);
+                }
                 Some(Effect::LoadLayerBrowserDirectory {
                     layer,
                     root,

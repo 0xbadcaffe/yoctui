@@ -10102,18 +10102,18 @@ notes = "DONE in v0.1.249. Focused terminal-graphics, graphics-handoff and Hardw
 id = "HARDWARE-PDF-WHEEL-001"
 milestone = "M97"
 title = "Navigate PDF pages with the mouse wheel"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3150
 required = true
 depends_on = ["HARDWARE-PDF-AUTO-XTERM-RELEASE-001"]
 verify = ["cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "Manual: scroll a multi-page PDF from page 1 to page 2 in XTerm and confirm the native page changes"]
-notes = "Map Hardware PDF workspace wheel events to typed previous/next-page actions and route their Hardware load effects through the existing CLI worker."
+notes = "DONE. Wheel up/down over an open PDF maps to the same typed previous/next-page actions as PgUp/PgDn. The CLI mouse runtime submits resulting Hardware load effects to HardwareIo, while arrows and h/j/k/l retain within-page panning. Focused app/UI/CLI Hardware tests, formatting, and roadmap validation pass. A real XTerm SGR wheel event advanced the 71-page SMARC guide from page 1 to page 2 and replaced the native pixels; evidence is /tmp/yoctui-pdf-wheel-repro/wheel-page2.png."
 
 [[task]]
 id = "HARDWARE-PDF-WHEEL-RELEASE-001"
 milestone = "M97"
 title = "Release PDF wheel page navigation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3151
 required = true
 depends_on = ["HARDWARE-PDF-WHEEL-001"]

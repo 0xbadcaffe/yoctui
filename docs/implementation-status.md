@@ -4409,6 +4409,12 @@ within-page pan and the CLI mouse handler lacks Hardware load-effect routing.
 The focused correction maps wheel input to previous/next page, submits the typed
 load through `HardwareIo`, and releases v0.1.250.
 
+HARDWARE-PDF-WHEEL-001 is DONE. Mouse wheel input over a PDF now emits typed
+previous/next-page actions, and the CLI mouse path submits the resulting load to
+the existing bounded Hardware worker. Focused app/UI/CLI Hardware tests pass. A
+real XTerm wheel event advanced the SMARC guide to page 2/71 and rendered that
+page's distinct native content. Release v0.1.250 is in progress.
+
 HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
 offer extracted Text with `v` only when readable text exists. The non-native PDF
 renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell

@@ -130,8 +130,14 @@ pub fn mouse_action_for_app(
     }
     if region.target == FocusTarget::Workspace {
         if matches!(mouse.kind, MouseKind::ScrollUp | MouseKind::ScrollDown) {
+            let pages_pdf = app.screen == Screen::Hardware
+                && app.hardware.viewer.as_ref().is_some_and(|viewer| {
+                    viewer.document.kind == yoctui_model::HardwareDocumentKind::Pdf
+                });
             let key = if matches!(mouse.kind, MouseKind::ScrollUp) {
-                Input::Up
+                if pages_pdf { Input::PageUp } else { Input::Up }
+            } else if pages_pdf {
+                Input::PageDown
             } else {
                 Input::Down
             };
