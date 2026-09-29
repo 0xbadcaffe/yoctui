@@ -2191,3 +2191,9 @@ at the user's request.
 Route mouse-wheel input over a Hardware PDF to bounded previous/next-page loads
 and preserve keyboard panning. Release v0.1.250 after focused app, UI, CLI, and
 live multi-page PDF checks. Full workspace tests remain deferred until requested.
+
+M97 is DONE in v0.1.250. Wheel input over a PDF now advances bounded pages and
+routes the resulting load through the existing Hardware worker. A real XTerm
+wheel replay changed both the header and native pixels from page 1 to page 2 of
+the 71-page SMARC guide. Full workspace tests remain deferred at the user's
+request.

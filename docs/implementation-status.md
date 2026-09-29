@@ -4415,6 +4415,15 @@ the existing bounded Hardware worker. Focused app/UI/CLI Hardware tests pass. A
 real XTerm wheel event advanced the SMARC guide to page 2/71 and rendered that
 page's distinct native content. Release v0.1.250 is in progress.
 
+HARDWARE-PDF-WHEEL-RELEASE-001 is DONE in v0.1.250. Focused app/UI/CLI Hardware
+tests, formatting, strict app/UI/CLI Clippy, version policy, roadmap validation,
+and the optimized build pass. The release binary repeated the real XTerm wheel
+transition from page 1 to page 2 with distinct native pixels. Release and
+installed binaries match SHA-256
+`40a5c6929cfc55eab9e3d1d8b6bf7d35cd2ea8764e6f171597627127a6a2f682`.
+The initialized Romulus daemon runs as PID 4118210. Full workspace tests remain
+deferred at the user's request.
+
 HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
 offer extracted Text with `v` only when readable text exists. The non-native PDF
 renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell
