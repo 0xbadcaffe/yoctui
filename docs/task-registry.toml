@@ -10097,3 +10097,25 @@ required = true
 depends_on = ["HARDWARE-PDF-AUTO-XTERM-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
 notes = "DONE in v0.1.249. Focused terminal-graphics, graphics-handoff and Hardware UI tests, formatting, strict UI/CLI Clippy, version policy, roadmap validation, and the optimized build pass. An unsupported-terminal invocation automatically opened /usr/bin/xterm with VT340, Monospace 14 and 140x40 geometry; the release screenshot shows a readable attached Hardware library. Release and installed binaries match SHA-256 d1a8ec3e9aee6e72aea3ff68347126db9127675019df1b124baa37f31b485cc2. The initialized Romulus daemon runs as PID 4080772. Full workspace tests remain deferred per user."
+
+[[task]]
+id = "HARDWARE-PDF-WHEEL-001"
+milestone = "M97"
+title = "Navigate PDF pages with the mouse wheel"
+status = "IN_PROGRESS"
+priority = 3150
+required = true
+depends_on = ["HARDWARE-PDF-AUTO-XTERM-RELEASE-001"]
+verify = ["cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "Manual: scroll a multi-page PDF from page 1 to page 2 in XTerm and confirm the native page changes"]
+notes = "Map Hardware PDF workspace wheel events to typed previous/next-page actions and route their Hardware load effects through the existing CLI worker."
+
+[[task]]
+id = "HARDWARE-PDF-WHEEL-RELEASE-001"
+milestone = "M97"
+title = "Release PDF wheel page navigation"
+status = "NOT_STARTED"
+priority = 3151
+required = true
+depends_on = ["HARDWARE-PDF-WHEEL-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-app --all-features -- -D warnings", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Release v0.1.250 after focused tests and live wheel validation."

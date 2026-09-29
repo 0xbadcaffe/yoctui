@@ -4789,3 +4789,12 @@ select VT340, scalable Monospace at 14 points, and 140x40 cells. If XTerm or a
 graphical display is unavailable, startup continues in the invoking terminal
 with typed graphics capability unavailable; model and UI boundaries are
 unchanged.
+
+## M97 Hardware mouse effect routing
+
+The app mouse mapper converts wheel input over an open Hardware PDF to the same
+typed page actions used by PgUp/PgDn. The CLI mouse runtime routes resulting
+`HardwareEffect::Load` values through the existing client-local `HardwareIo`
+worker; it does not perform conversion in the input or render loop. Reducer
+generation checks continue to reject stale page results, and model state remains
+the sole owner of the selected page.

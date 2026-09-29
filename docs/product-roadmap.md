@@ -2185,3 +2185,9 @@ from a terminal without native graphics to a readable 140x40 XTerm VT340 client.
 The initialized environment, daemon attachment, working directory, and exact
 arguments are preserved without a shell. Full workspace tests remain deferred
 at the user's request.
+
+## M97 — PDF wheel page navigation
+
+Route mouse-wheel input over a Hardware PDF to bounded previous/next-page loads
+and preserve keyboard panning. Release v0.1.250 after focused app, UI, CLI, and
+live multi-page PDF checks. Full workspace tests remain deferred until requested.

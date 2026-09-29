@@ -4403,6 +4403,12 @@ binaries match SHA-256
 The initialized Romulus daemon runs as PID 4080772. Full workspace tests remain
 deferred at the user's request.
 
+M97 is IN_PROGRESS from the reported PDF first-page lock. A real XTerm replay
+proves PgDn, `]`, and End load pages 2, 3, and 71, while the wheel path maps to
+within-page pan and the CLI mouse handler lacks Hardware load-effect routing.
+The focused correction maps wheel input to previous/next page, submits the typed
+load through `HardwareIo`, and releases v0.1.250.
+
 HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
 offer extracted Text with `v` only when readable text exists. The non-native PDF
 renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell

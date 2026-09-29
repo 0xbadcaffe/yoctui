@@ -6358,3 +6358,12 @@ monospace font, and a 140x40 initial cell geometry. The user continues to invoke
 `yoctui attach`; recursive relaunch is forbidden. If automatic launch is not
 available, Yoctui remains usable in the original terminal and explains the
 missing display or XTerm prerequisite without requiring a copied launch command.
+
+### M97 PDF wheel page navigation
+
+While a Hardware PDF viewer owns the workspace, mouse-wheel up/down over the
+document selects the previous/next PDF page and starts the same bounded page
+load as PgUp/PgDn. The page header and native pixels update together; a mouse
+action must not update only the page number or discard the resulting Hardware
+load effect. Wheel input at the first or last page remains bounded. Keyboard
+arrows and h/j/k/l continue to pan within the current page.
