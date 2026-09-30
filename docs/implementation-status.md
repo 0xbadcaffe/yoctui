@@ -10,6 +10,13 @@ strict UI Clippy, and roadmap validation pass. The broader UI package run still
 has the repository's unrelated existing snapshot/assertion failures (267 pass,
 60 fail); no golden or unrelated assertion was weakened for this fix.
 
+ROOTFS-PIE-LIST-RELEASE-001 is DONE in v0.1.251. The requested standing bug-fix
+delivery flow now includes a version bump, release commit, push, and optimized
+binary build after implementation verification. Focused responsive RootFS
+coverage, formatting, strict UI Clippy, version policy, roadmap validation, and
+the optimized build pass. The initial release artifact SHA-256 is
+`30d614011541e7fc89bbfc6f0dc748cee11f9605ce29086a3f0449e2a56a32f9`.
+
 M85 is DONE in v0.1.238. A live Romulus U-Boot menuconfig failed its
 legacy ncurses probe, then OpenEmbedded's generated terminal wrapper waited at
 `Press any key to continue...` with no viewer. Session 14 therefore remained

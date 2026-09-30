@@ -10130,3 +10130,14 @@ required = true
 depends_on = ["UX-ROOTFS-PIE-BRAILLE-001"]
 verify = ["cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks", "cargo test -p yoctui-ui concept_rootfs_composition_keeps_chart_table_selection_and_tree_visible", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
 notes = "DONE. Chart admission now accepts ordinary wide 40-row workspaces. At compact wide widths the Braille pie stacks above the full-width exact composition table; roomier workspaces retain the established side-by-side layout. Package selection and filesystem evidence remain below, while narrow, monochrome, no-color and ASCII fallbacks remain list-only. Focused TestBackend coverage passes at 200x42 and 140x40, including Braille cells, exact table, selection, filesystem evidence, and accessibility fallbacks. Formatting, strict UI Clippy, and roadmap validation pass."
+
+[[task]]
+id = "ROOTFS-PIE-LIST-RELEASE-001"
+milestone = "M98"
+title = "Release the RootFS chart continuity fix"
+status = "DONE"
+priority = 3161
+required = true
+depends_on = ["ROOTFS-PIE-LIST-001"]
+verify = ["cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "DONE in v0.1.251. Focused 200x42/140x40 RootFS chart-and-list coverage, formatting, strict UI Clippy, version policy, roadmap validation, and the optimized build pass. Six concept text fixtures carry the version-only header bump; unrelated stale golden drift was rejected. The initial optimized binary SHA-256 is 30d614011541e7fc89bbfc6f0dc748cee11f9605ce29086a3f0449e2a56a32f9. Push and a final source-bound rebuild complete the delivery loop."

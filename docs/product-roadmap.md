@@ -2210,3 +2210,10 @@ M98 is DONE. Wide 40-row workspaces render the pie and exact list together;
 compact wide layouts stack them for readable table columns, while roomier
 layouts remain side by side. Selection, filesystem evidence, and accessible
 list-only fallbacks are preserved.
+
+The v0.1.251 release packages this correction with focused UI, formatting,
+strict Clippy, version-policy, roadmap, push, and optimized-build gates.
+
+M98 is released in v0.1.251. The focused responsive coverage and release gates
+pass; the optimized binary is built and the two coherent commits are pushed to
+`origin/master`.

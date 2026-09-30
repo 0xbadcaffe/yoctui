@@ -67,12 +67,21 @@ pub(crate) fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect
             (sections[0], sections[1], sections[2], sections[3])
         } else {
             let chart_height = body.height.saturating_mul(52).div_ceil(100).clamp(12, 24);
-            let sections = Layout::vertical([
-                Constraint::Length(chart_height),
-                Constraint::Length(9),
-                Constraint::Min(6),
-            ])
-            .split(body);
+            let sections = if body.height >= 36 {
+                Layout::vertical([
+                    Constraint::Length(chart_height),
+                    Constraint::Length(11),
+                    Constraint::Min(7),
+                ])
+                .split(body)
+            } else {
+                Layout::vertical([
+                    Constraint::Length(chart_height),
+                    Constraint::Length(9),
+                    Constraint::Min(6),
+                ])
+                .split(body)
+            };
             let columns =
                 Layout::horizontal([Constraint::Percentage(55), Constraint::Percentage(45)])
                     .split(sections[0]);
