@@ -10119,3 +10119,14 @@ required = true
 depends_on = ["HARDWARE-PDF-WHEEL-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-app --all-features -- -D warnings", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
 notes = "DONE in v0.1.250. Focused app/UI/CLI Hardware tests, formatting, strict app/UI/CLI Clippy, version policy, roadmap validation, and the optimized build pass. A real XTerm SGR wheel event against the release binary advanced the 71-page SMARC guide from page 1 to page 2 and rendered the distinct native page. Release and installed binaries match SHA-256 40a5c6929cfc55eab9e3d1d8b6bf7d35cd2ea8764e6f171597627127a6a2f682. The initialized Romulus daemon runs as PID 4118210. Full workspace tests remain deferred per user."
+
+[[task]]
+id = "ROOTFS-PIE-LIST-001"
+milestone = "M98"
+title = "Keep the RootFS pie chart beside its composition list"
+status = "DONE"
+priority = 3160
+required = true
+depends_on = ["UX-ROOTFS-PIE-BRAILLE-001"]
+verify = ["cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks", "cargo test -p yoctui-ui concept_rootfs_composition_keeps_chart_table_selection_and_tree_visible", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "DONE. Chart admission now accepts ordinary wide 40-row workspaces. At compact wide widths the Braille pie stacks above the full-width exact composition table; roomier workspaces retain the established side-by-side layout. Package selection and filesystem evidence remain below, while narrow, monochrome, no-color and ASCII fallbacks remain list-only. Focused TestBackend coverage passes at 200x42 and 140x40, including Braille cells, exact table, selection, filesystem evidence, and accessibility fallbacks. Formatting, strict UI Clippy, and roadmap validation pass."

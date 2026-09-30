@@ -48,23 +48,41 @@ pub(crate) fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect
     let groups = inventory.grouped(8);
     let total = composition.totals().0.installed_package_bytes;
     let can_render_pie = app.color_enabled
-        && body.width >= 64
-        && body.height >= 36
+        && body.width >= 56
+        && body.height >= 28
         && app.theme != Theme::Monochrome
         && app.preferences.symbols == SymbolPreference::Unicode
         && app.preferences.charts == yoctui_model::ChartPreference::Automatic
         && total > 0
         && !groups.is_empty();
     if can_render_pie {
-        let chart_height = body.height.saturating_mul(52).div_ceil(100).clamp(18, 24);
-        let sections = Layout::vertical([
-            Constraint::Length(chart_height),
-            Constraint::Length(11),
-            Constraint::Min(7),
-        ])
-        .split(body);
-        let columns = Layout::horizontal([Constraint::Percentage(55), Constraint::Percentage(45)])
-            .split(sections[0]);
+        let (chart_area, table_area, selection_area, filesystem_area) = if body.width < 70 {
+            let sections = Layout::vertical([
+                Constraint::Length(9),
+                Constraint::Length(11),
+                Constraint::Length(5),
+                Constraint::Min(4),
+            ])
+            .split(body);
+            (sections[0], sections[1], sections[2], sections[3])
+        } else {
+            let chart_height = body.height.saturating_mul(52).div_ceil(100).clamp(12, 24);
+            let sections = Layout::vertical([
+                Constraint::Length(chart_height),
+                Constraint::Length(9),
+                Constraint::Min(6),
+            ])
+            .split(body);
+            let columns =
+                Layout::horizontal([Constraint::Percentage(55), Constraint::Percentage(45)])
+                    .split(sections[0]);
+            (columns[0], columns[1], sections[1], sections[2])
+        };
+        let chart_title = if chart_area.width >= 36 {
+            "Rootfs packages · installed bytes"
+        } else {
+            "Package pie · bytes"
+        };
         let labels = groups
             .iter()
             .map(|group| rootfs_group_label(&group.identity))
@@ -83,15 +101,15 @@ pub(crate) fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect
             .collect();
         frame.render_widget(
             PieChart::new(slices)
-                .block(Block::bordered().title("Rootfs packages · installed bytes"))
+                .block(Block::bordered().title(chart_title))
                 .resolution(Resolution::Braille)
                 .show_percentages(false)
                 .show_legend(false),
-            columns[0],
+            chart_area,
         );
-        render_rootfs_exact_group_table(frame, app, &groups, total, columns[1]);
-        render_rootfs_accessible_selection(frame, app, inventory, &groups, sections[1]);
-        render_rootfs_filesystem_preview(frame, app, composition, sections[2]);
+        render_rootfs_exact_group_table(frame, app, &groups, total, table_area);
+        render_rootfs_accessible_selection(frame, app, inventory, &groups, selection_area);
+        render_rootfs_filesystem_preview(frame, app, composition, filesystem_area);
     } else {
         render_rootfs_package_table(frame, app, inventory, &groups, total, body);
     }

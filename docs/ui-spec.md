@@ -5720,6 +5720,14 @@ primary visual area and retains the exact installed-byte table as independent
 authority. Narrow, no-color, and ASCII layouts retain their existing
 accessible table fallback.
 
+A wide color/Unicode Rootfs package workspace keeps both the Braille pie and
+the exact composition list visible at ordinary 40-row terminal heights. The
+chart may compact vertically to preserve the package-selection and filesystem
+evidence below it; height alone must not replace the chart with a list while
+the workspace remains wide enough to render both. Truly narrow, no-color,
+monochrome, ASCII, chart-disabled, empty, and zero-total states retain the
+accessible list-only fallback.
+
 Kernel is a dedicated Content destination with Configuration and Device trees
 tabs. Up/Down selects an authoritative artifact, `Tab` switches tabs, `1` and
 `2` select the exact tab, and clicking either numbered tab selects it. `m`

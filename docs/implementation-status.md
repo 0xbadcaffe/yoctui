@@ -1,3 +1,15 @@
+ROOTFS-PIE-LIST-001 is DONE. RootFS Composition now admits the Braille pie at
+ordinary wide 40-row terminal heights instead of replacing it with the package
+list. A compact wide workspace stacks the pie above a full-width exact table;
+larger workspaces retain the established side-by-side composition. Package
+selection and filesystem evidence remain visible below, and narrow,
+monochrome, no-color, ASCII, disabled-chart, empty, and zero-total states keep
+their list-only fallback. Focused TestBackend checks pass at 200x42 and 140x40,
+including real Braille cells and all retained evidence panes. Formatting,
+strict UI Clippy, and roadmap validation pass. The broader UI package run still
+has the repository's unrelated existing snapshot/assertion failures (267 pass,
+60 fail); no golden or unrelated assertion was weakened for this fix.
+
 M85 is DONE in v0.1.238. A live Romulus U-Boot menuconfig failed its
 legacy ncurses probe, then OpenEmbedded's generated terminal wrapper waited at
 `Press any key to continue...` with no viewer. Session 14 therefore remained

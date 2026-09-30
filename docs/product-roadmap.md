@@ -2198,3 +2198,15 @@ routes the resulting load through the existing Hardware worker. A real XTerm
 wheel replay changed both the header and native pixels from page 1 to page 2 of
 the 71-page SMARC guide. Full workspace tests remain deferred at the user's
 request.
+
+## M98 — RootFS composition chart continuity
+
+Keep the RootFS package pie chart and exact composition list visible together
+on ordinary wide 40-row terminals. Compact the chart vertically when needed
+without removing package-selection or filesystem evidence; retain list-only
+fallbacks for layouts and preferences that cannot render the Braille chart.
+
+M98 is DONE. Wide 40-row workspaces render the pie and exact list together;
+compact wide layouts stack them for readable table columns, while roomier
+layouts remain side by side. Selection, filesystem evidence, and accessible
+list-only fallbacks are preserved.

@@ -73,16 +73,28 @@ fn ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks() 
     );
 
     app.preferences.symbols = SymbolPreference::Unicode;
-    let short_wide = rendered_text(&app, 200, 42);
-    assert!(
-        short_wide.contains("Installed-package authority"),
-        "{short_wide}"
-    );
-    assert!(short_wide.contains("Exact bytes"), "{short_wide}");
-    assert!(
-        !short_wide.contains("Rootfs packages · installed bytes"),
-        "the pie layout must yield to the explorable table when all three panes do not fit: {short_wide}"
-    );
+    for (width, height) in [(200, 42), (140, 40)] {
+        let short_wide = rendered_text(&app, width, height);
+        assert!(
+            short_wide.contains("Rootfs packages · installed bytes")
+                || short_wide.contains("Package pie · bytes"),
+            "{short_wide}"
+        );
+        assert!(short_wide.contains("Exact bytes"), "{short_wide}");
+        assert!(
+            short_wide.contains("Accessible package selection"),
+            "{short_wide}"
+        );
+        assert!(short_wide.contains("Filesystem tree"), "{short_wide}");
+        assert!(
+            short_wide
+                .chars()
+                .filter(|glyph| ('\u{2801}'..='\u{28ff}').contains(glyph))
+                .count()
+                > 8,
+            "an ordinary-height wide workspace must keep the Braille pie beside the exact list: {short_wide}"
+        );
+    }
 }
 
 #[test]
