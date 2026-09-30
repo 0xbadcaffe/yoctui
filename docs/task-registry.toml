@@ -9915,12 +9915,12 @@ notes = "Build/install v0.1.241; validate live navigation, leave/resume and clie
 id = "MENUCONFIG-UBOOT-LIVE-001"
 milestone = "M88"
 title = "Validate U-Boot interaction after provider ncurses build repair"
-status = "BLOCKED"
+status = "DONE"
 priority = 3063
 required = true
 depends_on = ["MENUCONFIG-RESUME-RELEASE-001"]
 verify = ["Manual: rebuild u-boot-aspeed-sdk menuconfig after fixing its recipe sysroot/compiler ncurses check, then verify arrows, Enter, search, Ctrl+G resume and client restart in Firmware"]
-notes = "External dependency: Romulus u-boot-aspeed-sdk v2019.04+git fails scripts/kconfig/dochecklxdialog with Unable to find the ncurses libraries or required header files before producing mconf. Reproduced with installed v0.1.241 daemon session 20, bitbake u-boot-aspeed-sdk -c menuconfig. The retained PTY shows the compile error; the generated upstream wrapper exits 0 after its acknowledgement despite the failed make command, so that status is not evidence of a successful U-Boot frontend. Shared typed Firmware key/resume tests pass; real Kernel session 19 passed live input and client restart checks and exited 0. Do not claim live U-Boot navigation until the provider dependency is repaired."
+notes = "DONE against the live Romulus u-boot-aspeed-sdk v2019.04+git provider. A build-local workspace append patches scripts/kconfig/lxdialog/check-lxdialog.sh from legacy main() {} to the C23-compatible int main(void) { return 0; }; forced do_patch passed and the staged source was verified. Daemon session 24 built and ran the real scripts/kconfig/mconf Kconfig frontend. Firmware validated writer acquisition, styled arrow selection movement, Enter into ARM architecture, boot-symbol search results, Ctrl+G hide/resume, and recovery of the same running session after a normal client restart. The session exited without saving or changing configuration."
 
 [[task]]
 id = "BACKEND-PROBE-RECOVERY-001"

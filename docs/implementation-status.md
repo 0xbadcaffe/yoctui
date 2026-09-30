@@ -4251,15 +4251,21 @@ The optimized installed/release binary SHA-256 is
 with embedded source SHA `7963eba0`; initialized daemon PID is 3764604.
 Full workspace tests remain deferred at the user's request.
 
-MENUCONFIG-UBOOT-LIVE-001 is BLOCKED externally. Live session 20 reproduced
-u-boot-aspeed-sdk v2019.04+git's ncurses compile-check failure in
-`scripts/kconfig/dochecklxdialog`. Its generated upstream wrapper exits 0 after
-acknowledgement despite failed make; this is not a successful frontend build.
-The session ended and retained diagnostics, with no stuck interactive process.
-Firmware shares the tested key and recovery flow, but live U-Boot navigation
-needs the recipe/compiler/sysroot issue repaired first. Both this provider
-validation and the pre-existing M67 real-Poky performance evidence are blocked;
-no eligible implementation task remains.
+MENUCONFIG-UBOOT-LIVE-001 is DONE. A build-local OpenBMC workspace append
+patches u-boot-aspeed-sdk v2019.04+git's legacy `main() {}` ncurses probe to
+`int main(void) { return 0; }`; forced `do_patch` passed and the corrected staged
+source was verified. Initialized daemon session 24 built and ran the real
+`scripts/kconfig/mconf Kconfig` frontend. Firmware passed writer acquisition,
+styled arrow movement, Enter into ARM architecture, `boot` symbol search,
+Ctrl+G hide/resume, and recovery of the same running session after a normal
+client restart. The session then exited without saving or changing the U-Boot
+configuration. There are now 912 DONE tasks; only M67-LIVE-EVIDENCE-001 remains
+BLOCKED on a genuine current-source real-Poky performance capture. Formatting,
+strict workspace Clippy, 54 bridge tests, and roadmap validation pass. The full
+Rust workspace run completed with 312 CLI tests passing, four ignored, and two
+pre-existing deterministic failures in `dialog_input_routing_prevents_pane_shortcuts_from_leaking`
+and `ux_rootfs_workspace_resolves_exact_artifact_sources_and_updates_model`; the
+first failure reproduces alone and is outside this external live-validation task.
 
 M89 is IN_PROGRESS from the v0.1.241 fallback-map screenshot. Live direct probing
 now succeeds on BitBake 2.19.0 in 1.1 seconds, but the daemon retained unknown

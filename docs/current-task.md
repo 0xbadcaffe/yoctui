@@ -1,19 +1,18 @@
 # Current Task
 
-**ID:** MENUCONFIG-UBOOT-LIVE-001
-**Title:** Validate U-Boot interaction after provider ncurses build repair
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
 **Status:** BLOCKED
 
-The Romulus `u-boot-aspeed-sdk` v2019.04+git provider fails before producing
-`mconf`. Its legacy `scripts/kconfig/lxdialog/check-lxdialog.sh` probe declares
-`main() {}`, which the current compiler rejects. A corrected
-`int main(void) { return 0; }` probe links successfully against the recipe's
-Yocto ncurses sysroot. Repair that external provider, rerun menuconfig, and then
-validate arrows, Enter, search, Ctrl+G resume, and client restart in Firmware.
+The retained performance evidence is not bound to the current source tree: its
+manifest has 143 source digest mismatches, including changes predating M67.
+Supply a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto` compile
+capture using the documented release workload. Do not rewrite historical
+digests or substitute fake-process startup timings for live evidence.
 
 ```bash
-bitbake u-boot-aspeed-sdk -c menuconfig
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
 
-This is an external OpenBMC provider compatibility blocker. Do not claim live
-U-Boot menuconfig navigation until the provider builds its ncurses frontend.
+This external validation prerequisite is the only remaining required task.

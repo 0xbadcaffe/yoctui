@@ -2083,10 +2083,11 @@ for Kernel and U-Boot, improve startup feedback, and publish v0.1.241 after
 focused automated coverage and live menuconfig validation.
 
 M88 input, recovery and preparation changes are released in v0.1.241. Live
-Kernel input, Ctrl+G resume, and client restart pass. U-Boot shares the tested
-implementation, but MENUCONFIG-UBOOT-LIVE-001 is BLOCKED on the local legacy
-provider's ncurses compile check; its upstream wrapper exit status alone does
-not certify a successful menuconfig build. Full workspace testing stays deferred.
+Kernel input, Ctrl+G resume, and client restart pass. MENUCONFIG-UBOOT-LIVE-001
+is also DONE after a build-local compatibility patch repaired the legacy
+provider's C23-incompatible ncurses probe. Real U-Boot `mconf` session 24 passed
+arrows, Enter, search, Ctrl+G resume, and same-session client restart recovery,
+then exited without saving. Full workspace testing stays deferred.
 
 ## M89 — Recover transient BitBake capability failures
 
