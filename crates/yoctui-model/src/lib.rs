@@ -223,7 +223,7 @@ mod layer_browser;
 pub use layer_browser::{
     GitFileState, ImagePicker, LayerBrowser, LayerBrowserEntry, LayerInspectorMode,
     LayerRelationship, LayerRelationships, MAX_BUILD_HISTORY, PreviewKind, RecipePicker,
-    RecipePickerPurpose,
+    RecipePickerPurpose, RootfsFileMetadata,
 };
 
 mod log_state;

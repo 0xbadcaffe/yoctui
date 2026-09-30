@@ -5274,6 +5274,20 @@ file focuses its preview, arrows scroll it, and `e` opens the selected file in
 the in-TUI editor. Generated-rootfs edits are explicit and the Inspector warns
 that a later BitBake task can replace them.
 
+The Files tab opens the Layers-style lazy expandable tree directly, with
+directories first, hidden-file toggle, paging, collapse/parent navigation,
+search, numbered bounded content preview and explicit `e` editor action.
+`Enter` on a RootFS file focuses its preview, rather than opening the editor.
+The tree shows ls-style type/permissions, four-digit octal chmod mode,
+owner/user and group (names with numeric IDs), and exact byte size. These are
+explicitly host/on-disk IMAGE_ROOTFS attributes, not claimed fakeroot/image
+ownership. Symlink targets are displayed but never followed; special files
+are listed but never read. Missing metadata stays explicitly unavailable.
+Wide terminals pair the tree with preview; narrow terminals stack them and
+retain full selected-file attributes in the information panel. Tab/Shift-Tab
+and numbered Images tabs remain available while the tree is open. Package
+composition charts and the Layers workspace behavior are unchanged.
+
 The systemd tab lists `.service` unit files in the standard system and local
 unit search directories, reports `Description=` and `BusName=`, and derives
 enablement evidence from `.wants` and `.requires` links. The system D-Bus tab

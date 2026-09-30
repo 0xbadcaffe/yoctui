@@ -25,6 +25,13 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     directory: entry.path,
                 });
             }
+            if app
+                .layer_browser
+                .as_ref()
+                .is_some_and(LayerBrowser::is_rootfs)
+            {
+                return update(app, Action::LayerBrowserExpand);
+            }
             return update(app, Action::EditSelectedLayerBrowserFile);
         }
         Action::LayerBrowserUp => {

@@ -114,6 +114,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                             .map(|root| (root, composition.image.image.clone()))
                     })
             {
+                app.images_view = ImagesView::RootfsFilesystem;
+                app.metadata_query.clear();
+                app.metadata_searching = false;
                 return Some(Effect::LoadLayerBrowserDirectory {
                     layer: format!("Rootfs: {image}"),
                     root: root.clone(),

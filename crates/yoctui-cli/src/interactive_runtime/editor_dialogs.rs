@@ -352,7 +352,8 @@ impl InteractiveRuntime {
             let _ = quit_confirmation_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
         } else if runtime.app.layer_browser.is_some()
-            && !runtime.app.metadata_searching
+            && (!runtime.app.metadata_searching || runtime.app.rootfs_browser_active())
+            && (runtime.app.screen == Screen::Layers || runtime.app.rootfs_browser_active())
             && runtime.app.focus != yoctui_model::FocusTarget::Dialog
         {
             let preview_focused = runtime
@@ -360,101 +361,110 @@ impl InteractiveRuntime {
                 .layer_browser
                 .as_ref()
                 .is_some_and(|browser| browser.preview_focused);
-            let effect = match (preview_focused, input) {
-                (true, Input::Up) => compatibility_workspace_action(
-                    &mut runtime.app,
-                    Action::ScrollLayerBrowserPreview { delta: -1 },
-                ),
-                (true, Input::Down) => compatibility_workspace_action(
-                    &mut runtime.app,
-                    Action::ScrollLayerBrowserPreview { delta: 1 },
-                ),
-                (true, Input::PageUp) => compatibility_workspace_action(
-                    &mut runtime.app,
-                    Action::ScrollLayerBrowserPreview { delta: -10 },
-                ),
-                (true, Input::PageDown) => compatibility_workspace_action(
-                    &mut runtime.app,
-                    Action::ScrollLayerBrowserPreview { delta: 10 },
-                ),
-                (true, Input::Left) => {
-                    compatibility_workspace_action(&mut runtime.app, Action::FocusLayerBrowserTree)
-                }
-                (_, input) => match input {
-                    Input::Tab => compatibility_workspace_action(
+            let effect = if runtime.app.screen == Screen::Images {
+                rootfs_browser_action(&runtime.app, input)
+                    .and_then(|action| compatibility_workspace_action(&mut runtime.app, action))
+            } else {
+                match (preview_focused, input) {
+                    (true, Input::Up) => compatibility_workspace_action(
                         &mut runtime.app,
-                        Action::CycleFocus { backwards: false },
+                        Action::ScrollLayerBrowserPreview { delta: -1 },
                     ),
-                    Input::BackTab => compatibility_workspace_action(
+                    (true, Input::Down) => compatibility_workspace_action(
                         &mut runtime.app,
-                        Action::CycleFocus { backwards: true },
+                        Action::ScrollLayerBrowserPreview { delta: 1 },
                     ),
-                    Input::Up => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::SelectLayerBrowserEntry { delta: -1 },
-                    ),
-                    Input::Down => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::SelectLayerBrowserEntry { delta: 1 },
-                    ),
-                    Input::PageUp => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::SelectLayerBrowserEntry { delta: -10 },
-                    ),
-                    Input::PageDown => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::SelectLayerBrowserEntry { delta: 10 },
-                    ),
-                    Input::Enter => {
-                        compatibility_workspace_action(&mut runtime.app, Action::LayerBrowserEnter)
-                    }
-                    Input::Right | Input::Char('l') => {
-                        compatibility_workspace_action(&mut runtime.app, Action::LayerBrowserExpand)
-                    }
-                    Input::Esc => {
-                        compatibility_workspace_action(&mut runtime.app, Action::CloseLayerBrowser)
-                    }
-                    Input::Left | Input::Char('h') => {
-                        compatibility_workspace_action(&mut runtime.app, Action::LayerBrowserUp)
-                    }
-                    Input::Char('r') => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::RefreshLayerBrowser,
-                    ),
-                    Input::Char('e') => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::EditSelectedLayerBrowserFile,
-                    ),
-                    Input::Char('.') => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::ToggleLayerBrowserHidden,
-                    ),
-                    Input::Char('/') => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::BeginMetadataSearch,
-                    ),
-                    Input::Char('i') => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
-                    ),
-                    Input::Char('[') => compatibility_workspace_action(
+                    (true, Input::PageUp) => compatibility_workspace_action(
                         &mut runtime.app,
                         Action::ScrollLayerBrowserPreview { delta: -10 },
                     ),
-                    Input::Char(']') => compatibility_workspace_action(
+                    (true, Input::PageDown) => compatibility_workspace_action(
                         &mut runtime.app,
                         Action::ScrollLayerBrowserPreview { delta: 10 },
                     ),
-                    Input::Char('m') => compatibility_workspace_action(
+                    (true, Input::Left) => compatibility_workspace_action(
                         &mut runtime.app,
-                        Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                        Action::FocusLayerBrowserTree,
                     ),
-                    Input::Char('d') => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
-                    ),
-                    _ => None,
-                },
+                    (_, input) => match input {
+                        Input::Tab => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::CycleFocus { backwards: false },
+                        ),
+                        Input::BackTab => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::CycleFocus { backwards: true },
+                        ),
+                        Input::Up => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::SelectLayerBrowserEntry { delta: -1 },
+                        ),
+                        Input::Down => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::SelectLayerBrowserEntry { delta: 1 },
+                        ),
+                        Input::PageUp => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::SelectLayerBrowserEntry { delta: -10 },
+                        ),
+                        Input::PageDown => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::SelectLayerBrowserEntry { delta: 10 },
+                        ),
+                        Input::Enter => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::LayerBrowserEnter,
+                        ),
+                        Input::Right | Input::Char('l') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::LayerBrowserExpand,
+                        ),
+                        Input::Esc => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::CloseLayerBrowser,
+                        ),
+                        Input::Left | Input::Char('h') => {
+                            compatibility_workspace_action(&mut runtime.app, Action::LayerBrowserUp)
+                        }
+                        Input::Char('r') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::RefreshLayerBrowser,
+                        ),
+                        Input::Char('e') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::EditSelectedLayerBrowserFile,
+                        ),
+                        Input::Char('.') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::ToggleLayerBrowserHidden,
+                        ),
+                        Input::Char('/') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::BeginMetadataSearch,
+                        ),
+                        Input::Char('i') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                        ),
+                        Input::Char('[') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::ScrollLayerBrowserPreview { delta: -10 },
+                        ),
+                        Input::Char(']') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::ScrollLayerBrowserPreview { delta: 10 },
+                        ),
+                        Input::Char('m') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                        ),
+                        Input::Char('d') => compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
+                        ),
+                        _ => None,
+                    },
+                }
             };
             match effect {
                 Some(Effect::LoadLayerBrowserDirectory {

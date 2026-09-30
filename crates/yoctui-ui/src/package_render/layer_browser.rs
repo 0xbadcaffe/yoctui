@@ -1,78 +1,87 @@
 pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rect) {
     let left_width = layer_browser_left_width(browser, area.width);
-    let chunks =
-        Layout::horizontal([Constraint::Length(left_width), Constraint::Min(1)]).split(area);
+    let rootfs = browser.is_rootfs();
+    let chunks = if rootfs && area.width < 120 {
+        Layout::vertical([Constraint::Percentage(55), Constraint::Percentage(45)]).split(area)
+    } else {
+        Layout::horizontal([Constraint::Length(left_width), Constraint::Min(1)]).split(area)
+    };
     let layer_height = app.workspace.layers.len().saturating_add(2).min(8) as u16;
-    let left =
-        Layout::vertical([Constraint::Length(layer_height), Constraint::Min(3)]).split(chunks[0]);
+    let left = if rootfs {
+        Layout::vertical([Constraint::Length(0), Constraint::Min(0)]).split(chunks[0])
+    } else {
+        Layout::vertical([Constraint::Length(layer_height), Constraint::Min(3)]).split(chunks[0])
+    };
     let palette = ThemePalette::for_app(app);
-    let configured = app
-        .workspace
-        .layers
-        .iter()
-        .filter(|layer| {
-            matches_metadata(
-                &app.metadata_query,
-                &[layer.name.as_str(), layer.path.to_str().unwrap_or("")],
-            )
-        })
-        .collect::<Vec<_>>();
-    let configured_selection = configured
-        .iter()
-        .position(|layer| layer.name == browser.layer);
-    let configured_viewport = yoctui_model::centered_viewport_range(
-        configured_selection,
-        configured.len(),
-        usize::from(left[0].height.saturating_sub(3)).max(1),
-    );
-    let configured_rows = configured[configured_viewport].iter().map(|layer| {
-        let relationship = layer_relationship(app, &layer.name);
-        let compatibility = relationship.map_or("?", |value| {
-            if value.compatible.is_empty() {
-                "-"
+    if !rootfs {
+        let configured = app
+            .workspace
+            .layers
+            .iter()
+            .filter(|layer| {
+                matches_metadata(
+                    &app.metadata_query,
+                    &[layer.name.as_str(), layer.path.to_str().unwrap_or("")],
+                )
+            })
+            .collect::<Vec<_>>();
+        let configured_selection = configured
+            .iter()
+            .position(|layer| layer.name == browser.layer);
+        let configured_viewport = yoctui_model::centered_viewport_range(
+            configured_selection,
+            configured.len(),
+            usize::from(left[0].height.saturating_sub(3)).max(1),
+        );
+        let configured_rows = configured[configured_viewport].iter().map(|layer| {
+            let relationship = layer_relationship(app, &layer.name);
+            let compatibility = relationship.map_or("?", |value| {
+                if value.compatible.is_empty() {
+                    "-"
+                } else {
+                    "yes"
+                }
+            });
+            let active = active_build_layer(app, &layer.name);
+            let style = if layer.name == browser.layer {
+                palette.selected()
+            } else if active {
+                palette.role(palette.success, Modifier::BOLD)
             } else {
-                "yes"
-            }
+                Style::default()
+            };
+            Row::new([
+                if active {
+                    format!("▪ {}", layer.name)
+                } else {
+                    format!("  {}", layer.name)
+                },
+                layer
+                    .priority
+                    .map_or_else(|| "?".into(), |priority| priority.to_string()),
+                compatibility.into(),
+            ])
+            .style(style)
         });
-        let active = active_build_layer(app, &layer.name);
-        let style = if layer.name == browser.layer {
-            palette.selected()
-        } else if active {
-            palette.role(palette.success, Modifier::BOLD)
-        } else {
-            Style::default()
-        };
-        Row::new([
-            if active {
-                format!("▪ {}", layer.name)
-            } else {
-                format!("  {}", layer.name)
-            },
-            layer
-                .priority
-                .map_or_else(|| "?".into(), |priority| priority.to_string()),
-            compatibility.into(),
-        ])
-        .style(style)
-    });
-    frame.render_widget(
-        Table::new(
-            configured_rows,
-            [
-                Constraint::Min(8),
-                Constraint::Length(4),
-                Constraint::Length(6),
-            ],
-        )
-        .header(Row::new(["Configured layers", "Pri", "Compat"]).style(Style::default().bold()))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .style(palette.base())
-                .border_style(palette.focus()),
-        ),
-        left[0],
-    );
+        frame.render_widget(
+            Table::new(
+                configured_rows,
+                [
+                    Constraint::Min(8),
+                    Constraint::Length(4),
+                    Constraint::Length(6),
+                ],
+            )
+            .header(Row::new(["Configured layers", "Pri", "Compat"]).style(Style::default().bold()))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .style(palette.base())
+                    .border_style(palette.focus()),
+            ),
+            left[0],
+        );
+    }
 
     let query = app.metadata_query.to_ascii_lowercase();
     let entries = browser
@@ -166,13 +175,24 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
         ),
     }
 
-    let info_open = browser.inspector_mode != LayerInspectorMode::Preview;
+    let info_open = rootfs || browser.inspector_mode != LayerInspectorMode::Preview;
     let right = Layout::vertical([
-        Constraint::Length(if info_open { 9 } else { 3 }),
+        Constraint::Length(if rootfs {
+            if area.width < 120 { 5 } else { 8 }
+        } else if info_open {
+            9
+        } else {
+            3
+        }),
         Constraint::Min(5),
     ])
     .split(chunks[1]);
-    let info = if info_open {
+    let info = if rootfs {
+        Text::from(browser.selected_entry().map_or_else(
+            || "Empty directory".into(),
+            |entry| layer_entry_metadata(app, browser, entry),
+        ))
+    } else if info_open {
         layer_inspector_text(app, browser)
     } else {
         Text::from(format!(
@@ -193,7 +213,9 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
         Paragraph::new(info)
             .block(
                 Block::default()
-                    .title(if info_open {
+                    .title(if rootfs {
+                        "Host IMAGE_ROOTFS attributes (not fakeroot)"
+                    } else if info_open {
                         "File information · i hide"
                     } else {
                         "File information · i show"

@@ -396,6 +396,15 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::ShiftImagesView { delta } => {
             app.images_view = app.images_view.shifted(delta);
             app.image_artifact_searching = false;
+            if app
+                .layer_browser
+                .as_ref()
+                .is_some_and(LayerBrowser::is_rootfs)
+            {
+                app.layer_browser = None;
+                app.metadata_query.clear();
+                app.metadata_searching = false;
+            }
             if app.images_view != ImagesView::Artifacts {
                 let Some(image) = rootfs_image_identity(app) else {
                     app.notification = Some(
@@ -412,6 +421,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     .is_some_and(|request| request.image == image);
                 if !is_current {
                     return begin_rootfs_composition(app, image);
+                }
+                if app.images_view == ImagesView::RootfsFilesystem {
+                    return update(app, Action::BrowseRootfsFilesystem);
                 }
             }
         }
@@ -440,6 +452,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 RootfsCompositionState::Loading { request: pending } if pending == &request
             ) {
                 set_rootfs_composition(app, request, composition, Vec::new());
+                if app.images_view == ImagesView::RootfsFilesystem {
+                    return update(app, Action::BrowseRootfsFilesystem);
+                }
             }
         }
         Action::RootfsCompositionPartial {
@@ -452,6 +467,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 RootfsCompositionState::Loading { request: pending } if pending == &request
             ) {
                 set_rootfs_composition(app, request, composition, limitations);
+                if app.images_view == ImagesView::RootfsFilesystem {
+                    return update(app, Action::BrowseRootfsFilesystem);
+                }
             }
         }
         Action::RootfsCompositionUnavailable { request, reason } => {

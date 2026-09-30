@@ -301,7 +301,13 @@ pub(crate) async fn poll_rootfs_composition_operation(
     } else {
         event
     };
-    if let Some(action) = model_action_from_backend_event(event) {
-        let _ = update(app, action);
+    if let Some(action) = model_action_from_backend_event(event)
+        && let Some(Effect::LoadLayerBrowserDirectory {
+            layer,
+            root,
+            directory,
+        }) = update(app, action)
+    {
+        load_layer_browser_directory(app, layer, root, directory).await;
     }
 }

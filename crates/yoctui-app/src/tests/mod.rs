@@ -1,6 +1,7 @@
 //! Shared fixtures and regression modules.
 
 use super::*;
+mod rootfs_browser;
 
 pub(crate) fn compatibility_workspace_authority(
     generation: u64,

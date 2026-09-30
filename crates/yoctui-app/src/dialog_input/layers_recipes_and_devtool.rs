@@ -33,6 +33,26 @@ pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+pub fn rootfs_browser_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
+    let browser = app.rootfs_browser()?;
+    if app.metadata_searching {
+        return layer_tree_action(true, key);
+    }
+    if matches!(key, Input::Tab | Input::BackTab | Input::Char('1'..='6')) {
+        return images_workspace_action_for_view(false, app.images_view, key);
+    }
+    if browser.preview_focused {
+        match key {
+            Input::Up => return Some(Action::ScrollLayerBrowserPreview { delta: -1 }),
+            Input::Down => return Some(Action::ScrollLayerBrowserPreview { delta: 1 }),
+            Input::PageUp => return Some(Action::ScrollLayerBrowserPreview { delta: -10 }),
+            Input::PageDown => return Some(Action::ScrollLayerBrowserPreview { delta: 10 }),
+            Input::Left | Input::Char('h') => return Some(Action::FocusLayerBrowserTree),
+            _ => {}
+        }
+    }
+    layer_tree_action(false, key)
+}
 pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
     if searching {
         return match key {
@@ -144,9 +164,7 @@ pub fn yocto_utility_dialog_action(
         Input::Down | Input::Tab => Some(Action::SelectYoctoUtilityField { delta: 1 }),
         Input::Left => Some(Action::CycleYoctoUtilityChoice { delta: -1 }),
         Input::Right => Some(Action::CycleYoctoUtilityChoice { delta: 1 }),
-        Input::Char(' ')
-            if selected_kind == Some(yoctui_model::YoctoUtilityFieldKind::Choice) =>
-        {
+        Input::Char(' ') if selected_kind == Some(yoctui_model::YoctoUtilityFieldKind::Choice) => {
             Some(Action::CycleYoctoUtilityChoice { delta: 1 })
         }
         Input::Backspace => Some(Action::BackspaceYoctoUtilityField),

@@ -64,6 +64,7 @@ pub(crate) fn scan_layer_directory(
                 size: metadata.as_ref().map(|value| value.len()),
                 modified: metadata.and_then(|value| value.modified().ok()),
                 git,
+                rootfs_metadata: None,
             })
         })
         .collect::<Vec<_>>();
@@ -83,8 +84,17 @@ pub(crate) async fn load_layer_browser_directory(
     directory: PathBuf,
 ) {
     let scan = directory.clone();
-    let inspect_git = !layer.starts_with("Rootfs:") && layer != "Rootfs system";
-    match tokio::task::spawn_blocking(move || scan_layer_directory(&scan, inspect_git)).await {
+    let is_rootfs = layer.starts_with("Rootfs:") || layer == "Rootfs system";
+    let scan_root = root.clone();
+    match tokio::task::spawn_blocking(move || {
+        if is_rootfs {
+            yoctui_bitbake::scan_rootfs_browser_directory(&scan_root, &scan)
+        } else {
+            scan_layer_directory(&scan, true)
+        }
+    })
+    .await
+    {
         Ok(Ok(entries)) => {
             if let Some(Effect::LoadLayerBrowserPreview(path)) = compatibility_workspace_action(
                 app,
@@ -127,7 +137,20 @@ pub(crate) fn read_layer_preview(path: &Path) -> io::Result<(String, PreviewKind
 
 pub(crate) async fn load_layer_browser_preview(app: &mut App, path: PathBuf) {
     let preview_path = path.clone();
-    match tokio::task::spawn_blocking(move || read_layer_preview(&preview_path)).await {
+    let root = app
+        .layer_browser
+        .as_ref()
+        .filter(|browser| browser.is_rootfs())
+        .map(|browser| browser.root.clone());
+    match tokio::task::spawn_blocking(move || {
+        if let Some(root) = root {
+            yoctui_bitbake::read_rootfs_browser_preview(&root, &preview_path)
+        } else {
+            read_layer_preview(&preview_path)
+        }
+    })
+    .await
+    {
         Ok(Ok((content, kind, truncated))) => {
             let _ = update(
                 app,

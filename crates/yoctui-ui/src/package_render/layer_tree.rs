@@ -40,6 +40,22 @@ pub(crate) fn layer_tree_entry_label(
         GitFileState::Clean => "  ",
         GitFileState::Unavailable => " -",
     };
+    if browser.is_rootfs() {
+        let attributes = entry.rootfs_metadata.as_ref().map_or_else(
+            || "permissions/owner/group unavailable".into(),
+            |metadata| metadata.listing(entry.size),
+        );
+        let target = entry
+            .rootfs_metadata
+            .as_ref()
+            .and_then(|metadata| metadata.link_target.as_ref())
+            .map_or_else(String::new, |path| format!(" -> {}", path.display()));
+        return format!(
+            "{}{marker}{name}{}{target}  {attributes}",
+            "  ".repeat(leading_depth),
+            if entry.is_dir { "/" } else { "" }
+        );
+    }
     format!(
         "{}{marker}{name}{}{git}",
         "  ".repeat(leading_depth),
@@ -151,6 +167,11 @@ pub(crate) fn layer_tree_widget_projection(
 }
 
 pub(crate) fn layer_browser_left_width(browser: &LayerBrowser, total_width: u16) -> u16 {
+    if browser.is_rootfs() {
+        return total_width
+            .saturating_sub(38)
+            .min(total_width.saturating_mul(65) / 100);
+    }
     let configured = browser.layer.chars().count().saturating_add(18);
     let tree = browser
         .entries

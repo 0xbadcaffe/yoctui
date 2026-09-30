@@ -80,6 +80,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.config_selection = 0;
             select_first_matching_layer_entry(app);
             select_first_matching_recipe(app);
+            if app.rootfs_browser_active() {
+                return update(app, Action::SelectLayerBrowserEntry { delta: 0 });
+            }
         }
         Action::FinishMetadataSearch => app.metadata_searching = false,
         Action::Notify(message) => app.notification = Some(message),

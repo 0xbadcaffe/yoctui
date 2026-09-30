@@ -3593,6 +3593,14 @@ records. Opening the rootfs reuses the existing lazy directory effects,
 64-KiB preview loader, and validated editor-save path; it never starts systemd,
 connects to D-Bus, or mounts a deploy artifact.
 
+The Files tab reuses the typed LayerBrowser reducer and tree/preview renderer
+inline. Optional RootFS-only entry attributes carry lstat type, mode, numeric
+UID/GID, resolved host account names and link target. The BitBake adapter owns
+contained lazy directory acquisition and bounded host-account lookup. RootFS
+preview reads revalidate containment and require a non-symlink regular file;
+neither special files nor links are opened. Layers entries omit these optional
+attributes and retain their existing Git and editor behavior.
+
 Daemon-attached rootfs acquisition uses a capability-advertised, read-only
 InspectRootfsSources request and request-scoped typed command result, never
 broadcast metadata or guessed work paths. The daemon binds exact image,

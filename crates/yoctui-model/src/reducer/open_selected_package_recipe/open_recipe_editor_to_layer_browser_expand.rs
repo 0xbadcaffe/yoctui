@@ -330,11 +330,21 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 browser.rebuild(None);
                 app.layer_browser = Some(browser);
             }
+            if let Some(browser) = app
+                .layer_browser
+                .as_mut()
+                .filter(|browser| browser.is_rootfs())
+            {
+                browser.preview.clear();
+                browser.preview_kind = PreviewKind::Unavailable;
+                browser.preview_truncated = false;
+                browser.preview_scroll = 0;
+            }
             if let Some(path) = app
                 .layer_browser
                 .as_ref()
                 .and_then(LayerBrowser::selected_entry)
-                .filter(|entry| !entry.is_dir)
+                .filter(|entry| entry.can_preview())
                 .map(|entry| entry.path.clone())
             {
                 return Some(Effect::LoadLayerBrowserPreview(path));
@@ -362,16 +372,27 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     .position(|index| *index == browser.selection)
                     .unwrap_or(0);
                 let position = shifted_index(position, delta, matches.len());
+                if browser.is_rootfs() && matches.is_empty() {
+                    browser.preview.clear();
+                    browser.preview_kind = PreviewKind::Unavailable;
+                    browser.preview_truncated = false;
+                    browser.preview_scroll = 0;
+                    return None;
+                }
                 browser.selection = matches.get(position).copied().unwrap_or(0);
                 browser.preview_scroll = 0;
-                if browser.selected_entry().is_some_and(|entry| entry.is_dir) {
+                if browser.is_rootfs()
+                    || browser
+                        .selected_entry()
+                        .is_some_and(|entry| !entry.can_preview())
+                {
                     browser.preview.clear();
                     browser.preview_kind = PreviewKind::Unavailable;
                     browser.preview_truncated = false;
                 }
                 browser
                     .selected_entry()
-                    .filter(|entry| !entry.is_dir)
+                    .filter(|entry| entry.can_preview())
                     .map(|entry| entry.path.clone())
             } else {
                 None

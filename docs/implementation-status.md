@@ -1,3 +1,18 @@
+ROOTFS-FILES-BROWSER-001 is DONE in v0.1.253. The Files tab now opens the
+Layers-style lazy tree inline, with expandable directories, hidden entries,
+paging/search, numbered bounded content preview and explicit editor action.
+Rows expose ls-style permissions, octal chmod mode, host owner/group names and
+numeric IDs, exact size and link targets. Ownership is explicitly on-disk
+IMAGE_ROOTFS, not fakeroot image ownership; symlinks and special files are never
+read. RootFS search refreshes or clears the selected preview, without changing
+Layers behavior. Focused adapter/model/app/UI/CLI tests, Layers navigation and
+binary-preview regressions, RootFS chart/list checks, strict affected-crate
+Clippy, formatting, UI contract, version policy, roadmap and optimized build
+pass. Full tests remain deferred per user. The optional documentation gate
+still rejects the existing M22 editor raster DIM style (present in HEAD's
+unchanged .cells fixture); no unrelated raster tooling or fixture was changed.
+The external M67 live-evidence blocker remains the current queue task.
+
 QEMU-LIVE-LAUNCH-001 is DONE in v0.1.252. The interactive Images handler now
 routes on-demand inspection, artifact completion refreshes QEMU and Wic
 capabilities, and attached clients prefer the daemon's initialized absolute

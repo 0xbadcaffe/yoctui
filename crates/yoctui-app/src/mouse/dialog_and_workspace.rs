@@ -104,6 +104,11 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         Screen::Devtool => devtool_workspace_action(app.metadata_searching, key),
         Screen::Packages => package_workspace_action(app.package_searching, key),
         Screen::Images => {
+            if app.images_view == yoctui_model::ImagesView::RootfsFilesystem
+                && app.rootfs_browser().is_some()
+            {
+                return rootfs_browser_action(app, key);
+            }
             images_workspace_action_for_view(app.image_artifact_searching, app.images_view, key)
         }
         Screen::Hardware => hardware_workspace_action(app, key),

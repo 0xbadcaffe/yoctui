@@ -78,6 +78,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.config_selection = 0;
             select_first_matching_layer_entry(app);
             select_first_matching_recipe(app);
+            if app.rootfs_browser_active() {
+                return update(app, Action::SelectLayerBrowserEntry { delta: 0 });
+            }
         }
         Action::BackspaceMetadataQuery if app.metadata_searching => {
             app.metadata_query.pop();
@@ -86,6 +89,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.config_selection = 0;
             select_first_matching_layer_entry(app);
             select_first_matching_recipe(app);
+            if app.rootfs_browser_active() {
+                return update(app, Action::SelectLayerBrowserEntry { delta: 0 });
+            }
         }
         Action::AppendInternalLogQuery(_)
         | Action::BackspaceInternalLogQuery

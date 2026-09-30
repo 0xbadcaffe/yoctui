@@ -163,7 +163,7 @@ fn ux_rootfs_filesystem_tree_and_inspector_preserve_exact_separate_authority() {
         assert!(output.contains("exact bytes"), "{output}");
         assert!(output.contains("symlinks 1"), "{output}");
         assert!(output.contains("special 1"), "{output}");
-        assert!(output.contains("tool"), "{output}");
+        assert!(output.contains("IMAGE_ROOTFS directory is unavailable"), "{output}");
     }
     app.focus = FocusTarget::Inspector;
     let inspector = rendered_text(&app, 200, 60);

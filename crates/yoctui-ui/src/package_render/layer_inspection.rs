@@ -3,6 +3,29 @@ pub(crate) fn layer_entry_metadata(
     browser: &LayerBrowser,
     entry: &LayerBrowserEntry,
 ) -> String {
+    if browser.is_rootfs() {
+        let logical = entry
+            .path
+            .strip_prefix(&browser.root)
+            .unwrap_or(&entry.path);
+        let listing = entry.rootfs_metadata.as_ref().map_or_else(
+            || "Permissions / Mode / Owner / Group: unavailable".into(),
+            |metadata| {
+                format!(
+                    "Permissions / Mode / Owner / Group / Size:\n{}",
+                    metadata.listing(entry.size)
+                )
+            },
+        );
+        let target = entry
+            .rootfs_metadata
+            .as_ref()
+            .and_then(|metadata| metadata.link_target.as_ref())
+            .map_or_else(String::new, |path| {
+                format!("\nSymlink -> {} (not followed)", path.display())
+            });
+        return format!("Path: /{}\n{listing}{target}", logical.display());
+    }
     let display_path = if entry.path.is_absolute() {
         entry.path.clone()
     } else {
@@ -39,11 +62,18 @@ pub(crate) fn layer_entry_metadata(
 
 pub(crate) fn layer_inspector_text(app: &App, browser: &LayerBrowser) -> Text<'static> {
     let Some(entry) = browser.selected_entry() else {
-        return Text::from("This layer is empty.");
+        return Text::from(if browser.is_rootfs() {
+            "This directory is empty."
+        } else {
+            "This layer is empty."
+        });
     };
     let metadata = layer_entry_metadata(app, browser, entry);
     let relationship = layer_relationship(app, &browser.layer);
     match browser.inspector_mode {
+        LayerInspectorMode::Preview if !entry.is_dir && !entry.can_preview() => Text::from(
+            format!("{metadata}\n\nSymlink or special file: content is not read."),
+        ),
         LayerInspectorMode::Git => Text::from(format!(
             "{metadata}\n\nGit state: {}\nGit status is detected per loaded subtree; missing Git is non-fatal.",
             git_state_text(entry.git)

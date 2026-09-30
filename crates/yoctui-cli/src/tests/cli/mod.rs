@@ -1,4 +1,5 @@
 use super::*;
+mod rootfs_browser;
 
 mod task_identity_unknown_statistics_use_existing_job_progress_without_a_task_row;
 

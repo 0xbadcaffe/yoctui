@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+## M100 — RootFS file browser
+
+ROOTFS-FILES-BROWSER-001 is DONE in v0.1.253: inline Layers-style lazy Files
+tree, safe content preview and explicit host ls-style attributes. Focused
+RootFS and Layers regression checks pass; full suite remains deferred per
+user. M67 live evidence remains blocked.
+
 REDUCE-UI-001 is split into four ordered tasks after an audit found 41,808
 Rust lines, 17 production sources above 500 lines, five inline test modules and
 18 oversized existing test sources. Workflow renderers are first, followed by

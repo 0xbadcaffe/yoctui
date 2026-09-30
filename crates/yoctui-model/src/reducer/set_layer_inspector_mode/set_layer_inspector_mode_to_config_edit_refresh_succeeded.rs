@@ -48,7 +48,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::EditSelectedLayerBrowserFile => {
             if let Some(browser) = app.layer_browser.as_ref()
                 && let Some(entry) = browser.selected_entry()
-                && !entry.is_dir
+                && entry.can_preview()
                 && let Ok(file) = entry.path.strip_prefix(&browser.root)
             {
                 return Some(Effect::OpenLayerBrowserEditor {

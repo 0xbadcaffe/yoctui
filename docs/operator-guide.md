@@ -319,6 +319,15 @@ view is separate authority and is available only while BitBake's exact
 may legitimately leave package composition available while reporting the
 logical filesystem as `Unavailable (cleaned)`.
 
+The Files tab opens the same lazy expandable tree as Layers. Use arrows or
+`h/j/k/l` to navigate, `Enter` to toggle a directory or focus a file preview,
+`Left` to return from preview, `.` for hidden entries, `/` to search, and
+`Tab`/`Shift-Tab` to switch Images views. `e` explicitly opens the editor.
+Rows show ls-style permissions, octal chmod mode, owner and group names/IDs,
+and exact bytes. Ownership is the host/on-disk `IMAGE_ROOTFS` metadata, not
+Yocto fakeroot ownership. Links show their targets without being followed;
+special files are listed but not read.
+
 The wide color view pairs its pie with exact values and an inspectable `Other`
 group. Medium, narrow, ASCII, no-color, and reader-oriented layouts use bars,
 tables, and trees carrying the same totals. A `Partial` result names the exact

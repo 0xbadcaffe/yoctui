@@ -32,6 +32,8 @@ mod qemu;
 mod raw_job;
 mod recipe_inventory;
 mod rootfs;
+mod rootfs_browser;
+pub use rootfs_browser::{read_rootfs_browser_preview, scan_rootfs_browser_directory};
 mod sdk;
 mod sdk_shell;
 mod sdk_tool;

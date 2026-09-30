@@ -161,13 +161,14 @@ pub use dialog_input::{
     devtool_workspace_action, dtc_compile_dialog_action, dtc_decompile_dialog_action,
     image_console_dialog_action, layer_tree_action, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
-    recipes_workspace_action, terminal_launch_dialog_action, test_cancellation_confirmation_action,
-    test_comparison_confirmation_action, test_comparison_dialog_action,
-    test_comparison_workspace_action, test_junit_confirmation_action, test_junit_dialog_action,
-    test_launch_confirmation_action, test_launch_dialog_action, test_result_import_dialog_action,
-    test_results_workspace_action, wic_cancellation_confirmation_action,
-    wic_create_confirmation_action, wic_create_dialog_action, wic_device_picker_action,
-    wic_write_confirmation_action, wic_write_phrase_action, yocto_utility_dialog_action,
+    recipes_workspace_action, rootfs_browser_action, terminal_launch_dialog_action,
+    test_cancellation_confirmation_action, test_comparison_confirmation_action,
+    test_comparison_dialog_action, test_comparison_workspace_action,
+    test_junit_confirmation_action, test_junit_dialog_action, test_launch_confirmation_action,
+    test_launch_dialog_action, test_result_import_dialog_action, test_results_workspace_action,
+    wic_cancellation_confirmation_action, wic_create_confirmation_action, wic_create_dialog_action,
+    wic_device_picker_action, wic_write_confirmation_action, wic_write_phrase_action,
+    yocto_utility_dialog_action,
 };
 
 pub use keyboard::{terminal_owns_input, workspace_text_input_active};

@@ -26,10 +26,21 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             with_focus_shortcuts(app, "↑/↓ scroll inspector | q quit"),
         );
     }
-    if app.layer_browser.is_some() {
+    if app.layer_browser.is_some()
+        && (app.screen == Screen::Layers
+            || (app.screen == Screen::Images
+                && app.images_view == ImagesView::RootfsFilesystem
+                && app.rootfs_browser().is_some()))
+    {
+        if app.screen == Screen::Images {
+            return with_focus_shortcuts(
+                app,
+                "↑/↓ select | → expand/preview | ← collapse/tree | Enter toggle/preview | e edit | . hidden | / search | r refresh | Tab views",
+            );
+        }
         return with_compatibility_footer(
             app,
-            WorkspaceDestination::Layers,
+            yoctui_model::workspace_screen_destination(app.screen),
             with_focus_shortcuts(
                 app,
                 "↑/↓ select | PgUp/PgDn page | →/l expand or focus preview | preview arrows scroll | ← tree | e editor | i info | r refresh | . hidden | / search",
@@ -40,10 +51,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         return with_compatibility_footer(
             app,
             yoctui_model::workspace_screen_destination(app.screen),
-            with_focus_shortcuts(
-                app,
-                "Ctrl+G Yoctui | all other keys go to menuconfig",
-            ),
+            with_focus_shortcuts(app, "Ctrl+G Yoctui | all other keys go to menuconfig"),
         );
     }
     let shortcuts = match app.screen {

@@ -193,6 +193,13 @@ pub(crate) fn begin_rootfs_composition(
     app.rootfs_composition = RootfsCompositionState::Loading {
         request: request.clone(),
     };
+    if app
+        .layer_browser
+        .as_ref()
+        .is_some_and(LayerBrowser::is_rootfs)
+    {
+        app.layer_browser = None;
+    }
     Some(Effect::GetRootfsComposition(request))
 }
 

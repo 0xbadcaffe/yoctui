@@ -261,6 +261,10 @@ pub fn workspace_text_input_active(app: &yoctui_model::App) -> bool {
         || (app.screen == yoctui_model::Screen::Dependencies && app.dependency_graph_searching)
         || (app.screen == yoctui_model::Screen::Packages && app.package_searching)
         || (app.screen == yoctui_model::Screen::Images && app.image_artifact_searching)
+        || (app.screen == yoctui_model::Screen::Images
+            && app.images_view == yoctui_model::ImagesView::RootfsFilesystem
+            && app.rootfs_browser().is_some()
+            && app.metadata_searching)
         || (app.screen == yoctui_model::Screen::Sdk && app.sdk_artifact_searching)
         || (app.screen == yoctui_model::Screen::Testing && app.test_result_searching)
         || (app.screen == yoctui_model::Screen::Security && app.security.searching)

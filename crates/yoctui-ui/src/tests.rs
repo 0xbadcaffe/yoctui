@@ -1,6 +1,7 @@
 // Shared fixtures and regression modules.
 
 use super::*;
+mod rootfs_browser;
 use ratatui::{Terminal, backend::TestBackend};
 use std::{fs, path::PathBuf};
 use yoctui_model::{Action, BuildRequest, update};

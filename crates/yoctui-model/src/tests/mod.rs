@@ -1,6 +1,7 @@
 //! Shared fixtures and regression modules.
 
 use super::*;
+mod rootfs_browser;
 use proptest::prelude::*;
 
 pub(crate) fn log(message: &str) -> LogEntry {

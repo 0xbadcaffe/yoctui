@@ -296,6 +296,12 @@ pub(crate) fn current_collection_edge_action(app: &App, to_end: bool) -> Option<
         Screen::Signatures => Action::SelectSignatureRecord { delta },
         Screen::Recipes | Screen::Devtool => Action::SelectRecipe { delta },
         Screen::Packages => Action::SelectPackage { delta },
+        Screen::Images
+            if app.images_view == ImagesView::RootfsFilesystem
+                && app.rootfs_browser().is_some() =>
+        {
+            Action::SelectLayerBrowserEntry { delta }
+        }
         Screen::Images => Action::SelectImageArtifact { delta },
         Screen::Hardware => Action::Hardware(HardwareAction::SelectDocument { delta }),
         Screen::Kernel => Action::SelectKernelFile { delta },

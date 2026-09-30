@@ -16,3 +16,5 @@ digests or substitute fake-process startup timings for live evidence.
 ```
 
 This external validation prerequisite is the only remaining required task.
+The user explicitly deferred the full test suite for the v0.1.253 Files change;
+do not run the full completion suite without a subsequent instruction.
