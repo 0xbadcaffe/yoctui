@@ -241,7 +241,7 @@ pub(crate) async fn tui(
     let sdk_capability_operation = None;
     let sdk_operation = None;
     let pending_sdk_build = None;
-    let qemu_inspector = QemuCapabilityInspector::default();
+    let qemu_inspector = qemu_capability_inspector(&app);
     let qemu_operation = None;
     let wic_inspector = wic_capability_inspector(&app);
     let wic_capability_operation = None;

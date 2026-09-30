@@ -1,3 +1,14 @@
+QEMU-LIVE-LAUNCH-001 is DONE in v0.1.252. The interactive Images handler now
+routes on-demand inspection, artifact completion refreshes QEMU and Wic
+capabilities, and attached clients prefer the daemon's initialized absolute
+`runqemu` identity over their desktop PATH. The existing typed QEMU Console
+retains exact preview, daemon PTY, writer lease, input/resize, reconnect, and
+termination. Focused CLI, artifact-refresh and image-console tests, formatting,
+strict CLI Clippy, version policy, roadmap validation, the initialized Romulus
+tool probe, and optimized build pass. Initial binary SHA-256 is
+`903dd96b22378e96cb7b4e302c6450c039669c2e952771f440878cdbafe68916`.
+Romulus supplies no compatible QEMU guest artifact, so no guest boot is claimed.
+
 ROOTFS-PIE-LIST-001 is DONE. RootFS Composition now admits the Braille pie at
 ordinary wide 40-row terminal heights instead of replacing it with the package
 list. A compact wide workspace stacks the pie above a full-width exact table;

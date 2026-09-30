@@ -18,7 +18,16 @@ pub(crate) fn image_artifact_generation(app: &App) -> Option<u64> {
     }
 }
 
-#[cfg(test)]
+pub(crate) fn qemu_capability_inspector(app: &App) -> QemuCapabilityInspector {
+    app.workspace_compatibility
+        .authority()
+        .and_then(|authority| authority.snapshot.environment.available_tools.value())
+        .and_then(|tools| tools.iter().find(|tool| tool.id == "runqemu"))
+        .map_or_else(QemuCapabilityInspector::default, |tool| {
+            QemuCapabilityInspector::with_executable(tool.executable.clone())
+        })
+}
+
 pub(crate) fn execute_qemu_capability_effect(
     app: &mut App,
     inspector: &QemuCapabilityInspector,
@@ -96,9 +105,9 @@ pub(crate) fn begin_image_artifact_operation(
 pub(crate) async fn poll_image_artifact_operation(
     app: &mut App,
     operation: &mut Option<ImageArtifactBackgroundOperation>,
-    _qemu_inspector: &QemuCapabilityInspector,
-    _wic_inspector: &WicCapabilityInspector,
-    _wic_operation: &mut Option<WicCapabilityBackgroundOperation>,
+    qemu_inspector: &QemuCapabilityInspector,
+    wic_inspector: &WicCapabilityInspector,
+    wic_operation: &mut Option<WicCapabilityBackgroundOperation>,
 ) {
     if !operation
         .as_ref()
@@ -135,6 +144,14 @@ pub(crate) async fn poll_image_artifact_operation(
             Action::WicCapabilityLoaded(WicCapability::Failed {
                 message: format!("image artifact inventory failed: {message}"),
             }),
+        );
+    } else {
+        execute_qemu_capability_effect(app, qemu_inspector, Effect::InspectQemuCapability);
+        begin_wic_capability_operation(
+            app,
+            wic_inspector,
+            wic_operation,
+            Effect::InspectWicCapability,
         );
     }
 }

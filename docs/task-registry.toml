@@ -10141,3 +10141,14 @@ required = true
 depends_on = ["ROOTFS-PIE-LIST-001"]
 verify = ["cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
 notes = "DONE in v0.1.251. Focused 200x42/140x40 RootFS chart-and-list coverage, formatting, strict UI Clippy, version policy, roadmap validation, and the optimized build pass. Six concept text fixtures carry the version-only header bump; unrelated stale golden drift was rejected. The initial optimized binary SHA-256 is 30d614011541e7fc89bbfc6f0dc748cee11f9605ce29086a3f0449e2a56a32f9. Push and a final source-bound rebuild complete the delivery loop."
+
+[[task]]
+id = "QEMU-LIVE-LAUNCH-001"
+milestone = "M99"
+title = "Restore initialized runqemu launch from the QEMU workspace"
+status = "DONE"
+priority = 3170
+required = true
+depends_on = ["ROOTFS-PIE-LIST-RELEASE-001"]
+verify = ["cargo test -p yoctui --bin yoctui qemu_workspace", "cargo test -p yoctui-model image_console", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: source the Romulus environment and run runqemu --help"]
+notes = "DONE in v0.1.252. Images routes on-demand InspectQemuCapability, successful artifact scans refresh QEMU and Wic capability, and attached clients construct the inspector from the daemon's initialized absolute runqemu identity before falling back to local PATH. Enter on the approved preview retains the daemon-owned QEMU Console PTY with input, resize, writer lease, reconnect, and termination. Focused QEMU CLI, artifact-refresh, and image-console tests, formatting, strict CLI Clippy, version policy, roadmap validation, initialized Romulus runqemu --help, and the optimized build pass. Romulus has no compatible QEMU guest artifact, so no guest boot is claimed. Initial binary SHA-256: 903dd96b22378e96cb7b4e302c6450c039669c2e952771f440878cdbafe68916."

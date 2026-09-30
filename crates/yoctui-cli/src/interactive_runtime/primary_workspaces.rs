@@ -197,6 +197,19 @@ impl InteractiveRuntime {
                     &mut runtime.wic_device_operation,
                     effect,
                 ),
+                Some(effect @ Effect::InspectQemuCapability) => {
+                    execute_qemu_capability_effect(
+                        &mut runtime.app,
+                        &runtime.qemu_inspector,
+                        effect,
+                    );
+                }
+                Some(effect @ Effect::InspectWicCapability) => begin_wic_capability_operation(
+                    &mut runtime.app,
+                    &runtime.wic_inspector,
+                    &mut runtime.wic_capability_operation,
+                    effect,
+                ),
                 Some(Effect::CancelImageArtifactOperation) => {
                     if let Some(operation) = runtime.image_artifact_operation.as_ref() {
                         if operation.cancellation.cancel() {

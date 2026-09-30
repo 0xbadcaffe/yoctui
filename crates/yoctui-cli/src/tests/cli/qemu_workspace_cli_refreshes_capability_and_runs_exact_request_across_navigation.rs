@@ -48,3 +48,38 @@ async fn qemu_workspace_cli_refreshes_capability_and_runs_exact_request_across_n
     assert!(matches!(app.qemu_capability, QemuCapability::Failed { .. }));
     fs::remove_dir_all(directory).unwrap();
 }
+
+#[cfg(unix)]
+#[test]
+fn qemu_workspace_uses_initialized_daemon_runqemu_identity() {
+    let (directory, _, mut app) = qemu_workspace_fixture("authority", "exit 0");
+    let executable = directory.join("runqemu").canonicalize().unwrap();
+    app.workspace_compatibility
+        .install(yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: yoctui_model::CapabilitySnapshot {
+                generation: 1,
+                environment: yoctui_model::YoctoEnvironmentIdentity {
+                    available_tools: yoctui_model::AuthoritativeValue::detected(
+                        vec![yoctui_model::ToolIdentity {
+                            id: "runqemu".into(),
+                            executable: executable.clone(),
+                            version: None,
+                        }],
+                        yoctui_model::IdentityAuthority::ExecutableProbe,
+                    ),
+                    ..yoctui_model::YoctoEnvironmentIdentity::default()
+                },
+                capabilities: Vec::new(),
+            },
+            implementations: std::collections::BTreeMap::new(),
+        })
+        .unwrap();
+
+    let inspector = qemu_capability_inspector(&app);
+    execute_qemu_capability_effect(&mut app, &inspector, Effect::InspectQemuCapability);
+    assert!(matches!(
+        &app.qemu_capability,
+        QemuCapability::Available { executable: actual, .. } if actual == &executable
+    ));
+    fs::remove_dir_all(directory).unwrap();
+}

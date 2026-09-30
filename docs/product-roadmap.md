@@ -2217,3 +2217,15 @@ strict Clippy, version-policy, roadmap, push, and optimized-build gates.
 M98 is released in v0.1.251. The focused responsive coverage and release gates
 pass; the optimized binary is built and the two coherent commits are pushed to
 `origin/master`.
+
+## M99 — Initialized QEMU Console launch
+
+Restore the complete `Q` launch path from QEMU / Wic and Images: consume the
+daemon's initialized absolute `runqemu` identity, refresh capability after
+artifact scans, route on-demand inspection, and create the existing daemon-owned
+QEMU Console PTY. Release after focused tests and a live initialized tool probe.
+
+M99 is DONE in v0.1.252. On-demand and post-scan capability inspection use the
+initialized daemon tool identity, and an approved launch opens the embedded
+QEMU Console. The Romulus tool probe passes; no guest boot is claimed without
+a compatible deployed QEMU machine artifact.

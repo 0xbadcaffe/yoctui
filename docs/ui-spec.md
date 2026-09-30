@@ -3231,6 +3231,13 @@ the current artifact is incompatible but inspection reports a compatible
 deployed artifact, that exact identity becomes the operation target; the user
 does not have to leave QEMU / Wic to select it on another screen.
 
+An attached client resolves `runqemu` from the daemon's current initialized
+compatibility identity, not from the attaching shell's `PATH`. Completing an
+image-artifact scan refreshes that capability, and `Q` routes a missing
+capability through the same inspection immediately. A daemon that reports an
+absolute executable can therefore launch the approved QEMU Console even when
+the client was opened from an uninitialized desktop terminal.
+
 `p` validates the editable draft and replaces it with a deterministic argument
 preview. `Enter` in that preview starts the session. `Esc`
 from either launch step returns without starting a process. Missing runqemu,
