@@ -1,3 +1,9 @@
+ROOTFS-SYSTEMD-SCROLL-001 and GLOBAL-SEARCH-MARKER-001 are queued after the
+in-progress ownership fix, as separate small commits with focused tests and
+versioned release delivery. Disk cleanup reclaimed 10.7 GiB of regenerable
+Cargo debug/test artifacts; Yocto builds, sources, captures and release were
+preserved. Subsequent checks disable incremental caching.
+
 ROOTFS-TARGET-OWNERSHIP-001 is IN_PROGRESS. Actual Romulus lstat UID/GID
 1000/1000 differs from its exact Pseudo records (0/0); the current browser also
 resolves host rather than target account names. Replace both sources with

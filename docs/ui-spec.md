@@ -5435,6 +5435,12 @@ configuration map; live ownership, activation state, jobs, and the running
 bus cannot exist until the image boots. `e` edits the selected unit or
 activation descriptor.
 
+The systemd list keeps the selected service visible when keyboard, paging or
+wheel navigation passes the bottom/top of the viewport. Its bounded title cue
+reports the selected position and visible range when clipped. Resizing preserves
+selection and visibility; empty/short lists and tiny terminals remain safe.
+This is viewport behavior only: selection, edit and explorer actions are unchanged.
+
 The filesystem traversal requires canonical build containment, never follows symlinks,
 deduplicates hard links, identifies special files, and enforces entry, depth,
 byte, time, and cancellation bounds. Missing or cleaned work state is
@@ -5743,6 +5749,11 @@ loads the chosen result into this integrated editor and preserves the recipe.
 The global `/` content search remains available from the editor in Normal/file
 mode and keeps its existing build-content scope. Search never follows symlinks,
 enters `.git`, or escapes the selected workspace root.
+
+An empty loading global/workspace content search shows exactly one activity
+marker before `Searching …`, not a static loading ellipsis beside a spinner.
+Unicode uses the existing animated Braille set; reduced motion stays static;
+ASCII uses one plain marker. Error/empty/results states retain their behavior.
 
 The editor inspector shows the selected recipe workspace repository root,
 branch, upstream, clean/dirty counts, and `synced`, `ahead N`, `behind N`,

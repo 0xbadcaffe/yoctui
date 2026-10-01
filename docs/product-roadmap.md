@@ -1,5 +1,14 @@
 # Yoctui Product Roadmap
 
+## M106 — Systemd list viewport and single search activity marker
+
+Two independently committed user-reported fixes follow M105:
+ROOTFS-SYSTEMD-SCROLL-001 keeps the selected service visible beyond the first
+viewport; GLOBAL-SEARCH-MARKER-001 removes the duplicate static loading marker
+beside the existing activity spinner. Preserve actions, focus and scope.
+Each gets focused normal/boundary regressions and a version bump; release
+delivery includes all queued fixes. Full-suite deferral and M67 blocker remain.
+
 ## M105 — Correct target RootFS owner/group and mode
 
 ROOTFS-TARGET-OWNERSHIP-001 supersedes M100's host attribute presentation.

@@ -10273,3 +10273,25 @@ required = true
 depends_on = ["ROOTFS-FILES-BROWSER-001"]
 verify = ["cargo test -p yoctui-bitbake rootfs_browser", "cargo test -p yoctui-model rootfs_browser", "cargo test -p yoctui-model layer_tree", "cargo test -p yoctui-app rootfs_browser", "cargo test -p yoctui-ui rootfs_browser", "cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks", "cargo test -p yoctui --bin yoctui rootfs_browser", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: read-only genuine Romulus target attributes against Pseudo and image accounts"]
 notes = "Requested correction to M100 host metadata. Exact-root read-only Pseudo mode/UID/GID, contained image account names, stale/missing/corrupt/locked/ambiguous evidence unavailable with no host/root fallback. Preserve normal Layers, RootFS tree/preview/chart and daemon; focused checks only, full suite deferred."
+
+[[task]]
+id = "ROOTFS-SYSTEMD-SCROLL-001"
+milestone = "M106"
+title = "Keep the selected systemd service visible beyond the first viewport"
+status = "NOT_STARTED"
+priority = 3240
+required = true
+depends_on = ["ROOTFS-TARGET-OWNERSHIP-001"]
+verify = ["cargo test -p yoctui-model rootfs_systemd", "cargo test -p yoctui-app rootfs_systemd", "cargo test -p yoctui-ui rootfs_systemd", "cargo test -p yoctui-ui ux_rootfs_system_views_render_offline_service_and_bus_authority", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "User reports the service list sticks at the bottom of the first screen. Relevant files: rootfs_services.rs and focused UI/model/app tests. Done when bounded viewport follows existing selection, title cue exposes position, paging/wheel/reverse/resize/empty/tiny cases pass with unchanged edit/explorer behavior; docs/status/version updated, committed, pushed and release built. Full suite deferred."
+
+[[task]]
+id = "GLOBAL-SEARCH-MARKER-001"
+milestone = "M106"
+title = "Show one loading activity marker in global and workspace content search"
+status = "NOT_STARTED"
+priority = 3250
+required = true
+depends_on = ["ROOTFS-SYSTEMD-SCROLL-001"]
+verify = ["cargo test -p yoctui-ui global_search", "cargo test -p yoctui-ui devtool_editor_search", "cargo test -p yoctui-ui primitives", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Screenshot confirms StateView static loading ellipsis plus separately prefixed spinner. Relevant files: palette_render.rs, state primitive if needed, focused search tests. Done when single Unicode animated marker, reduced-motion and ASCII fallbacks pass, other states/scopes unchanged, docs/status/version updated, committed, pushed and release built. Full suite deferred."
