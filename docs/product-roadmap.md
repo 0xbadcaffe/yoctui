@@ -1,5 +1,40 @@
 # Yoctui Product Roadmap
 
+## M104 — From Kernel guides to managed debug sessions
+
+The user requested documentation of this roadmap and implementation of the
+first QEMU → GDB step. Only that first step is authorized for implementation;
+later steps below are proposals, not eligible tasks in the autonomous queue.
+
+1. **QEMU → GDB (current):** explicit deployed boot inputs and matching vmlinux,
+   validated preparation, private debug transport, snapshot guest paused at
+   startup, managed interactive GDB with bounded console logs, failure cleanup
+   and real Linux guest breakpoint/backtrace/resume verification.
+2. **Physical-board KGDB/KDB (proposed):** inspect kernel/transport prerequisites,
+   review persistent Yocto configuration fragments and boot arguments, serial
+   or approved proxy transport, explicit halt/resume and reconnect semantics.
+   Board-specific build/deploy/reset actions need separate authorization.
+3. **Sanitizers and lockdep (proposed):** supported configuration presets,
+   reviewed build/deployment, controlled reproduction, typed report capture and
+   source navigation. These are instrumented-kernel diagnostics, not interactive
+   debugger sessions; each technique needs independent compatibility evidence.
+4. **SysRq/kdump (proposed):** separate read-only diagnostic collection from
+   disruptive actions, inspect crash-kernel/memory/storage prerequisites, require
+   explicit confirmation for halt/panic/reboot, then capture vmcore and hand off
+   to the existing matching-symbol crash-analysis tool.
+
+Sources: [QEMU GDB/Unix socket/security](https://www.qemu.org/docs/master/system/gdb.html),
+[Yocto runqemu/snapshot](https://docs.yoctoproject.org/dev/dev-manual/qemu.html),
+[KGDB/KDB](https://docs.kernel.org/process/debugging/kgdb.html),
+[kernel debugging tools](https://docs.kernel.org/dev-tools/index.html),
+[lockdep](https://docs.kernel.org/locking/lockdep-design.html),
+[kdump](https://docs.kernel.org/admin-guide/kdump/kdump.html).
+
+QEMU-GDB-SESSION-001 owns the typed plan/backend, QEMU-GDB-UI-001 owns Kernel
+integration and versioned delivery, and QEMU-GDB-LIVE-001 owns genuine matching
+Linux guest evidence. Tests do not substitute for unavailable real artifacts.
+The existing M67 external evidence blocker and deferred full suite are retained.
+
 ## M103 — Kernel debugging techniques and tools
 
 KERNEL-DEBUG-TOOLS-001 and KERNEL-DEBUG-UI-001 are DONE in v0.1.256. Kernel has

@@ -1,22 +1,23 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** QEMU-GDB-SESSION-001
+**Title:** Validate and supervise a private QEMU-to-GDB session
+**Status:** IN_PROGRESS
 
-The retained performance evidence is not bound to the current source tree: its
-manifest has 143 documented source digest mismatches, including changes predating
-M67. Supply a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto` compile
-capture using the documented release workload. Do not rewrite historical
-digests or substitute fake-process startup timings for live evidence.
+Dependency KERNEL-DEBUG-UI-001 is DONE. Implement only the typed plan, non-spawning
+file/symbol/config checks and private managed QEMU/GDB backend, with bounded
+readiness/logs and owned-process cleanup. Relevant files: model qemu_debug module,
+CLI helper/runtime and tests. Update UI/architecture/roadmap/status/registry, then
+advance immediately to QEMU-GDB-UI-001 after the coherent commit.
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model qemu_debug
+cargo test -p yoctui --bin yoctui qemu_debug
+cargo fmt --all --check
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+./scripts/verify-roadmap.sh
 ```
 
-This external prerequisite is the only remaining required task. The user
-explicitly deferred the full test suite; do not run the full completion suite
-without a subsequent instruction. The v0.1.256 Kernel debugging request passes
-focused checks and harmless live GDB terminal smoke. No live target debugging
-or source-bound Yocto performance certification is claimed by that smoke.
+Normal/failure fake-process coverage is required; genuine Linux guest evidence
+is tracked separately in QEMU-GDB-LIVE-001. No existing daemon restart, kernel
+configuration/deployment change or full suite. Preserve the M67 blocker.

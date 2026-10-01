@@ -1,3 +1,10 @@
+M104 is IN_PROGRESS. The Kernel guide-to-session roadmap is documented, with
+only QEMU → GDB authorized now. QEMU-GDB-SESSION-001 owns closed plans and managed
+backend/cleanup; QEMU-GDB-UI-001 follows with forms/review and release delivery;
+QEMU-GDB-LIVE-001 separately requires genuine matching Linux guest evidence.
+Existing daemon/build configuration and user captures are preserved. Focused
+checks only; the full suite remains deferred and M67 stays externally blocked.
+
 KERNEL-DEBUG-TOOLS-001 and KERNEL-DEBUG-UI-001 are DONE in v0.1.256. Kernel
 `3`/`b` opens 16 techniques (12 typed tool routes/four guides): GDB remote/core,
 strace, perf, trace-cmd, ftrace, dmesg, dynamic debug, kmemleak, bpftrace, LTTng

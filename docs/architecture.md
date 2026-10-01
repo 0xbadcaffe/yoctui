@@ -21,6 +21,21 @@ identity and lost authority produce None; authoritative idle/terminal builds
 produce zero. The UI formats this typed optional count and does not derive its
 own worker inventory from retained rows.
 
+## M104 Managed QEMU → GDB boundary
+
+Model owns a closed serializable QEMU debug specification, bounded form fields
+and deterministic child argv templates; existing Kernel debugging correlation
+and terminal confirmation are reused. App maps existing form/navigation input,
+and UI renders typed templates without parsing process output or serialized JSON.
+CLI preparation checks files/ELF/config/tool prerequisites without starting work.
+A hidden typed CLI helper runs inside the existing daemon-owned Utility PTY (or
+existing detached terminal), supervises runqemu and foreground GDB, owns a private
+Unix socket, bounded QEMU log and only its spawned QEMU process group. Bounded
+startup, failure/normal-exit and signal cleanup do not depend on the attaching
+client remaining alive. No daemon protocol change or replacement is required.
+The helper validates the same closed specification again; it does not accept
+arbitrary shell, QEMU or GDB commands. Normal QEMU and M103 TCP-GDB are unchanged.
+
 ## M103 Kernel debugging boundary
 
 Model owns the closed debugging catalogue, bounded typed drafts, deterministic

@@ -10229,3 +10229,36 @@ required = true
 depends_on = ["KERNEL-DEBUG-TOOLS-001"]
 verify = ["cargo test -p yoctui-model kernel_debug", "cargo test -p yoctui-app kernel_debug", "cargo test -p yoctui-ui kernel_debug", "cargo test -p yoctui --bin yoctui kernel_debug", "cargo test -p yoctui --bin yoctui platform", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: Kernel Debugging catalogue/form/preview cancellation and harmless tool PTY smoke"]
 notes = "DONE in v0.1.256. Kernel-only third tab, 12 typed tool routes/four guides, trapped bounded forms, explicit host/SSH scope, correlated owned workers, exact argv review and existing embedded/detached lifecycle. GDB disables init/auto-load, debuginfod and implicit native connection. Focused debugging tests (model/app/UI/CLI 7/3/2/4), platform/menuconfig, daemon client, saved environment, QEMU, Hardware and RootFS regressions, strict affected-crate all-target Clippy, formatting, version policy, roadmap and optimized compilation pass. Isolated live UI validates missing host/symlink, guide-only and cancel behavior; harmless GDB PTY writer/control/exit and installed-GDB startup guards pass. No actual target compatibility or full-suite claim; existing daemon/configuration/user captures preserved. Push and final source-bound release rebuild complete delivery; M67 stays externally blocked."
+
+[[task]]
+id = "QEMU-GDB-SESSION-001"
+milestone = "M104"
+title = "Validate and supervise a private QEMU-to-GDB session"
+status = "IN_PROGRESS"
+priority = 3220
+required = true
+depends_on = ["KERNEL-DEBUG-UI-001"]
+verify = ["cargo test -p yoctui-model qemu_debug", "cargo test -p yoctui --bin yoctui qemu_debug", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Outcome: closed typed specification/templates, non-spawning regular-file/ELF/qemuboot checks and hidden CLI helper with private Unix transport, snapshot/nonetwork/paused QEMU, bounded console logging, native foreground GDB and owned-process cleanup. Files: model qemu_debug module and CLI qemu_debug helper/runtime/tests. Cover valid/invalid inputs, readiness, missing socket, early process exit, GDB failure and cancellation cleanup; update architecture/UI/roadmap/status. No full suite or user daemon mutation."
+
+[[task]]
+id = "QEMU-GDB-UI-001"
+milestone = "M104"
+title = "Launch managed QEMU debugging from the Kernel workbench"
+status = "NOT_STARTED"
+priority = 3221
+required = true
+depends_on = ["QEMU-GDB-SESSION-001"]
+verify = ["cargo test -p yoctui-model kernel_debug", "cargo test -p yoctui-app kernel_debug", "cargo test -p yoctui-ui kernel_debug", "cargo test -p yoctui --bin yoctui kernel_debug", "cargo test -p yoctui --bin yoctui qemu_workspace", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Outcome: launchable Kernel technique, trapped explicit boot/symbol fields, initialized tool discovery, typed underlying command preview and embedded/detached managed session. Files: kernel_debug model/app/UI/CLI hooks and focused tests. Cover prepare/cancel/stale/launch and existing QEMU/menuconfig/terminal/saved environment regressions. Update specs, roadmap, status, registry/current task; bump, commit/push and source-bound release build."
+
+[[task]]
+id = "QEMU-GDB-LIVE-001"
+milestone = "M104"
+title = "Verify real Linux guest breakpoint backtrace and resume"
+status = "NOT_STARTED"
+priority = 3222
+required = true
+depends_on = ["QEMU-GDB-UI-001"]
+verify = ["Manual: compatible deployed Yocto guest plus matching debug-info vmlinux; managed QEMU/GDB attach, kernel breakpoint, backtrace, resume, clean exit and failure cleanup", "./scripts/verify-roadmap.sh"]
+notes = "Genuine Linux guest evidence only. Record exact artifacts, debugger/QEMU versions and tested command/results. If matching symbols or a compatible guest are unavailable, record exact paths/missing dependency and mark this task BLOCKED; do not claim success using fake tools, host ELF or bare-metal fixtures. Preserve the running user daemon and build configuration."

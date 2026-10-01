@@ -84,6 +84,39 @@ Yoctui is not a collection of unrelated screens. It is a persistent workbench wi
 
 BitBake remains authoritative. Yoctui presents, controls, and organizes BitBake state.
 
+### M104 Managed QEMU → GDB
+
+Kernel Debugging adds a launchable `QEMU → GDB · managed boot` technique while
+retaining all M103 tools and guidance-only entries. Its trapped form requires
+explicit deployed qemuboot configuration, boot kernel, root filesystem, matching
+uncompressed vmlinux symbols and build directory, with bounded memory (MiB).
+Detected runqemu/GDB and the current build/artifact may seed fields; missing
+artifacts remain empty requirements, never guessed providers or paths.
+
+Enter validates existing regular files, symbol ELF/debug information, qemuboot
+direct-kernel boot prerequisites and executable presence. Review shows both
+fixed child command templates and scope/risk: host-only managed QEMU, nonetwork,
+snapshot disks, nographic/serialstdio, `nokaslr`, CPU paused until GDB continues.
+A private Unix debug socket/log directory is allocated only after confirmation;
+its runtime path is labeled a placeholder in the reviewed templates. No public
+TCP listener or arbitrary qemuparams/bootparams editor is exposed.
+
+The existing embedded/detached terminal chooser starts a single managed GDB
+session. Its backend starts runqemu, waits boundedly for its private debug
+socket, then starts GDB with matching selected symbols and safe startup settings.
+The interactive terminal is GDB; QEMU serial/startup output is separately
+captured in a bounded private log with a visible path. Quit/failure/timeout or
+confirmed terminal termination stops only this session's owned QEMU processes.
+Client detach/reconnect preserves the daemon session. Standard writer control
+and GDB commands (`break`, `bt`, `continue`, Ctrl+C, `quit`) remain native.
+
+Opening/cancelling, validation and missing prerequisites launch nothing. Final
+launch revalidates inputs. No package installation, kernel rebuild, deployment,
+SysRq, physical-board KGDB setup or modification of normal QEMU launches is
+performed. Genuine Linux guest breakpoint/backtrace/resume evidence is a
+separate live verification task; mocked tools or a bare-metal fixture cannot
+certify it.
+
 ### M103 Kernel debugging workbench
 
 Kernel gains a third `3 Debugging` tab (`b` also opens it); Configuration and
