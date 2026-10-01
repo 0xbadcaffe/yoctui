@@ -23,7 +23,7 @@ pub(crate) fn image_artifact_inspector_text(app: &App) -> String {
     };
     let artifact_text = app.selected_image_artifact().map_or_else(
         || {
-            "No deployed image artifact selected.\nUse i to select a buildable image recipe; press R to scan DEPLOY_DIR_IMAGE.".into()
+            "No deployed image artifact selected.\nUse i to select a buildable image recipe; press Alt+r to scan DEPLOY_DIR_IMAGE.".into()
         },
         |artifact| {
             let checksums = artifact.checksums.available().map_or_else(

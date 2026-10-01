@@ -64,7 +64,9 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
             }),
             Input::Char('/') => hardware(HardwareAction::BeginSearch),
             Input::Char('n') => hardware(HardwareAction::NextMatch { backwards: false }),
-            Input::Char('N') => hardware(HardwareAction::NextMatch { backwards: true }),
+            Input::Alt('n') | Input::Char('N') => {
+                hardware(HardwareAction::NextMatch { backwards: true })
+            }
             Input::Char('r') => hardware(HardwareAction::Reload),
             _ => None,
         };

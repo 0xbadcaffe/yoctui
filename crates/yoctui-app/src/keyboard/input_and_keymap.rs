@@ -3,6 +3,7 @@ use super::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Input {
     Char(char),
+    Alt(char),
     Esc,
     Enter,
     CtrlC,
@@ -90,7 +91,7 @@ pub fn terminal_workspace_action(app: &yoctui_model::App, input: Input) -> Optio
             Input::Char('v') => Some(Action::TerminalEnterCopyMode),
             Input::Char('r') => Some(Action::TerminalBeginRename),
             Input::Char('o') => Some(Action::TerminalTakeControl),
-            Input::Char('O') => Some(Action::TerminalReleaseControl),
+            Input::Alt('o') | Input::Char('O') => Some(Action::TerminalReleaseControl),
             Input::Char('c') => Some(Action::TerminalReleaseControl),
             Input::Char('x') => Some(Action::TerminalBeginKill),
             Input::Char('?') => Some(Action::TerminalToggleHelp),
@@ -290,6 +291,7 @@ pub fn input_key_stroke(key: Input) -> yoctui_model::KeyStroke {
     use yoctui_model::KeyStroke as Stroke;
     match key {
         Input::Char(character) => Stroke::Char(character),
+        Input::Alt(character) => Stroke::Alt(character),
         Input::Esc => Stroke::Esc,
         Input::Enter => Stroke::Enter,
         Input::CtrlC => Stroke::CtrlC,

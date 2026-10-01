@@ -5789,9 +5789,14 @@ Native GitUI, shells and menuconfig retain their own key ownership and receive
 the original Alt escape sequence. The active editor exposes `Alt+f` workspace
 search and `Alt+g` GitUI from file/document and Insert/Visual/Normal modes;
 Ctrl+Shift+F remains an unadvertised alias where terminals distinguish it.
-`Alt+e` opens the workspace editor from Recipes/Devtool (as does Devtool `e`).
+`Alt+w` opens the workspace editor from Recipes/Devtool (as does Devtool `e`).
 `Alt+g` consistently opens workspace GitUI from Recipes/Devtool, their menus
 and editors. Alt+g in other application workspaces opens source GitUI.
+The Devtool workflow preview places its six existing steps and modifier hints
+before the detailed provider/Git facts. The stacked preview prefers 24 rows
+while retaining at least seven recipe-list rows, so supported tall layouts keep
+both workflow and Git facts visible. Short layouts prioritize actions;
+`[`/`]` preview scrolling still reaches all retained details.
 
 GitUI from a source/metadata/layer editor uses that editor's exact root, not
 the globally selected source or another recipe. A bounded asynchronous read-only

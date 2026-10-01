@@ -77,24 +77,27 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('e') => Some(Action::OpenSelectedRecipeProvider),
         Input::Char('o') => Some(Action::BeginSelectedRecipeTaskLog),
         Input::Char('p') => Some(Action::BeginSelectedRecipePatchReview),
-        Input::Char('g') | Input::Char('A') => Some(Action::BeginSelectedRecipeDependencies),
+        Input::Char('g') | Input::Alt('a') | Input::Char('A') => Some(Action::BeginSelectedRecipeDependencies),
         Input::Char('f') => Some(Action::BeginSelectedRecipeForceTask),
         Input::Char('v') => Some(Action::BeginSelectedRecipeDevshell),
-        Input::Char('K') => Some(Action::BeginSelectedRecipeDiffconfig),
+        Input::Alt('k') | Input::Char('K') => Some(Action::BeginSelectedRecipeDiffconfig),
         Input::Char('z') => Some(Action::BeginSelectedRecipeDiffsigs),
-        Input::Char('Z') => Some(Action::BeginSelectedRecipeSignatures),
-        Input::Char('V') => Some(Action::BeginSelectedRecipeCveCheck),
-        Input::Char('X') => Some(Action::BeginSelectedRecipeSpdx),
-        Input::Char('d') => Some(Action::BeginSelectedRecipeDevtoolModify),
+        Input::Alt('z') | Input::Char('Z') => Some(Action::BeginSelectedRecipeSignatures),
+        Input::Alt('v') | Input::Char('V') => Some(Action::BeginSelectedRecipeCveCheck),
+        Input::Alt('x') | Input::Char('X') => Some(Action::BeginSelectedRecipeSpdx),
+        Input::Alt('w') | Input::Char('d') => Some(Action::BeginSelectedRecipeDevtoolModify),
+        Input::Alt('g') | Input::Alt('j') | Input::Char('J') => {
+            Some(Action::BeginSelectedRecipeDevtoolGitUi)
+        }
         Input::Char('t') => Some(Action::BeginSelectedRecipeDevtoolStatus),
         Input::Char('u') => Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe),
-        Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
-        Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
-        Input::Char('N') => Some(Action::BeginSelectedRecipeDevtoolUndeploy),
-        Input::Char('U') => Some(Action::BeginSelectedRecipeDevtoolUpgrade),
-        Input::Char('D') => Some(Action::BeginSelectedRecipeDevtoolReset),
+        Input::Alt('f') | Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
+        Input::Alt('p') | Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
+        Input::Alt('n') | Input::Char('N') => Some(Action::BeginSelectedRecipeDevtoolUndeploy),
+        Input::Alt('u') | Input::Char('U') => Some(Action::BeginSelectedRecipeDevtoolUpgrade),
+        Input::Alt('d') | Input::Char('D') => Some(Action::BeginSelectedRecipeDevtoolReset),
         Input::Char('s') => Some(Action::BeginSelectedRecipeDevtoolWorkspaceShell),
-        Input::Char('E') => Some(Action::BeginSelectedRecipeDevtoolEditRecipe),
+        Input::Alt('e') | Input::Char('E') => Some(Action::BeginSelectedRecipeDevtoolEditRecipe),
         _ => None,
     }
 }
@@ -109,7 +112,7 @@ pub fn devtool_workspace_action(searching: bool, key: Input) -> Option<Action> {
             _ => None,
         };
     }
-    if matches!(key, Input::Char('G') | Input::Char('J')) {
+    if matches!(key, Input::Alt('g') | Input::Char('G') | Input::Alt('j') | Input::Char('J')) {
         return Some(Action::BeginSelectedRecipeDevtoolGitUi);
     }
     if let Some(delta) = collection_scroll_delta(key) {
@@ -125,14 +128,16 @@ pub fn devtool_workspace_action(searching: bool, key: Input) -> Option<Action> {
         }
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::CtrlU => Some(Action::ClearMetadataQuery),
-        Input::Char('d') | Input::Char('e') => Some(Action::BeginSelectedRecipeDevtoolModify),
+        Input::Alt('w') | Input::Char('d') | Input::Char('e') => {
+            Some(Action::BeginSelectedRecipeDevtoolModify)
+        }
         Input::Char('b') => Some(Action::BeginSelectedRecipeBuild),
-        Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
+        Input::Alt('p') | Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
         Input::Char('u') => Some(Action::BeginSelectedRecipeDevtoolPatch),
-        Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
-        Input::Char('D') => Some(Action::BeginSelectedRecipeDevtoolReset),
+        Input::Alt('f') | Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
+        Input::Alt('d') | Input::Char('D') => Some(Action::BeginSelectedRecipeDevtoolReset),
         Input::Char('s') => Some(Action::BeginSelectedRecipeDevtoolWorkspaceShell),
-        Input::Char('E') => Some(Action::BeginSelectedRecipeDevtoolEditRecipe),
+        Input::Alt('e') | Input::Char('E') => Some(Action::BeginSelectedRecipeDevtoolEditRecipe),
         _ => None,
     }
 }

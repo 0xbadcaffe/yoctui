@@ -127,7 +127,7 @@ pub(crate) fn security_inventory_lines(
 ) {
     match &app.security.inventory {
         SecurityInventoryState::NotLoaded => lines.push(Line::from(
-            "Reports are not loaded. Press I to import or R after capability discovery.",
+            "Reports are not loaded. Press Alt+i to import or R after capability discovery.",
         )),
         SecurityInventoryState::Loading { request } => lines.push(Line::styled(
             format!(

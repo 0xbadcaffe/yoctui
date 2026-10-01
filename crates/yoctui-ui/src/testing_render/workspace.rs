@@ -201,7 +201,7 @@ pub(crate) fn testing_result_lines(
     ));
     match &app.test_results {
         TestResultInventoryState::NotLoaded => lines.push(Line::from(
-            "Results are not loaded. Press I to import an exact path.",
+            "Results are not loaded. Press Alt+i to import an exact path.",
         )),
         TestResultInventoryState::Loading { request } => lines.push(Line::styled(
             format!("Loading result generation {}…", request.generation),

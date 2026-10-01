@@ -355,7 +355,7 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
             Line::from("[Ctrl+S] Save"),
             Line::from("[Ctrl+B] Build recipe"),
             Line::from("[e] External editor"),
-            Line::from("[G] Open repository in GitUI"),
+            Line::from("[Alt+g] Open repository in GitUI"),
         ]);
         frame.render_widget(
             Paragraph::new(inspector)
@@ -389,7 +389,7 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
             }
             lines.push(Line::from(if editor.searching {
                 format!(
-                    "Search /{}▏ · Enter finish · n/N next/previous",
+                    "Search /{}▏ · Enter finish · n/Alt+n next/previous",
                     editor.document.search_state().query
                 )
             } else {
@@ -408,11 +408,11 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     );
     frame.render_widget(
         Paragraph::new(if file_focus {
-            "Ctrl+F file · Ctrl+Shift+F workspace · / global · G GitUI · Enter edit"
+            "Ctrl+F file · Alt+f workspace · / global · Alt+g GitUI · Enter edit"
         } else if integrated {
-            "i insert · Ctrl+F file · Ctrl+Shift+F workspace · / global · G GitUI · Ctrl+S save"
+            "i insert · Ctrl+F file · Alt+f workspace · / global · Alt+g GitUI · Ctrl+S save"
         } else {
-            "EDITOR · i insert · v visual · Ctrl+F file · Ctrl+Shift+F workspace · / global · Ctrl+S save"
+            "EDITOR · i insert · v visual · Ctrl+F file · Alt+f workspace · / global · Alt+g GitUI · Ctrl+S save"
         })
         .style(dialog_styles(app).hint),
         status_area,

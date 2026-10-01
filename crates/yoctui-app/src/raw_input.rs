@@ -160,7 +160,7 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
             RawModeView::Execution => {
                 let vertical = match key {
                     Input::Home => isize::MAX,
-                    Input::End | Input::Char('G') => isize::MIN,
+                    Input::End | Input::Alt('g') | Input::Char('G') => isize::MIN,
                     _ => delta.saturating_neg(),
                 };
                 Some(RawModeAction::ScrollOutput {
@@ -175,7 +175,7 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
         RawModeView::Browser => match key {
             Input::Char('/') => Some(RawModeAction::BeginSearch),
             Input::Char('f') => Some(RawModeAction::ToggleFavorite),
-            Input::Char('H') => Some(RawModeAction::OpenHistory),
+            Input::Alt('h') | Input::Char('H') => Some(RawModeAction::OpenHistory),
             Input::Left | Input::Char('h') => Some(RawModeAction::FocusCategories),
             Input::Right | Input::Char('l') => Some(RawModeAction::FocusCommands),
             Input::Up | Input::Char('k') => Some(match state.browser_column {

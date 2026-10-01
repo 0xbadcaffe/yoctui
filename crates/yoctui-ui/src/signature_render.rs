@@ -47,7 +47,7 @@ pub(crate) fn signature_records(frame: &mut Frame, app: &App, area: Rect) {
     let records = app.signature_dump.records();
     let text = match &app.signature_dump {
         SignatureDumpState::NotLoaded => {
-            "Signatures have not been loaded.\n\nReturn to Recipes and press Z.".into()
+            "Signatures have not been loaded.\n\nReturn to Recipes and press Alt+z.".into()
         }
         SignatureDumpState::Loading { .. } => {
             "Loading authoritative signature artifacts…\n\nEsc requests cancellation.".into()

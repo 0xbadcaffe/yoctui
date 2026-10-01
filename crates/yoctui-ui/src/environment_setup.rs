@@ -114,7 +114,7 @@ pub(super) fn environment_setup_popup(
         hint = "Type/paste path  Left/Right Home/End  Ctrl-U clear\nEnter accept value  Esc discard edit";
     } else {
         lines.push(Line::from(
-            "Choose paths, save, then press V to initialize and verify.",
+            "Choose paths, save, then press Alt+v to initialize and verify.",
         ));
         lines.push(Line::from(
             "No daemon or initialized build environment is needed to browse.",

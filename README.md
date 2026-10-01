@@ -134,6 +134,11 @@ starting the daemon from an initialized shell as shown above.
 | `B` | Image build options |
 | `q` | Request exit; confirmation required |
 
+Use `Alt+w` to start/open a Recipes/Devtool workspace, `Alt+g` for GitUI, and
+`Alt+f` for integrated-editor workspace search (`Ctrl+F` searches the file).
+Uppercase application shortcuts have Alt-lowercase alternatives; literal text
+and native terminal-program keys stay unchanged.
+
 The footer lists shortcuts for the current view. Dialogs and editors own
 their keys before global navigation. Terminal writers retain normal keys; use
 `Ctrl+B` for Yoctui terminal controls. See the [keymap](docs/keymap.md) for

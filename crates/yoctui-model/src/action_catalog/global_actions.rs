@@ -28,7 +28,7 @@ pub fn global_operator_action_definition(command: CommandId) -> OperatorActionDe
 
 const fn global_shortcut_label(command: CommandId) -> &'static str {
     match command {
-        CommandId::BuildImage => "B",
+        CommandId::BuildImage => "Alt+b",
         CommandId::SelectImage => "i",
         CommandId::BuildSelectedRecipe => "b",
         CommandId::EditBbmask => "x then e",
@@ -48,7 +48,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenErrors => "e",
         CommandId::OpenConfiguration => "v",
         CommandId::OpenRawMode => "Ctrl+P raw",
-        CommandId::OpenGitUi => "F12 Tools",
+        CommandId::OpenGitUi => "Alt+g / F12 Tools",
         CommandId::OpenDevtool(_) => "F12 Devtool",
         CommandId::OpenBitBakeConfigBuild
         | CommandId::OpenBitBakeLayersShowLayers
@@ -77,7 +77,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         | CommandId::NextSubfocus
         | CommandId::TogglePaneZoom => "F12 View",
         CommandId::ScrollFirst => "gg / Home",
-        CommandId::ScrollLast => "G / End",
+        CommandId::ScrollLast => "End",
         CommandId::OpenOnboarding => "F12 Help",
         CommandId::OpenHelp => "? / F1",
         CommandId::OpenAbout => "F12 Help",

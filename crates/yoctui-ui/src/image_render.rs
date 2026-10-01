@@ -111,7 +111,7 @@ pub(crate) fn image_artifacts_workspace(frame: &mut Frame, app: &App, area: Rect
     ));
     match &app.image_artifacts {
         ImageArtifactInventoryState::NotLoaded => {
-            lines.push(Line::from("Artifacts not loaded. Press R to scan."));
+            lines.push(Line::from("Artifacts not loaded. Press Alt+r to scan."));
         }
         ImageArtifactInventoryState::Loading { .. } => {
             lines.push(Line::from("Loading deployed image artifacts…"));

@@ -23,7 +23,7 @@ pub(crate) fn packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
     match &app.package_inventory {
         PackageInventoryState::NotLoaded => frame.render_widget(
             Paragraph::new(
-                "Package data has not been loaded.\n\nEnter this workspace or press R to query generated pkgdata.",
+                "Package data has not been loaded.\n\nEnter this workspace or press Alt+r to query generated pkgdata.",
             )
             .block(block)
             .wrap(Wrap { trim: false }),
@@ -45,7 +45,7 @@ pub(crate) fn packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ),
         PackageInventoryState::Failed { message, .. } => frame.render_widget(
             Paragraph::new(format!(
-                "Package inventory failed.\n\n{message}\n\nIf generated pkgdata is missing, build a target through do_package and press R."
+                "Package inventory failed.\n\n{message}\n\nIf generated pkgdata is missing, build a target through do_package and press Alt+r."
             ))
             .block(block)
             .wrap(Wrap { trim: false }),

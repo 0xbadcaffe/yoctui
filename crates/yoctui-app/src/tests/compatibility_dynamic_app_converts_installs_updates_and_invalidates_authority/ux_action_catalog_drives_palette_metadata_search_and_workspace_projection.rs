@@ -22,7 +22,7 @@ fn ux_action_catalog_drives_palette_metadata_search_and_workspace_projection() {
         .into_iter()
         .find(|command| command.id == yoctui_model::CommandId::BuildImage)
         .unwrap();
-    assert_eq!(build.shortcut, "B");
+    assert_eq!(build.shortcut, "Alt+b");
     assert_eq!(key_action(Input::Char('B')), Some(Action::OpenBuildOptions));
 
     let catalog = yoctui_model::workspace_operator_action_definitions(

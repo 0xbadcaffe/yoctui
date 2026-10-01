@@ -16,20 +16,20 @@ pub fn sdk_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Down | Input::Char('j') => Some(Action::SelectSdkArtifact { delta: 1 }),
         Input::Char('/') => Some(Action::BeginSdkArtifactSearch),
         Input::CtrlU => Some(Action::ClearSdkArtifactQuery),
-        Input::Char('R') => Some(Action::RefreshSdkArtifactInventory),
+        Input::Alt('r') | Input::Char('R') => Some(Action::RefreshSdkArtifactInventory),
         Input::Char('s') => Some(Action::BeginSdkBuild(SdkBuildAction::Populate(
             SdkKind::Standard,
         ))),
-        Input::Char('E') => Some(Action::BeginSdkBuild(SdkBuildAction::Populate(
+        Input::Alt('e') | Input::Char('E') => Some(Action::BeginSdkBuild(SdkBuildAction::Populate(
             SdkKind::Extensible,
         ))),
         Input::Char('t') => Some(Action::BeginSdkBuild(SdkBuildAction::Test(
             SdkKind::Standard,
         ))),
-        Input::Char('T') => Some(Action::BeginSdkBuild(SdkBuildAction::Test(
+        Input::Alt('t') | Input::Char('T') => Some(Action::BeginSdkBuild(SdkBuildAction::Test(
             SdkKind::Extensible,
         ))),
-        Input::Char('P') => Some(Action::BeginSelectedSdkPublish),
+        Input::Alt('p') | Input::Char('P') => Some(Action::BeginSelectedSdkPublish),
         Input::Char('n') => Some(Action::BeginSdkNative),
         Input::Char('o') => Some(Action::OpenSelectedSdkArtifact),
         Input::Char('c') => Some(Action::BeginActiveSdkSessionCancellation),

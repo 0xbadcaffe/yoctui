@@ -1,16 +1,17 @@
 # Current Task
 
-**ID:** MODIFIER-SHORTCUTS-001
-**Title:** Make application shortcuts portable modifier combinations
+**ID:** EDITOR-GITUI-CONTEXT-001
+**Title:** Open GitUI at the active integrated editor repository
 **Status:** IN_PROGRESS
 
-User priority supersedes the blocked performance queue. Add typed Alt-letter
-input and keymap support, modifier alternatives for uppercase application
-commands, consistent workspace-open/GitUI routes, and Alt+f workspace search.
-Preserve literal text, modal focus, user keymaps and native PTY keys. Verify
-focused modifier/keymap/Devtool/search/UI/CLI checks, formatting, affected strict
-Clippy, version policy and roadmap; bump version and commit. Then complete
-EDITOR-GITUI-CONTEXT-001 and push/build the final source-bound release.
+MODIFIER-SHORTCUTS-001 is DONE in v0.1.261 with focused app/model/UI/CLI
+verification, strict Clippy, formatting, version policy and roadmap passing.
+Enable GitUI for all integrated editor contexts with exact-root bounded
+asynchronous read-only inspection, correlated results, retained dirty state and
+contextual F12 routing. Check missing tool/nonrepository/invalid/stale failure
+paths and existing Devtool/terminal flows. Run the registry's focused editor
+GitUI checks, formatting, strict Clippy, version policy and roadmap. Bump version,
+build optimized release, commit, push and bind the final binary to that commit.
 Do not run the full test suite.
 
 The separate external blocker remains:

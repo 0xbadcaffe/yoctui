@@ -77,7 +77,9 @@ impl InteractiveRuntime {
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevshell,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('K') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('k') | Input::Char('K'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDiffconfig,
@@ -87,17 +89,23 @@ impl InteractiveRuntime {
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDiffsigs,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('Z') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('z') | Input::Char('Z'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeSignatures,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('V') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('v') | Input::Char('V'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeCveCheck,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('X') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('x') | Input::Char('X'))
+        {
             let _ =
                 compatibility_workspace_action(&mut runtime.app, Action::BeginSelectedRecipeSpdx);
         } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('e') {
@@ -179,7 +187,9 @@ impl InteractiveRuntime {
                 &mut runtime.app,
                 Action::SelectBuildHistory { delta },
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('w') | Input::Char('d'))
+        {
             let root = match compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolModify,
@@ -192,7 +202,9 @@ impl InteractiveRuntime {
             }
         } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('t') {
             runtime.begin_selected_devtool_status();
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('J') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('g') | Input::Alt('j') | Input::Char('J'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolGitUi,
@@ -202,12 +214,16 @@ impl InteractiveRuntime {
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolWorkspaceShell,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('E') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('e') | Input::Char('E'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolEditRecipe,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('d') | Input::Char('D'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolReset,
@@ -217,22 +233,30 @@ impl InteractiveRuntime {
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolUpdateRecipe,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('F') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('f') | Input::Char('F'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolFinish,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('P') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('p') | Input::Char('P'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolDeploy,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('N') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('n') | Input::Char('N'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolUndeploy,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('U') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('u') | Input::Char('U'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolUpgrade,
@@ -268,15 +292,21 @@ impl InteractiveRuntime {
             let delta = collection_scroll_delta(input).expect("scroll key was checked");
             let _ =
                 compatibility_workspace_action(&mut runtime.app, Action::SelectRecipe { delta });
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('C') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('c') | Input::Char('C'))
+        {
             let _ =
                 compatibility_workspace_action(&mut runtime.app, Action::BeginSelectedRecipeClean);
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('M') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('m') | Input::Char('M'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeMenuConfig,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('S') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Alt('s') | Input::Char('S'))
+        {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeCleanState,
@@ -347,7 +377,9 @@ impl InteractiveRuntime {
             {
                 open_workspace_editor(&mut runtime.app, label, root).await;
             }
-        } else if runtime.app.screen == yoctui_model::Screen::Layers && input == Input::Char('R') {
+        } else if runtime.app.screen == yoctui_model::Screen::Layers
+            && matches!(input, Input::Alt('r') | Input::Char('R'))
+        {
             if matches!(
                 compatibility_workspace_action(&mut runtime.app, Action::BeginLayerRelationships),
                 Some(Effect::GetLayerRelationships)

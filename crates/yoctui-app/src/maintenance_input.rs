@@ -26,7 +26,7 @@ pub fn maintenance_workspace_action(
         Input::Char('r') => maintenance(MaintenanceAction::InspectCapability),
         Input::Char('x') => maintenance(MaintenanceAction::BeginCancellation),
         Input::Char('o') => maintenance(MaintenanceAction::OpenSelectedEvidence),
-        Input::Char('S') => maintenance(MaintenanceAction::OpenSignatures),
+        Input::Alt('s') | Input::Char('S') => maintenance(MaintenanceAction::OpenSignatures),
         Input::Char('c') if view == MaintenanceView::Sstate => {
             maintenance(MaintenanceAction::OpenReadinessForm)
         }

@@ -65,7 +65,7 @@ pub(crate) fn internal_logs(frame: &mut Frame, app: &App, area: Rect) {
     );
     let actions = "Actions E Export diagnostics · c Clear retained diagnostics";
     let filters = format!(
-        "Filters s level: {} · T target: {}",
+        "Filters s level: {} · Alt+t target: {}",
         app.internal_logs
             .level_filter
             .map_or("all", InternalLogLevel::label),

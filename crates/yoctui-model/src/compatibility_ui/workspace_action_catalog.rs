@@ -9,7 +9,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
     use CompatibilityUiWorkspaceActionDefinition as Action;
     match destination {
         Destination::Dashboard => vec![
-            Action::capability("dashboard.build", "Build image", "B", Id::BitBakeBuild),
+            Action::capability("dashboard.build", "Build image", "Alt+b", Id::BitBakeBuild),
             Action::capability(
                 "dashboard.cancel",
                 "Cancel active build",
@@ -21,8 +21,8 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::local("dashboard.errors", "Review failures", "e"),
             Action::local("dashboard.history", "Inspect recent work", "F3"),
             Action::local("dashboard.artifacts", "Inspect artifacts", "F8"),
-            Action::local("dashboard.environment", "Configure build environment", "E"),
-            Action::local("dashboard.maintenance", "Sstate readiness", "M"),
+            Action::local("dashboard.environment", "Configure build environment", "Alt+e"),
+            Action::local("dashboard.maintenance", "Sstate readiness", "Alt+m"),
             Action::local("dashboard.favorites", "Browse favorite commands", "f"),
             Action::local("dashboard.terminals", "Open terminal sessions", "t"),
         ],
@@ -42,7 +42,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::capability(
                 "recipes.dependencies",
                 "Dependencies",
-                "A",
+                "Alt+a",
                 Id::BitBakeRecipeDependencies,
             ),
             Action::capability(
@@ -66,25 +66,25 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::all(
                 "recipes.cve",
                 "Run CVE check",
-                "V",
+                "Alt+v",
                 &[Id::BitBakeBuild, Id::CveCheck],
             ),
             Action::all(
                 "recipes.spdx",
                 "Create SPDX",
-                "X",
+                "Alt+x",
                 &[Id::BitBakeBuild, Id::SpdxCreate],
             ),
             Action::capability(
                 "recipes.devtool_modify",
                 "Devtool modify",
-                "d",
+                "d/Alt+w",
                 Id::DevtoolModify,
             ),
             Action::local(
                 "recipes.devtool_gitui",
                 "Open Devtool workspace GitUI",
-                "F12 Actions",
+                "Alt+g",
             ),
             Action::capability(
                 "recipes.devtool_update",
@@ -95,19 +95,19 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::capability(
                 "recipes.devtool_finish",
                 "Devtool finish",
-                "F",
+                "Alt+f",
                 Id::DevtoolFinish,
             ),
             Action::capability(
                 "recipes.devtool_deploy",
                 "Devtool deploy-target",
-                "P",
+                "Alt+p",
                 Id::DevtoolDeployTarget,
             ),
             Action::capability(
                 "recipes.devtool_reset",
                 "Devtool reset",
-                "D",
+                "Alt+d",
                 Id::DevtoolReset,
             ),
             Action::local("recipes.open", "Open provider/log/source", "Enter/o/e"),
@@ -122,7 +122,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::capability(
                 "layers.relationships",
                 "Layer relationships",
-                "R",
+                "Alt+r",
                 Id::BitBakeLayerRelationships,
             ),
             Action::capability(
@@ -150,9 +150,9 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::local(
                 "configuration.inspect",
                 "Inspect/copy/source",
-                "Enter/C/U/o",
+                "Enter/Alt+c/Alt+u/o",
             ),
-            Action::local("configuration.edit", "Edit local assignment", "E/x"),
+            Action::local("configuration.edit", "Edit local assignment", "Alt+e/x"),
         ],
         Destination::Tasks => vec![
             Action::capability(
@@ -161,7 +161,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "F2",
                 Id::BitBakeTaskList,
             ),
-            Action::capability("tasks.build", "Build options", "B", Id::BitBakeBuild),
+            Action::capability("tasks.build", "Build options", "Alt+b", Id::BitBakeBuild),
             Action::capability(
                 "tasks.cancel",
                 "Cancel active build",
@@ -179,7 +179,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
         Destination::Logs => vec![Action::local(
             "logs.inspect",
             "Filter/bookmark/copy/export/open retained logs",
-            "/m/[/]/C/E/o",
+            "/m/[/]/Alt+c/Alt+e/o",
         )],
         Destination::Errors => vec![Action::local(
             "errors.inspect",
@@ -193,7 +193,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "r",
                 &[Id::BitBakeRecipeDependencies, Id::BitBakeDependencyGraph],
             ),
-            Action::local("dependencies.open", "Open provider/task log", "Enter/o/L"),
+            Action::local("dependencies.open", "Open provider/task log", "Enter/o/Alt+l"),
         ],
         Destination::Signatures => vec![
             Action::capability(
@@ -214,7 +214,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::all(
                 "packages.inventory",
                 "Refresh package inventory",
-                "R",
+                "Alt+r",
                 &[Id::PkgDataGenerated, Id::PkgDataListPackages],
             ),
             Action::all(
@@ -242,11 +242,11 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "b",
                 Id::BitBakeBuild,
             ),
-            Action::capability("images.qemu", "Launch QEMU", "Q", Id::RunQemu),
-            Action::local("images.console", "Open image console", "T"),
-            Action::capability("images.wic", "Create Wic image", "W", Id::WicCreate),
-            Action::local("images.device_write", "Write selected local device", "D"),
-            Action::local("images.artifacts", "Scan/open deployed artifacts", "R/o/O"),
+            Action::capability("images.qemu", "Launch QEMU", "Alt+q", Id::RunQemu),
+            Action::local("images.console", "Open image console", "Alt+t"),
+            Action::capability("images.wic", "Create Wic image", "Alt+w", Id::WicCreate),
+            Action::local("images.device_write", "Write selected local device", "Alt+d"),
+            Action::local("images.artifacts", "Scan/open deployed artifacts", "Alt+r/o/Alt+o"),
             Action::local(
                 "images.rootfs",
                 "Inspect selected rootfs composition",
@@ -290,7 +290,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::all(
                 "sdk.extensible",
                 "Populate extensible SDK",
-                "E",
+                "Alt+e",
                 &[Id::BitBakeBuild, Id::SdkExtensible],
             ),
             Action::all(
@@ -302,12 +302,12 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::all(
                 "sdk.testsdkext",
                 "Run testsdkext",
-                "T",
+                "Alt+t",
                 &[Id::BitBakeBuild, Id::TestSdkExtensible],
             ),
-            Action::capability("sdk.publish", "Publish SDK", "P", Id::SdkPublish),
+            Action::capability("sdk.publish", "Publish SDK", "Alt+p", Id::SdkPublish),
             Action::capability("sdk.native", "Run native SDK tool", "n", Id::SdkNativeTools),
-            Action::local("sdk.artifacts", "Scan/open SDK artifacts", "R/o"),
+            Action::local("sdk.artifacts", "Scan/open SDK artifacts", "Alt+r/o"),
             Action::local("sdk.cancel", "Cancel owned SDK operation", "c"),
         ],
         Destination::Testing => vec![
@@ -348,32 +348,32 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 &[Id::BitBakeBuild, Id::Ptest],
             ),
             Action::capability("testing.compare", "Compare results", "c", Id::ResultTool),
-            Action::local("testing.import", "Import/open/export results", "I/o/J"),
+            Action::local("testing.import", "Import/open/export results", "Alt+i/o/Alt+j"),
             Action::local("testing.cancel", "Cancel owned test operation", "x"),
         ],
         Destination::Security => vec![
             Action::all(
                 "security.cve",
                 "Run CVE check",
-                "V",
+                "Alt+v",
                 &[Id::BitBakeBuild, Id::CveCheck],
             ),
             Action::all(
                 "security.spdx",
                 "Create SPDX/SBOM",
-                "X",
+                "Alt+x",
                 &[Id::BitBakeBuild, Id::SpdxCreate],
             ),
             Action::all(
                 "security.package_map",
                 "Map package data",
-                "M",
+                "Alt+m",
                 &[Id::PkgDataGenerated, Id::PkgDataLookupPackage],
             ),
             Action::local(
                 "security.reports",
                 "Import/open security evidence",
-                "I/R/o/e/v",
+                "Alt+i/Alt+r/o/e/v",
             ),
             Action::local("security.cancel", "Cancel owned security operation", "c"),
         ],
@@ -390,7 +390,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "r",
                 Id::YoctoCheckLayer,
             ),
-            Action::local("qa.reports", "Import/open QA evidence", "I/R/o/e/l"),
+            Action::local("qa.reports", "Import/open QA evidence", "Alt+i/Alt+r/o/e/l"),
             Action::local("qa.cancel", "Cancel owned QA operation", "c"),
         ],
         Destination::RawMode => vec![Action::local(
@@ -405,11 +405,11 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "r",
                 Id::DevtoolStatus,
             ),
-            Action::capability("devtool.modify", "Modify recipe", "d", Id::DevtoolModify),
+            Action::capability("devtool.modify", "Modify recipe", "d/e/Alt+w", Id::DevtoolModify),
             Action::local(
                 "devtool.gitui",
                 "Open workspace GitUI",
-                "F12 Actions",
+                "Alt+g",
             ),
             Action::local(
                 "devtool.shell",
@@ -422,33 +422,33 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "F12 Actions",
                 Id::BitBakeBuild,
             ),
-            Action::capability("devtool.edit", "Edit recipe file", "E", Id::DevtoolEditRecipe),
+            Action::capability("devtool.edit", "Edit recipe file", "Alt+e", Id::DevtoolEditRecipe),
             Action::capability(
                 "devtool.update",
                 "Create/update patches in layer",
                 "u",
                 Id::DevtoolUpdateRecipe,
             ),
-            Action::capability("devtool.finish", "Finish recipe", "F", Id::DevtoolFinish),
+            Action::capability("devtool.finish", "Finish recipe", "Alt+f", Id::DevtoolFinish),
             Action::capability(
                 "devtool.deploy",
                 "Deploy build with SSH/SCP",
-                "P",
+                "Alt+p",
                 Id::DevtoolDeployTarget,
             ),
             Action::capability(
                 "devtool.undeploy",
                 "Undeploy target",
-                "P",
+                "Alt+p",
                 Id::DevtoolUndeployTarget,
             ),
-            Action::capability("devtool.reset", "Reset recipe", "D", Id::DevtoolReset),
-            Action::capability("devtool.upgrade", "Upgrade recipe", "U", Id::DevtoolUpgrade),
+            Action::capability("devtool.reset", "Reset recipe", "Alt+d", Id::DevtoolReset),
+            Action::capability("devtool.upgrade", "Upgrade recipe", "Alt+u", Id::DevtoolUpgrade),
         ],
         Destination::QemuWic => vec![
-            Action::capability("qemu_wic.qemu", "Launch QEMU", "Q", Id::RunQemu),
-            Action::capability("qemu_wic.wic", "Create Wic image", "W", Id::WicCreate),
-            Action::local("qemu_wic.write", "Write local block device", "D"),
+            Action::capability("qemu_wic.qemu", "Launch QEMU", "Alt+q", Id::RunQemu),
+            Action::capability("qemu_wic.wic", "Create Wic image", "Alt+w", Id::WicCreate),
+            Action::local("qemu_wic.write", "Write local block device", "Alt+d"),
             Action::local("qemu_wic.cancel", "Cancel owned runtime", "x"),
         ],
         Destination::Maintenance => vec![

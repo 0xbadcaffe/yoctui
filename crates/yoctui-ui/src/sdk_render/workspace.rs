@@ -37,7 +37,7 @@ pub(crate) fn sdk_workspace(frame: &mut Frame, app: &App, area: Rect) {
     match &app.sdk_artifacts {
         SdkArtifactInventoryState::NotLoaded => {
             lines.push(Line::from(
-                "SDK artifacts are not loaded. Press R to scan SDK_DEPLOY.",
+                "SDK artifacts are not loaded. Press Alt+r to scan SDK_DEPLOY.",
             ));
         }
         SdkArtifactInventoryState::Loading { request } => {

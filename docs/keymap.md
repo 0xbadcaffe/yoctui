@@ -19,14 +19,15 @@ considered. Disabled actions stay visible with their exact prerequisite.
 | `F8` | Images |
 | `F9` or `Ctrl+P` | Command palette |
 | `F12` | Workspace/Build/Navigate/View/Tools/Help application menu |
-| `B` | Image build options |
+| `Alt+b` | Image build options |
+| `Alt+g` | GitUI (active workspace/editor repository or configured source) |
 | `a` or right-click | Context actions for the current selection |
 | `?` | Contextual Help |
 | `!` | Suspend Yoctui and open the inherited Yocto shell |
 | `q` or `Ctrl+C` | Request quit or contextually cancel; confirmations remain distinct |
 
 `F5` never starts a build. A lower-case workspace binding such as recipe `b`
-may build the selected recipe through its typed confirmation, while global `B`
+may build the selected recipe through its typed confirmation, while `Alt+b`
 opens image build options.
 
 ## Focus and collection movement
@@ -44,16 +45,24 @@ exact selection, scroll, follow, and subfocus state.
 |---|---|
 | Move one row | arrows or `j`/`k` |
 | Move one page | `PageUp`/`PageDown` |
-| First/last row | `Home`/`End` or `gg`/`G` |
+| First/last row | `Home`/`End` or `gg` |
 | Tree collapse/expand | `h`/`l` or `Left`/`Right` |
 | Global regex search | `/` (case-insensitive Rust regex) |
 | Edit/clear active search | type or `Backspace` / `Ctrl+U` |
-| Next/previous match | `n`/`N` |
+| Next/previous match | `n`/`Alt+n` in application views |
 | Primary action | `Enter` |
 | Toggle checkbox | `Space` |
 
 Mouse wheel movement uses the same bounded scroll route. Dialogs trap focus;
 terminal and editor input is not interpreted as workspace navigation.
+
+Application uppercase-letter shortcuts now have `Alt+<lowercase>` equivalents;
+uppercase aliases remain for compatibility. Literal uppercase text is unchanged.
+Recipes/Devtool use `Alt+w` to start/open the selected workspace and `Alt+g` for
+its GitUI. Integrated editors use `Ctrl+F` for the file and `Alt+f` for workspace
+search, including Insert mode. Ctrl+Shift+F remains an unadvertised alias on
+terminals supporting distinct modifier events. Native terminal programs keep
+their own bindings. Alt combinations can also be captured/exported as keymaps.
 
 `/` opens a menuconfig-style unified search. It matches workbench destinations
 and operator actions (labels, descriptions, action IDs, menu paths, aliases, and
@@ -89,11 +98,11 @@ Daemon-owned Terminal Sessions reserve `Ctrl+B` as a one-second prefix:
 | `Ctrl+B d` | Detach client; keep the process |
 | `Ctrl+B :` | Command palette |
 | `Ctrl+B ?` | Prefix help |
-| `Ctrl+B o` / `Ctrl+B O` | Take / release writer control |
+| `Ctrl+B o` / `Ctrl+B Alt+o` | Take / release writer control |
 | `Ctrl+B t` | Terminal Sessions |
 | `Ctrl+B [` / `Ctrl+B /` | Copy / search mode |
 | `Ctrl+B r` | Rename session |
-| `Ctrl+B K` | Confirmed process-group termination |
+| `Ctrl+B Alt+k` | Confirmed process-group termination |
 | `Ctrl+B Ctrl+B` | Send literal `Ctrl+B` |
 
 The inherited shell opened by `!` instead reserves `Ctrl+]` as its emergency

@@ -27,7 +27,7 @@ fn devtool_workspace_renders_recipe_centered_workflow_and_scp_deployment() {
         "Create/update patches",
         "Finish into configured layer",
     ] {
-        assert!(output.contains(expected), "missing {expected:?}");
+        assert!(output.contains(expected), "missing {expected:?}:\n{output}");
     }
 }
 

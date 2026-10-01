@@ -9,10 +9,10 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('s') => Some(Action::CycleLogSeverity),
         Input::Char('/') => Some(Action::BeginLogSearch),
         Input::Char('n') => Some(Action::NextLogMatch),
-        Input::Char('N') => Some(Action::PreviousLogMatch),
+        Input::Alt('n') | Input::Char('N') => Some(Action::PreviousLogMatch),
         Input::CtrlU => Some(Action::ClearLogQuery),
-        Input::Char('R') => Some(Action::CycleLogRecipeFilter),
-        Input::Char('T') => Some(Action::CycleLogTaskFilter),
+        Input::Alt('r') | Input::Char('R') => Some(Action::CycleLogRecipeFilter),
+        Input::Alt('t') | Input::Char('T') => Some(Action::CycleLogTaskFilter),
         Input::Backspace => Some(Action::BackspaceLogQuery),
         Input::Up => Some(Action::ScrollLogs { delta: 1 }),
         Input::Down => Some(Action::ScrollLogs { delta: -1 }),
@@ -21,13 +21,13 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('l') => Some(Action::Open(Screen::Logs)),
         Input::Char('h') => Some(Action::Open(Screen::BuildHistory)),
         Input::Char('e') => Some(Action::Open(Screen::Errors)),
-        Input::Char('E') => Some(Action::Open(Screen::BuildEnvironment)),
-        Input::Char('M') => Some(Action::Open(Screen::Maintenance)),
+        Input::Alt('e') | Input::Char('E') => Some(Action::Open(Screen::BuildEnvironment)),
+        Input::Alt('m') | Input::Char('M') => Some(Action::Open(Screen::Maintenance)),
         Input::Char('r') => Some(Action::Open(Screen::Recipes)),
         Input::Char('y') => Some(Action::Open(Screen::Layers)),
         Input::Char('v') => Some(Action::Open(Screen::Configuration)),
         Input::Char('x') => Some(Action::Open(Screen::Bbmask)),
-        Input::Char('B') => Some(Action::OpenBuildOptions),
+        Input::Alt('b') | Input::Char('B') => Some(Action::OpenBuildOptions),
         Input::Char('a') => Some(Action::OpenContextMenu),
         Input::Char('?') => Some(Action::Open(Screen::Help)),
         Input::Char('q') | Input::CtrlC => Some(Action::Quit),
@@ -44,7 +44,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::F12 => Some(yoctui_model::function_shortcut_action(FunctionKey::F12)),
         Input::Tab => Some(Action::CycleFocus { backwards: false }),
         Input::BackTab => Some(Action::CycleFocus { backwards: true }),
-        Input::Char('Y') => Some(Action::ConfirmQuit),
+        Input::Alt('y') | Input::Char('Y') => Some(Action::ConfirmQuit),
         Input::Enter => Some(Action::ActivateNotification),
         Input::Esc => Some(Action::Open(Screen::Dashboard)),
         _ => None,
@@ -53,10 +53,10 @@ pub fn key_action(key: Input) -> Option<Action> {
 
 pub fn build_cancellation_confirmation_action(key: Input) -> Option<Action> {
     match key {
-        Input::Char('y') | Input::Char('Y') | Input::Enter => {
+        Input::Char('y') | Input::Alt('y') | Input::Char('Y') | Input::Enter => {
             Some(Action::ConfirmBuildCancellation)
         }
-        Input::Char('n') | Input::Char('N') | Input::Esc => Some(Action::CancelBuildCancellation),
+        Input::Char('n') | Input::Alt('n') | Input::Char('N') | Input::Esc => Some(Action::CancelBuildCancellation),
         _ => None,
     }
 }
@@ -71,8 +71,8 @@ pub fn resolved_build_removal_confirmation_action(key: Input) -> Option<Action> 
 
 pub fn quit_confirmation_action(key: Input) -> Option<Action> {
     match key {
-        Input::Char('y') | Input::Char('Y') | Input::Enter => Some(Action::ConfirmQuit),
-        Input::Char('n') | Input::Char('N') | Input::Esc => Some(Action::CancelQuit),
+        Input::Char('y') | Input::Alt('y') | Input::Char('Y') | Input::Enter => Some(Action::ConfirmQuit),
+        Input::Char('n') | Input::Alt('n') | Input::Char('N') | Input::Esc => Some(Action::CancelQuit),
         _ => None,
     }
 }
@@ -153,7 +153,7 @@ pub fn settings_action(key: Input) -> Option<Action> {
         Input::Left => Some(Action::ChangeSelectedSetting { backwards: true }),
         Input::Right | Input::Enter => Some(Action::ChangeSelectedSetting { backwards: false }),
         Input::Char('r') => Some(Action::RetrySettingsPersistence),
-        Input::Char('R') => Some(Action::ResetPreferences),
+        Input::Alt('r') | Input::Char('R') => Some(Action::ResetPreferences),
         _ => None,
     }
 }
@@ -212,14 +212,14 @@ pub fn build_environment_action(key: Input) -> Option<Action> {
         Input::Char('b') => Some(Action::EnvironmentSetup(
             yoctui_model::EnvironmentSetupAction::Open { browse: true },
         )),
-        Input::Char('A') => Some(Action::OpenBuildEnvironmentEditor),
+        Input::Alt('a') | Input::Char('A') => Some(Action::OpenBuildEnvironmentEditor),
         Input::Char('c') => Some(Action::OpenBuildEnvironmentCloneEditor),
         Input::Up | Input::Char('k') => Some(Action::SelectBuildEnvironmentField { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectBuildEnvironmentField { delta: 1 }),
         Input::Char('s') => Some(Action::ApplyBuildEnvironmentProfile),
-        Input::Char('V') => Some(Action::BeginBuildEnvironmentVerification),
+        Input::Alt('v') | Input::Char('V') => Some(Action::BeginBuildEnvironmentVerification),
         Input::Char('n') => Some(Action::SelectProjectProfileItem { delta: 1 }),
-        Input::Char('N') => Some(Action::SelectProjectProfileItem { delta: -1 }),
+        Input::Alt('n') | Input::Char('N') => Some(Action::SelectProjectProfileItem { delta: -1 }),
         Input::Char('p') => Some(Action::ActivateProjectProfileItem),
         Input::Esc => Some(Action::Open(Screen::Dashboard)),
         _ => None,
@@ -241,7 +241,7 @@ pub fn tasks_action(editing: bool, key: Input) -> Option<Action> {
         Input::Up | Input::Char('k') => Some(Action::ScrollBuildTasks { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::ScrollBuildTasks { delta: 1 }),
         Input::Char('f') => Some(Action::CycleTaskStateFilter),
-        Input::Char('F') => Some(Action::CycleTaskFilterField),
+        Input::Alt('f') | Input::Char('F') => Some(Action::CycleTaskFilterField),
         Input::Char('/') => Some(Action::BeginTaskFilterEdit),
         Input::Char('d') => Some(Action::CycleTaskDurationFilter),
         _ => None,
@@ -274,18 +274,18 @@ pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('/') => Some(Action::BeginLogSearch),
         Input::CtrlU => Some(Action::ClearLogQuery),
         Input::Char('n') => Some(Action::NextLogMatch),
-        Input::Char('N') => Some(Action::PreviousLogMatch),
-        Input::Char('R') => Some(Action::CycleLogRecipeFilter),
-        Input::Char('T') => Some(Action::CycleLogTaskFilter),
-        Input::Char('B') => Some(Action::CycleLogBuildFilter),
-        Input::Char('S') => Some(Action::CycleLogSourceFilter),
-        Input::Char('I') => Some(Action::CycleLogTimeRange),
+        Input::Alt('n') | Input::Char('N') => Some(Action::PreviousLogMatch),
+        Input::Alt('r') | Input::Char('R') => Some(Action::CycleLogRecipeFilter),
+        Input::Alt('t') | Input::Char('T') => Some(Action::CycleLogTaskFilter),
+        Input::Alt('b') | Input::Char('B') => Some(Action::CycleLogBuildFilter),
+        Input::Alt('s') | Input::Char('S') => Some(Action::CycleLogSourceFilter),
+        Input::Alt('i') | Input::Char('I') => Some(Action::CycleLogTimeRange),
         Input::Char('m') => Some(Action::ToggleSelectedLogBookmark),
         Input::Char(']') => Some(Action::NextLogBookmark),
         Input::Char('[') => Some(Action::PreviousLogBookmark),
         Input::Char('o') => Some(Action::OpenSelectedLogSource),
-        Input::Char('C') => Some(Action::CopySelectedLog),
-        Input::Char('E') => Some(Action::ExportFilteredLogs),
+        Input::Alt('c') | Input::Char('C') => Some(Action::CopySelectedLog),
+        Input::Alt('e') | Input::Char('E') => Some(Action::ExportFilteredLogs),
         _ => None,
     }
 }
@@ -307,11 +307,11 @@ pub fn internal_logs_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('v') => Some(Action::CycleLogWorkspaceView),
         Input::Char('f') => Some(Action::ToggleInternalLogFollow),
         Input::Char('s') => Some(Action::CycleInternalLogLevelFilter),
-        Input::Char('T') => Some(Action::CycleInternalLogTargetFilter),
+        Input::Alt('t') | Input::Char('T') => Some(Action::CycleInternalLogTargetFilter),
         Input::Char('/') => Some(Action::BeginInternalLogSearch),
         Input::CtrlU => Some(Action::ClearInternalLogQuery),
         Input::Char('c') => Some(Action::ClearInternalLogs),
-        Input::Char('E') => Some(Action::ExportInternalLogs),
+        Input::Alt('e') | Input::Char('E') => Some(Action::ExportInternalLogs),
         _ => None,
     }
 }

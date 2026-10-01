@@ -70,14 +70,17 @@ impl InteractiveRuntime {
         } else if runtime.app.screen == yoctui_model::Screen::Configuration
             && matches!(
                 input,
-                Input::Char('s') | Input::Char('c') | Input::Char('E')
+                Input::Char('s') | Input::Char('c') | Input::Alt('e') | Input::Char('E')
             )
         {
             if let Some(action) = config_workspace_action(false, input) {
                 let _ = compatibility_workspace_action(&mut runtime.app, action);
             }
         } else if runtime.app.screen == yoctui_model::Screen::Configuration
-            && matches!(input, Input::Char('C') | Input::Char('U'))
+            && matches!(
+                input,
+                Input::Alt('c') | Input::Char('C') | Input::Alt('u') | Input::Char('U')
+            )
         {
             if let Some(Effect::CopyToClipboard(content)) =
                 config_copy_effect(&mut runtime.app, input)

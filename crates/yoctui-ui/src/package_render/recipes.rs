@@ -148,7 +148,7 @@ pub(crate) fn devtool_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let chunks = if area.width >= 100 {
         Layout::horizontal([Constraint::Percentage(48), Constraint::Percentage(52)]).split(area)
     } else {
-        Layout::vertical([Constraint::Min(7), Constraint::Length(16)]).split(area)
+        Layout::vertical([Constraint::Min(7), Constraint::Length(24)]).split(area)
     };
     let list = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(chunks[0]);
     let visible_rows = usize::from(list[1].height.saturating_sub(3));
@@ -310,7 +310,7 @@ fn devtool_workflow_detail(app: &App, recipe: &Recipe) -> String {
         },
     );
     format!(
-        "Recipe: {}\nProvider: {}\nWorkspace: {workspace}\nSource: {}\nGit: {git}\n{git_detail}\nBuild: {}\nGitUI: G · Workspace shell: s · Reset: D\n\n1  Start/refresh workspace       Enter / d\n2  Edit source                   d / e\n3  Build workspace recipe        b\n4  Deploy build with SSH/SCP     P\n5  Create/update patches         u\n6  Finish into configured layer  F\n\n{}",
+        "Recipe: {}\n\n1  Start/refresh workspace       Enter / d\n2  Edit source                   d / e / Alt+w\n3  Build workspace recipe        b\n4  Deploy build with SSH/SCP     Alt+p\n5  Create/update patches         u\n6  Finish into configured layer  Alt+f\nGitUI: Alt+g · Workspace shell: s · Reset: Alt+d\n\nProvider: {}\nWorkspace: {workspace}\nSource: {}\nGit: {git}\n{git_detail}\nBuild: {}\n\n{}",
         recipe.name,
         recipe
             .file

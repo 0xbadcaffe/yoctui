@@ -1,3 +1,9 @@
+MODIFIER-SHORTCUTS-001 is DONE in v0.1.261. Alt+w workspace, Alt+g GitUI and
+Alt+f workspace search have typed routes and matching modifier hints. Uppercase
+aliases and literal text/native terminal ownership remain. Focused input,
+keymap, Devtool UI/CLI checks, strict Clippy, fmt/version/roadmap pass; generic
+editor-context GitUI follows now. Final push/source-bound release delivers both.
+
 M107 user request is active: portable modifier shortcuts, reliable workspace
 opening/search and context-correct editor GitUI. MODIFIER-SHORTCUTS-001 precedes
 EDITOR-GITUI-CONTEXT-001; focused checks only, then version bumps/commits/push and

@@ -7,6 +7,7 @@ pub const MAX_EFFECTIVE_KEYMAP_REPORT_BYTES: usize = 64 * 1024;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum KeyStroke {
     Char(char),
+    Alt(char),
     Esc,
     Enter,
     Backspace,
@@ -52,6 +53,7 @@ impl fmt::Display for KeyStroke {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = match self {
             Self::Char(character) => return write!(formatter, "{character}"),
+            Self::Alt(character) => return write!(formatter, "Alt+{character}"),
             Self::Esc => "Esc",
             Self::Enter => "Enter",
             Self::Backspace => "Backspace",
@@ -95,6 +97,16 @@ impl FromStr for KeyStroke {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let value = value.trim();
+        if let Some(letter) = value.to_ascii_lowercase().strip_prefix("alt+") {
+            let mut characters = letter.chars();
+            if let Some(character) = characters.next()
+                && character.is_ascii_lowercase()
+                && characters.next().is_none()
+            {
+                return Ok(Self::Alt(character));
+            }
+            return Err(KeymapError::InvalidStroke(value.into()));
+        }
         let named = match value.to_ascii_lowercase().as_str() {
             "esc" | "escape" => Some(Self::Esc),
             "enter" | "return" => Some(Self::Enter),

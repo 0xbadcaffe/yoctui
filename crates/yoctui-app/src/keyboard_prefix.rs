@@ -87,8 +87,10 @@ impl PrefixState {
                 Input::Char('[') => PrefixEvent::Command(PrefixCommand::CopyMode),
                 Input::Char('/') => PrefixEvent::Command(PrefixCommand::Search),
                 Input::Char('r') => PrefixEvent::Command(PrefixCommand::Rename),
-                Input::Char('O') => PrefixEvent::Command(PrefixCommand::ReleaseControl),
-                Input::Char('K') => PrefixEvent::Command(PrefixCommand::Kill),
+                Input::Alt('o') | Input::Char('O') => {
+                    PrefixEvent::Command(PrefixCommand::ReleaseControl)
+                }
+                Input::Alt('k') | Input::Char('K') => PrefixEvent::Command(PrefixCommand::Kill),
                 Input::Char('z') => PrefixEvent::Command(PrefixCommand::Zoom),
                 // A second prefix sends a literal Ctrl+B to the terminal.
                 Input::CtrlB => PrefixEvent::Literal(Input::CtrlB),

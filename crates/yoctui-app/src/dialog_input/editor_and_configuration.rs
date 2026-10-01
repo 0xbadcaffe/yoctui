@@ -1,6 +1,14 @@
 pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> Option<Action> {
     use yoctui_model::{RecipeEditorFocus as Focus, TextAreaMode};
 
+    match key {
+        Input::Alt('f') | Input::CtrlShiftF => {
+            return Some(Action::OpenRecipeEditorWorkspaceSearch);
+        }
+        Input::Alt('g') => return Some(Action::OpenRecipeEditorGitUi),
+        _ => {}
+    }
+
     if editor.searching {
         return match key {
             Input::Char(character) => Some(Action::AppendRecipeEditorSearch(character)),
@@ -21,7 +29,7 @@ pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> 
             Input::End => Some(Action::SelectRecipeEditorFile { delta: isize::MAX }),
             Input::Enter | Input::Tab => Some(Action::FocusRecipeEditor(Focus::Document)),
             Input::Char('e') => Some(Action::OpenRecipeEditorExternal),
-            Input::Char('G') => Some(Action::OpenRecipeEditorGitUi),
+            Input::Alt('g') | Input::Char('G') => Some(Action::OpenRecipeEditorGitUi),
             Input::CtrlS => Some(Action::SaveRecipeEditor),
             Input::CtrlB => Some(Action::BeginRecipeEditorBuild),
             Input::CtrlF => Some(Action::BeginRecipeEditorSearch),
@@ -49,7 +57,7 @@ pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> 
         Input::Char('n') if editor.document.mode() != TextAreaMode::Insert => {
             Some(Action::NextRecipeEditorMatch { backwards: false })
         }
-        Input::Char('N') if editor.document.mode() != TextAreaMode::Insert => {
+        Input::Alt('n') | Input::Char('N') if editor.document.mode() != TextAreaMode::Insert => {
             Some(Action::NextRecipeEditorMatch { backwards: true })
         }
         Input::Esc if editor.document.mode() == TextAreaMode::Normal => {
@@ -81,11 +89,11 @@ pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Up | Input::Char('k') => Some(Action::SelectConfigVariable { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectConfigVariable { delta: 1 }),
         Input::Enter => Some(Action::BeginSelectedConfigDetail),
-        Input::Char('C') => Some(Action::CopySelectedConfigEffective),
-        Input::Char('U') => Some(Action::CopySelectedConfigUnexpanded),
+        Input::Alt('c') | Input::Char('C') => Some(Action::CopySelectedConfigEffective),
+        Input::Alt('u') | Input::Char('U') => Some(Action::CopySelectedConfigUnexpanded),
         Input::Char('s') => Some(Action::OpenConfigScopePicker),
         Input::Char('c') => Some(Action::OpenConfigComparison),
-        Input::Char('E') => Some(Action::BeginConfigEdit),
+        Input::Alt('e') | Input::Char('E') => Some(Action::BeginConfigEdit),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::CtrlU => Some(Action::ClearMetadataQuery),
         Input::Char('o') => Some(Action::OpenSelectedConfigSource),

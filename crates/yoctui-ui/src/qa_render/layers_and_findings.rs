@@ -127,7 +127,7 @@ pub(crate) fn qa_inventory_lines(
 ) {
     match &app.qa.inventory {
         QaReportInventoryState::NotLoaded => lines.push(Line::from(
-            "Reports not loaded. I imports; R refreshes exact paths.",
+            "Reports not loaded. Alt+i imports; Alt+r refreshes exact paths.",
         )),
         QaReportInventoryState::Loading { request } => lines.push(Line::styled(
             format!(

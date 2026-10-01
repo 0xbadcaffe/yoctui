@@ -10,6 +10,13 @@ probe and the existing destination chooser. Each gets focused regression tests,
 documentation and an independent version-bumped commit. Push and final release
 delivery follow both fixes. Full suite remains deferred and M67 blocked.
 
+MODIFIER-SHORTCUTS-001 is DONE in v0.1.261. Modifier/Devtool/workspace input
+checks (3/24/38), six keymap tests, 18 Devtool UI tests and native Alt/Unicode/
+control/shift/release CLI checks pass, as do formatting, affected strict
+all-target Clippy, version policy and roadmap. Text/PTY input and legacy
+bindings remain unchanged; longer hints retain the action list and Git facts
+in the responsive preview. Generic editor GitUI follows separately.
+
 ## M106 — Systemd list viewport and single search activity marker
 
 Two independently committed user-reported fixes follow M105:

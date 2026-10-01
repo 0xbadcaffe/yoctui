@@ -52,7 +52,7 @@ fn devtool_editor_git_renders_repository_branch_sync_changes_and_gitui_action() 
         "ahead 2",
         "behind 1",
         "Changes: 1 modified",
-        "[G] Open repository in GitUI",
+        "[Alt+g] Open repository in GitUI",
     ] {
         assert!(output.contains(anchor), "missing {anchor:?}:\n{output}");
     }
@@ -71,7 +71,7 @@ fn devtool_editor_git_renders_repository_branch_sync_changes_and_gitui_action() 
         "Branch: feature/editor",
         "Upstream: origin/feature/editor",
         "Sync: unsynced · diverged, ahead 2, behind 1",
-        "GitUI: G",
+        "GitUI: Alt+g",
     ] {
         assert!(output.contains(anchor), "missing {anchor:?}:\n{output}");
     }

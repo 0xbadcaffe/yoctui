@@ -63,7 +63,7 @@ pub fn dependency_workspace_action(searching: bool, key: Input) -> Option<Action
         Input::Down | Input::Char('j') => Some(Action::SelectDependencyGraphNode { delta: 1 }),
         Input::Enter => Some(Action::OpenSelectedDependencyRecipe),
         Input::Char('o') => Some(Action::OpenSelectedDependencyProvider),
-        Input::Char('L') => Some(Action::OpenSelectedDependencyTaskLog),
+        Input::Alt('l') | Input::Char('L') => Some(Action::OpenSelectedDependencyTaskLog),
         Input::Char('r') => Some(Action::RefreshDependencyGraph),
         Input::Char('/') => Some(Action::BeginDependencyGraphSearch),
         Input::CtrlU => Some(Action::ClearDependencyGraphQuery),
@@ -122,9 +122,9 @@ pub fn package_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Enter => Some(Action::BeginSelectedPackageDetail),
         Input::Char('/') => Some(Action::BeginPackageSearch),
         Input::CtrlU => Some(Action::ClearPackageQuery),
-        Input::Char('R') => Some(Action::RefreshPackageInventory),
+        Input::Alt('r') | Input::Char('R') => Some(Action::RefreshPackageInventory),
         Input::Char('c') => Some(Action::CancelPackageOperation),
-        Input::Char('D') => Some(Action::TogglePackageDependencyKind),
+        Input::Alt('d') | Input::Char('D') => Some(Action::TogglePackageDependencyKind),
         Input::Char('[') => Some(Action::SelectPackageDependency { delta: -1 }),
         Input::Char(']') => Some(Action::SelectPackageDependency { delta: 1 }),
         Input::Char('d') => Some(Action::OpenSelectedPackageDependency),
@@ -170,7 +170,7 @@ pub fn images_workspace_action_for_view(
             Input::Down | Input::Char('j') => Some(Action::SelectRootfsPackage { delta: 1 }),
             Input::Left | Input::Char('h') => Some(Action::SelectRootfsGroup { delta: -1 }),
             Input::Right | Input::Char('l') => Some(Action::SelectRootfsGroup { delta: 1 }),
-            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            Input::Char('r') | Input::Alt('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
     }
@@ -182,7 +182,7 @@ pub fn images_workspace_action_for_view(
             Input::Up | Input::Char('k') => Some(Action::SelectRootfsEntry { delta: -1 }),
             Input::Down | Input::Char('j') => Some(Action::SelectRootfsEntry { delta: 1 }),
             Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
-            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            Input::Char('r') | Input::Alt('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
     }
@@ -194,7 +194,7 @@ pub fn images_workspace_action_for_view(
             Input::Char('[') => Some(Action::ScrollRootfsUdevPreview { delta: -1 }),
             Input::Char(']') => Some(Action::ScrollRootfsUdevPreview { delta: 1 }),
             Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
-            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            Input::Char('r') | Input::Alt('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
     }
@@ -207,7 +207,7 @@ pub fn images_workspace_action_for_view(
             Input::Down | Input::Char('j') => Some(Action::SelectRootfsSystemdService { delta: 1 }),
             Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
             Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
-            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            Input::Char('r') | Input::Alt('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
     }
@@ -220,7 +220,7 @@ pub fn images_workspace_action_for_view(
             Input::Down | Input::Char('j') => Some(Action::SelectRootfsDbusService { delta: 1 }),
             Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
             Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
-            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            Input::Char('r') | Input::Alt('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
     }
@@ -241,17 +241,17 @@ pub fn images_workspace_action_for_view(
         Input::Down | Input::Char('j') => Some(Action::SelectImageArtifact { delta: 1 }),
         Input::Char('/') => Some(Action::BeginImageArtifactSearch),
         Input::CtrlU => Some(Action::ClearImageArtifactQuery),
-        Input::Char('R') => Some(Action::RefreshImageArtifactInventory),
+        Input::Alt('r') | Input::Char('R') => Some(Action::RefreshImageArtifactInventory),
         Input::Char('c') => Some(Action::CancelImageArtifactOperation),
         Input::Char('b') => Some(Action::BeginSelectedImageArtifactBuild),
-        Input::Char('T') => Some(Action::BeginSelectedImageConsole),
-        Input::Char('Q') => Some(Action::BeginSelectedQemuLaunch),
-        Input::Char('W') => Some(Action::BeginSelectedWicCreate),
-        Input::Char('D') => Some(Action::BeginSelectedWicDeviceWrite),
+        Input::Alt('t') | Input::Char('T') => Some(Action::BeginSelectedImageConsole),
+        Input::Alt('q') | Input::Char('Q') => Some(Action::BeginSelectedQemuLaunch),
+        Input::Alt('w') | Input::Char('W') => Some(Action::BeginSelectedWicCreate),
+        Input::Alt('d') | Input::Char('D') => Some(Action::BeginSelectedWicDeviceWrite),
         Input::Char('x') => Some(Action::BeginActiveImageRuntimeCancellation),
         Input::Char('[') => Some(Action::SelectWicOutput { delta: -1 }),
         Input::Char(']') => Some(Action::SelectWicOutput { delta: 1 }),
-        Input::Char('O') => Some(Action::OpenSelectedWicOutput),
+        Input::Alt('o') | Input::Char('O') => Some(Action::OpenSelectedWicOutput),
         Input::Char('o') => Some(Action::OpenSelectedImageArtifact),
         Input::Char('m') => Some(Action::OpenSelectedImageArtifactAssociation(
             yoctui_model::ImageArtifactAssociation::Manifest,

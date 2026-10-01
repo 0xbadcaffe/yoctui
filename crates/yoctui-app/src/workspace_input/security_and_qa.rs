@@ -45,11 +45,11 @@ pub fn security_workspace_action(
         Input::Char('/') => security(SecurityAction::BeginSearch),
         Input::CtrlU => security(SecurityAction::ClearQuery),
         Input::Char('f') => security(SecurityAction::CycleCveFilter),
-        Input::Char('V') => security(SecurityAction::BeginCveCheck),
-        Input::Char('M') => security(SecurityAction::BeginPackageMap),
-        Input::Char('X') => security(SecurityAction::BeginSbomGeneration),
-        Input::Char('I') => security(SecurityAction::BeginImport),
-        Input::Char('R') => security(SecurityAction::RefreshReports),
+        Input::Alt('v') | Input::Char('V') => security(SecurityAction::BeginCveCheck),
+        Input::Alt('m') | Input::Char('M') => security(SecurityAction::BeginPackageMap),
+        Input::Alt('x') | Input::Char('X') => security(SecurityAction::BeginSbomGeneration),
+        Input::Alt('i') | Input::Char('I') => security(SecurityAction::BeginImport),
+        Input::Alt('r') | Input::Char('R') => security(SecurityAction::RefreshReports),
         Input::Char('o') => security(SecurityAction::OpenSelectedReport),
         Input::Char('e') => security(SecurityAction::OpenSelectedRecipe),
         Input::Char('v') => security(SecurityAction::OpenSelectedAdvisory),
@@ -137,8 +137,8 @@ pub fn qa_workspace_action(
         } else {
             QaAction::BeginSelectedCheck
         }),
-        Input::Char('I') => qa(QaAction::BeginImport),
-        Input::Char('R') => qa(QaAction::RefreshReports),
+        Input::Alt('i') | Input::Char('I') => qa(QaAction::BeginImport),
+        Input::Alt('r') | Input::Char('R') => qa(QaAction::RefreshReports),
         Input::Char('o') => qa(QaAction::OpenSelectedReport),
         Input::Char('e') => qa(if view == QaView::LayerQa {
             QaAction::OpenSelectedLayerRoot

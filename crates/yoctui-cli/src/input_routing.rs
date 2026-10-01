@@ -143,6 +143,24 @@ pub(crate) fn mouse_kind_from_event(kind: crossterm::event::MouseEventKind) -> O
 }
 
 pub(crate) fn input_from_key(key: KeyEvent) -> Option<Input> {
+    if key.kind == crossterm::event::KeyEventKind::Release {
+        return None;
+    }
+    if let KeyCode::Char(character) = key.code
+        && key.modifiers.contains(KeyModifiers::ALT)
+    {
+        let character = if key.modifiers.contains(KeyModifiers::CONTROL) && character.is_ascii() {
+            match character {
+                ' ' | '@' | '2' => '\0',
+                'a'..='z' | 'A'..='Z' | '['..='_' => char::from((character as u8) & 0x1f),
+                '?' => '\x7f',
+                _ => character,
+            }
+        } else {
+            character
+        };
+        return Some(Input::Alt(character));
+    }
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
         KeyCode::Char('v') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlV),
@@ -193,6 +211,11 @@ pub(crate) fn terminal_input_bytes(input: Input) -> Option<Vec<u8>> {
         Input::Char(character) => {
             let mut buffer = [0; 4];
             return Some(character.encode_utf8(&mut buffer).as_bytes().to_vec());
+        }
+        Input::Alt(character) => {
+            let mut bytes = vec![0x1b];
+            bytes.extend(character.to_string().as_bytes());
+            return Some(bytes);
         }
         Input::Enter => b"\r".as_slice(),
         Input::CtrlC => b"\x03".as_slice(),

@@ -313,7 +313,7 @@ fn render_viewer(
         )
     };
     frame.render_widget(Paragraph::new(vec![
-        Line::from("Esc/Backspace library  Tab Navigator  PgUp/PgDn or wheel page  +/- zoom  0 fit  arrows/hjkl pan  / search  n/N match  v view  r reload"),
+        Line::from("Esc/Backspace library  Tab Navigator  PgUp/PgDn or wheel page  +/- zoom  0 fit  arrows/hjkl pan  / search  n/Alt+n match  v view  r reload"),
         Line::styled(search, Style::default().fg(palette.accent)),
     ]), rows[2]);
 }

@@ -6,18 +6,18 @@ status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 id = "MODIFIER-SHORTCUTS-001"
 milestone = "M107"
 title = "Use portable modifier shortcuts with consistent workspace routes"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3260
 required = true
 depends_on = ["GLOBAL-SEARCH-MARKER-001"]
 verify = ["cargo test -p yoctui-model modifier", "cargo test -p yoctui-model keymap", "cargo test -p yoctui-app modifier", "cargo test -p yoctui-app devtool", "cargo test -p yoctui-ui devtool_editor", "cargo test -p yoctui --bin yoctui modifier", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Active user priority. Definition: typed modifier decoding/keymap round-trip, Alt alternatives and accurate hints, workspace-open and Alt+f search routes, normal/text/modal/native-PTY regressions. Relevant files: app keyboard/dialog routing, model keymap/action catalog, CLI input routing, UI hints. Required docs: UI spec, architecture, roadmap, status and current task. Full suite deferred."
+notes = "DONE in v0.1.261. Typed Alt input/keymaps, lowercase modifier alternatives with legacy aliases, consistent Alt+w workspace and Alt+g GitUI routing, Alt+f editor search in all modes, accurate catalog/footer hints and action-first stacked workflow with retained Git facts. Three modifier and 24 Devtool app checks, 38 workspace regressions, six keymap tests, 18 Devtool UI tests and CLI raw Alt/Unicode/control/shift/release checks pass. Formatting, strict CLI dependency/all-target Clippy, version policy and roadmap pass. Literal text/native terminal ownership is preserved; no full suite or daemon mutation. Context-correct generic editor GitUI follows in its independent task; final push/source-bound release delivers both."
 
 [[task]]
 id = "EDITOR-GITUI-CONTEXT-001"
 milestone = "M107"
 title = "Open GitUI at the active integrated editor repository"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3261
 required = true
 depends_on = ["MODIFIER-SHORTCUTS-001"]

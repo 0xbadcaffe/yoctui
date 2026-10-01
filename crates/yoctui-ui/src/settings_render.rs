@@ -54,7 +54,7 @@ pub(crate) fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
         .unwrap_or("Changes preview immediately and are saved atomically for the next launch.");
     frame.render_widget(
         Paragraph::new(format!(
-            "↑/↓ or j/k select  ←/→ or Enter change/open  R reset all  r retry\n{selected_detail}\nBuild actions stay disabled until the environment connection is verified."
+            "↑/↓ or j/k select  ←/→ or Enter change/open  Alt+r reset all  r retry\n{selected_detail}\nBuild actions stay disabled until the environment connection is verified."
         ))
         .block(
             Block::default()
@@ -178,7 +178,7 @@ pub(crate) fn keymap_preferences_overlay(frame: &mut Frame, app: &App, area: Rec
         )
     } else {
         (
-            "Enter/c capture · x remove · r reset · R reset all · e export · p retry save · Esc close"
+            "Enter/c capture · x remove · r reset · Alt+r reset all · e export · p retry save · Esc close"
                 .into(),
             palette.role(palette.secondary_foreground, Modifier::DIM),
         )

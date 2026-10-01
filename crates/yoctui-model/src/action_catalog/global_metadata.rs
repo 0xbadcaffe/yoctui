@@ -18,7 +18,7 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             description: "Open image build options for the active machine",
             aliases: &["image build", "bitbake image"],
             keywords: &["build", "image", "machine", "bitbake"],
-            bindings: &["B"],
+            bindings: &["Alt+b", "B"],
             local_requirement: Local::WorkspaceLoaded,
             safety: Safety::ConfirmationRequired,
             footer_priority: 90,
@@ -217,7 +217,7 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
                 "Review source diffs, stage changes, commit and synchronize in GitUI",
                 &["git", "diff", "commit"],
                 &["git", "source", "stage", "push", "fetch"],
-                &[],
+                &["Alt+g"],
                 65,
             );
             metadata.menu_path = vec!["Tools", "GitUI"];
