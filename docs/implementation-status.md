@@ -1,3 +1,9 @@
+M107 user request is active: portable modifier shortcuts, reliable workspace
+opening/search and context-correct editor GitUI. MODIFIER-SHORTCUTS-001 precedes
+EDITOR-GITUI-CONTEXT-001; focused checks only, then version bumps/commits/push and
+source-bound optimized release. Existing daemon/builds/captures are preserved.
+M67 remains separately blocked; no full-suite pass is claimed.
+
 GLOBAL-SEARCH-MARKER-001 is DONE in v0.1.260. Search loading renders exactly
 one activity marker; existing default states, scopes, backend and focus remain
 unchanged. Six global search, one workspace search and twelve primitive tests,

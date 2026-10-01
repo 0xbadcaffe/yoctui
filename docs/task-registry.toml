@@ -3,6 +3,28 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "MODIFIER-SHORTCUTS-001"
+milestone = "M107"
+title = "Use portable modifier shortcuts with consistent workspace routes"
+status = "IN_PROGRESS"
+priority = 3260
+required = true
+depends_on = ["GLOBAL-SEARCH-MARKER-001"]
+verify = ["cargo test -p yoctui-model modifier", "cargo test -p yoctui-model keymap", "cargo test -p yoctui-app modifier", "cargo test -p yoctui-app devtool", "cargo test -p yoctui-ui devtool_editor", "cargo test -p yoctui --bin yoctui modifier", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Active user priority. Definition: typed modifier decoding/keymap round-trip, Alt alternatives and accurate hints, workspace-open and Alt+f search routes, normal/text/modal/native-PTY regressions. Relevant files: app keyboard/dialog routing, model keymap/action catalog, CLI input routing, UI hints. Required docs: UI spec, architecture, roadmap, status and current task. Full suite deferred."
+
+[[task]]
+id = "EDITOR-GITUI-CONTEXT-001"
+milestone = "M107"
+title = "Open GitUI at the active integrated editor repository"
+status = "NOT_STARTED"
+priority = 3261
+required = true
+depends_on = ["MODIFIER-SHORTCUTS-001"]
+verify = ["cargo test -p yoctui-model editor_gitui", "cargo test -p yoctui-app devtool_editor_git", "cargo test -p yoctui-ui devtool_editor_git", "cargo test -p yoctui --bin yoctui editor_gitui", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Definition: all integrated editor contexts use exact root and bounded asynchronous read-only Git checks; missing tool/nonrepository/invalid root/stale result failures are visible; direct and menu shortcuts work in editing modes; launch/cancel preserves dirty buffer and existing embedded/detached/offline terminal lifecycle. Relevant files: model actions/effects/reducer/menu availability, CLI editor worker/runtime polling, app/UI editor routes. Update UI spec, architecture, roadmap, status and current task. Full suite deferred; final commit push and source-bound release required."
+
+[[task]]
 id = "M72-IPC-001"
 milestone = "M72"
 title = "Preserve client frames under temporary backpressure and terminal ownership"

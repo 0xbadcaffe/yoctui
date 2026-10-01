@@ -5749,7 +5749,7 @@ LSP results. Local diagnostics are explicitly labelled structural and include
 only deterministic checks owned by Yoctui. External compiler/BitBake failures
 continue to arrive through typed build jobs and Logs/Errors.
 
-`Ctrl+F` starts search in the selected file. `Ctrl+Shift+F` opens the shared
+`Ctrl+F` starts search in the selected file. `Alt+f` opens the shared
 regex result surface scoped to the exact absolute Devtool workspace root; Enter
 loads the chosen result into this integrated editor and preserves the recipe.
 The global `/` content search remains available from the editor in Normal/file
@@ -5765,18 +5765,42 @@ results explanation and keep-typing/cancel action remain visible as before.
 
 The editor inspector shows the selected recipe workspace repository root,
 branch, upstream, clean/dirty counts, and `synced`, `ahead N`, `behind N`,
-`diverged`, or `no upstream` state from typed Git status. `G` opens GitUI in
+`diverged`, or `no upstream` state from typed Git status. `Alt+g` opens GitUI in
 that exact root through the existing embedded/detached terminal chooser. GitUI
 remains disabled with the exact tool/status reason when unavailable. The file
 tree, document, validation/diff, and inspector panes use distinct semantic
 border colors and bold inner titles; focus remains independently visible.
 
 The editor footer prioritizes `i` insert, `Esc` normal/outward, movement,
-`Ctrl+S` save, `Ctrl+F` file search, `Ctrl+Shift+F` workspace search, `/` global
-search, `n/N` matches, `u` undo, `Ctrl+R` redo, `v` visual, `G` GitUI,
+`Ctrl+S` save, `Ctrl+F` file search, `Alt+f` workspace search, `/` global
+search, `n/Alt+n` matches, `u` undo, `Ctrl+R` redo, `v` visual, `Alt+g` GitUI,
 `Ctrl+B` build recipe, and the Devtool update/finish routes. Responsive layouts
 may shorten labels but must preserve mode, dirty/save state, language, cursor
 line/column, and a reachable build/publish route.
+
+### Portable application shortcuts (M107)
+
+Application actions formerly requiring a standalone uppercase letter advertise
+and accept `Alt+<lowercase letter>` instead. Existing uppercase bindings remain
+compatibility aliases, not required controls. Function keys, existing lowercase
+navigation, Ctrl combinations and explicit custom keymaps remain unchanged.
+Text entry keeps literal uppercase characters; Alt keys never insert letters.
+Native GitUI, shells and menuconfig retain their own key ownership and receive
+the original Alt escape sequence. The active editor exposes `Alt+f` workspace
+search and `Alt+g` GitUI from file/document and Insert/Visual/Normal modes;
+Ctrl+Shift+F remains an unadvertised alias where terminals distinguish it.
+`Alt+e` opens the workspace editor from Recipes/Devtool (as does Devtool `e`).
+`Alt+g` consistently opens workspace GitUI from Recipes/Devtool, their menus
+and editors. Alt+g in other application workspaces opens source GitUI.
+
+GitUI from a source/metadata/layer editor uses that editor's exact root, not
+the globally selected source or another recipe. A bounded asynchronous read-only
+Git probe checks the root before the normal embedded/detached chooser opens.
+Missing tools, invalid roots and non-repositories report precise reasons.
+Cancellation and launch retain unsaved document/mode/cursor/tree state; no
+automatic save, staging or commit occurs. F12 Tools GitUI targets the active
+editor too. Late probe results cannot launch after the editor is replaced or
+covered by another dialog. Read-only RootFS/non-Git directories fail explicitly.
 
 ### Interactive-session destination chooser
 

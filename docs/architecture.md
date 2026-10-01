@@ -3823,7 +3823,7 @@ highlighting; they retain the normal backend/app/reducer path.
 
 The model also owns editor file/document viewport anchors, the selected search
 scope, and typed workspace Git tracking facts. `Ctrl+F` mutates only the active
-`TextAreaState` search. `Ctrl+Shift+F` sets an exact absolute workspace root on
+`TextAreaState` search. `Alt+f` sets an exact absolute workspace root on
 the shared bounded regex-search plan; the CLI scanner applies its existing
 symlink, directory, byte, hit and cancellation bounds to that root. Activating a
 workspace result becomes `LoadRecipeEditorFile` after root containment and
@@ -3847,6 +3847,15 @@ all six scenes into a temporary directory and byte-compares them with the
 tracked artifacts, so metadata-only or independently edited images cannot pass.
 
 ## M39 image-console boundary
+
+M107 adds typed `Alt(char)` input/key strokes; terminal decoding preserves
+modifiers rather than flattening them into printable characters. Application
+uppercase-command aliases gain Alt-lowercase alternatives only in command
+branches, after literal text handling. Catalog defaults/hints use combinations;
+user override parsing round-trips them. Terminal writers retain native Alt bytes.
+Editor GitUI preparation is a client-local asynchronous read-only adapter;
+correlated typed root/results flow to the reducer, which opens the existing
+terminal chooser without mutating the retained document. No widget parses Git.
 
 The image-console model owns only bounded form state, validation, selected
 artifact correlation, and an argv-preserving terminal launch projection. QEMU

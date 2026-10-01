@@ -1,5 +1,15 @@
 # Yoctui Product Roadmap
 
+## M107 — Portable shortcuts and context-correct editor GitUI
+
+User priority: MODIFIER-SHORTCUTS-001 adds typed Alt combinations and fixes
+workspace-opening/search/GitUI routing/hints without consuming literal text or
+native terminal keys. EDITOR-GITUI-CONTEXT-001 then enables repository launch
+from every integrated source/layer editor using a bounded correlated read-only
+probe and the existing destination chooser. Each gets focused regression tests,
+documentation and an independent version-bumped commit. Push and final release
+delivery follow both fixes. Full suite remains deferred and M67 blocked.
+
 ## M106 — Systemd list viewport and single search activity marker
 
 Two independently committed user-reported fixes follow M105:

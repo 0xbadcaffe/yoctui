@@ -1,8 +1,19 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** MODIFIER-SHORTCUTS-001
+**Title:** Make application shortcuts portable modifier combinations
+**Status:** IN_PROGRESS
+
+User priority supersedes the blocked performance queue. Add typed Alt-letter
+input and keymap support, modifier alternatives for uppercase application
+commands, consistent workspace-open/GitUI routes, and Alt+f workspace search.
+Preserve literal text, modal focus, user keymaps and native PTY keys. Verify
+focused modifier/keymap/Devtool/search/UI/CLI checks, formatting, affected strict
+Clippy, version policy and roadmap; bump version and commit. Then complete
+EDITOR-GITUI-CONTEXT-001 and push/build the final source-bound release.
+Do not run the full test suite.
+
+The separate external blocker remains:
 
 The retained performance evidence is not bound to the current source tree: it
 has 143 previously documented source digest mismatches, including changes
@@ -15,7 +26,7 @@ digests or substitute fake-process startup timings for live evidence.
 ./scripts/verify-completion.sh
 ```
 
-This external prerequisite is the only remaining required task. The user
+This external prerequisite remains unresolved. The user
 explicitly deferred the full suite; do not run the full completion suite without
 a subsequent instruction. All M105/M106 requested corrections are DONE:
 v0.1.258 target RootFS owner/group/mode, v0.1.259 systemd viewport scrolling,
