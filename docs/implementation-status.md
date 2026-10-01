@@ -1,3 +1,10 @@
+SAVED-ENV-DAEMON-001 and SAVED-ENV-LOAD-001 are prioritized for the user's
+saved-environment workflow. The prior daemon PID 1086776 is absent on the same
+boot, its socket/record are stale, no service is installed, and no daemon output
+or matching OOM/segfault record was retained. A crash is not established. The
+current History path is read-only and cannot start or load an environment.
+Full workspace tests remain deferred; focused startup/history checks are required.
+
 ROOTFS-FILES-BROWSER-001 is DONE in v0.1.253. The Files tab now opens the
 Layers-style lazy tree inline, with expandable directories, hidden entries,
 paging/search, numbered bounded content preview and explicit editor action.

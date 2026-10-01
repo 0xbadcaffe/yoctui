@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+## M101 — Reload past build environments
+
+Two atomic tasks: SAVED-ENV-DAEMON-001 makes explicit environment daemon startup
+independent and diagnosable; SAVED-ENV-LOAD-001 adds reviewed History loading,
+background startup/attach/safe idle replacement and build-adapter rebinding.
+Verification remains focused; M67 live performance evidence remains blocked.
+
 ## M100 — RootFS file browser
 
 ROOTFS-FILES-BROWSER-001 is DONE in v0.1.253: inline Layers-style lazy Files

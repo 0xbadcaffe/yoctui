@@ -4523,6 +4523,16 @@ focus policy. Signatures consumes only its own keys while Workspace is focused.
 
 ## M69 offline authority and build archives
 
+Saved environment loading is an explicit transition outside archive authority.
+Model owns typed request/review/loading/result correlation; app maps keys; UI
+renders the existing modal review and named loading states. CLI validates saved
+profiles from disk, initializes them after confirmation, supervises daemon
+startup/safe idle replacement off the event loop, and rebinds build-dependent
+adapters after a fresh daemon handshake. An archived build never installs live
+capability or lifecycle state. Replacement rechecks instance, current generation
+and active jobs/PTYs at the daemon boundary. Child launch uses an independent
+Unix session, exact child-only initialized environment, and private diagnostics.
+
 The model owns connection provenance and read-only saved-build presentations.
 Protocol owns bounded archive wire records; CLI performs private atomic archive
 I/O and daemon capture, app maps records to model state, and UI renders typed

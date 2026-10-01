@@ -6159,6 +6159,29 @@ all screenshots explicitly use fixture data and do not assert live build evidenc
 
 ## M69 offline workbench and saved builds
 
+### Load a saved build environment
+
+History keeps Enter as read-only details and adds `o Load environment` in both
+the list and detail views. This prepares a read-only validation of the saved
+source/build paths and the existing oe-init-build-env script. A focus-trapped
+review shows the exact source, build directory and init script, the historical
+target/machine for context, and whether the action starts a daemon, attaches to
+the same environment or restarts an idle daemon in another environment.
+Enter/y confirms; Esc/n cancels without sourcing scripts or changing the daemon.
+Missing/cleaned paths, missing configuration and unavailable script remain
+explicit failures; the workflow does not recreate a deleted build directory.
+
+After confirmation, named background loading initializes the exact selected
+profile in the child process, starts an independent daemon or attaches, and
+loads fresh daemon workspace/compatibility authority. It does not replay an
+archived job, copy historical tasks/logs into the current build, change MACHINE
+or configuration, or automatically begin a build. Active jobs or live PTYs
+prevent replacing a daemon, including work that starts after the review. The
+client updates build-bound adapters and reconnect state to the loaded environment.
+Failures remain visible with retry. Starting a daemon retains a private default
+daemon.log and detaches its session from the invoking terminal; arbitrary
+foreground startup still intentionally belongs to its caller.
+
 All screens remain navigable without an environment or daemon. A persistent
 workspace notice distinguishes unconfigured, disconnected, stale and current
 connections; it gives Configure/Connect guidance and the last observed timestamp.

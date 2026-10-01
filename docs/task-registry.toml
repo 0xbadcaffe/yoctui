@@ -10163,3 +10163,25 @@ required = true
 depends_on = ["QEMU-LIVE-LAUNCH-001"]
 verify = ["cargo test -p yoctui-bitbake rootfs_browser", "cargo test -p yoctui-model rootfs_browser", "cargo test -p yoctui-model layer_tree", "cargo test -p yoctui-app rootfs_browser", "cargo test -p yoctui-ui rootfs_browser", "cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks", "cargo test -p yoctui --bin yoctui rootfs_browser", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
 notes = "DONE in v0.1.253. Files opens the shared lazy tree inline with directory expansion/collapse, hidden entries, paging/search, numbered content preview, explicit editor, ls-style permissions/octalmode, host owner/group names and numeric IDs, size and non-followed link targets. RootFS-only lstat acquisition validates containment, bounds account reads and refuses special/symlink previews. Search updates/clears preview without stale content. Focused adapter/model/app/UI/CLI checks, Layers navigation and binary preview regression checks, RootFS chart/list and missing-root authority checks, formatting, strict affected-crate Clippy, UI contract, version policy, roadmap and optimized build pass. Full suite deferred per user. Optional check-docs hits the unchanged committed M22 editor raster's unsupported DIM style; no unrelated fixture/tool was altered. M67 live source-bound performance evidence remains externally blocked. Push and final source-bound binary rebuild complete delivery."
+
+[[task]]
+id = "SAVED-ENV-DAEMON-001"
+milestone = "M101"
+title = "Honor exact profiles in independent diagnosable daemon startup"
+status = "IN_PROGRESS"
+priority = 3190
+required = true
+depends_on = ["ROOTFS-FILES-BROWSER-001"]
+verify = ["cargo test -p yoctui --bin yoctui daemon_start", "cargo test -p yoctui --bin yoctui daemon_build_directory", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Reusable quiet exact-profile startup, independent session and private default log; no daemon stop. Full suite deferred."
+
+[[task]]
+id = "SAVED-ENV-LOAD-001"
+milestone = "M101"
+title = "Load a reviewed saved environment into the live daemon workbench"
+status = "NOT_STARTED"
+priority = 3191
+required = true
+depends_on = ["SAVED-ENV-DAEMON-001"]
+verify = ["cargo test -p yoctui-model saved_environment", "cargo test -p yoctui-app saved_environment", "cargo test -p yoctui-ui saved_environment", "cargo test -p yoctui --bin yoctui saved_environment", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: load saved Romulus paths, attach fresh authority and keep the daemon alive after closing the initiating client"]
+notes = "Relevant files: typed saved-environment state/reducer, history input/review/rendering, CLI background lifecycle worker, daemon shutdown guard and build-bound adapter rebinding. Done requires normal/error/stale/modal/active-work coverage and source-bound pushed release. Never replay archived jobs or stop active work."
