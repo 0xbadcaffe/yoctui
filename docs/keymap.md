@@ -86,6 +86,11 @@ from the context action menu (`a`).
 
 ## Terminal prefix
 
+Kernel `3`/`b` opens Debugging. The serial KGDB form reuses Tab/Shift+Tab,
+arrows, Ctrl+U, Enter review and Esc cancel. Readiness is literal lowercase
+`yes`, not an uppercase shortcut. PageUp/PageDown scroll config/GDB review;
+the final Enter starts the shown embedded/detached client.
+
 Daemon-owned Terminal Sessions reserve `Ctrl+B` as a one-second prefix:
 
 | Sequence | Result |

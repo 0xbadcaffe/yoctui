@@ -17,10 +17,11 @@ pub enum KernelDebugTool {
     Lockdep,
     SysrqKdump,
     QemuGdb,
+    KgdbSerial,
 }
 
 impl KernelDebugTool {
-    pub const ALL: [Self; 17] = [
+    pub const ALL: [Self; 18] = [
         Self::GdbRemote,
         Self::GdbCore,
         Self::Strace,
@@ -38,6 +39,7 @@ impl KernelDebugTool {
         Self::Lockdep,
         Self::SysrqKdump,
         Self::QemuGdb,
+        Self::KgdbSerial,
     ];
 
     pub const fn label(self) -> &'static str {
@@ -59,12 +61,13 @@ impl KernelDebugTool {
             Self::Lockdep => "lockdep / hung tasks",
             Self::SysrqKdump => "SysRq / kdump setup",
             Self::QemuGdb => "QEMU → GDB · managed boot",
+            Self::KgdbSerial => "KGDB → GDB · serial board",
         }
     }
 
     pub const fn program(self) -> Option<&'static str> {
         match self {
-            Self::GdbRemote | Self::GdbCore => Some("gdb"),
+            Self::GdbRemote | Self::GdbCore | Self::KgdbSerial => Some("gdb"),
             Self::Strace => Some("strace"),
             Self::Perf => Some("perf"),
             Self::TraceCmd => Some("trace-cmd"),
@@ -94,6 +97,9 @@ impl KernelDebugTool {
 
     pub const fn guide(self) -> &'static str {
         match self {
+            Self::KgdbSerial => {
+                "HOST GDB client for an already halted PHYSICAL BOARD. Supply exact running-kernel .config and matching uncompressed vmlinux with DWARF; architecture-capable GDB and exclusive serial access are required. CONFIG_KGDB, CONFIG_KGDB_SERIAL_CONSOLE and CONFIG_DEBUG_INFO must be y for this built-in transport workflow. Select the real host /dev/tty device (not a symlink) and the target UART name separately. Close other console clients. Set readiness to yes ONLY when kgdboc is configured and the target is stopped. Host files cannot prove target readiness or matching build. No config writes, rebuild/deploy/reset, serial break or SysRq is automatic. kgdboc cannot reliably interrupt a running board with GDB Ctrl+C; after continue, re-entry may need manually approved SysRq-G. Use bt, break, continue and deliberate detach; killing the host GDB is not a promise to resume the board. CONFIG_KGDB_KDB is optional for manual KDB; frame pointers aid backtraces, strict RWX may require hardware breakpoints."
+            }
             Self::QemuGdb => {
                 "Managed Linux host guest, not the physical target. Select exact .qemuboot.conf, boot kernel, rootfs and matching uncompressed vmlinux with DWARF. Direct kernel boot only; flash-only configs are unsupported. Linux, runqemu/native QEMU and GDB 9+ with the guest architecture are required. Snapshot/nonetwork, nokaslr and paused CPUs; private Unix debug socket, separate bounded console log. In GDB: break start_kernel, continue, bt; Ctrl+C interrupts the guest and quit stops it. No rebuild, install or privilege changes. Matching kernel/symbols are your responsibility; ELF presence alone does not establish a match."
             }
@@ -134,7 +140,7 @@ impl KernelDebugTool {
                 "Offline kernel dump analysis with crash; crashrc startup files are disabled. Supply matching vmlinux/debug symbols and vmcore, architecture-compatible crash and a previously collected kdump. Useful commands: bt, log, ps, kmem. Collection/reboot is not automatic; vmcore may contain secrets."
             }
             Self::Kgdb => {
-                "GUIDE ONLY. Enable KGDB and debug information; optionally KDB and KGDB serial-console support. Use matching vmlinux on the debugger host. Configure the target transport/boot arguments intentionally; kgdbwait/breakpoints stop execution. QEMU can provide its own GDB stub. Yoctui remote GDB uses TCP; serial KGDB transport setup remains manual."
+                "GUIDE ONLY. Enable KGDB and debug information; optionally KDB and KGDB serial-console support. Use matching vmlinux on the debugger host. Configure the target transport/boot arguments intentionally; kgdbwait/breakpoints stop execution. QEMU can provide its own GDB stub. Use GDB remote for an approved TCP stub or KGDB → GDB serial board for an already configured/halted serial target. Transport setup and KDB console commands remain manual."
             }
             Self::Sanitizers => {
                 "GUIDE ONLY. KASAN detects memory-access bugs, KCSAN samples data races, UBSAN reports undefined behavior. Enable the architecture-supported options in menuconfig, rebuild/deploy deliberately and inspect reports via dmesg. Instrumentation changes memory/performance characteristics; no configuration is enabled automatically."
@@ -151,7 +157,9 @@ impl KernelDebugTool {
     pub const fn reference(self) -> &'static str {
         match self {
             Self::QemuGdb => "https://www.qemu.org/docs/master/system/gdb.html",
-            Self::GdbRemote | Self::Kgdb => "https://docs.kernel.org/process/debugging/kgdb.html",
+            Self::GdbRemote | Self::Kgdb | Self::KgdbSerial => {
+                "https://docs.kernel.org/process/debugging/kgdb.html"
+            }
             Self::GdbCore => "https://sourceware.org/gdb/current/onlinedocs/gdb/Files.html",
             Self::Strace => "https://strace.io/",
             Self::Perf => {

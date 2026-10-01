@@ -21,15 +21,15 @@ fn elf() -> Vec<u8> {
 }
 
 #[cfg(target_os = "linux")]
-struct Fixture {
+pub(crate) struct Fixture {
     root: tempfile::TempDir,
-    spec: KgdbSerialSpec,
+    pub(crate) spec: KgdbSerialSpec,
     master: File,
     _slave: File,
 }
 
 #[cfg(target_os = "linux")]
-fn fixture() -> Fixture {
+pub(crate) fn fixture() -> Fixture {
     use std::os::fd::FromRawFd;
     let root = tempfile::tempdir().unwrap();
     let (mut master, mut slave) = (-1, -1);

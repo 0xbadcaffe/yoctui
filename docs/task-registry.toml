@@ -17,12 +17,12 @@ notes = "DONE in v0.1.263. Closed bounded spec/fixed serial GDB argv, pure confi
 id = "KGDB-SERIAL-UI-001"
 milestone = "M108"
 title = "Review and launch KGDB serial clients in the Kernel workbench"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3271
 required = true
 depends_on = ["KGDB-SERIAL-PLAN-001"]
 verify = ["cargo test -p yoctui-model kernel_debug", "cargo test -p yoctui-app kernel_debug", "cargo test -p yoctui-ui kernel_debug", "cargo test -p yoctui --bin yoctui kernel_debug", "cargo test -p yoctui --bin yoctui kgdb_serial", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
-notes = "Definition: append serial technique, six explicit fields including manual readiness; typed config/template preview, correlated workers, stale/cancel safety and existing embedded/detached lifecycle. Files: model catalogue/draft/state/planner, CLI worker, app/UI/tests, README/keymap. Cover trapped/narrow forms, no launch before confirmation, QEMU/TCP-GDB regressions. Update all governance documents; bump version, commit/push and commit-bound release; full suite deferred."
+notes = "DONE in v0.1.264. Appended serial technique preserves prior indices; six trapped fields, explicit lowercase readiness, typed config/GDB preview, correlated read-only workers and existing embedded/detached routing. Focused Kernel model/app/UI/CLI checks (11/5/4/6), three pure serial model/four CLI helper cases, QEMU model/backend/workspace (2/8/3), saved environment seven, serial menuconfig fifteen, editor GitUI four, modifier three, RootFS tree/systemd/chart and global-search regressions pass. Formatting, strict affected all-target/all-feature Clippy, UI contract, version policy, roadmap and optimized release pass. Actual release helper rejects an unknown-command JSON spec before initialization. Installed GDB's default interrupt settings are inspected without connecting. No live board/full-suite or overall performance claim; final commit/push and commit-bound rebuild deliver this slice."
 
 [[task]]
 id = "KGDB-SERIAL-LIVE-001"

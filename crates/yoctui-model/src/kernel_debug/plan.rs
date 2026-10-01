@@ -5,6 +5,11 @@ pub(super) fn request(
     draft: &KernelDebugDraft,
     tools: &KernelDebugTools,
 ) -> Result<TerminalLaunchRequest, String> {
+    if draft.tool == KernelDebugTool::KgdbSerial {
+        return draft
+            .serial_spec(tools)?
+            .terminal_request(tools.program("yoctui")?);
+    }
     if draft.tool == KernelDebugTool::QemuGdb {
         return draft
             .qemu_spec(tools)?

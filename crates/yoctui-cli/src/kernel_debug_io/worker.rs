@@ -34,7 +34,16 @@ impl KernelDebugIo {
                 let result = match request.operation {
                     KernelDebugOperation::Inspect => discover().map(KernelDebugResult::Tools),
                     KernelDebugOperation::Prepare { draft, tools } => {
-                        prepare(&draft, &tools).map(KernelDebugResult::Prepared)
+                        if draft.tool == KernelDebugTool::KgdbSerial {
+                            prepare(&draft, &tools).and_then(|request| {
+                                let report =
+                                    crate::kgdb_serial::validate_files(&draft.serial_spec(&tools)?)
+                                        .map_err(|error| format!("{error:#}"))?;
+                                Ok(KernelDebugResult::PreparedSerial { request, report })
+                            })
+                        } else {
+                            prepare(&draft, &tools).map(KernelDebugResult::Prepared)
+                        }
                     }
                 };
                 Action::KernelDebug(KernelDebugAction::Finished {

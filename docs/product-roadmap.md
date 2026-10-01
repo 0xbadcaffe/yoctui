@@ -2,6 +2,20 @@
 
 ## M108 — Physical-board KGDB serial attachment
 
+KGDB-SERIAL-UI-001 is DONE in v0.1.264. Kernel model/app/UI/CLI checks
+(11/5/4/6), serial planner/helper cases (3/4), QEMU model/backend/workspace
+(2/8/3), saved environment seven, serial menuconfig fifteen, editor GitUI four,
+modifier three, RootFS tree/systemd/chart and global search regressions pass.
+Strict affected all-target Clippy, fmt, UI contract, version policy, roadmap
+and optimized release pass; the actual binary rejects unknown-command helper
+JSON before initialization. Native GDB default interrupt settings were inspected
+without a connection (Ctrl-C sequence, interrupt-on-connect off). No board port
+was opened, no target halt/resume, deployment/configuration write or live board
+compatibility is claimed. Final push/commit-bound rebuild deliver the attach
+slice. KGDB-SERIAL-LIVE-001 stays BLOCKED until an approved already configured/
+halted board, serial path/baud/UART and exact config/symbols are supplied.
+Read-only /dev discovery found no serial directory/ttyUSB/ttyACM device.
+
 KGDB-SERIAL-PLAN-001 is DONE in v0.1.263. Three pure planner/config tests and
 four CLI input/device/fake-process checks pass, with eight existing QEMU backend
 regressions and strict affected all-target Clippy, fmt/version/roadmap passing.

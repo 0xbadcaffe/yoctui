@@ -4746,3 +4746,17 @@ board. KGDB-SERIAL-PLAN-001 then KGDB-SERIAL-UI-001 are independent focused task
 Real board verification is separate and blocked on hardware/matching inputs;
 no build/deploy/reset or SysRq/configuration changes are authorized. Full suite
 remains deferred; the daemon, user builds/captures and M67 blocker are preserved.
+KGDB-SERIAL-UI-001 is DONE in v0.1.264. Kernel Debugging appends a serial
+board GDB client with six explicit fields, lowercase yes readiness, read-only
+prerequisite checks, typed config/template review and existing terminal chooser.
+Focus/stale/cancel and embedded/detached behavior pass Kernel model/app/UI/CLI
+checks (11/5/4/6), plus serial planner/helper (3/4). QEMU model/backend/workspace,
+saved environment, serial menuconfig, editor GitUI/modifier, RootFS tree/chart/
+systemd and global search regressions pass. Fmt, strict affected all-target
+Clippy, UI contract, version policy, roadmap and optimized release pass. Actual
+release helper rejects unknown-command JSON without initializing or connecting.
+Final push and commit-bound rebuild deliver this slice; installed PATH remains
+v0.1.250, so use target/release/yoctui explicitly. Daemon/builds/captures remain.
+KGDB-SERIAL-LIVE-001 is BLOCKED on an approved configured/halted physical board
+and exact matching inputs; no board compatibility, full-suite or overall M67
+performance certification is claimed. Later roadmap phases remain proposals.

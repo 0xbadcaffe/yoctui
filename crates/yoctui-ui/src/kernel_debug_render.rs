@@ -113,6 +113,8 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
                 } else {
                     if tool == KernelDebugTool::QemuGdb {
                         "MANAGED HOST GUEST · snapshot/nonetwork · Linux · not a physical target"
+                    } else if tool == KernelDebugTool::KgdbSerial {
+                        "HOST GDB → PHYSICAL BOARD · requires already halted/configured exclusive serial target"
                     } else {
                         "HOST client/offline analysis · files must match target architecture/build"
                     }
@@ -227,6 +229,43 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
                     .map(|(index, arg)| Line::from(format!("argv[{index}]: {arg:?}"))),
             );
         }
+    } else if let Some(preview) = &app.kernel_debug.serial_preview {
+        lines.push(Line::from(
+            "PHYSICAL BOARD: host file checks do NOT prove target readiness/build match.",
+        ));
+        lines.push(Line::from(
+            "No automatic halt/reset/resume or SysRq. Ctrl+C cannot reliably halt kgdboc.",
+        ));
+        lines.push(Line::from(
+            "After continue, re-entry may need manual SysRq-G; use deliberate detach.",
+        ));
+        lines.push(Line::from(format!(
+            "Config inspected: {}",
+            preview.spec.config.display()
+        )));
+        for name in yoctui_model::KGDB_CONFIG_OPTIONS {
+            let value = preview
+                .report
+                .options
+                .get(name)
+                .and_then(|value| value.as_deref())
+                .unwrap_or("absent/unknown");
+            lines.push(Line::from(format!("{name}={value}")));
+        }
+        lines.push(Line::from("KDB optional; frame pointers aid backtraces; strict RWX may need hardware breakpoints."));
+        lines.push(Line::from(preview.spec.boot_guidance()));
+        lines.push(Line::from(format!(
+            "GDB child: {}",
+            preview.spec.gdb.display()
+        )));
+        lines.extend(
+            preview
+                .spec
+                .gdb_arguments()
+                .iter()
+                .enumerate()
+                .map(|(index, argument)| Line::from(format!("argv[{index}]: {argument:?}"))),
+        );
     } else {
         lines.extend(
             dialog

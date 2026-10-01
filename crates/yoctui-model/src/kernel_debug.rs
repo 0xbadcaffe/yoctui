@@ -29,6 +29,11 @@ pub enum KernelDebugField {
     KernelImage,
     RootfsImage,
     Memory,
+    KernelConfig,
+    SerialDevice,
+    SerialBaud,
+    TargetUart,
+    Ready,
 }
 
 impl KernelDebugField {
@@ -49,6 +54,11 @@ impl KernelDebugField {
             Self::KernelImage => "Matching boot kernel image",
             Self::RootfsImage => "Root filesystem image",
             Self::Memory => "Guest memory (MiB)",
+            Self::KernelConfig => "Exact target kernel .config",
+            Self::SerialDevice => "Host serial character tty device",
+            Self::SerialBaud => "Serial baud (matches target)",
+            Self::TargetUart => "Target UART name (not host device)",
+            Self::Ready => "Target configured/halted; console closed? yes",
         }
     }
 }
@@ -66,6 +76,28 @@ pub struct KernelDebugDraft {
     pub endpoint: String,
     pub event: String,
     pub qemu: crate::QemuDebugDraft,
+    pub serial: KgdbSerialDraft,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KgdbSerialDraft {
+    pub config: String,
+    pub device: String,
+    pub baud: String,
+    pub target_uart: String,
+    pub ready: String,
+}
+
+impl Default for KgdbSerialDraft {
+    fn default() -> Self {
+        Self {
+            config: String::new(),
+            device: String::new(),
+            baud: "115200".into(),
+            target_uart: String::new(),
+            ready: String::new(),
+        }
+    }
 }
 
 impl KernelDebugDraft {
@@ -82,6 +114,7 @@ impl KernelDebugDraft {
             endpoint: "127.0.0.1:1234".into(),
             event: "syscalls:sys_enter_openat".into(),
             qemu: crate::QemuDebugDraft::default(),
+            serial: KgdbSerialDraft::default(),
         }
     }
 
@@ -95,6 +128,14 @@ impl KernelDebugDraft {
             }
         }
         match self.tool {
+            KernelDebugTool::KgdbSerial => fields.extend([
+                F::Symbols,
+                F::KernelConfig,
+                F::SerialDevice,
+                F::SerialBaud,
+                F::TargetUart,
+                F::Ready,
+            ]),
             KernelDebugTool::QemuGdb => fields.extend([
                 F::Runqemu,
                 F::BuildDirectory,
@@ -139,6 +180,11 @@ impl KernelDebugDraft {
             KernelDebugField::KernelImage => &self.qemu.kernel,
             KernelDebugField::RootfsImage => &self.qemu.rootfs,
             KernelDebugField::Memory => &self.qemu.memory,
+            KernelDebugField::KernelConfig => &self.serial.config,
+            KernelDebugField::SerialDevice => &self.serial.device,
+            KernelDebugField::SerialBaud => &self.serial.baud,
+            KernelDebugField::TargetUart => &self.serial.target_uart,
+            KernelDebugField::Ready => &self.serial.ready,
         }
     }
 
@@ -159,11 +205,35 @@ impl KernelDebugDraft {
             KernelDebugField::KernelImage => Some(&mut self.qemu.kernel),
             KernelDebugField::RootfsImage => Some(&mut self.qemu.rootfs),
             KernelDebugField::Memory => Some(&mut self.qemu.memory),
+            KernelDebugField::KernelConfig => Some(&mut self.serial.config),
+            KernelDebugField::SerialDevice => Some(&mut self.serial.device),
+            KernelDebugField::SerialBaud => Some(&mut self.serial.baud),
+            KernelDebugField::TargetUart => Some(&mut self.serial.target_uart),
+            KernelDebugField::Ready => Some(&mut self.serial.ready),
         }
     }
 
     pub fn plan(&self, tools: &KernelDebugTools) -> Result<TerminalLaunchRequest, String> {
         plan::request(self, tools)
+    }
+
+    pub fn serial_spec(&self, tools: &KernelDebugTools) -> Result<crate::KgdbSerialSpec, String> {
+        let spec = crate::KgdbSerialSpec {
+            gdb: tools.program("gdb")?,
+            cwd: tools.cwd.clone(),
+            symbols: self.symbols.clone().into(),
+            config: self.serial.config.clone().into(),
+            device: self.serial.device.clone().into(),
+            baud: self
+                .serial
+                .baud
+                .parse()
+                .map_err(|_| "Serial baud must be a supported whole number")?,
+            target_uart: self.serial.target_uart.clone(),
+            ready: self.serial.ready == "yes",
+        };
+        spec.validate()?;
+        Ok(spec)
     }
 
     pub fn qemu_spec(&self, tools: &KernelDebugTools) -> Result<crate::QemuDebugSpec, String> {

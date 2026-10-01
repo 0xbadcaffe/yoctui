@@ -33,6 +33,15 @@ No target state, halt/readiness or matching build is inferred from host files.
 Board interruption/resume/reset is native/manual, not helper cleanup. UI consumes
 typed observations/templates, never raw config, process text or helper JSON.
 
+`PreparedSerial` carries the reviewed request and `KgdbConfigReport`; reducer
+acceptance requires the pending draft/request identity, generation, unobscured
+dialog and explicit required config evidence. The typed serial preview clears
+when another technique opens and on saved-environment reset. No-follow,
+nonblocking regular-file descriptors prevent special-file/symlink substitutions
+from turning config reads into serial/FIFO I/O. Symbol validation reuses the
+existing bounded ELF-section scanner on an already-checked file descriptor;
+normal QEMU retains its original path-opening and validation behavior.
+
 ## M104 Managed QEMU → GDB boundary
 
 The managed runtime currently requires Linux. A close-on-exec lifetime pipe and

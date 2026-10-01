@@ -21,7 +21,14 @@ pub struct KernelDebugState {
     pub pending: Option<KernelDebugOperation>,
     pub prepared: Option<TerminalLaunchRequest>,
     pub qemu_preview: Option<crate::QemuDebugSpec>,
+    pub serial_preview: Option<KgdbSerialPreview>,
     pub preview_scroll: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KgdbSerialPreview {
+    pub spec: crate::KgdbSerialSpec,
+    pub report: crate::KgdbConfigReport,
 }
 
 impl KernelDebugState {
@@ -49,6 +56,10 @@ pub struct KernelDebugRequest {
 pub enum KernelDebugResult {
     Tools(KernelDebugTools),
     Prepared(TerminalLaunchRequest),
+    PreparedSerial {
+        request: TerminalLaunchRequest,
+        report: crate::KgdbConfigReport,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -89,15 +100,54 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
                 KernelDebugOperation::Prepare { draft, tools },
                 Ok(KernelDebugResult::Prepared(request)),
             ) => {
+                if draft.tool == KernelDebugTool::KgdbSerial {
+                    app.kernel_debug.error =
+                        Some("Serial preparation requires typed config observations; retry".into());
+                    return None;
+                }
                 if !matches!(app.active_dialog(), Some(Dialog::KernelDebug(dialog)) if dialog.draft == *draft)
                     || draft.plan(&tools).ok().as_ref() != Some(&request)
                 {
                     return None;
                 }
                 app.kernel_debug.prepared = Some(request.clone());
+                app.kernel_debug.serial_preview = None;
                 app.kernel_debug.qemu_preview = (draft.tool == KernelDebugTool::QemuGdb)
                     .then(|| draft.qemu_spec(&tools).ok())
                     .flatten();
+                app.kernel_debug.preview_scroll = 0;
+                crate::replace_dialog(
+                    app,
+                    Dialog::TerminalLaunch(TerminalLaunchDialog {
+                        request,
+                        destination: TerminalLaunchDestination::Embedded,
+                        output_must_not_exist: None,
+                    }),
+                );
+                crate::synchronize_focus(app);
+            }
+            (
+                KernelDebugOperation::Prepare { draft, tools },
+                Ok(KernelDebugResult::PreparedSerial { request, report }),
+            ) => {
+                if draft.tool != KernelDebugTool::KgdbSerial
+                    || !matches!(app.active_dialog(), Some(Dialog::KernelDebug(dialog)) if dialog.draft == *draft)
+                    || app.menu.is_open()
+                    || app.command_palette_open
+                    || app.onboarding.open
+                    || draft.plan(&tools).ok().as_ref() != Some(&request)
+                    || crate::KGDB_CONFIG_OPTIONS[..3].iter().any(|name| {
+                        report.options.get(*name).and_then(|v| v.as_deref()) != Some("y")
+                    })
+                {
+                    return None;
+                }
+                let Ok(spec) = draft.serial_spec(&tools) else {
+                    return None;
+                };
+                app.kernel_debug.prepared = Some(request.clone());
+                app.kernel_debug.qemu_preview = None;
+                app.kernel_debug.serial_preview = Some(KgdbSerialPreview { spec, report });
                 app.kernel_debug.preview_scroll = 0;
                 crate::replace_dialog(
                     app,
@@ -249,6 +299,9 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
             app.kernel_debug.selection = index.min(KernelDebugTool::ALL.len() - 1)
         }
         A::OpenSelected => {
+            app.kernel_debug.prepared = None;
+            app.kernel_debug.qemu_preview = None;
+            app.kernel_debug.serial_preview = None;
             let mut draft = KernelDebugDraft::new(app.kernel_debug.tool());
             if draft.tool == KernelDebugTool::QemuGdb {
                 draft.qemu.build_dir = app

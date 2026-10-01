@@ -375,6 +375,12 @@ exact argv before embedded/detached launch. Tools, target permissions and kernel
 support are prerequisites, not automatically installed or enabled. KGDB/KDB,
 sanitizers, lockdep and SysRq/kdump have clearly labeled setup guides.
 
+Kernel Debugging also offers `KGDB → GDB · serial board`: matching vmlinux and
+kernel `.config`, explicit host tty device/baud and target UART, and `yes` readiness
+for an already configured/halted board. Read-only checks and exact command review
+precede launch; no serial port opens during preparation. No automatic configuration,
+SysRq, flash or reset. [Serial KGDB usage and limitations](docs/platform-workbenches.md#serial-kgdb-for-an-already-configured-board).
+
 Open **Overview → Insights** and choose `1`–`8` for timeline, rebuild causes,
 sstate/downloads, image size, metadata provenance, package dependencies,
 supply-chain coverage or disk history. These views use loaded data; missing

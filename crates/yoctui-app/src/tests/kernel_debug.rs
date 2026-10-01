@@ -2,6 +2,36 @@ use super::*;
 use yoctui_model::{KernelDebugDialog, KernelDebugDraft, KernelDebugTool};
 
 #[test]
+fn kernel_debug_serial_readiness_uses_lowercase_text_and_combination_controls() {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    app.dialogs
+        .push_front(Dialog::KernelDebug(KernelDebugDialog {
+            draft: KernelDebugDraft::new(KernelDebugTool::KgdbSerial),
+            selection: 5,
+            guide_scroll: 0,
+            error: None,
+        }));
+    for (input, expected) in [
+        (Input::Char('y'), A::Insert("y".into())),
+        (Input::CtrlU, A::Clear),
+        (Input::Tab, A::Field(1)),
+        (Input::BackTab, A::Field(-1)),
+        (Input::Enter, A::Review),
+        (Input::Esc, A::Cancel),
+    ] {
+        assert!(kernel_debug_owns_input(&app, input));
+        assert_eq!(
+            kernel_debug_action(&app, input),
+            Some(Action::KernelDebug(expected))
+        );
+    }
+    assert_eq!(kernel_debug_action(&app, Input::F12), None);
+    assert!(kernel_debug_owns_input(&app, Input::F12));
+}
+
+#[test]
 fn kernel_debug_navigation_is_kernel_only_and_does_not_steal_menuconfig_input() {
     let mut app = App::new(32, 4096);
     app.onboarding.open = false;

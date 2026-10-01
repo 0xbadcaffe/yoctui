@@ -45,6 +45,10 @@ pub(crate) fn prepare(
         crate::qemu_debug::validate_files(&draft.qemu_spec(tools)?)
             .map_err(|error| error.to_string())?;
     }
+    if draft.tool == KernelDebugTool::KgdbSerial {
+        crate::kgdb_serial::validate_files(&draft.serial_spec(tools)?)
+            .map_err(|error| format!("{error:#}"))?;
+    }
     if !request.cwd.is_dir() {
         return Err("Host working directory disappeared; refresh tools".into());
     }

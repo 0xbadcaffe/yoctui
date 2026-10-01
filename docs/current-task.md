@@ -1,17 +1,28 @@
 # Current Task
 
-**ID:** KGDB-SERIAL-UI-001
-**Title:** Review and launch KGDB serial clients in the Kernel workbench
-**Status:** IN_PROGRESS
+**ID:** KGDB-SERIAL-LIVE-001
+**Title:** Verify KGDB attach backtrace resume and re-entry on a real board
+**Status:** BLOCKED
 
-KGDB-SERIAL-PLAN-001 is DONE in v0.1.263: three model/four CLI tests, eight
-QEMU backend regressions, formatting, strict Clippy, version policy and roadmap
-pass. Add the appended technique, six-field form, typed config/GDB template
-preview and correlated worker integration. Test trapped/narrow forms, cancellation,
-stale/covered errors and unchanged QEMU/TCP-GDB/terminal lifecycle. Run the
-registry's focused checks, bump version, build optimized release, commit/push and
-rebuild bound to the final commit. Do not run the full suite or alter the board.
-KGDB-SERIAL-LIVE-001 separately needs a compatible board and exact inputs.
+KGDB-SERIAL-PLAN-001 and KGDB-SERIAL-UI-001 are DONE in v0.1.263/v0.1.264.
+Closed non-opening prerequisites, launch-time revalidation/exec, six-field form,
+typed config/GDB preview and correlated worker integration pass focused checks.
+Kernel model/app/UI/CLI (11/5/4/6), serial model/helper (3/4), QEMU, saved
+environment, menuconfig, GitUI/modifier, RootFS and search regressions pass.
+Formatting, strict Clippy, UI contract, version policy, roadmap and optimized
+build pass; the actual release rejects unknown helper JSON without launching.
+Final commit/push and commit-bound rebuild deliver this attach slice.
+
+Live verification requires an approved already-configured/halted physical board,
+exact running-kernel .config/vmlinux and exclusive host serial device/baud plus
+target UART. No /dev/serial, ttyUSB or ttyACM target is present, and these inputs
+have not been supplied. Reproduction/verification: use the new Kernel serial
+form with those exact inputs, review and attach; verify breakpoint/backtrace,
+continue, separately approved manual re-entry, deliberate detach and reconnect.
+Fake-process/PTY checks are not physical-board evidence. Do not flash/reset,
+trigger SysRq, change configuration or guess matching symbols to bypass this.
+No other eligible implementation task remains. Sanitizers/lockdep and SysRq/
+kdump remain proposals requiring independently scoped tasks. Full suite deferred.
 
 Previous user fixes (completed):
 
@@ -25,7 +36,7 @@ RootFS, search, QEMU and saved-environment regressions pass. Formatting, strict
 Clippy, UI contract, version policy, roadmap and optimized build pass. Final
 push and commit-bound optimized rebuild deliver both tasks. No full suite ran.
 
-The remaining external blocker is:
+The separate M67 external blocker remains:
 
 The retained performance evidence is not bound to the current source tree: it
 has 143 previously documented source digest mismatches, including changes

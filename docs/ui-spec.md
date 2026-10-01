@@ -114,6 +114,15 @@ Killing/detaching the host terminal is not a promise to resume/reset the board.
 Cancelled, invalid, stale or covered preparation launches nothing. Board live
 verification stays separately BLOCKED until exact hardware/inputs are available.
 
+Serial config input is bounded to 512 KiB. Duplicate/invalid selected config
+values are rejected; absent optional settings read `absent/unknown`, not `n`.
+The three required settings must explicitly be `y`. Supported baud rates are
+1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800 and 921600.
+Readiness is not retained as a reusable target profile: opening the form starts
+empty required inputs again. Review scrolls evidence and native GDB templates,
+never the helper's serialized payload, while destination/cancel controls remain
+visible. Existing QEMU/TCP-GDB catalogue indices and guidance remain intact.
+
 ### M104 Managed QEMU → GDB
 
 Kernel Debugging adds a launchable `QEMU → GDB · managed boot` technique while

@@ -97,4 +97,4 @@ pub(crate) fn run(encoded: &str) -> Result<()> {
 
 #[cfg(test)]
 #[path = "tests/kgdb_serial.rs"]
-mod tests;
+pub(crate) mod tests;

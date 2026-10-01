@@ -100,3 +100,38 @@ execution; profiling/tracing changes timing and may expose sensitive data.
 Required options, matching architecture/symbols and permissions remain the
 operator's responsibility. Missing tools block launch with explicit guidance;
 unsupported/missing target features fail visibly rather than claiming success.
+
+## Serial KGDB for an already configured board
+
+Kernel → `3 Debugging` → `KGDB → GDB · serial board` connects host GDB to an
+already configured/halted board. Supply matching uncompressed `vmlinux` with
+DWARF, the exact kernel `.config`, the real host tty device (for example
+`/dev/ttyUSB0`, not a symlink alias), baud, and the board's UART name (for example
+`ttyAMA0`, not the host USB name). Set readiness to `yes` only after closing
+other serial-console clients and ensuring the target is already stopped.
+
+Preparation checks bounded regular config/symbol files and serial metadata
+without opening the port. This built-in transport slice requires
+`CONFIG_KGDB=y`, `CONFIG_KGDB_SERIAL_CONSOLE=y` and `CONFIG_DEBUG_INFO=y` plus
+ELF/DWARF symbols; it does not support a module-only kgdboc setup. Optional KDB,
+frame pointers, SysRq and strict-RWX observations appear in the scrollable
+review. Host observations cannot establish what kernel the board runs or its
+halt/transport state. Build matching, GDB architecture support, exclusive access
+and permissions remain the operator's responsibility.
+
+Review shows manual `kgdboc=UART,BAUD nokaslr` guidance and the fixed GDB argv,
+including disabled init/auto-load/debuginfod/native inferior, selected symbols,
+serial baud, timeout and exact device. `kgdbwait`, when deliberately used, must
+follow transport configuration. Nothing is written to Yocto config or boot
+arguments. The final confirmed helper revalidates inputs and execs native GDB
+in the existing embedded/detached terminal. Permission, busy-port, architecture
+and protocol failures remain native diagnostics; there is no automatic sudo.
+
+Use native `bt`, `break`, `continue`, `detach` and `quit`. kgdboc requires the
+target to be stopped before connecting and cannot reliably interrupt a running
+board through GDB Ctrl+C; re-entry after continue may need separately approved
+manual SysRq-G. Yoctui never sends SysRq or serial break, flashes, resets, reboots
+or changes debug settings automatically. Closing/killing the host client does
+not guarantee the board resumes. Real-board evidence is separate from fake
+process/PTY checks and remains unavailable without approved matching hardware.
+[Linux KGDB serial setup and limitations](https://docs.kernel.org/process/debugging/kgdb.html#connecting-with-gdb-to-a-serial-port).

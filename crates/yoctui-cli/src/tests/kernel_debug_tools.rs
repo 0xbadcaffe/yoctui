@@ -5,6 +5,80 @@ use std::{
 };
 static NEXT: AtomicU64 = AtomicU64::new(0);
 
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn kernel_debug_serial_worker_preserves_typed_report_and_cancel_error_boundaries() {
+    use yoctui_model::{Action, App, Dialog, KernelDebugAction as A, Screen};
+    for scenario in ["success", "cancel", "error", "covered"] {
+        let fixture = crate::kgdb_serial::tests::fixture();
+        let mut app = App::new(32, 4096);
+        app.onboarding.open = false;
+        app.screen = Screen::Kernel;
+        app.kernel_debug.tools = Some(KernelDebugTools {
+            cwd: fixture.spec.cwd.clone(),
+            programs: [
+                ("gdb".into(), fixture.spec.gdb.clone()),
+                ("yoctui".into(), std::env::current_exe().unwrap()),
+            ]
+            .into(),
+        });
+        app.kernel_debug.selection = 17;
+        yoctui_model::update(&mut app, Action::KernelDebug(A::OpenSelected));
+        let Some(Dialog::KernelDebug(d)) = app.active_dialog_mut() else {
+            panic!()
+        };
+        d.draft.symbols = fixture.spec.symbols.display().to_string();
+        d.draft.serial = yoctui_model::KgdbSerialDraft {
+            config: fixture.spec.config.display().to_string(),
+            device: fixture.spec.device.display().to_string(),
+            target_uart: fixture.spec.target_uart.clone(),
+            ready: "yes".into(),
+            ..Default::default()
+        };
+        if scenario == "error" {
+            fs::write(&fixture.spec.config, "CONFIG_KGDB=n\n").unwrap();
+        }
+        let effect = yoctui_model::update(&mut app, Action::KernelDebug(A::Review)).unwrap();
+        let mut worker = KernelDebugIo::default();
+        worker.submit(effect);
+        if scenario == "cancel" {
+            yoctui_model::update(&mut app, Action::KernelDebug(A::Cancel));
+        }
+        if scenario == "covered" {
+            app.command_palette_open = true;
+        }
+        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            while !worker.poll(&mut app).await {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(app.daemon.pty_sessions.is_empty());
+        if scenario == "success" {
+            assert!(matches!(
+                app.active_dialog(),
+                Some(Dialog::TerminalLaunch(_))
+            ));
+            assert_eq!(
+                app.kernel_debug.serial_preview.as_ref().unwrap().spec,
+                fixture.spec
+            );
+        } else {
+            assert!(!matches!(
+                app.active_dialog(),
+                Some(Dialog::TerminalLaunch(_))
+            ));
+            assert!(app.kernel_debug.serial_preview.is_none());
+        }
+        if scenario == "error" {
+            assert!(
+                matches!(app.active_dialog(), Some(Dialog::KernelDebug(d)) if d.error.as_deref().unwrap().contains("requires"))
+            );
+        }
+    }
+}
+
 #[tokio::test]
 async fn kernel_debug_worker_installs_typed_tool_presence_without_process_launch() {
     use yoctui_model::{Action, App, Effect, KernelDebugAction as A, Screen};

@@ -37,6 +37,13 @@ fn kernel_debug_all_launchable_tools_have_fixed_plans_and_guides_are_non_executa
         draft.pid = "123".into();
         draft.symbols = "/work/vmlinux symbols".into();
         draft.data = "/work/core".into();
+        draft.serial = KgdbSerialDraft {
+            config: "/work/.config".into(),
+            device: "/dev/ttyUSB0".into(),
+            target_uart: "ttyS0".into(),
+            ready: "yes".into(),
+            ..Default::default()
+        };
         draft.qemu = crate::QemuDebugDraft {
             build_dir: "/work".into(),
             qemuboot: "/work/image.qemuboot.conf".into(),
@@ -53,11 +60,17 @@ fn kernel_debug_all_launchable_tools_have_fixed_plans_and_guides_are_non_executa
         if let Ok(request) = result {
             assert!(request.program.is_absolute());
             assert_eq!(request.kind, TerminalCreationKind::Utility);
-            assert!(request.name.contains(if tool.runtime_target() {
-                "SSH TARGET"
-            } else {
-                "HOST, NOT TARGET"
-            }));
+            assert!(
+                request
+                    .name
+                    .contains(if tool == KernelDebugTool::KgdbSerial {
+                        "BOARD TARGET"
+                    } else if tool.runtime_target() {
+                        "SSH TARGET"
+                    } else {
+                        "HOST, NOT TARGET"
+                    })
+            );
         }
     }
 }
@@ -88,6 +101,166 @@ fn kernel_debug_gdb_disables_startup_scripts_and_remote_local_inferiors() {
     assert!(draft.plan(&tools()).is_err());
     draft.endpoint = "|sh".into();
     assert!(draft.plan(&tools()).is_err());
+}
+
+fn serial_app() -> App {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    app.kernel_debug.tools = Some(tools());
+    app.kernel_debug.selection = 17;
+    update(&mut app, Action::KernelDebug(A::OpenSelected));
+    let Some(Dialog::KernelDebug(d)) = app.active_dialog_mut() else {
+        panic!()
+    };
+    d.draft.symbols = "/work/vmlinux".into();
+    d.draft.serial = KgdbSerialDraft {
+        config: "/work/.config".into(),
+        device: "/dev/ttyUSB0".into(),
+        target_uart: "ttyAMA0".into(),
+        ready: "yes".into(),
+        ..Default::default()
+    };
+    app
+}
+
+fn serial_result(request: &crate::KernelDebugRequest) -> R {
+    let Op::Prepare { draft, tools } = &request.operation else {
+        panic!()
+    };
+    R::PreparedSerial {
+        request: draft.plan(tools).unwrap(),
+        report: crate::KgdbConfigReport::inspect(
+            "CONFIG_KGDB=y\nCONFIG_KGDB_SERIAL_CONSOLE=y\nCONFIG_DEBUG_INFO=y\n",
+        )
+        .unwrap(),
+    }
+}
+
+#[test]
+fn kernel_debug_serial_requires_six_explicit_fields_and_readiness_before_review() {
+    let mut app = serial_app();
+    let Some(Dialog::KernelDebug(d)) = app.active_dialog_mut() else {
+        panic!()
+    };
+    assert_eq!(
+        d.draft.fields(),
+        vec![
+            KernelDebugField::Symbols,
+            KernelDebugField::KernelConfig,
+            KernelDebugField::SerialDevice,
+            KernelDebugField::SerialBaud,
+            KernelDebugField::TargetUart,
+            KernelDebugField::Ready
+        ]
+    );
+    d.draft.serial.ready.clear();
+    assert!(update(&mut app, Action::KernelDebug(A::Review)).is_none());
+    assert!(
+        matches!(app.active_dialog(), Some(Dialog::KernelDebug(d)) if d.error.as_deref().unwrap().contains("readiness"))
+    );
+    assert!(app.kernel_debug.pending.is_none());
+    update(&mut app, Action::KernelDebug(A::Field(5)));
+    update(&mut app, Action::KernelDebug(A::Insert("yes".into())));
+    assert!(update(&mut app, Action::KernelDebug(A::Review)).is_some());
+    assert!(app.daemon.pty_sessions.is_empty());
+}
+
+#[test]
+fn kernel_debug_serial_typed_preview_launch_cancel_and_detached_use_existing_lifecycle() {
+    let mut app = serial_app();
+    let Some(Effect::KernelDebug(request)) = update(&mut app, Action::KernelDebug(A::Review))
+    else {
+        panic!()
+    };
+    update(
+        &mut app,
+        Action::KernelDebug(A::Finished {
+            generation: request.generation,
+            result: Ok(serial_result(&request)),
+        }),
+    );
+    let preview = app.kernel_debug.serial_preview.as_ref().unwrap();
+    assert_eq!(preview.spec.target_uart, "ttyAMA0");
+    assert_eq!(preview.report.options["CONFIG_KGDB"].as_deref(), Some("y"));
+    assert!(app.kernel_debug.qemu_preview.is_none());
+    assert!(matches!(
+        app.active_dialog(),
+        Some(Dialog::TerminalLaunch(_))
+    ));
+    assert_eq!(app.focus, FocusTarget::Dialog);
+    let expected = app.kernel_debug.prepared.clone().unwrap();
+    let mut cancelled = app.clone();
+    assert!(update(&mut cancelled, Action::CancelTerminalLaunch).is_none());
+    assert!(cancelled.active_dialog().is_none());
+    assert!(cancelled.daemon.pty_sessions.is_empty());
+    let mut detached = app.clone();
+    detached.detached_terminal = crate::DetachedTerminalAvailability::Available {
+        launcher: "test".into(),
+    };
+    update(
+        &mut detached,
+        Action::SelectTerminalLaunchDestination { delta: 1 },
+    );
+    assert!(
+        matches!(update(&mut detached, Action::ConfirmTerminalLaunch), Some(Effect::LaunchDetachedTerminal(request)) if request == expected)
+    );
+    assert!(
+        matches!(update(&mut app, Action::ConfirmTerminalLaunch), Some(Effect::Terminal(crate::TerminalEffect::Create { program, arguments, .. })) if program == expected.program && arguments == expected.arguments)
+    );
+    assert_eq!(app.screen, Screen::TerminalSessions);
+    assert_eq!(app.focus, FocusTarget::Workspace);
+}
+
+#[test]
+fn kernel_debug_serial_cancel_stale_covered_changed_and_wrong_results_cannot_launch() {
+    for failure in ["cancel", "covered", "changed", "wrong", "error", "stale"] {
+        let mut app = serial_app();
+        let Some(Effect::KernelDebug(request)) = update(&mut app, Action::KernelDebug(A::Review))
+        else {
+            panic!()
+        };
+        let mut result = Ok(serial_result(&request));
+        match failure {
+            "cancel" => {
+                update(&mut app, Action::KernelDebug(A::Cancel));
+            }
+            "covered" => app.command_palette_open = true,
+            "changed" => {
+                let Some(Dialog::KernelDebug(d)) = app.active_dialog_mut() else {
+                    panic!()
+                };
+                d.draft.serial.baud = "9600".into();
+            }
+            "wrong" => {
+                let R::PreparedSerial { request, .. } = result.unwrap() else {
+                    panic!()
+                };
+                result = Ok(R::Prepared(request));
+            }
+            "error" => result = Err("serial config unavailable".into()),
+            "stale" => app.kernel_debug.generation += 1,
+            _ => unreachable!(),
+        }
+        update(
+            &mut app,
+            Action::KernelDebug(A::Finished {
+                generation: request.generation,
+                result,
+            }),
+        );
+        assert!(app.kernel_debug.serial_preview.is_none(), "{failure}");
+        assert!(
+            !matches!(app.active_dialog(), Some(Dialog::TerminalLaunch(_))),
+            "{failure}"
+        );
+        assert!(app.daemon.pty_sessions.is_empty());
+        if failure == "error" {
+            assert!(
+                matches!(app.active_dialog(), Some(Dialog::KernelDebug(d)) if d.error.as_deref() == Some("serial config unavailable"))
+            );
+        }
+    }
 }
 
 #[test]
