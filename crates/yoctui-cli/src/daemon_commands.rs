@@ -1,5 +1,11 @@
 //! Daemon commands.
 use super::*;
+#[cfg(unix)]
+mod startup_process;
+#[cfg(unix)]
+pub(crate) use startup_process::DaemonStartupChild;
+#[cfg(unix)]
+use startup_process::{detach_daemon_session, open_daemon_log};
 
 #[cfg(unix)]
 pub(crate) async fn daemon_cli(
@@ -36,34 +42,6 @@ pub(crate) async fn daemon_cli(
 
 #[cfg(unix)]
 pub(crate) const DAEMON_STARTUP_TIMEOUT: Duration = Duration::from_secs(180);
-
-#[cfg(unix)]
-pub(crate) struct DaemonStartupChild {
-    pub(crate) child: std::process::Child,
-    pub(crate) ready: bool,
-}
-
-#[cfg(unix)]
-impl Drop for DaemonStartupChild {
-    fn drop(&mut self) {
-        if self.ready || self.child.try_wait().ok().flatten().is_some() {
-            return;
-        }
-        // Only the unreaped foreground child spawned by this startup attempt.
-        unsafe {
-            libc::kill(self.child.id() as i32, libc::SIGTERM);
-        }
-        let deadline = Instant::now() + Duration::from_secs(2);
-        while Instant::now() < deadline {
-            if self.child.try_wait().ok().flatten().is_some() {
-                return;
-            }
-            std::thread::sleep(Duration::from_millis(25));
-        }
-        let _ = self.child.kill();
-        let _ = self.child.wait();
-    }
-}
 
 #[cfg(unix)]
 pub(crate) async fn start_daemon(build_dir: Option<PathBuf>) -> Result<()> {
@@ -138,7 +116,7 @@ pub(crate) async fn start_daemon_with_environment(
                 log_path.display()
             );
         }
-        if let Ok(record) = daemon_is_available() {
+        if let Ok(record) = tokio::task::spawn_blocking(daemon_is_available).await? {
             anyhow::ensure!(
                 record.pid == child.child.id(),
                 "another daemon owns the startup socket"
@@ -160,39 +138,6 @@ pub(crate) async fn start_daemon_with_environment(
             );
         }
         tokio::time::sleep(Duration::from_millis(25)).await;
-    }
-}
-
-#[cfg(unix)]
-fn open_daemon_log(path: &Path) -> Result<fs::File> {
-    use std::os::unix::fs::OpenOptionsExt;
-    let log = fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .mode(0o600)
-        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
-        .open(path)
-        .with_context(|| format!("could not open daemon diagnostics {}", path.display()))?;
-    anyhow::ensure!(
-        log.metadata()?.is_file(),
-        "daemon diagnostics must be a regular file"
-    );
-    log.set_permissions(fs::Permissions::from_mode(0o600))?;
-    Ok(log)
-}
-
-#[cfg(unix)]
-fn detach_daemon_session(command: &mut ProcessCommand) {
-    // setsid is async-signal-safe; the child owns neither the parent's session
-    // nor its controlling terminal. Foreground mode intentionally remains attached.
-    unsafe {
-        command.pre_exec(|| {
-            if libc::setsid() == -1 {
-                Err(io::Error::last_os_error())
-            } else {
-                Ok(())
-            }
-        });
     }
 }
 

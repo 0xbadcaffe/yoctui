@@ -1,4 +1,5 @@
 use super::*;
+mod saved_environment;
 use yoctui_protocol::daemon::*;
 fn snapshot() -> DaemonSnapshot {
     DaemonSnapshot {

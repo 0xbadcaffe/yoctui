@@ -4532,6 +4532,9 @@ adapters after a fresh daemon handshake. An archived build never installs live
 capability or lifecycle state. Replacement rechecks instance, current generation
 and active jobs/PTYs at the daemon boundary. Child launch uses an independent
 Unix session, exact child-only initialized environment, and private diagnostics.
+The confirmed load holds environment-bound input, and waits for owned local
+work before switching adapters. Cross-environment installation clears path-bound
+inspection caches without changing preferences, history or generation counters.
 
 The model owns connection provenance and read-only saved-build presentations.
 Protocol owns bounded archive wire records; CLI performs private atomic archive

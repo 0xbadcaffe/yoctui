@@ -1,5 +1,21 @@
 fn render_project_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
-    if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
+    if let Some(Dialog::SavedEnvironmentReview(plan)) = app.active_dialog() {
+        let popup = bounded_dialog_rect(area, 100, 17);
+        clear_popup(frame, app, popup);
+        let mode = match plan.mode {
+            yoctui_model::SavedEnvironmentMode::Start => "Start independent daemon",
+            yoctui_model::SavedEnvironmentMode::Attach { .. } => "Attach to existing environment",
+            yoctui_model::SavedEnvironmentMode::Restart { .. } => {
+                "Restart idle daemon for this environment (other clients will reconnect)"
+            }
+        };
+        frame.render_widget(Paragraph::new(format!(
+            "{mode}\nSource: {}\nBuild: {}\nInit script: {}\nHistorical target: {}\nHistorical machine: {}\n\nCurrent configuration remains authoritative; MACHINE will not be changed.\nNo saved build, task or log is replayed. Active jobs/terminals block replacement.\n\n[y/Enter] Load environment  [n/Esc] Cancel",
+            plan.profile.source_dir.display(), plan.profile.build_dir.display(), plan.profile.init_script.display(),
+            plan.target, plan.machine.as_deref().unwrap_or("not recorded")
+        )).wrap(Wrap { trim: false }).block(dialog_block(app, "Load saved environment", DialogTone::Confirmation)), popup);
+        return true;
+    } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
         return true;
     } else if matches!(

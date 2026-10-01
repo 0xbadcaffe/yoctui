@@ -3,6 +3,9 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) fn handle_paste(&mut self, text: String) -> Result<()> {
         let runtime = self;
+        if runtime.app.saved_builds.environment.loading {
+            return Ok(());
+        }
         if matches!(
             runtime.app.active_dialog(),
             Some(Dialog::EnvironmentSetup(_))

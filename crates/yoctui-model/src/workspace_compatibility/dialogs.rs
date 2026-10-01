@@ -1,7 +1,8 @@
 pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequirement {
     use CapabilityId as Id;
     match dialog {
-        Dialog::BuildEnvironmentCloneEditor(_)
+        Dialog::SavedEnvironmentReview(_)
+        | Dialog::BuildEnvironmentCloneEditor(_)
         | Dialog::EnvironmentSetup(_)
         | Dialog::BuildEnvironmentCloneReview(_)
         | Dialog::BuildEnvironmentEditor(_)

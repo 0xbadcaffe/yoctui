@@ -2,10 +2,11 @@
 
 ## M101 — Reload past build environments
 
-Two atomic tasks: SAVED-ENV-DAEMON-001 makes explicit environment daemon startup
-independent and diagnosable; SAVED-ENV-LOAD-001 adds reviewed History loading,
-background startup/attach/safe idle replacement and build-adapter rebinding.
-Verification remains focused; M67 live performance evidence remains blocked.
+SAVED-ENV-DAEMON-001 and SAVED-ENV-LOAD-001 are DONE in v0.1.254: independent,
+diagnosable exact-profile daemon startup and reviewed History environment loading,
+background start/attach/guarded idle replacement, fresh authority and adapter
+rebinding. Focused verification and live Romulus start/attach/client-exit checks
+pass; the full suite remains deferred. M67 live performance evidence stays blocked.
 
 ## M100 — RootFS file browser
 

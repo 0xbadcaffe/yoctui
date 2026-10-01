@@ -2,6 +2,7 @@
 
 use super::*;
 mod rootfs_browser;
+mod saved_environment;
 use ratatui::{Terminal, backend::TestBackend};
 use std::{fs, path::PathBuf};
 use yoctui_model::{Action, BuildRequest, update};

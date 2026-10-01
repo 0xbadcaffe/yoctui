@@ -136,6 +136,99 @@ pub(crate) fn dialog_is_open(app: &App) -> bool {
     !app.dialogs.is_empty()
 }
 
+impl Dialog {
+    pub fn is_confirmation(&self) -> bool {
+        match self {
+            Self::SavedEnvironmentReview(_)
+            | Self::BuildEnvironmentCloneReview(_)
+            | Self::BuildCompletion
+            | Self::QemuLaunchConfirmation(_)
+            | Self::QemuCancellationConfirmation(_)
+            | Self::WicCreateConfirmation(_)
+            | Self::WicWritePhrase(_)
+            | Self::WicWriteConfirmation(_)
+            | Self::WicCancellationConfirmation { .. }
+            | Self::SdkBuildConfirmation(_)
+            | Self::SdkPublishConfirmation(_)
+            | Self::SdkNativeConfirmation(_)
+            | Self::SdkCancellationConfirmation(_)
+            | Self::TestLaunchConfirmation(_)
+            | Self::TestCancellationConfirmation(_)
+            | Self::TestComparisonConfirmation(_)
+            | Self::TestJunitExportConfirmation(_)
+            | Self::RecipeTaskConfirmation(_)
+            | Self::ConfigEditConfirmation(_)
+            | Self::DevtoolModifyConfirmation(_)
+            | Self::DevtoolResetConfirmation(_)
+            | Self::DevtoolUpdateConfirmation(_)
+            | Self::DevtoolPatchConfirmation(_)
+            | Self::DevtoolFinishConfirmation(_)
+            | Self::DevtoolDeployConfirmation(_)
+            | Self::DevtoolUndeployConfirmation(_)
+            | Self::DevtoolUpgradeConfirmation(_)
+            | Self::BbmaskConfirmation(_)
+            | Self::BuildCancellationConfirmation
+            | Self::ResolvedBuildRemovalConfirmation { .. }
+            | Self::QuitConfirmation => true,
+            Self::Security(dialog) => matches!(
+                dialog,
+                SecurityDialog::Operation(_) | SecurityDialog::Cancellation(_)
+            ),
+            Self::Qa(dialog) => !matches!(dialog, QaDialog::Import { .. }),
+            Self::Maintenance(dialog) => matches!(
+                dialog.as_ref(),
+                MaintenanceDialog::Confirm(_)
+                    | MaintenanceDialog::CleanupPhrase { .. }
+                    | MaintenanceDialog::ConfirmNetworkPush(_)
+                    | MaintenanceDialog::ConfirmCancellation(_)
+            ),
+            Self::BuildEnvironmentCloneEditor(_)
+            | Self::EnvironmentSetup(_)
+            | Self::BuildEnvironmentEditor(_)
+            | Self::ThemePicker { .. }
+            | Self::BuildOptions
+            | Self::BuildTarget { .. }
+            | Self::ImagePicker(_)
+            | Self::RecipePicker(_)
+            | Self::ImageConsole(_)
+            | Self::QemuLaunch(_)
+            | Self::WicCreate(_)
+            | Self::WicCreateTomlEditor { .. }
+            | Self::WicDevicePicker(_)
+            | Self::SdkPublish(_)
+            | Self::SdkPublishTomlEditor(_)
+            | Self::SdkNative(_)
+            | Self::SdkNativeTomlEditor(_)
+            | Self::TestLaunch(_)
+            | Self::TestLaunchTomlEditor { .. }
+            | Self::TestResultImport(_)
+            | Self::TestResultImportTomlEditor { .. }
+            | Self::TestComparison(_)
+            | Self::TestComparisonTomlEditor { .. }
+            | Self::TestJunitExport(_)
+            | Self::TestJunitTomlEditor { .. }
+            | Self::RecipeTaskPicker(_)
+            | Self::SignatureTaskPicker(_)
+            | Self::RecipeTaskLogPicker(_)
+            | Self::RecipePatchPicker(_)
+            | Self::ConfigSourcePicker(_)
+            | Self::ConfigScopePicker(_)
+            | Self::ConfigComparison(_)
+            | Self::ConfigEdit { .. }
+            | Self::DevtoolFinishPicker(_)
+            | Self::DevtoolPatchPicker(_)
+            | Self::DevtoolDeploy(_)
+            | Self::DevtoolUndeploy(_)
+            | Self::BbmaskEdit(_)
+            | Self::DtcCompile(_)
+            | Self::DtcDecompile(_)
+            | Self::YoctoUtility(_)
+            | Self::TerminalLaunch(_)
+            | Self::RecipeEditor(_) => false,
+        }
+    }
+}
+
 pub(crate) fn open_dialog(app: &mut App, dialog: Dialog) {
     if app.dialogs.is_empty() {
         app.dialogs.push_front(dialog);

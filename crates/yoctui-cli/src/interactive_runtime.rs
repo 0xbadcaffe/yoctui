@@ -42,6 +42,8 @@ mod primary_workspaces;
 mod recipe_inspection_operation;
 mod remaining_workspaces;
 mod runtime_loop;
+#[cfg(unix)]
+mod saved_environment;
 mod sdk_test_dialogs;
 mod shutdown;
 mod state;
@@ -379,6 +381,8 @@ pub(crate) async fn tui(
         clone_operation,
         source_git_poller,
         environment_operation,
+        #[cfg(unix)]
+        saved_environment_operation: None,
         sdk_artifact_adapter,
         sdk_tool_adapter,
         sdk_artifact_operation,

@@ -255,6 +255,16 @@ Use **Left/Right** for Summary, Logs, Tasks and Errors; **PgUp/PgDn** scrolls;
 saved records and live job history when connected. Saved history is read-only
 and separate from live task and log views.
 
+Press **o** on a saved build (list or details) to **Load environment**. Review
+the exact existing source/build paths, then **Enter/y** starts an independent
+daemon, attaches to the same environment, or safely replaces an idle daemon.
+**Esc/n** cancels. Missing directories/configuration are reported, not recreated;
+active jobs and terminals prevent an environment switch. Loading fetches fresh
+workspace/capability state and never replays the historical build or changes
+MACHINE. Select a target afterwards to start a new build. Startup diagnostics
+are private at `$XDG_STATE_HOME/yoctui/daemon.log` (default
+`~/.local/state/yoctui/daemon.log`); `YOCTUI_DAEMON_LOG` overrides the destination.
+
 The daemon saves builds without an attached client. It checkpoints active
 builds every 30 seconds and terminal transitions promptly in a background worker.
 Storage is private under `$XDG_STATE_HOME/yoctui/build-history/history.json`

@@ -5,14 +5,36 @@ pub(crate) fn saved_build_history(frame: &mut Frame, app: &App, area: Rect, now:
     let state = &app.saved_builds;
     let block = pane_block(
         app,
-        "Saved builds · offline archive · r refresh · l live jobs",
+        "Saved builds · o Load environment · r refresh · l live jobs",
         true,
     );
-    let inner = block.inner(area);
+    let mut inner = block.inner(area);
     frame.render_widget(block, area);
+    if state.environment.preparing || state.environment.loading {
+        frame.render_widget(
+            Paragraph::new(if state.environment.preparing {
+                "Preparing saved environment… validating existing paths and daemon"
+            } else {
+                "Loading saved environment… initializing and attaching fresh daemon authority"
+            })
+            .wrap(Wrap { trim: false }),
+            inner,
+        );
+        return;
+    }
     if state.loading {
         frame.render_widget(Paragraph::new("Loading saved builds…"), inner);
         return;
+    }
+    if let Some(error) = &state.environment.error {
+        let height = inner.height.min(2);
+        frame.render_widget(
+            Paragraph::new(format!("Load environment failed: {error} · o retry"))
+                .wrap(Wrap { trim: false }),
+            Rect::new(inner.x, inner.y, inner.width, height),
+        );
+        inner.y = inner.y.saturating_add(height);
+        inner.height = inner.height.saturating_sub(height);
     }
     let Some(record) = state.records.get(state.selection) else {
         frame.render_widget(Paragraph::new(state.notice.as_deref().unwrap_or("No saved builds. New daemon builds are saved automatically; older logs may be unavailable.")).wrap(Wrap { trim:true }),inner);

@@ -48,6 +48,8 @@ pub(super) struct InteractiveRuntime {
     pub(super) clone_operation: Option<clone_operation::CloneOperation>,
     pub(super) source_git_poller: source_git::SourceGitPoller,
     pub(super) environment_operation: Option<environment_operation::EnvironmentOperation>,
+    #[cfg(unix)]
+    pub(super) saved_environment_operation: Option<crate::saved_environment::Operation>,
 
     pub(super) sdk_artifact_adapter: Option<SdkArtifactAdapter>,
     pub(super) sdk_tool_adapter: Option<SdkToolAdapter>,

@@ -9,6 +9,25 @@ use crate::client_transport::DaemonClientTransport;
 use super::{ClientRuntimeError, InteractiveDaemonRuntime};
 
 impl InteractiveDaemonRuntime {
+    pub(crate) fn snapshot(&self) -> &yoctui_protocol::daemon::DaemonSnapshot {
+        self.replica
+            .snapshot
+            .as_ref()
+            .expect("attached runtime has a snapshot")
+    }
+
+    pub(crate) fn install_saved_environment(&mut self, app: &mut App, client_id: [u8; 16]) {
+        let snapshot = self.snapshot().clone();
+        self.local_build_dir = snapshot
+            .workspace
+            .as_ref()
+            .map(|workspace| PathBuf::from(&workspace.canonical_build));
+        if app.workspace.build_dir != self.local_build_dir {
+            yoctui_model::clear_saved_environment_views(app);
+        }
+        self.replica.replace_app(app, snapshot);
+        app.terminal.client_id = Some(client_id);
+    }
     pub fn connect(app: &mut App, timeout: Duration) -> Result<Self, ClientRuntimeError> {
         let local_build_dir = app.workspace.build_dir.clone();
         let client_id = random_client_id()?;

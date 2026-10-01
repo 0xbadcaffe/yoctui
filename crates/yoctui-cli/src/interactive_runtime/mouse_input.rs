@@ -3,6 +3,9 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) async fn handle_mouse(&mut self, mouse: crossterm::event::MouseEvent) -> Result<()> {
         let runtime = self;
+        if runtime.app.saved_builds.environment.loading {
+            return Ok(());
+        }
         let kind = mouse_kind_from_event(mouse.kind);
         let terminal_size = runtime.terminal.size()?;
         if let Some(kind) = kind

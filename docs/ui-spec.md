@@ -6178,7 +6178,10 @@ archived job, copy historical tasks/logs into the current build, change MACHINE
 or configuration, or automatically begin a build. Active jobs or live PTYs
 prevent replacing a daemon, including work that starts after the review. The
 client updates build-bound adapters and reconnect state to the loaded environment.
-Failures remain visible with retry. Starting a daemon retains a private default
+During the confirmed load, environment-bound input is held until completion;
+q/Ctrl+C retains exit confirmation. Unrelated dialogs are not replaced by an
+asynchronous review, and failures remain visible in History with `o` retry.
+Starting a daemon retains a private default
 daemon.log and detaches its session from the invoking terminal; arbitrary
 foreground startup still intentionally belongs to its caller.
 

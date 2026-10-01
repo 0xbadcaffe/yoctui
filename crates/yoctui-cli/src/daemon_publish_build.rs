@@ -8,6 +8,7 @@ pub(crate) fn publish_startup_metadata_log(
     failed: bool,
 ) -> Result<()> {
     use yoctui_protocol::daemon::{DaemonEvent, LogRecord, LogSeverity};
+    eprintln!("{} daemon-metadata: {message}", unix_ms());
     journal.publish(DaemonEvent::Log(LogRecord {
         source: "daemon-metadata".into(),
         severity: if failed {

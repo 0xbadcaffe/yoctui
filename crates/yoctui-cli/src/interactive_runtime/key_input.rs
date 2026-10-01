@@ -25,6 +25,16 @@ impl InteractiveRuntime {
         let Some(mut input) = input_from_key(k) else {
             return Ok(true);
         };
+        #[cfg(unix)]
+        if runtime.app.saved_builds.environment.loading
+            || matches!(
+                runtime.app.active_dialog(),
+                Some(Dialog::SavedEnvironmentReview(_))
+            )
+        {
+            runtime.handle_saved_environment_input(input);
+            return Ok(true);
+        }
         if input == Input::Esc
             && runtime.app.screen == Screen::BuildEnvironment
             && runtime.app.active_dialog().is_none()
@@ -241,7 +251,9 @@ impl InteractiveRuntime {
             return Ok(true);
         }
         if let Some(action) = yoctui_app::saved_build_workspace_action(&runtime.app, input) {
-            let _ = compatibility_workspace_action(&mut runtime.app, action);
+            let effect = compatibility_workspace_action(&mut runtime.app, action);
+            #[cfg(unix)]
+            runtime.submit_saved_environment_effect(effect);
             return Ok(true);
         }
         if let Some(action) = notification_popup_action(&runtime.app, input) {

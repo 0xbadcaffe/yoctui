@@ -4,6 +4,13 @@ use super::*;
 use std::ffi::OsStr;
 
 const HANDOFF_ENV: &str = "YOCTUI_GRAPHICS_TERMINAL_HANDOFF";
+pub(crate) fn uses_interactive_terminal(cli: &Cli) -> bool {
+    !cli.headless
+        && matches!(
+            cli.command,
+            None | Some(Command::Attach | Command::Build { .. })
+        )
+}
 const XTERM_ARGUMENTS: [&str; 9] = [
     "-ti",
     "vt340",

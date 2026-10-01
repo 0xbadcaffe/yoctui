@@ -3,6 +3,8 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) async fn poll_runtime(&mut self) -> Result<bool> {
         let runtime = self;
+        #[cfg(unix)]
+        runtime.poll_saved_environment().await;
         let (internal_records, ingress_dropped) = runtime.internal_tracing_capture.drain(256);
         runtime.render_scheduler.invalidate_if(
             runtime.environment_browser_io.poll(&mut runtime.app).await,
@@ -95,7 +97,13 @@ impl InteractiveRuntime {
             }
         }
         #[cfg(unix)]
-        if runtime.daemon_runtime.is_none() && Instant::now() >= runtime.next_daemon_reconnect {
+        if runtime.daemon_runtime.is_none()
+            && runtime
+                .saved_environment_operation
+                .as_ref()
+                .is_none_or(|operation| !operation.loading)
+            && Instant::now() >= runtime.next_daemon_reconnect
+        {
             runtime.next_daemon_reconnect =
                 Instant::now() + client_runtime::DAEMON_RECONNECT_INTERVAL;
             match client_runtime::InteractiveDaemonRuntime::connect(
@@ -104,6 +112,7 @@ impl InteractiveRuntime {
             ) {
                 Ok(daemon_client) => {
                     runtime.daemon_runtime = Some(daemon_client);
+                    runtime.daemon_attached = true;
                     runtime.render_scheduler.invalidate(RenderCause::State);
                 }
                 Err(error) => tracing::debug!(%error, "daemon reattach not yet available"),
@@ -172,6 +181,7 @@ impl InteractiveRuntime {
             runtime.render_scheduler.invalidate(RenderCause::State);
         }
         let local_operation_active = runtime.history_load.is_some()
+            || runtime.saved_environment_operation.is_some()
             || runtime.environment_operation.is_some()
             || runtime.clone_operation.is_some()
             || runtime.signature_operation.is_some()

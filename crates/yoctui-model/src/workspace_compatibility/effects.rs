@@ -10,6 +10,7 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         | Effect::GenerateProjectProfile { .. }
         | Effect::VerifyBuildEnvironment { .. }
         | Effect::CloneBuildEnvironment(_)
+        | Effect::SavedEnvironment(_)
         | Effect::OpenInEditor(_)
         | Effect::LoadErrorLog(_)
         | Effect::RemoveSavedBuild(_)

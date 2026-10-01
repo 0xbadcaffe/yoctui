@@ -54,6 +54,7 @@ pub enum SavedBuildView {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SavedBuildState {
+    pub environment: crate::SavedEnvironmentState,
     pub records: std::sync::Arc<Vec<SavedBuild>>,
     pub selection: usize,
     pub view: Option<SavedBuildView>,
@@ -65,6 +66,7 @@ pub struct SavedBuildState {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SavedBuildAction {
+    Environment(crate::SavedEnvironmentAction),
     Loaded {
         records: Vec<SavedBuild>,
         notice: Option<String>,
@@ -77,10 +79,14 @@ pub enum SavedBuildAction {
     Toggle,
     Refresh,
 }
-pub(crate) fn reduce_saved_build(app: &mut App, action: SavedBuildAction) {
+pub(crate) fn reduce_saved_build(app: &mut App, action: SavedBuildAction) -> Option<crate::Effect> {
+    if let SavedBuildAction::Environment(action) = action {
+        return crate::saved_environment::reduce_saved_environment(app, action);
+    }
     let offline = app.is_offline();
     let state = &mut app.saved_builds;
     match action {
+        SavedBuildAction::Environment(_) => unreachable!("environment actions routed above"),
         SavedBuildAction::Loaded { records, notice } => {
             let previous = state.records.get(state.selection).map(|r| r.id.clone());
             let initial = state.records.is_empty();
@@ -140,6 +146,7 @@ pub(crate) fn reduce_saved_build(app: &mut App, action: SavedBuildAction) {
             state.reload_requested = true;
         }
     }
+    None
 }
 
 #[cfg(test)]

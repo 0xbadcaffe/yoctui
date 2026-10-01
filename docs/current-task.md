@@ -1,28 +1,20 @@
 # Current Task
 
-**ID:** SAVED-ENV-LOAD-001
-**Title:** Load a reviewed saved environment into the live daemon workbench
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Dependency SAVED-ENV-DAEMON-001 is DONE. Relevant files: typed saved-environment
-state/reducer, history input/review/rendering, CLI background lifecycle worker,
-daemon shutdown guard and build-bound adapter rebinding. Implement the approved
-reviewed loading specification. No archived execution state becomes live and
-active jobs/PTYs must prevent replacement. Definition of done includes focused
-normal/error/stale/modal/active-work coverage, documentation, version bump,
-commit/push and a source-bound optimized release binary. Full suite deferred.
+The retained performance evidence is not bound to the current source tree: its
+manifest has 143 source digest mismatches, including changes predating M67.
+Supply a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto` compile
+capture using the documented release workload. Do not rewrite historical
+digests or substitute fake-process startup timings for live evidence.
 
 ```bash
-cargo test -p yoctui-model saved_environment
-cargo test -p yoctui-app saved_environment
-cargo test -p yoctui-ui saved_environment
-cargo test -p yoctui --bin yoctui saved_environment
-cargo fmt --all --check
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-./scripts/verify-roadmap.sh
-python3 scripts/check-version-bump.py
-cargo build --release -p yoctui --bin yoctui
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
 
-Manual: load saved Romulus paths, attach fresh authority and keep the daemon
-alive after closing the initiating client. After delivery restore M67 blocker.
+This external validation prerequisite is the only remaining required task.
+The user explicitly deferred the full test suite for the v0.1.254 saved-environment
+change; do not run the full completion suite without a subsequent instruction.

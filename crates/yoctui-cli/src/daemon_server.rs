@@ -145,6 +145,12 @@ pub(crate) async fn run_daemon_foreground(
         ),
     )?;
     write_runtime_record(&paths, &record)?;
+    eprintln!(
+        "{} Yoctui daemon ready: pid {} instance {}",
+        unix_ms(),
+        record.pid,
+        format_instance(instance)
+    );
     let record_guard = DaemonRuntimeGuard {
         paths: paths.clone(),
         instance,
@@ -478,5 +484,10 @@ pub(crate) async fn run_daemon_foreground(
     remove_runtime_record(&paths, services.instance)?;
     std::mem::forget(record_guard);
     drop(listener);
+    eprintln!(
+        "{} Yoctui daemon stopped gracefully: pid {}",
+        unix_ms(),
+        record.pid
+    );
     Ok(())
 }

@@ -52,8 +52,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     }
     match action {
         Action::SavedBuild(action) => {
-            crate::saved_builds::reduce_saved_build(app, action);
-            None
+            crate::saved_builds::reduce_saved_build(app, action)
         }
         Action::SetErrorWorkspaceView(..) | Action::SelectHistoricalError { .. }
         | Action::OpenSelectedErrorLog | Action::ErrorLogLoaded { .. }

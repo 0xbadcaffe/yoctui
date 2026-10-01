@@ -4,6 +4,7 @@ use yoctui_utils::unix_ms;
 mod build_archive;
 mod error_log;
 mod graphics_terminal_handoff;
+use graphics_terminal_handoff::uses_interactive_terminal;
 mod hardware_native_graphics;
 mod terminal_graphics;
 use error_log::*;
@@ -209,6 +210,8 @@ mod daemon_test;
 mod daemon_wic;
 
 mod environment_operation;
+#[cfg(unix)]
+mod saved_environment;
 
 mod environment_setup;
 
@@ -240,14 +243,6 @@ use global_search::{
 // bounded synchronous terminal/listener polls. More workers add idle scheduler
 // threads without improving those bounded waits; expensive filesystem and
 // process work is dispatched through `spawn_blocking` at its call sites.
-fn uses_interactive_terminal(cli: &Cli) -> bool {
-    !cli.headless
-        && matches!(
-            cli.command,
-            None | Some(Command::Attach | Command::Build { .. })
-        )
-}
-
 #[tokio::main(worker_threads = 2)]
 async fn main() -> Result<()> {
     install_panic_hook();

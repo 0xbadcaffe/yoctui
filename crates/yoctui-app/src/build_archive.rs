@@ -149,6 +149,33 @@ pub fn saved_build_workspace_action(
 ) -> Option<yoctui_model::Action> {
     use crate::Input;
     use yoctui_model::{Action, FocusTarget, SavedBuildAction as A, Screen};
+    if app.saved_builds.environment.loading {
+        return Some(
+            if matches!(
+                app.active_dialog(),
+                Some(yoctui_model::Dialog::QuitConfirmation)
+            ) {
+                crate::quit_confirmation_action(input).unwrap_or(Action::Focus(FocusTarget::Dialog))
+            } else if matches!(input, Input::CtrlC | Input::Char('q')) {
+                Action::Quit
+            } else {
+                Action::Notify(
+                    "Loading environment; please wait. q/Ctrl+C opens exit confirmation.".into(),
+                )
+            },
+        );
+    }
+    if matches!(
+        app.active_dialog(),
+        Some(yoctui_model::Dialog::SavedEnvironmentReview(_))
+    ) {
+        let action = match input {
+            Input::Enter | Input::Char('y') => yoctui_model::SavedEnvironmentAction::Confirm,
+            Input::Esc | Input::Char('n') => yoctui_model::SavedEnvironmentAction::Cancel,
+            _ => return Some(Action::Focus(FocusTarget::Dialog)),
+        };
+        return Some(Action::SavedBuild(A::Environment(action)));
+    }
     if app.screen != Screen::BuildHistory
         || app.focus != FocusTarget::Workspace
         || app.active_dialog().is_some()
@@ -156,15 +183,17 @@ pub fn saved_build_workspace_action(
         || app.menu.is_open()
         || app.onboarding.open
         || app.keymap_preferences_ui.open
-        || app
-            .notification
-            .as_deref()
-            .is_some_and(yoctui_model::notification_requires_acknowledgement)
+        || app.notification.as_deref().is_some_and(|message| {
+            yoctui_model::notification_requires_acknowledgement(message)
+                && !(app.saved_builds.environment.error.is_some()
+                    && message.starts_with("Load environment failed:"))
+        })
     {
         return None;
     }
     let browsing = app.is_offline() || app.saved_builds.browsing;
     let action = match input {
+        Input::Char('o') if browsing => A::Environment(yoctui_model::SavedEnvironmentAction::Begin),
         Input::Char('l') => A::Toggle,
         Input::Char('r') => A::Refresh,
         Input::Enter if browsing => A::Open,

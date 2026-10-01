@@ -316,6 +316,8 @@ mod offline;
 
 mod saved_builds;
 pub use saved_builds::*;
+mod saved_environment;
+pub use saved_environment::*;
 
 mod error_workspace;
 pub use error_workspace::*;

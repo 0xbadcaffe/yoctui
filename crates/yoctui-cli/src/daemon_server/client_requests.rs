@@ -228,6 +228,20 @@ pub(super) fn service(
                 Ok(ClientMessage::Command(request))
                     if matches!(request.command, DaemonCommand::PrepareShutdown) =>
                 {
+                    if request.expected_generation.is_some()
+                        && let Some((code, message)) = crate::saved_environment::replacement_denial(
+                            services.daemon_journal.snapshot(), request.expected_generation,
+                        )
+                    {
+                        client.connection.send(&ServerMessage::CommandResult(CommandResult {
+                            request_id: request.request_id,
+                            outcome: CommandOutcome::Rejected {
+                                code, message,
+                                current_generation: services.daemon_journal.snapshot().generation,
+                            },
+                        }))?;
+                        continue;
+                    }
                     let active_jobs = services.daemon_journal
                         .snapshot()
                         .jobs

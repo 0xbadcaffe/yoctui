@@ -1,12 +1,29 @@
-SAVED-ENV-DAEMON-001 is DONE: reusable quiet startup honors exact profiles over
-inherited BUILDDIR, detaches the daemon session and writes private regular-file
-diagnostics. Focused startup/profile/process tests, formatting and strict CLI
-Clippy pass. SAVED-ENV-LOAD-001 is now active for the user's
-saved-environment workflow. The prior daemon PID 1086776 is absent on the same
-boot, its socket/record are stale, no service is installed, and no daemon output
-or matching OOM/segfault record was retained. A crash is not established. The
-current History path is read-only and cannot start or load an environment.
-Full workspace tests remain deferred; focused startup/history checks are required.
+SAVED-ENV-DAEMON-001 and SAVED-ENV-LOAD-001 are DONE in v0.1.254. History `o`
+reviews exact existing source/build/init paths, then confirms background daemon
+start, attachment or guarded idle replacement. Archived jobs are never replayed.
+Fresh daemon authority, adapter rebinding and path-bound cache invalidation keep
+the selected environment isolated from the previous one. Instance/generation,
+active-job/PTY and local-worker guards prevent unsafe replacement. Loading traps
+work input but retains quit confirmation; owned workers cancel on client exit.
+Missing paths are not recreated, stale responses cannot replace unrelated
+dialogs, and failures remain visible for retry. Startup honors explicit profiles
+over inherited BUILDDIR, detaches the daemon session and retains private logs.
+
+The prior daemon PID 1086776 was absent on the same boot with stale socket/record;
+no service, retained output or matching OOM/segfault evidence established a crash.
+Live Romulus History loading started daemon PID 1729515, then attached fresh
+inventory without starting a build. It survived the initiating client's exit;
+a release client subsequently loaded the same environment successfully. Exact
+local.conf and bblayers.conf hashes remained unchanged. Initial inventory took
+over three minutes, so cancellable discovery now allows the existing ten-minute
+capability probe plus inventory rather than prematurely declaring failure.
+Focused model/app/UI/CLI tests, startup/profile tests, daemon-client regressions,
+RootFS chart/tree and QEMU routing regressions, formatting, strict CLI Clippy,
+version policy, roadmap and optimized build pass. Push and final source-bound
+release rebuild complete delivery. Full suite remains deferred per user. The
+optional global library-layout check reports 15 existing violations in untouched
+files; edited production modules stay within 500 lines. M67 live evidence remains
+the sole externally blocked required task.
 
 ROOTFS-FILES-BROWSER-001 is DONE in v0.1.253. The Files tab now opens the
 Layers-style lazy tree inline, with expandable directories, hidden entries,
