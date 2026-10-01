@@ -10,9 +10,7 @@ mod terminal_graphics;
 use error_log::*;
 
 use anyhow::{Context, Result};
-
 use clap::{Parser, Subcommand, ValueEnum};
-
 use crossterm::{
     cursor::{Hide, Show},
     event::{
@@ -428,6 +426,8 @@ mod path_validation;
 use path_validation::*;
 mod qa_effects;
 use qa_effects::*;
+#[cfg(test)]
+mod kernel_debug_io;
 mod terminal_launcher;
 use terminal_launcher::*;
 mod maintenance_effects;

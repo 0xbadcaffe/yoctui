@@ -1,6 +1,9 @@
-KERNEL-DEBUG-TOOLS-001 is IN_PROGRESS for the user's Kernel debugging request;
-KERNEL-DEBUG-UI-001 follows with navigation/forms, terminal integration and a
-versioned release. Focused checks only; M67 remains externally blocked.
+KERNEL-DEBUG-TOOLS-001 is DONE: 16 techniques (12 tools/four guides), bounded
+fixed command plans, explicit host/SSH scope, safe quoting, safe GDB startup and
+non-mutating local executable/file preparation. Four planner and two CLI tests,
+formatting, strict CLI Clippy and roadmap pass. KERNEL-DEBUG-UI-001 is IN_PROGRESS
+with runtime correlation, navigation/forms, terminal integration and a versioned
+release. Focused checks only; M67 remains externally blocked.
 
 HARDWARE-PROJECT-STORE-001 and HARDWARE-PROJECT-UI-001 are DONE in v0.1.255.
 Hardware `p` opens persistent named projects, `n` creates real project/subfolders,
