@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+## M102 — Persistent Hardware projects and bring-up
+
+The user request is split into HARDWARE-PROJECT-STORE-001 (bounded real project
+folders, manifests, import and persistence) and HARDWARE-PROJECT-UI-001 (typed
+project navigation/forms, restricted viewing and manual bring-up progress).
+Focused verification only; M67 live performance evidence remains blocked.
+
 ## M101 — Reload past build environments
 
 SAVED-ENV-DAEMON-001 and SAVED-ENV-LOAD-001 are DONE in v0.1.254: independent,

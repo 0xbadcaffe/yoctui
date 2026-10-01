@@ -4638,6 +4638,20 @@ initialized Devtool executable, build directory, and argv as separate values;
 the daemon remains the sole process owner and UI widgets never parse Devtool
 output.
 
+## M102 Persistent Hardware project boundary
+
+Model owns project records, bounded directory rows, manual stage progress,
+forms, selection and generation-correlated requests/results. App maps project,
+folder, import and progress keys. UI only renders this typed state and reuses
+the embedded Hardware viewer. CLI owns an independent background filesystem
+worker and project store under the user data directory. Project manifests are
+private, bounded, atomically replaced; directory navigation validates containment
+and refuses symlinks. Import uses exclusive destination creation and bounded
+copying, never shell commands. Any file may be stored, but model and backend
+both enforce the restricted project preview kinds. Existing library/session and
+daemon protocol semantics are unchanged. Manual progress never derives from
+BitBake state. No project deletion or overwrite operation is introduced.
+
 ## M81 Hardware library and document rendering
 
 `yoctui-model` owns the closed Hardware category and document-kind enums, the

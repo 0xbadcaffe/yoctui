@@ -1,20 +1,22 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** HARDWARE-PROJECT-STORE-001
+**Title:** Persist real Hardware project folders, files and manual stage values
+**Status:** IN_PROGRESS
 
-The retained performance evidence is not bound to the current source tree: its
-manifest has 143 source digest mismatches, including changes predating M67.
-Supply a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto` compile
-capture using the documented release workload. Do not rewrite historical
-digests or substitute fake-process startup timings for live evidence.
+Dependency SAVED-ENV-LOAD-001 is DONE. Relevant files: new model project types,
+CLI filesystem project store and focused tests. Definition of done: private
+bounded manifests, named project/subfolders, contained navigation, arbitrary
+regular-file import without overwrite, restart-safe stage persistence and
+normal/error/containment tests. Update architecture, UI specification, registry
+and implementation status. Follow immediately with HARDWARE-PROJECT-UI-001.
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model hardware_project
+cargo test -p yoctui --bin yoctui hardware_project
+cargo fmt --all --check
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+./scripts/verify-roadmap.sh
 ```
 
-This external validation prerequisite is the only remaining required task.
-The user explicitly deferred the full test suite for the v0.1.254 saved-environment
-change; do not run the full completion suite without a subsequent instruction.
+Full suite remains deferred per user. M67 stays externally blocked.

@@ -1,3 +1,8 @@
+HARDWARE-PROJECT-STORE-001 is IN_PROGRESS for the user's persistent Hardware
+project request, followed by HARDWARE-PROJECT-UI-001. Existing library/viewer
+behavior is retained. Verification stays focused; full suite remains deferred.
+M67 live evidence remains externally blocked and is paused for this request.
+
 SAVED-ENV-DAEMON-001 and SAVED-ENV-LOAD-001 are DONE in v0.1.254. History `o`
 reviews exact existing source/build/init paths, then confirms background daemon
 start, attachment or guarded idle replacement. Archived jobs are never replayed.

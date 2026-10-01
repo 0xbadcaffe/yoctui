@@ -10185,3 +10185,25 @@ required = true
 depends_on = ["SAVED-ENV-DAEMON-001"]
 verify = ["cargo test -p yoctui-model saved_environment", "cargo test -p yoctui-app saved_environment", "cargo test -p yoctui-ui saved_environment", "cargo test -p yoctui --bin yoctui saved_environment", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: load saved Romulus paths, attach fresh authority and keep the daemon alive after closing the initiating client"]
 notes = "DONE in v0.1.254. Typed reviewed History loading starts/attaches or safely replaces an idle exact-instance daemon, installs fresh authority, clears path-bound caches and rebinds adapters without replaying archived jobs. Generation/instance, active job/PTY and local-worker guards prevent unsafe replacement. Cancellation, stale/modal/error handling, missing paths and exact configuration retention are covered. Focused model/app/UI/CLI tests, startup/profile and client-runtime checks, RootFS chart/tree and QEMU regressions, formatting, strict CLI Clippy, version policy, roadmap and optimized build pass. Live Romulus loading started an independent daemon, survived initiating-client exit and attached from a release client without starting work or changing configuration hashes. Full suite deferred per user. Optional global layout check reports 15 existing violations in untouched files; edited production modules respect 500 lines. Push and final source-bound release rebuild complete delivery; M67 evidence remains blocked."
+
+[[task]]
+id = "HARDWARE-PROJECT-STORE-001"
+milestone = "M102"
+title = "Persist real Hardware project folders, files and manual stage values"
+status = "IN_PROGRESS"
+priority = 3200
+required = true
+depends_on = ["SAVED-ENV-LOAD-001"]
+verify = ["cargo test -p yoctui-model hardware_project", "cargo test -p yoctui --bin yoctui hardware_project", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Model project types and CLI filesystem store: real named folders, bounded contained browsing, arbitrary regular-file import without overwrites, private atomic manifests and manually reported stage values. Done requires normal/failure/containment/restart coverage and documentation."
+
+[[task]]
+id = "HARDWARE-PROJECT-UI-001"
+milestone = "M102"
+title = "Expose Hardware projects, restricted previews and manual bring-up controls"
+status = "NOT_STARTED"
+priority = 3201
+required = true
+depends_on = ["HARDWARE-PROJECT-STORE-001"]
+verify = ["cargo test -p yoctui-model hardware_project", "cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: create project/subfolders, import arbitrary and viewable files, set progress, restart and reload"]
+notes = "Typed Hardware project navigation, trapped create/import/progress forms and generation-correlated background filesystem worker. Embedded previews restricted to TXT/PDF/schematics; proprietary formats expose converter/PDF limitations. Preserve legacy library, add focused regression tests, bump version, commit/push and source-bound optimized binary."

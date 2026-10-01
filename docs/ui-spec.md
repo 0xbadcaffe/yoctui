@@ -84,6 +84,42 @@ Yoctui is not a collection of unrelated screens. It is a persistent workbench wi
 
 BitBake remains authoritative. Yoctui presents, controls, and organizes BitBake state.
 
+### M102 Persistent Hardware projects
+
+Hardware retains its existing document library. `p` switches to Projects without
+requiring a daemon/build environment. The project list supports arrows/paging,
+`n` New project (a trapped name form), Enter open and `r` refresh. Project names
+become real folders under `$XDG_DATA_HOME/yoctui/hardware-projects` (default
+`~/.local/share/yoctui/hardware-projects`). Names cannot escape that root or
+overwrite an existing project. Projects and their contents survive restart.
+
+Inside a project, Enter opens a directory or views a supported file; Backspace
+goes to the parent, then the project list. `n` creates a named subfolder in the
+current directory. `a` opens a trapped import browser listing all regular files
+and directories; Enter navigates/copies the selected file into the current
+project folder, Esc cancels. Files of any type may be stored, but project viewing
+is restricted to TXT, PDF, KiCad, Altium and Xpedition schematics. Other files
+remain listed with Stored only, never launched or executed. Imports are bounded
+to 256 MiB and never overwrite existing names. Symlinks/special files and paths
+outside the selected project are refused; internal manifest files are hidden.
+Folder rows retain selection-centered scrolling and exact file sizes.
+
+`s` opens a trapped manual bring-up form for Bootloader, Kernel, Device tree,
+Drivers, RootFS and Packages. Up/Down/Tab selects a stage, Left/Right changes it
+by five percentage points, digits enter an exact 0–100 value, Space toggles
+0/100. Enter saves atomically and Esc cancels. Overall progress is the integer
+average of the six values and is displayed as an exact percentage and continuous
+bar with stage values. This is explicitly user-reported progress, independent
+of BitBake completion, and saved in the project's private manifest. Invalid
+names, permissions, collisions and persistence failures stay visible; failed
+saves never claim completion. Narrow terminals degrade without panic.
+
+TXT previews are bounded/searchable text. PDF and KiCad viewing reuse the
+existing embedded viewer. Altium/Xpedition source files are preserved; a sibling
+same-stem PDF export supplies graphical viewing where a native converter is
+unavailable, with an explicit limitation instead of pretending to render a
+binary schematic. Readable schematic source may be shown with that limitation.
+
 ### M81 Hardware library and embedded document viewer
 
 `Hardware` is a first-class CONTENT destination. It is reachable from the
