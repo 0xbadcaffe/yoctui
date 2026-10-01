@@ -210,6 +210,9 @@ pub fn clear_saved_environment_views(app: &mut App) {
     app.wic_output_selection = None;
     app.wic_device_selection = None;
     app.kernel = fresh.kernel;
+    let debug_generation = app.kernel_debug.generation.saturating_add(1);
+    app.kernel_debug = fresh.kernel_debug;
+    app.kernel_debug.generation = debug_generation;
     app.firmware = fresh.firmware;
     app.layer_relationships = None;
     app.recipe_sources.clear();

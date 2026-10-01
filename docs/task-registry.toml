@@ -10245,18 +10245,18 @@ notes = "DONE. Closed typed plan, non-spawning bounded regular-file/qemuboot/ELF
 id = "QEMU-GDB-UI-001"
 milestone = "M104"
 title = "Launch managed QEMU debugging from the Kernel workbench"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3221
 required = true
 depends_on = ["QEMU-GDB-SESSION-001"]
 verify = ["cargo test -p yoctui-model kernel_debug", "cargo test -p yoctui-app kernel_debug", "cargo test -p yoctui-ui kernel_debug", "cargo test -p yoctui --bin yoctui kernel_debug", "cargo test -p yoctui --bin yoctui qemu_workspace", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
-notes = "Outcome: launchable Kernel technique, trapped explicit boot/symbol fields, initialized tool discovery, typed underlying command preview and embedded/detached managed session. Files: kernel_debug model/app/UI/CLI hooks and focused tests. Cover prepare/cancel/stale/launch and existing QEMU/menuconfig/terminal/saved environment regressions. Update specs, roadmap, status, registry/current task; bump, commit/push and source-bound release build."
+notes = "DONE in v0.1.257. Seventeenth Kernel technique preserves old indices/tools/guides, seven trapped fields, initialized runqemu identity/current build seeding, explicit matching symbols, typed child command templates and existing embedded/detached chooser. Uses native runqemu qemuparams=-m syntax and config-last precedence; compressed rootfs writes are privately staged, never deployed. Saved-environment changes invalidate debug caches/generation. Focused debugging model/app/UI/CLI 8/4/3/5 plus backend 8, normal QEMU, serial menuconfig, client runtime, saved environment, Hardware and RootFS focused regressions pass, as do strict affected-crate all-target Clippy, formatting, version policy, roadmap and optimized build. Broader rootfs filter exposes an unchanged editor-footer assertion reproduced on ae00556d baseline; it is not weakened. Manual embedded launch/writer/breakpoint/client-exit/reattach works; detailed real Linux evidence follows in LIVE task. Final push/source-bound optimized build completes delivery; no full suite or daemon restart."
 
 [[task]]
 id = "QEMU-GDB-LIVE-001"
 milestone = "M104"
 title = "Verify real Linux guest breakpoint backtrace and resume"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3222
 required = true
 depends_on = ["QEMU-GDB-UI-001"]

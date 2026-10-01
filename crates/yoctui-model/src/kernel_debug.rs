@@ -23,6 +23,12 @@ pub enum KernelDebugField {
     Data,
     Endpoint,
     Event,
+    Runqemu,
+    BuildDirectory,
+    Qemuboot,
+    KernelImage,
+    RootfsImage,
+    Memory,
 }
 
 impl KernelDebugField {
@@ -37,6 +43,12 @@ impl KernelDebugField {
             Self::Data => "Absolute core/vmcore/trace.dat file",
             Self::Endpoint => "GDB TCP host:port (QEMU/KGDB stub)",
             Self::Event => "Syscall tracepoint (category:event)",
+            Self::Runqemu => "Absolute runqemu executable",
+            Self::BuildDirectory => "Initialized build directory",
+            Self::Qemuboot => "Exact .qemuboot.conf file",
+            Self::KernelImage => "Matching boot kernel image",
+            Self::RootfsImage => "Root filesystem image",
+            Self::Memory => "Guest memory (MiB)",
         }
     }
 }
@@ -53,6 +65,7 @@ pub struct KernelDebugDraft {
     pub data: String,
     pub endpoint: String,
     pub event: String,
+    pub qemu: crate::QemuDebugDraft,
 }
 
 impl KernelDebugDraft {
@@ -68,6 +81,7 @@ impl KernelDebugDraft {
             data: String::new(),
             endpoint: "127.0.0.1:1234".into(),
             event: "syscalls:sys_enter_openat".into(),
+            qemu: crate::QemuDebugDraft::default(),
         }
     }
 
@@ -81,6 +95,15 @@ impl KernelDebugDraft {
             }
         }
         match self.tool {
+            KernelDebugTool::QemuGdb => fields.extend([
+                F::Runqemu,
+                F::BuildDirectory,
+                F::Qemuboot,
+                F::KernelImage,
+                F::RootfsImage,
+                F::Symbols,
+                F::Memory,
+            ]),
             KernelDebugTool::GdbRemote => fields.extend([F::Symbols, F::Endpoint]),
             KernelDebugTool::GdbCore | KernelDebugTool::Crash => {
                 fields.extend([F::Symbols, F::Data]);
@@ -110,6 +133,12 @@ impl KernelDebugDraft {
             KernelDebugField::Data => &self.data,
             KernelDebugField::Endpoint => &self.endpoint,
             KernelDebugField::Event => &self.event,
+            KernelDebugField::Runqemu => &self.qemu.runqemu,
+            KernelDebugField::BuildDirectory => &self.qemu.build_dir,
+            KernelDebugField::Qemuboot => &self.qemu.qemuboot,
+            KernelDebugField::KernelImage => &self.qemu.kernel,
+            KernelDebugField::RootfsImage => &self.qemu.rootfs,
+            KernelDebugField::Memory => &self.qemu.memory,
         }
     }
 
@@ -124,11 +153,40 @@ impl KernelDebugDraft {
             KernelDebugField::Data => Some(&mut self.data),
             KernelDebugField::Endpoint => Some(&mut self.endpoint),
             KernelDebugField::Event => Some(&mut self.event),
+            KernelDebugField::Runqemu => Some(&mut self.qemu.runqemu),
+            KernelDebugField::BuildDirectory => Some(&mut self.qemu.build_dir),
+            KernelDebugField::Qemuboot => Some(&mut self.qemu.qemuboot),
+            KernelDebugField::KernelImage => Some(&mut self.qemu.kernel),
+            KernelDebugField::RootfsImage => Some(&mut self.qemu.rootfs),
+            KernelDebugField::Memory => Some(&mut self.qemu.memory),
         }
     }
 
     pub fn plan(&self, tools: &KernelDebugTools) -> Result<TerminalLaunchRequest, String> {
         plan::request(self, tools)
+    }
+
+    pub fn qemu_spec(&self, tools: &KernelDebugTools) -> Result<crate::QemuDebugSpec, String> {
+        let spec = crate::QemuDebugSpec {
+            runqemu: if self.qemu.runqemu.is_empty() {
+                tools.program("runqemu")?
+            } else {
+                self.qemu.runqemu.clone().into()
+            },
+            gdb: tools.program("gdb")?,
+            build_dir: self.qemu.build_dir.clone().into(),
+            qemuboot: self.qemu.qemuboot.clone().into(),
+            kernel: self.qemu.kernel.clone().into(),
+            rootfs: self.qemu.rootfs.clone().into(),
+            symbols: self.symbols.clone().into(),
+            memory_mib: self
+                .qemu
+                .memory
+                .parse()
+                .map_err(|_| "Memory must be a whole number of MiB")?,
+        };
+        spec.validate()?;
+        Ok(spec)
     }
 }
 

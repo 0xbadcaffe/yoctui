@@ -28,6 +28,11 @@ async-signal-safe forked guardian stop only the freshly created runqemu process
 group if the helper is forcibly killed; the guardian owns no terminal/log FDs.
 Normal cleanup finishes within the existing PTY termination grace. Serial logs
 retain at most 4 MiB while continuing to drain both child pipes.
+Compressed rootfs staging is owned by the CLI runtime's private directory,
+protecting deploy artifacts from runqemu's adjacent decompression/cleanup writes.
+The model renders its deterministic staged-path placeholder, never process text
+or decoded helper JSON. Environment switches clear the typed debug cache and
+advance its generation so old preparation cannot cross build boundaries.
 
 Model owns a closed serializable QEMU debug specification, bounded form fields
 and deterministic child argv templates; existing Kernel debugging correlation

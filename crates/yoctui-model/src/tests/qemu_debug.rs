@@ -26,7 +26,9 @@ fn qemu_debug_closed_plan_pauses_and_isolates_guest_without_public_listener() {
     ] {
         assert!(args.iter().any(|arg| arg == value));
     }
-    assert!(args[8].starts_with("qemuparams=-S -chardev socket,path=/PRIVATE_SESSION/"));
+    assert!(args[7].starts_with("qemuparams=-S -m 1024 -chardev socket,path=/PRIVATE_SESSION/"));
+    assert_eq!(args[2], spec.qemuboot.display().to_string());
+    assert!(!args.iter().any(|arg| arg.starts_with("qemumemory=")));
     assert!(!args.join(" ").contains("tcp:"));
     let gdb = spec.gdb_arguments(Path::new(QEMU_DEBUG_SOCKET_TEMPLATE));
     assert!(gdb.iter().any(|arg| arg == "set debuginfod enabled off"));
@@ -68,6 +70,11 @@ fn qemu_debug_rejects_ambiguous_paths_memory_and_unstructured_arguments() {
     spec.memory_mib = 1024;
     spec.symbols = "/build/symbols with spaces".into();
     assert!(spec.validate().is_ok()); // passed as one GDB argv, not runqemu syntax
+    spec.rootfs = "/build/core-image.rootfs.ext4.zst".into();
+    assert_eq!(
+        spec.qemu_arguments(Path::new(QEMU_DEBUG_SOCKET_TEMPLATE))[1],
+        "/PRIVATE_SESSION/core-image.rootfs.ext4.zst"
+    );
     let mut json = serde_json::to_value(&spec).unwrap();
     json["extra_arguments"] = serde_json::json!(["-daemonize"]);
     assert!(serde_json::from_value::<QemuDebugSpec>(json).is_err());

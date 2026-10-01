@@ -20,6 +20,7 @@ pub struct KernelDebugState {
     pub generation: u64,
     pub pending: Option<KernelDebugOperation>,
     pub prepared: Option<TerminalLaunchRequest>,
+    pub qemu_preview: Option<crate::QemuDebugSpec>,
     pub preview_scroll: u16,
 }
 
@@ -94,6 +95,9 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
                     return None;
                 }
                 app.kernel_debug.prepared = Some(request.clone());
+                app.kernel_debug.qemu_preview = (draft.tool == KernelDebugTool::QemuGdb)
+                    .then(|| draft.qemu_spec(&tools).ok())
+                    .flatten();
                 app.kernel_debug.preview_scroll = 0;
                 crate::replace_dialog(
                     app,
@@ -245,10 +249,34 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
             app.kernel_debug.selection = index.min(KernelDebugTool::ALL.len() - 1)
         }
         A::OpenSelected => {
+            let mut draft = KernelDebugDraft::new(app.kernel_debug.tool());
+            if draft.tool == KernelDebugTool::QemuGdb {
+                draft.qemu.build_dir = app
+                    .workspace
+                    .build_dir
+                    .as_ref()
+                    .map(|path| path.display().to_string())
+                    .unwrap_or_default();
+                let initialized = app
+                    .workspace_compatibility
+                    .authority()
+                    .and_then(|authority| authority.snapshot.environment.available_tools.value())
+                    .and_then(|tools| tools.iter().find(|tool| tool.id == "runqemu"))
+                    .map(|tool| &tool.executable);
+                let detected = app
+                    .kernel_debug
+                    .tools
+                    .as_ref()
+                    .and_then(|tools| tools.programs.get("runqemu"));
+                draft.qemu.runqemu = initialized
+                    .or(detected)
+                    .map(|path| path.display().to_string())
+                    .unwrap_or_default();
+            }
             crate::open_dialog(
                 app,
                 Dialog::KernelDebug(KernelDebugDialog {
-                    draft: KernelDebugDraft::new(app.kernel_debug.tool()),
+                    draft,
                     selection: 0,
                     guide_scroll: 0,
                     error: None,

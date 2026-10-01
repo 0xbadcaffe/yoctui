@@ -90,6 +90,10 @@ Kernel Debugging adds a launchable `QEMU → GDB · managed boot` technique whil
 retaining all M103 tools and guidance-only entries. Its trapped form requires
 explicit deployed qemuboot configuration, boot kernel, root filesystem, matching
 uncompressed vmlinux symbols and build directory, with bounded memory (MiB).
+An editable absolute runqemu field is seeded from the initialized daemon tool
+identity when available, otherwise local PATH. GDB prefers detected gdb-multiarch
+over gdb. Seven fields use the existing centered six-row viewport; missing boot
+inputs stay empty. Linux is required for managed forced-termination cleanup.
 Detected runqemu/GDB and the current build/artifact may seed fields; missing
 artifacts remain empty requirements, never guessed providers or paths.
 
@@ -100,6 +104,10 @@ snapshot disks, nographic/serialstdio, `nokaslr`, CPU paused until GDB continues
 A private Unix debug socket/log directory is allocated only after confirmation;
 its runtime path is labeled a placeholder in the reviewed templates. No public
 TCP listener or arbitrary qemuparams/bootparams editor is exposed.
+Compressed .zst rootfs inputs are copied into the private session directory
+before runqemu decompresses them; review shows the source and staged placeholder.
+Normal cleanup removes staged image files while retaining the bounded log.
+Forced helper death may leave private temporary images, never deployed artifacts.
 
 The existing embedded/detached terminal chooser starts a single managed GDB
 session. Its backend starts runqemu, waits boundedly for its private debug

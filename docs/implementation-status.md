@@ -1,3 +1,17 @@
+QEMU-GDB-UI-001 is DONE in v0.1.257. Kernel Debugging now has the seventeenth
+managed QEMU → GDB technique, initialized tool/current-build seeding, seven
+explicit fields and typed child-command review through the existing terminal
+chooser. Native memory/config precedence and private compressed-image staging
+are covered; environment reload clears debug caches and stale generations.
+Focused debugging/backend and normal QEMU, serial menuconfig, daemon client,
+saved environment, Hardware and RootFS regressions, strict affected all-target
+Clippy, formatting, version policy, roadmap and optimized build pass.
+One incidental editor-footer assertion fails identically on baseline ae00556d
+(`cargo test -p yoctui-ui concept_editor_application_menu_composes_focus_validation_and_diff`);
+it remains unchanged, not hidden or weakened. A parallel menuconfig timing
+check passed on serial rerun without changes. No full suite was run. Real guest
+and embedded reconnect evidence is being recorded in QEMU-GDB-LIVE-001.
+
 QEMU-GDB-SESSION-001 is DONE. Typed plans and non-spawning bounded input/symbol
 checks, private socket launch, bounded logs and Linux owned-group cleanup are
 implemented. Focused model and CLI normal/failure/cancel/forced-death coverage,

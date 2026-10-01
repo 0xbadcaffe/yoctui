@@ -38,6 +38,14 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
                 .tools
                 .as_ref()
                 .is_some_and(|tools| tools.programs.contains_key(program))
+                || (tool == KernelDebugTool::QemuGdb
+                    && app
+                        .workspace_compatibility
+                        .authority()
+                        .and_then(|authority| {
+                            authority.snapshot.environment.available_tools.value()
+                        })
+                        .is_some_and(|tools| tools.iter().any(|tool| tool.id == "runqemu")))
             {
                 "Host found"
             } else {
@@ -103,7 +111,11 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
                         .draft
                         .value(yoctui_model::KernelDebugField::Destination)
                 } else {
-                    "HOST client/offline analysis · files must match target architecture/build"
+                    if tool == KernelDebugTool::QemuGdb {
+                        "MANAGED HOST GUEST · snapshot/nonetwork · Linux · not a physical target"
+                    } else {
+                        "HOST client/offline analysis · files must match target architecture/build"
+                    }
                 })
                 .wrap(Wrap { trim: false }),
                 rows[0],
@@ -180,14 +192,51 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
         "Executable: {}",
         dialog.request.program.display()
     ))];
-    lines.extend(
-        dialog
-            .request
-            .arguments
-            .iter()
-            .enumerate()
-            .map(|(index, argument)| Line::from(format!("argv[{index}]: {argument:?}"))),
-    );
+    if let Some(spec) = &app.kernel_debug.qemu_preview {
+        lines.push(Line::from(format!(
+            "Selected rootfs source: {}",
+            spec.rootfs.display()
+        )));
+        lines.push(Line::from(
+            "Runtime socket/log path: PRIVATE_SESSION is a placeholder allocated ONLY on launch.",
+        ));
+        lines.push(Line::from(
+            "QEMU: snapshot/nonetwork, paused CPUs (-S), nokaslr; quit stops owned guest.",
+        ));
+        for (name, program, arguments) in [
+            (
+                "QEMU child",
+                &spec.runqemu,
+                spec.qemu_arguments(std::path::Path::new(
+                    yoctui_model::QEMU_DEBUG_SOCKET_TEMPLATE,
+                )),
+            ),
+            (
+                "GDB child",
+                &spec.gdb,
+                spec.gdb_arguments(std::path::Path::new(
+                    yoctui_model::QEMU_DEBUG_SOCKET_TEMPLATE,
+                )),
+            ),
+        ] {
+            lines.push(Line::from(format!("{name}: {}", program.display())));
+            lines.extend(
+                arguments
+                    .iter()
+                    .enumerate()
+                    .map(|(index, arg)| Line::from(format!("argv[{index}]: {arg:?}"))),
+            );
+        }
+    } else {
+        lines.extend(
+            dialog
+                .request
+                .arguments
+                .iter()
+                .enumerate()
+                .map(|(index, argument)| Line::from(format!("argv[{index}]: {argument:?}"))),
+        );
+    }
     frame.render_widget(
         Paragraph::new(lines)
             .wrap(Wrap { trim: false })

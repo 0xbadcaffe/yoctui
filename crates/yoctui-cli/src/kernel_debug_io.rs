@@ -29,6 +29,10 @@ pub(crate) fn discover() -> Result<KernelDebugTools, String> {
             programs.insert(name.to_owned(), program);
         }
     }
+    let helper = std::env::current_exe()
+        .and_then(|path| path.canonicalize())
+        .map_err(|error| error.to_string())?;
+    programs.insert("yoctui".into(), helper);
     Ok(KernelDebugTools { cwd, programs })
 }
 
@@ -37,6 +41,10 @@ pub(crate) fn prepare(
     tools: &KernelDebugTools,
 ) -> Result<TerminalLaunchRequest, String> {
     let request = draft.plan(tools)?;
+    if draft.tool == KernelDebugTool::QemuGdb {
+        crate::qemu_debug::validate_files(&draft.qemu_spec(tools)?)
+            .map_err(|error| error.to_string())?;
+    }
     if !request.cwd.is_dir() {
         return Err("Host working directory disappeared; refresh tools".into());
     }

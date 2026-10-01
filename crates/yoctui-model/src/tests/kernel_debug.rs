@@ -18,6 +18,8 @@ fn tools() -> KernelDebugTools {
             "bpftrace",
             "lttng",
             "crash",
+            "runqemu",
+            "yoctui",
         ]
         .into_iter()
         .map(|name| (name.into(), PathBuf::from(format!("/tools/{name}"))))
@@ -35,6 +37,13 @@ fn kernel_debug_all_launchable_tools_have_fixed_plans_and_guides_are_non_executa
         draft.pid = "123".into();
         draft.symbols = "/work/vmlinux symbols".into();
         draft.data = "/work/core".into();
+        draft.qemu = crate::QemuDebugDraft {
+            build_dir: "/work".into(),
+            qemuboot: "/work/image.qemuboot.conf".into(),
+            kernel: "/work/bzImage".into(),
+            rootfs: "/work/image.ext4".into(),
+            ..crate::QemuDebugDraft::default()
+        };
         let result = draft.plan(&tools());
         assert_eq!(
             result.is_ok(),
@@ -258,5 +267,49 @@ fn kernel_debug_three_kernel_views_preserve_two_firmware_views_and_guides_never_
     assert_eq!(update(&mut app, Action::KernelDebug(A::Review)), None);
     assert!(
         matches!(app.active_dialog(), Some(Dialog::KernelDebug(dialog)) if dialog.draft.tool == KernelDebugTool::SysrqKdump)
+    );
+}
+
+#[test]
+fn kernel_debug_managed_qemu_requires_inputs_and_preserves_typed_preview_until_confirmation() {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    app.kernel_debug.tools = Some(tools());
+    app.kernel_debug.selection = 16;
+    app.workspace.build_dir = Some("/work".into());
+    update(&mut app, Action::KernelDebug(A::OpenSelected));
+    let Some(Dialog::KernelDebug(dialog)) = app.active_dialog_mut() else {
+        panic!()
+    };
+    assert_eq!(dialog.draft.qemu.build_dir, "/work");
+    assert_eq!(dialog.draft.qemu.runqemu, "/tools/runqemu");
+    assert!(dialog.draft.qemu.qemuboot.is_empty());
+    assert_eq!(dialog.draft.fields().len(), 7);
+    assert!(dialog.draft.plan(&tools()).is_err());
+    dialog.draft.qemu.qemuboot = "/work/image.qemuboot.conf".into();
+    dialog.draft.qemu.kernel = "/work/bzImage".into();
+    dialog.draft.qemu.rootfs = "/work/image.ext4".into();
+    dialog.draft.symbols = "/work/vmlinux".into();
+    let Some(Effect::KernelDebug(request)) = update(&mut app, Action::KernelDebug(A::Review))
+    else {
+        panic!()
+    };
+    let Op::Prepare { draft, tools } = request.operation else {
+        panic!()
+    };
+    let spec = draft.qemu_spec(&tools).unwrap();
+    let prepared = draft.plan(&tools).unwrap();
+    update(
+        &mut app,
+        Action::KernelDebug(A::Finished {
+            generation: request.generation,
+            result: Ok(R::Prepared(prepared.clone())),
+        }),
+    );
+    assert_eq!(app.kernel_debug.qemu_preview, Some(spec));
+    assert!(app.daemon.pty_sessions.is_empty());
+    assert!(
+        matches!(update(&mut app, Action::ConfirmTerminalLaunch), Some(Effect::Terminal(crate::TerminalEffect::Create { arguments, .. })) if arguments == prepared.arguments)
     );
 }

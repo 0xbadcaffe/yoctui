@@ -180,7 +180,17 @@ fn saved_environment_switch_clears_path_bound_inspection_not_preferences_or_arch
     app.rootfs_request_generation = 12;
     let records = app.saved_builds.records.clone();
     let preferences = app.preferences.clone();
+    app.kernel_debug.generation = 12;
+    app.kernel_debug.pending = Some(crate::KernelDebugOperation::Inspect);
+    app.kernel_debug.tools = Some(crate::KernelDebugTools {
+        cwd: "/old-build".into(),
+        programs: Default::default(),
+    });
     clear_saved_environment_views(&mut app);
+    assert_eq!(app.kernel_debug.generation, 13);
+    assert!(app.kernel_debug.tools.is_none());
+    assert!(app.kernel_debug.pending.is_none());
+    assert!(app.kernel_debug.qemu_preview.is_none());
     assert!(app.recipe_sources.is_empty());
     assert!(app.layer_browser.is_none());
     assert_eq!(app.saved_builds.records, records);

@@ -34,6 +34,8 @@ QEMU-GDB-SESSION-001 owns the typed plan/backend, QEMU-GDB-UI-001 owns Kernel
 integration and versioned delivery, and QEMU-GDB-LIVE-001 owns genuine matching
 Linux guest evidence. Tests do not substitute for unavailable real artifacts.
 The existing M67 external evidence blocker and deferred full suite are retained.
+The plan/backend and Kernel integration tasks are DONE in v0.1.257. Genuine
+Linux guest verification is the active task; final source-bound delivery follows.
 
 ## M103 — Kernel debugging techniques and tools
 

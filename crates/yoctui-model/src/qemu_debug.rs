@@ -17,6 +17,28 @@ pub struct QemuDebugSpec {
 
 pub const QEMU_DEBUG_SOCKET_TEMPLATE: &str = "/PRIVATE_SESSION/gdb.sock";
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QemuDebugDraft {
+    pub runqemu: String,
+    pub build_dir: String,
+    pub qemuboot: String,
+    pub kernel: String,
+    pub rootfs: String,
+    pub memory: String,
+}
+impl Default for QemuDebugDraft {
+    fn default() -> Self {
+        Self {
+            runqemu: String::new(),
+            build_dir: String::new(),
+            qemuboot: String::new(),
+            kernel: String::new(),
+            rootfs: String::new(),
+            memory: "1024".into(),
+        }
+    }
+}
+
 impl QemuDebugSpec {
     pub fn validate(&self) -> Result<(), String> {
         for path in [
@@ -41,9 +63,9 @@ impl QemuDebugSpec {
                 .to_str()
                 .unwrap()
                 .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b"/._-".contains(&b))
+                .all(|b| b.is_ascii_alphanumeric() || b"/._-+".contains(&b))
             {
-                return Err("runqemu input paths support ASCII letters/digits and /._- only; spaces, commas and shell syntax are unsupported".into());
+                return Err("runqemu input paths support ASCII letters/digits and /._-+ only; spaces, commas and shell syntax are unsupported".into());
             }
         }
         if !self.qemuboot.to_string_lossy().ends_with(".qemuboot.conf") {
@@ -57,20 +79,31 @@ impl QemuDebugSpec {
 
     pub fn qemu_arguments(&self, socket: &Path) -> Vec<String> {
         vec![
-            self.qemuboot.display().to_string(),
             self.kernel.display().to_string(),
-            self.rootfs.display().to_string(),
+            self.session_rootfs(socket).display().to_string(),
+            self.qemuboot.display().to_string(),
             "nonetwork".into(),
             "snapshot".into(),
             "nographic".into(),
             "serialstdio".into(),
-            format!("qemumemory={}", self.memory_mib),
             format!(
-                "qemuparams=-S -chardev socket,path={},server=on,wait=off,id=yoctui_gdb -gdb chardev:yoctui_gdb",
+                "qemuparams=-S -m {} -chardev socket,path={},server=on,wait=off,id=yoctui_gdb -gdb chardev:yoctui_gdb",
+                self.memory_mib,
                 socket.display()
             ),
             "bootparams=nokaslr".into(),
         ]
+    }
+
+    pub fn session_rootfs(&self, socket: &Path) -> PathBuf {
+        if self.rootfs.to_string_lossy().ends_with(".zst") {
+            socket
+                .parent()
+                .unwrap_or(Path::new("/PRIVATE_SESSION"))
+                .join(self.rootfs.file_name().unwrap_or_default())
+        } else {
+            self.rootfs.clone()
+        }
     }
 
     pub fn gdb_arguments(&self, socket: &Path) -> Vec<String> {
@@ -100,16 +133,16 @@ impl QemuDebugSpec {
         if !yoctui_utils::is_absolute_normal_path(&helper) {
             return Err("Yoctui session helper must be an absolute executable".into());
         }
+        let encoded = serde_json::to_string(self).map_err(|error| error.to_string())?;
+        if encoded.len() > 32 * 1024 {
+            return Err("Managed debug specification exceeds 32 KiB".into());
+        }
         Ok(crate::TerminalLaunchRequest {
-            name: "Kernel debug · QEMU → GDB · MANAGED HOST GUEST".into(),
+            name: "Kernel debug · QEMU → GDB · HOST, NOT TARGET · managed guest".into(),
             kind: crate::TerminalCreationKind::Utility,
             cwd: self.build_dir.clone(),
             program: helper,
-            arguments: vec![
-                "__qemu-gdb-session".into(),
-                "--spec".into(),
-                serde_json::to_string(self).map_err(|error| error.to_string())?,
-            ],
+            arguments: vec!["__qemu-gdb-session".into(), "--spec".into(), encoded],
             completion: None,
         })
     }

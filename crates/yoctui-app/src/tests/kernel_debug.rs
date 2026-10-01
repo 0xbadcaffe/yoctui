@@ -113,3 +113,34 @@ fn kernel_debug_modal_keys_are_typed_and_global_shortcuts_stay_inside_form() {
         Some(Action::KernelDebug(A::ScrollGuide(3)))
     );
 }
+
+#[test]
+fn kernel_debug_managed_qemu_memory_and_paths_stay_in_trapped_form() {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    app.dialogs
+        .push_back(Dialog::KernelDebug(KernelDebugDialog {
+            draft: KernelDebugDraft::new(KernelDebugTool::QemuGdb),
+            selection: 6,
+            guide_scroll: 0,
+            error: None,
+        }));
+    assert!(kernel_debug_owns_input(&app, Input::Char('q')));
+    assert_eq!(
+        kernel_debug_action(&app, Input::Char('q')),
+        Some(Action::KernelDebug(A::Insert("q".into())))
+    );
+    assert_eq!(
+        kernel_debug_action(&app, Input::Enter),
+        Some(Action::KernelDebug(A::Review))
+    );
+    assert_eq!(
+        kernel_debug_action(&app, Input::Tab),
+        Some(Action::KernelDebug(A::Field(1)))
+    );
+    assert_eq!(
+        kernel_debug_action(&app, Input::Esc),
+        Some(Action::KernelDebug(A::Cancel))
+    );
+}

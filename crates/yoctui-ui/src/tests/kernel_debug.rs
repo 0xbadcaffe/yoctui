@@ -91,3 +91,62 @@ fn kernel_debug_guide_and_exact_preview_keep_risks_and_cancel_visible() {
         let _ = rendered_text(&app, width, height);
     }
 }
+
+#[test]
+fn kernel_debug_managed_qemu_form_and_child_templates_render_without_json_parsing() {
+    let mut app = app();
+    let tools = app.kernel_debug.tools.as_mut().unwrap();
+    tools
+        .programs
+        .insert("runqemu".into(), "/tools/runqemu".into());
+    tools
+        .programs
+        .insert("yoctui".into(), "/tools/yoctui".into());
+    let mut draft = KernelDebugDraft::new(KernelDebugTool::QemuGdb);
+    draft.qemu.build_dir = "/work".into();
+    draft.qemu.qemuboot = "/work/image.qemuboot.conf".into();
+    draft.qemu.kernel = "/work/bzImage".into();
+    draft.qemu.rootfs = "/work/image.ext4".into();
+    draft.symbols = "/work/vmlinux".into();
+    app.dialogs
+        .push_back(Dialog::KernelDebug(KernelDebugDialog {
+            draft: draft.clone(),
+            selection: 6,
+            guide_scroll: 0,
+            error: None,
+        }));
+    let text = rendered_text(&app, 160, 42);
+    assert!(text.contains("MANAGED HOST GUEST"));
+    assert!(text.contains("Guest memory (MiB)"));
+    let tools = app.kernel_debug.tools.as_ref().unwrap();
+    let request = draft.plan(tools).unwrap();
+    app.kernel_debug.qemu_preview = Some(draft.qemu_spec(tools).unwrap());
+    app.kernel_debug.prepared = Some(request.clone());
+    app.dialogs.clear();
+    app.dialogs
+        .push_back(Dialog::TerminalLaunch(TerminalLaunchDialog {
+            request,
+            destination: TerminalLaunchDestination::Embedded,
+            output_must_not_exist: None,
+        }));
+    let text = rendered_text(&app, 160, 42);
+    for value in [
+        "PRIVATE_SESSION",
+        "placeholder",
+        "QEMU child",
+        "snapshot",
+        "nonetwork",
+        "nokaslr",
+        "qemuparams=-S",
+        "quit stops",
+    ] {
+        assert!(text.contains(value), "{value}: {text}");
+    }
+    app.kernel_debug.preview_scroll = 12;
+    let text = rendered_text(&app, 160, 42);
+    assert!(text.contains("GDB child"), "{text}");
+    assert!(text.contains("set auto-load off"));
+    for (w, h) in [(80, 24), (20, 5), (1, 1)] {
+        let _ = rendered_text(&app, w, h);
+    }
+}

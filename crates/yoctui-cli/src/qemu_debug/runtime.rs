@@ -13,6 +13,7 @@ use tokio::{
     time::{Instant, sleep, timeout},
 };
 pub(super) mod logging;
+mod staging;
 mod watchdog;
 
 const STARTUP_TIMEOUT: Duration = Duration::from_secs(60);
@@ -54,6 +55,7 @@ pub(super) async fn run(spec: &QemuDebugSpec) -> Result<()> {
     let directory = private_directory()?;
     let socket = directory.join("gdb.sock");
     let log = directory.join("qemu.log");
+    let _staged = staging::Rootfs::prepare(spec, &socket)?;
     println!("Managed QEMU → GDB: snapshot/nonetwork, CPU paused until continue.");
     println!("QEMU serial/startup log: {}", log.display());
     println!("Private debug socket: {}", socket.display());

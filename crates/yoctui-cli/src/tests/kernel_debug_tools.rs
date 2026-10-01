@@ -126,3 +126,18 @@ fn kernel_debug_preparation_rejects_missing_and_special_offline_files() {
     assert!(prepare(&draft, &unavailable).is_err());
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn kernel_debug_managed_preparation_requires_explicit_boot_files_without_launching() {
+    let tools = discover().unwrap();
+    assert!(tools.programs.contains_key("yoctui"));
+    let mut draft = KernelDebugDraft::new(KernelDebugTool::QemuGdb);
+    draft.qemu.runqemu = std::env::current_exe().unwrap().display().to_string();
+    draft.qemu.build_dir = tools.cwd.display().to_string();
+    assert!(prepare(&draft, &tools).is_err());
+    draft.qemu.qemuboot = "/missing/image.qemuboot.conf".into();
+    draft.qemu.kernel = "/missing/bzImage".into();
+    draft.qemu.rootfs = "/missing/image.ext4".into();
+    draft.symbols = "/missing/vmlinux".into();
+    assert!(prepare(&draft, &tools).is_err());
+}

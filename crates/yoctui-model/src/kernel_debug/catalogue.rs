@@ -16,10 +16,11 @@ pub enum KernelDebugTool {
     Sanitizers,
     Lockdep,
     SysrqKdump,
+    QemuGdb,
 }
 
 impl KernelDebugTool {
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 17] = [
         Self::GdbRemote,
         Self::GdbCore,
         Self::Strace,
@@ -36,6 +37,7 @@ impl KernelDebugTool {
         Self::Sanitizers,
         Self::Lockdep,
         Self::SysrqKdump,
+        Self::QemuGdb,
     ];
 
     pub const fn label(self) -> &'static str {
@@ -56,6 +58,7 @@ impl KernelDebugTool {
             Self::Sanitizers => "KASAN / KCSAN / UBSAN",
             Self::Lockdep => "lockdep / hung tasks",
             Self::SysrqKdump => "SysRq / kdump setup",
+            Self::QemuGdb => "QEMU → GDB · managed boot",
         }
     }
 
@@ -70,6 +73,7 @@ impl KernelDebugTool {
             Self::Bpftrace => Some("bpftrace"),
             Self::Lttng => Some("lttng"),
             Self::Crash => Some("crash"),
+            Self::QemuGdb => Some("runqemu"),
             _ => None,
         }
     }
@@ -90,6 +94,9 @@ impl KernelDebugTool {
 
     pub const fn guide(self) -> &'static str {
         match self {
+            Self::QemuGdb => {
+                "Managed Linux host guest, not the physical target. Select exact .qemuboot.conf, boot kernel, rootfs and matching uncompressed vmlinux with DWARF. Direct kernel boot only; flash-only configs are unsupported. Linux, runqemu/native QEMU and GDB 9+ with the guest architecture are required. Snapshot/nonetwork, nokaslr and paused CPUs; private Unix debug socket, separate bounded console log. In GDB: break start_kernel, continue, bt; Ctrl+C interrupts the guest and quit stops it. No rebuild, install or privilege changes. Matching kernel/symbols are your responsibility; ELF presence alone does not establish a match."
+            }
             Self::GdbRemote => {
                 "Host GDB connects to an already configured QEMU/KGDB TCP stub. Supply matching uncompressed vmlinux with debug symbols and architecture-capable GDB. Breakpoints can stop the whole target. No guest boot or stub setup is automatic. Useful commands: info threads, bt, break, continue. Init files/auto-loaded scripts are disabled; explicitly trust kernel GDB helpers before loading them manually."
             }
@@ -143,6 +150,7 @@ impl KernelDebugTool {
 
     pub const fn reference(self) -> &'static str {
         match self {
+            Self::QemuGdb => "https://www.qemu.org/docs/master/system/gdb.html",
             Self::GdbRemote | Self::Kgdb => "https://docs.kernel.org/process/debugging/kgdb.html",
             Self::GdbCore => "https://sourceware.org/gdb/current/onlinedocs/gdb/Files.html",
             Self::Strace => "https://strace.io/",
