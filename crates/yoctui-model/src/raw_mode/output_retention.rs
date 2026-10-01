@@ -114,8 +114,8 @@ impl RawRetainedOutput {
             || self.retained_bytes > MAX_RAW_OUTPUT_RETAINED_BYTES
             || self.retained_lines > MAX_RAW_OUTPUT_RETAINED_LINES
             || self.chunks.len() > MAX_RAW_OUTPUT_RETAINED_LINES
-            || self.retained_bytes != self.chunks.iter().map(|chunk| chunk.text.len()).sum()
-            || self.retained_lines != self.chunks.iter().map(RawOutputChunk::line_count).sum()
+            || self.retained_bytes != self.chunks.iter().map(|chunk| chunk.text.len()).sum::<usize>()
+            || self.retained_lines != self.chunks.iter().map(RawOutputChunk::line_count).sum::<usize>()
         {
             return Err(RawExecutionError::InvalidOutputSnapshot);
         }

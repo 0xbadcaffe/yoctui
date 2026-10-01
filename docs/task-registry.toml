@@ -10234,18 +10234,18 @@ notes = "DONE in v0.1.256. Kernel-only third tab, 12 typed tool routes/four guid
 id = "QEMU-GDB-SESSION-001"
 milestone = "M104"
 title = "Validate and supervise a private QEMU-to-GDB session"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3220
 required = true
 depends_on = ["KERNEL-DEBUG-UI-001"]
 verify = ["cargo test -p yoctui-model qemu_debug", "cargo test -p yoctui --bin yoctui qemu_debug", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "Outcome: closed typed specification/templates, non-spawning regular-file/ELF/qemuboot checks and hidden CLI helper with private Unix transport, snapshot/nonetwork/paused QEMU, bounded console logging, native foreground GDB and owned-process cleanup. Files: model qemu_debug module and CLI qemu_debug helper/runtime/tests. Cover valid/invalid inputs, readiness, missing socket, early process exit, GDB failure and cancellation cleanup; update architecture/UI/roadmap/status. No full suite or user daemon mutation."
+notes = "DONE. Closed typed plan, non-spawning bounded regular-file/qemuboot/ELF symbol and DWARF checks, private Unix transport, paused snapshot/nonetwork runqemu and foreground native GDB. Linux lifetime-pipe guardian handles forced helper death; owned groups only, bounded 4 MiB draining logs, 60-second readiness and short cleanup. Focused model/CLI normal/failure/cancellation/forced-death tests, formatting, strict CLI Clippy and roadmap pass. Explicit usize sum annotations preserve existing behavior after adding model JSON serialization. No full suite or user daemon mutation."
 
 [[task]]
 id = "QEMU-GDB-UI-001"
 milestone = "M104"
 title = "Launch managed QEMU debugging from the Kernel workbench"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3221
 required = true
 depends_on = ["QEMU-GDB-SESSION-001"]

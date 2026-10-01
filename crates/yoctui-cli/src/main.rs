@@ -4,11 +4,10 @@ use yoctui_utils::unix_ms;
 mod build_archive;
 mod error_log;
 mod graphics_terminal_handoff;
+mod qemu_debug;
 use graphics_terminal_handoff::uses_interactive_terminal;
 mod hardware_native_graphics;
 mod terminal_graphics;
-use error_log::*;
-
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use crossterm::{
@@ -22,6 +21,7 @@ use crossterm::{
         EnterAlternateScreen, LeaveAlternateScreen, SetTitle, disable_raw_mode, enable_raw_mode,
     },
 };
+use error_log::*;
 
 use ratatui::Terminal;
 
@@ -245,15 +245,15 @@ use global_search::{
 async fn main() -> Result<()> {
     install_panic_hook();
     let cli = Cli::parse();
+    if let Some(Command::QemuGdbSession { spec }) = &cli.command {
+        return qemu_debug::run(spec).await;
+    }
     if uses_interactive_terminal(&cli) && graphics_terminal_handoff::handoff_if_needed()?.is_some()
     {
         return Ok(());
     }
-    if let Some(Command::MenuconfigRelay { bitbake, arguments }) = &cli.command {
-        return menuconfig_relay::run(bitbake, arguments);
-    }
-    if let Some(Command::MenuconfigHandoff { socket, command }) = &cli.command {
-        return menuconfig_relay::handoff(socket, command);
+    if let Some(result) = cli_arguments::menuconfig_helper(&cli.command) {
+        return result;
     }
     if let Some(Command::Daemon { command }) = &cli.command {
         let configured = read_file_config(config_path(&cli).as_deref())?;
@@ -306,9 +306,11 @@ async fn main() -> Result<()> {
         | None => {}
         Some(Command::Sessions | Command::Session { .. }) => unreachable!(),
         Some(Command::Daemon { .. }) => unreachable!("daemon command handled before config"),
-        Some(Command::MenuconfigRelay { .. } | Command::MenuconfigHandoff { .. }) => {
-            unreachable!("menuconfig helper handled before config")
-        }
+        Some(
+            Command::QemuGdbSession { .. }
+            | Command::MenuconfigRelay { .. }
+            | Command::MenuconfigHandoff { .. },
+        ) => unreachable!("internal helper handled before config"),
     }
     let targets = match &cli.command {
         Some(Command::Build { targets }) => targets.clone(),

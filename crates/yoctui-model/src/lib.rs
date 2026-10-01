@@ -38,6 +38,7 @@ mod pty_multi;
 mod pty_session;
 mod qa;
 mod qemu;
+mod qemu_debug;
 mod raw_catalog_builtin;
 mod raw_mode;
 mod recipetool;
@@ -92,6 +93,7 @@ pub use pty_multi::*;
 pub use pty_session::*;
 pub use qa::*;
 pub use qemu::*;
+pub use qemu_debug::*;
 pub use raw_catalog_builtin::{
     RAW_BUILTIN_CATEGORY_COUNT, RAW_BUILTIN_COMMAND_COUNT, RAW_BUILTIN_EXECUTABLE_COUNT,
     RAW_REFERENCE_SHA256,

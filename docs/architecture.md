@@ -23,6 +23,12 @@ own worker inventory from retained rows.
 
 ## M104 Managed QEMU → GDB boundary
 
+The managed runtime currently requires Linux. A close-on-exec lifetime pipe and
+async-signal-safe forked guardian stop only the freshly created runqemu process
+group if the helper is forcibly killed; the guardian owns no terminal/log FDs.
+Normal cleanup finishes within the existing PTY termination grace. Serial logs
+retain at most 4 MiB while continuing to drain both child pipes.
+
 Model owns a closed serializable QEMU debug specification, bounded form fields
 and deterministic child argv templates; existing Kernel debugging correlation
 and terminal confirmation are reused. App maps existing form/navigation input,

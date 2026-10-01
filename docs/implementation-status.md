@@ -1,3 +1,8 @@
+QEMU-GDB-SESSION-001 is DONE. Typed plans and non-spawning bounded input/symbol
+checks, private socket launch, bounded logs and Linux owned-group cleanup are
+implemented. Focused model and CLI normal/failure/cancel/forced-death coverage,
+formatting, strict CLI Clippy and roadmap pass. UI integration follows now.
+
 M104 is IN_PROGRESS. The Kernel guide-to-session roadmap is documented, with
 only QEMU → GDB authorized now. QEMU-GDB-SESSION-001 owns closed plans and managed
 backend/cleanup; QEMU-GDB-UI-001 follows with forms/review and release delivery;

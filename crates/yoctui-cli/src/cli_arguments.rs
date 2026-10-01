@@ -39,6 +39,11 @@ impl std::fmt::Display for Backend {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum Command {
+    #[command(name = "__qemu-gdb-session", hide = true)]
+    QemuGdbSession {
+        #[arg(long)]
+        spec: String,
+    },
     #[command(name = "__menuconfig-relay", hide = true)]
     MenuconfigRelay {
         #[arg(long)]
@@ -119,4 +124,16 @@ pub(crate) enum DaemonServiceCommand {
     Stop,
     Restart,
     Status,
+}
+
+pub(crate) fn menuconfig_helper(command: &Option<Command>) -> Option<Result<()>> {
+    match command {
+        Some(Command::MenuconfigRelay { bitbake, arguments }) => {
+            Some(crate::menuconfig_relay::run(bitbake, arguments))
+        }
+        Some(Command::MenuconfigHandoff { socket, command }) => {
+            Some(crate::menuconfig_relay::handoff(socket, command))
+        }
+        _ => None,
+    }
 }

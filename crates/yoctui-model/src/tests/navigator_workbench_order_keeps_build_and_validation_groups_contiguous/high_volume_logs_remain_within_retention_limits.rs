@@ -10,7 +10,10 @@ fn high_volume_logs_remain_within_retention_limits() {
     assert!(logs.retained_bytes <= 4_096);
     assert_eq!(
         logs.retained_bytes,
-        logs.entries.iter().map(|entry| entry.message.len()).sum()
+        logs.entries
+            .iter()
+            .map(|entry| entry.message.len())
+            .sum::<usize>()
     );
     assert!(logs.dropped > 0);
 }
