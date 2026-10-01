@@ -7,7 +7,11 @@ pub(super) fn bounded_lines(text: &str) -> Vec<String> {
             bytes = bytes.saturating_add(line.len() + 1);
             bytes <= MAX_HARDWARE_TEXT_BYTES
         })
-        .map(str::to_owned)
+        .map(|line| {
+            line.chars()
+                .filter(|character| *character == '\t' || !character.is_control())
+                .collect()
+        })
         .collect()
 }
 

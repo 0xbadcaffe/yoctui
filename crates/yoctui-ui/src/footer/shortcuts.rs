@@ -104,10 +104,16 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         Screen::Hardware => {
             if app.hardware.viewer.is_some() {
                 "Esc library | PgUp/PgDn page | +/- zoom | 0 fit | arrows pan | / search | n/N match | v view | r reload"
+            } else if app.hardware.projects.form.is_some() {
+                "Enter save/create | Esc cancel | progress: ↑/↓ stage · ←/→ ±5 · digits 0–100"
+            } else if app.hardware.projects.import_browser.is_some() {
+                "↑/↓ select | Enter directory/copy | Backspace parent | Esc cancel"
+            } else if app.hardware.projects.visible {
+                "↑/↓ select | Enter open | n new project/folder | a import | s bring-up | Backspace parent | p library"
             } else if app.hardware.browser.is_some() {
                 "↑/↓ select | Enter directory | Backspace parent | ←/→ category | a add | Esc cancel"
             } else {
-                "←/→ category | ↑/↓ select | Enter view | a add | d remove | r reload | F12 menu"
+                "←/→ category | ↑/↓ select | Enter view | a add | d remove | r reload | p Projects | F12 menu"
             }
         }
         Screen::Kernel => {

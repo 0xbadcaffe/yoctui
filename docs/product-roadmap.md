@@ -2,10 +2,12 @@
 
 ## M102 — Persistent Hardware projects and bring-up
 
-The user request is split into HARDWARE-PROJECT-STORE-001 (bounded real project
-folders, manifests, import and persistence) and HARDWARE-PROJECT-UI-001 (typed
-project navigation/forms, restricted viewing and manual bring-up progress).
-Focused verification only; M67 live performance evidence remains blocked.
+HARDWARE-PROJECT-STORE-001 and HARDWARE-PROJECT-UI-001 are DONE in v0.1.255:
+real named project/subfolders, bounded non-overwriting import, persistent manual
+stage progress, typed navigation/forms and restricted embedded previews. Native
+Altium/Xpedition conversion is not implemented; graphical preview uses a
+same-stem PDF export. Focused checks and live create/import/progress/restart smoke
+pass. The full suite remains deferred; M67 live performance evidence stays blocked.
 
 ## M101 — Reload past build environments
 

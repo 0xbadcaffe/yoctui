@@ -267,6 +267,8 @@ pub struct HardwareLoadRequest {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HardwareState {
     pub projects: HardwareProjectsState,
+    pub project_view_root: Option<PathBuf>,
+    pub viewer_generation: u64,
     pub documents: Vec<HardwareDocument>,
     pub missing_paths: BTreeSet<PathBuf>,
     pub category: HardwareCategory,
@@ -369,8 +371,15 @@ pub enum HardwareAction {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HardwareEffect {
+    LoadProject {
+        root: PathBuf,
+        request: HardwareLoadRequest,
+    },
     Project(HardwareProjectRequest),
-    Browse { generation: u64, directory: PathBuf },
+    Browse {
+        generation: u64,
+        directory: PathBuf,
+    },
     Load(HardwareLoadRequest),
     Persist(Vec<HardwareDocument>),
 }

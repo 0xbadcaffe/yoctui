@@ -34,7 +34,7 @@ fn name_valid(name: &str) -> Result<()> {
     validate_hardware_project_name(name).map_err(anyhow::Error::msg)
 }
 
-fn regular_file(path: &Path) -> Result<fs::File> {
+pub(super) fn regular_file(path: &Path) -> Result<fs::File> {
     let mut options = fs::OpenOptions::new();
     options.read(true);
     #[cfg(unix)]
@@ -68,6 +68,35 @@ fn directory(path: &Path) -> Result<PathBuf> {
         );
     }
     fs::canonicalize(path).context("could not resolve project directory")
+}
+
+pub(super) fn validate_preview(root: &Path, path: &Path) -> Result<()> {
+    let store = directory(&data_root()?)?;
+    validate_preview_in_store(&store, root, path)
+}
+
+fn validate_preview_in_store(store: &Path, root: &Path, path: &Path) -> Result<()> {
+    let root = directory(root)?;
+    anyhow::ensure!(
+        root.parent() == Some(store),
+        "preview root is not a registered Hardware project"
+    );
+    let name = root
+        .file_name()
+        .and_then(|name| name.to_str())
+        .context("invalid project root")?;
+    read_project(store, name)?;
+    let parent = directory(path.parent().context("preview path has no directory")?)?;
+    anyhow::ensure!(
+        parent.starts_with(&root),
+        "preview file escapes project root"
+    );
+    anyhow::ensure!(
+        HardwareDocumentKind::project_kind(path).is_some(),
+        "file is stored only; preview format is not supported"
+    );
+    regular_file(path)?;
+    Ok(())
 }
 
 fn ensure_store(root: &Path) -> Result<PathBuf> {
@@ -226,9 +255,17 @@ fn copy_file(source: &Path, destination: &Path) -> Result<()> {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
     }
+    let temporary = destination
+        .parent()
+        .context("destination has no parent")?
+        .join(format!(
+            ".yoctui-import-{}-{}",
+            std::process::id(),
+            NEXT_TEMPORARY.fetch_add(1, Ordering::Relaxed)
+        ));
     let mut output = options
-        .open(destination)
-        .context("destination already exists or cannot be created; no overwrite performed")?;
+        .open(&temporary)
+        .context("cannot create private import staging file")?;
     let result = (|| -> Result<()> {
         let bytes = std::io::copy(
             &mut Read::by_ref(&mut source).take(MAX_HARDWARE_IMPORT_BYTES + 1),
@@ -239,12 +276,12 @@ fn copy_file(source: &Path, destination: &Path) -> Result<()> {
             "source grew beyond import limit"
         );
         output.sync_all()?;
+        fs::hard_link(&temporary, destination)
+            .context("destination already exists or cannot be created; no overwrite performed")?;
         Ok(())
     })();
-    if result.is_err() {
-        drop(output);
-        let _ = fs::remove_file(destination);
-    }
+    drop(output);
+    let _ = fs::remove_file(&temporary);
     result
 }
 

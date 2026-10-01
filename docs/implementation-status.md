@@ -1,8 +1,23 @@
-HARDWARE-PROJECT-STORE-001 is DONE: real project/subfolders, arbitrary bounded
-file import without overwrites, contained browsing and private atomic manual
-progress manifests pass two model and four CLI tests, formatting and strict CLI
-Clippy. HARDWARE-PROJECT-UI-001 is IN_PROGRESS next. Existing library/viewer
-behavior is retained; the full suite remains deferred. M67 evidence stays blocked.
+HARDWARE-PROJECT-STORE-001 and HARDWARE-PROJECT-UI-001 are DONE in v0.1.255.
+Hardware `p` opens persistent named projects, `n` creates real project/subfolders,
+`a` imports arbitrary regular files without overwriting, and Enter opens folders
+or supported previews. `s` edits six manual bring-up percentages; their mean is
+shown as a user-reported progress bar. Private atomic manifests retain progress
+and project names independently of the build daemon. TXT, PDF and KiCad use the
+embedded viewer; Altium/Xpedition graphical previews require a same-stem PDF
+export, with readable-source/explicit unsupported-binary fallback. Native
+proprietary conversion is not implemented. Other files are stored only.
+
+Focused Hardware model/app/UI/CLI checks (9/4/6/15 tests), strict affected-crate
+Clippy, formatting, version policy, roadmap and optimized build pass. Additional
+client-runtime, saved-environment, QEMU and RootFS composition regressions pass.
+Live isolated-client creation, import, TXT/PDF-export viewing, stored-only files,
+50% manual progress and restart/reload pass. Imported bytes match the source;
+the existing daemon, build configuration and user captures remain unchanged.
+Only regenerable debug caches were removed after disk exhaustion, and focused
+checks passed again with reduced debug information. Push and the final
+source-bound optimized rebuild complete delivery; the full suite remains
+deferred per user. M67 live evidence stays externally blocked.
 
 SAVED-ENV-DAEMON-001 and SAVED-ENV-LOAD-001 are DONE in v0.1.254. History `o`
 reviews exact existing source/build/init paths, then confirms background daemon

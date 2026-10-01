@@ -143,6 +143,32 @@ pub struct HardwareProjectsState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HardwareProjectAction {
+    Toggle,
+    Select {
+        delta: isize,
+    },
+    Open,
+    Parent,
+    NewName,
+    EditName(char),
+    Backspace,
+    Cancel,
+    Confirm,
+    BeginProgress,
+    SelectStage {
+        delta: isize,
+    },
+    ChangeProgress {
+        delta: i16,
+    },
+    ProgressDigit(char),
+    ToggleProgress,
+    BeginImport {
+        directory: PathBuf,
+    },
+    ImportParent,
+    ImportOpen,
+    Reload,
     Request(HardwareProjectOperation),
     Finished {
         generation: u64,
@@ -155,6 +181,12 @@ pub(crate) fn reduce_hardware_project(
     action: HardwareProjectAction,
 ) -> Option<Effect> {
     let state = &mut app.hardware.projects;
+    if !matches!(
+        action,
+        HardwareProjectAction::Request(_) | HardwareProjectAction::Finished { .. }
+    ) {
+        return super::project_controls::reduce(app, action);
+    }
     match action {
         HardwareProjectAction::Request(operation) => {
             if state.loading {
@@ -213,6 +245,7 @@ pub(crate) fn reduce_hardware_project(
             }
             None
         }
+        _ => unreachable!("controls routed above"),
     }
 }
 

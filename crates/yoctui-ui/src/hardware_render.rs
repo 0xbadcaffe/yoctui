@@ -6,6 +6,8 @@ use yoctui_model::HardwareDocumentKind;
 pub(super) fn hardware_workspace(frame: &mut Frame, app: &App, area: Rect) {
     if let Some(viewer) = app.hardware.viewer.as_ref() {
         render_viewer(frame, app, area, viewer);
+    } else if app.hardware.projects.visible {
+        hardware_projects_render::render(frame, app, area);
     } else if let Some(browser) = app.hardware.browser.as_ref() {
         render_browser(frame, app, area, browser);
     } else {
@@ -113,7 +115,7 @@ fn render_library(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(
         Paragraph::new(vec![
             Line::from(detail),
-            Line::from("←/→ category  ↑/↓ select  Enter view  a add  d remove  r reload  F12 menu"),
+            Line::from("←/→ category  ↑/↓ select  Enter view  a add  d remove  r reload  p Projects  F12 menu"),
         ])
         .style(Style::default().fg(palette.secondary_foreground)),
         rows[2],
@@ -226,9 +228,20 @@ fn render_viewer(
     .split(area);
     frame.render_widget(
         Paragraph::new(format!(
-            "{} · {} · page {}/{} · zoom {}% · {}",
+            "{} · {}{} · page {}/{} · zoom {}% · {}",
             viewer.document.name(),
             viewer.document.kind.label(),
+            if matches!(
+                viewer.document.kind,
+                HardwareDocumentKind::Altium | HardwareDocumentKind::Expedition
+            ) && matches!(
+                viewer.preview,
+                Some(yoctui_model::HardwarePreview::Raster(_))
+            ) {
+                " · PDF export"
+            } else {
+                ""
+            },
             viewer.page,
             viewer.page_count,
             viewer.zoom_percent,
@@ -268,7 +281,12 @@ fn render_viewer(
                 if app.hardware.graphics_capability
                     != yoctui_model::HardwareGraphicsCapability::Sixel
                 {
-                    if viewer.document.kind == HardwareDocumentKind::Pdf {
+                    if matches!(
+                        viewer.document.kind,
+                        HardwareDocumentKind::Pdf
+                            | HardwareDocumentKind::Altium
+                            | HardwareDocumentKind::Expedition
+                    ) {
                         render_pdf_graphics_help(frame, app, rows[1], viewer);
                     } else {
                         hardware_raster_render::render_raster_preview(
@@ -313,6 +331,21 @@ fn presentation_label(app: &App, viewer: &yoctui_model::HardwareViewerState) -> 
             if viewer.document.kind == HardwareDocumentKind::Pdf =>
         {
             "Page unavailable"
+        }
+        yoctui_model::HardwarePresentation::Page
+            if matches!(
+                viewer.document.kind,
+                HardwareDocumentKind::Altium | HardwareDocumentKind::Expedition
+            ) =>
+        {
+            if matches!(
+                viewer.preview,
+                Some(yoctui_model::HardwarePreview::Raster(_))
+            ) {
+                "Page unavailable"
+            } else {
+                "Source only"
+            }
         }
         yoctui_model::HardwarePresentation::Page => "Terminal preview",
     }

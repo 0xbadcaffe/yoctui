@@ -3,6 +3,20 @@
 use crate::Input;
 use std::path::PathBuf;
 use yoctui_model::{Action, App, HardwareAction};
+mod projects;
+
+pub fn hardware_project_owns_input(app: &App, input: Input) -> bool {
+    app.screen == yoctui_model::Screen::Hardware
+        && app.hardware.projects.visible
+        && app.active_dialog().is_none()
+        && !app.menu.is_open()
+        && !app.onboarding.open
+        && (app.hardware.projects.form.is_some()
+            || app.hardware.projects.import_browser.is_some()
+            || (app.hardware.viewer.is_some() && matches!(input, Input::Esc | Input::Backspace))
+            || (app.focus == yoctui_model::FocusTarget::Workspace
+                && hardware_workspace_action(app, input).is_some()))
+}
 
 pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
     let state = &app.hardware;
@@ -55,6 +69,9 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
             _ => None,
         };
     }
+    if state.projects.visible {
+        return projects::action(app, input);
+    }
     if let Some(browser) = state.browser.as_ref() {
         return match input {
             Input::Esc => hardware(HardwareAction::CancelBrowser),
@@ -84,6 +101,9 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
         };
     }
     match input {
+        Input::Char('p') => hardware(HardwareAction::Project(
+            yoctui_model::HardwareProjectAction::Toggle,
+        )),
         Input::Up | Input::Char('k') => hardware(HardwareAction::SelectDocument { delta: -1 }),
         Input::Down | Input::Char('j') => hardware(HardwareAction::SelectDocument { delta: 1 }),
         Input::PageUp => hardware(HardwareAction::SelectDocument { delta: -10 }),

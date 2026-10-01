@@ -3,6 +3,12 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) async fn handle_mouse(&mut self, mouse: crossterm::event::MouseEvent) -> Result<()> {
         let runtime = self;
+        if runtime.app.screen == Screen::Hardware
+            && (runtime.app.hardware.projects.form.is_some()
+                || runtime.app.hardware.projects.import_browser.is_some())
+        {
+            return Ok(());
+        }
         if runtime.app.saved_builds.environment.loading {
             return Ok(());
         }
@@ -58,7 +64,10 @@ impl InteractiveRuntime {
                     )
                     .await;
                 }
-                Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::Load(_))) => {
+                Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::Load(_)))
+                | Some(
+                    effect @ Effect::Hardware(yoctui_model::HardwareEffect::LoadProject { .. }),
+                ) => {
                     runtime.hardware_io.submit(effect);
                 }
                 Some(Effect::LoadLayerBrowserDirectory {

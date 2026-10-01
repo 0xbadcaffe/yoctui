@@ -102,7 +102,10 @@ is restricted to TXT, PDF, KiCad, Altium and Xpedition schematics. Other files
 remain listed with Stored only, never launched or executed. Imports are bounded
 to 256 MiB and never overwrite existing names. Symlinks/special files and paths
 outside the selected project are refused; internal manifest files are hidden.
-Folder rows retain selection-centered scrolling and exact file sizes.
+Folder rows retain selection-centered scrolling and exact file sizes. Project
+controls take precedence over global shortcuts while Workspace has focus;
+create/import/progress forms trap keyboard and mouse navigation. Escape and
+Backspace close a project viewer even if Navigator has focus.
 
 `s` opens a trapped manual bring-up form for Bootloader, Kernel, Device tree,
 Drivers, RootFS and Packages. Up/Down/Tab selects a stage, Left/Right changes it

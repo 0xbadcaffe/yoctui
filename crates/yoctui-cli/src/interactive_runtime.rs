@@ -7,10 +7,13 @@ mod dependency_workspace;
 mod devtool_status_operation;
 mod editor_dialogs;
 mod extended_devtool_dialogs;
+mod hardware_workspace;
 mod input;
 mod jobs;
 mod key_input;
 mod metadata_backend;
+mod notification_input;
+mod terminal_workspace;
 #[cfg(test)]
 pub(crate) use metadata_backend::metadata_backend_start_required;
 

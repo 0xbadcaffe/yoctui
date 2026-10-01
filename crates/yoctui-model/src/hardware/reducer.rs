@@ -4,6 +4,10 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
     if let HardwareAction::Project(action) = action {
         return projects::reduce_hardware_project(app, action);
     }
+    if matches!(action, HardwareAction::OpenSelected) {
+        let document = app.hardware.selected_document()?.clone();
+        return viewer::open(app, document, None);
+    }
     let state = &mut app.hardware;
     match action {
         HardwareAction::Project(_) => unreachable!("project actions are routed above"),
@@ -167,40 +171,15 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
             )));
         }
         HardwareAction::CancelBrowser => state.browser = None,
-        HardwareAction::OpenSelected => {
-            let document = state.selected_document()?.clone();
-            let generation = state
-                .viewer
-                .as_ref()
-                .map_or(1, |viewer| viewer.generation.wrapping_add(1).max(1));
-            let viewer = HardwareViewerState {
-                document,
-                generation,
-                page: 1,
-                page_count: 1,
-                zoom_percent: 100,
-                presentation: HardwarePresentation::Page,
-                pan_x: 0,
-                pan_y: 0,
-                loading: true,
-                preview: None,
-                searchable_text: Vec::new(),
-                query: String::new(),
-                searching: false,
-                matches: Vec::new(),
-                match_selection: 0,
-                error: None,
-            };
-            let request = viewer.request();
-            state.viewer = Some(viewer);
-            return Some(Effect::Hardware(HardwareEffect::Load(request)));
-        }
+        HardwareAction::OpenSelected => unreachable!("viewer creation routed above"),
         HardwareAction::Reload => {
             let viewer = state.viewer.as_mut()?;
             viewer.generation = next_generation(&mut viewer.generation);
             viewer.loading = true;
             viewer.error = None;
-            return Some(Effect::Hardware(HardwareEffect::Load(viewer.request())));
+            state.viewer_generation = viewer.generation;
+            let request = viewer.request();
+            return Some(viewer::load_effect(state, request));
         }
         HardwareAction::PreviewLoaded {
             generation,
@@ -252,7 +231,9 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
                 viewer.loading = true;
                 viewer.pan_x = 0;
                 viewer.pan_y = 0;
-                return Some(Effect::Hardware(HardwareEffect::Load(viewer.request())));
+                state.viewer_generation = viewer.generation;
+                let request = viewer.request();
+                return Some(viewer::load_effect(state, request));
             }
         }
         HardwareAction::FirstPage => {
@@ -276,7 +257,12 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
         }
         HardwareAction::TogglePresentation => {
             let viewer = state.viewer.as_mut()?;
-            if viewer.document.kind == HardwareDocumentKind::Pdf {
+            if matches!(
+                viewer.document.kind,
+                HardwareDocumentKind::Pdf
+                    | HardwareDocumentKind::Altium
+                    | HardwareDocumentKind::Expedition
+            ) {
                 viewer.presentation = match viewer.presentation {
                     HardwarePresentation::Page if !viewer.searchable_text.is_empty() => {
                         HardwarePresentation::Text

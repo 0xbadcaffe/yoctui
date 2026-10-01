@@ -132,7 +132,7 @@ pub fn mouse_action_for_app(
         if matches!(mouse.kind, MouseKind::ScrollUp | MouseKind::ScrollDown) {
             let pages_pdf = app.screen == Screen::Hardware
                 && app.hardware.viewer.as_ref().is_some_and(|viewer| {
-                    viewer.document.kind == yoctui_model::HardwareDocumentKind::Pdf
+                    matches!(viewer.document.kind, yoctui_model::HardwareDocumentKind::Pdf | yoctui_model::HardwareDocumentKind::Altium | yoctui_model::HardwareDocumentKind::Expedition)
                 });
             let key = if matches!(mouse.kind, MouseKind::ScrollUp) {
                 if pages_pdf { Input::PageUp } else { Input::Up }

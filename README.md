@@ -592,6 +592,33 @@ cargo install flamegraph --locked
 ./scripts/test-flamegraph.sh
 ```
 
+## Hardware projects and manual bring-up
+
+Open **Hardware**, focus its workspace with **Tab**, and press **p** for Projects.
+**n** creates a named project or subfolder, **Enter** opens it, **Backspace** goes
+up, and **a** imports any regular file without moving the source or overwriting
+an existing name. Projects are real persistent folders under
+`$XDG_DATA_HOME/yoctui/hardware-projects` (default
+`~/.local/share/yoctui/hardware-projects`). Import is limited to 256 MiB per file.
+Other file types can be stored, but only TXT, PDF, KiCad (`.kicad_sch`/`.sch`),
+Altium (`.SchDoc`) and Xpedition (`.prj`/numbered sheet files) have preview routes.
+
+**s** edits manual bring-up percentages for Bootloader, Kernel, Device tree,
+Drivers, RootFS and Packages. Select with arrows/Tab, type **0–100**, adjust with
+Left/Right, or toggle 0/100 with Space. **Enter** saves; **Esc** cancels. The
+overall bar averages these values; it does not infer progress from build tasks.
+
+TXT is embedded searchable text; PDF uses the existing embedded viewer and
+KiCad uses `kicad-cli` when available. Native Altium/Xpedition rendering is not
+implemented: keep a same-stem PDF export beside the source (for example,
+`board.SchDoc` and `board.pdf`) for graphical viewing; otherwise the viewer shows
+bounded source text or an explicit limitation. Altium documents its
+[schematic PDF export](https://my.altium.com/altium-365/getting-started/schematic-documentation);
+its [Xpedition migration guide](https://files.resources.altium.com/sites/default/files/2024-02/Xpedition%20Migration%20Guide.pdf)
+describes `.prj` databases and numbered schematic sheets. No associated
+applications or stored artifacts are executed. The existing document library
+and its SVG/raster support remain unchanged.
+
 ## Development and license
 
 ```sh

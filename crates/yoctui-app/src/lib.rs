@@ -3,7 +3,7 @@ mod environment_setup;
 mod hardware_input;
 mod keyboard_prefix;
 pub use environment_setup::*;
-pub use hardware_input::hardware_workspace_action;
+pub use hardware_input::{hardware_project_owns_input, hardware_workspace_action};
 mod pty_context;
 mod pty_devtool;
 mod pty_menuconfig;

@@ -1,6 +1,69 @@
 use super::*;
 use yoctui_model::{HardwareAction, HardwareCategory, HardwareDocument, HardwareDocumentKind};
 
+#[test]
+fn hardware_project_controls_trap_forms_and_keep_legacy_library_keys() {
+    use yoctui_model::{HardwareProject, HardwareProjectAction as A, HardwareProjectForm};
+    let mut app = hardware_app();
+    assert_eq!(
+        hardware_workspace_action(&app, Input::Char('p')),
+        Some(Action::Hardware(HardwareAction::Project(A::Toggle)))
+    );
+    app.hardware.projects.visible = true;
+    app.focus = yoctui_model::FocusTarget::Workspace;
+    assert!(!hardware_project_owns_input(&app, Input::Char('a'))); // No project yet.
+    assert_eq!(
+        hardware_workspace_action(&app, Input::Char('n')),
+        Some(Action::Hardware(HardwareAction::Project(A::NewName)))
+    );
+    app.hardware.projects.form = Some(HardwareProjectForm::Name {
+        value: String::new(),
+    });
+    assert_eq!(
+        hardware_workspace_action(&app, Input::Char('p')),
+        Some(Action::Hardware(HardwareAction::Project(A::EditName('p'))))
+    );
+    assert_eq!(hardware_workspace_action(&app, Input::Tab), None);
+    app.hardware.projects.project = Some(HardwareProject {
+        name: "board".into(),
+        root: "/tmp/board".into(),
+        progress: [0; 6],
+    });
+    app.hardware.projects.form = None;
+    assert!(hardware_project_owns_input(&app, Input::Char('a')));
+    app.hardware.projects.form = Some(HardwareProjectForm::Progress {
+        values: [0; 6],
+        stage: 0,
+        digits: String::new(),
+    });
+    assert_eq!(
+        hardware_workspace_action(&app, Input::Tab),
+        Some(Action::Hardware(HardwareAction::Project(A::SelectStage {
+            delta: 1
+        })))
+    );
+    assert_eq!(
+        hardware_workspace_action(&app, Input::Char('5')),
+        Some(Action::Hardware(HardwareAction::Project(A::ProgressDigit(
+            '5'
+        ))))
+    );
+    assert_eq!(hardware_workspace_action(&app, Input::Char('p')), None);
+    app.hardware.projects.form = None;
+    app.hardware.projects.import_browser = Some(("/tmp".into(), Vec::new(), 0));
+    assert_eq!(
+        hardware_workspace_action(&app, Input::Enter),
+        Some(Action::Hardware(HardwareAction::Project(A::ImportOpen)))
+    );
+    assert_eq!(hardware_workspace_action(&app, Input::Char('n')), None);
+    app.hardware.projects.import_browser = None;
+    let _ = update(&mut app, Action::Hardware(HardwareAction::OpenSelected));
+    app.focus = yoctui_model::FocusTarget::Navigator;
+    assert!(hardware_project_owns_input(&app, Input::Esc));
+    assert!(hardware_project_owns_input(&app, Input::Backspace));
+    assert!(!hardware_project_owns_input(&app, Input::Enter));
+}
+
 fn hardware_app() -> App {
     let mut app = App::new(100, 100_000);
     app.screen = Screen::Hardware;

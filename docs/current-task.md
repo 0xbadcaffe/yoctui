@@ -1,26 +1,21 @@
 # Current Task
 
-**ID:** HARDWARE-PROJECT-UI-001
-**Title:** Expose Hardware projects, restricted previews and manual bring-up controls
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Dependency HARDWARE-PROJECT-STORE-001 is DONE. Relevant files: model project
-reducer, app input, Hardware renderers, CLI lifecycle routing and document adapter.
-Implement specified project/folder/import forms, restricted embedded preview and
-manual stage controls. Done requires focused reducer/input/TestBackend/adapter
-tests, restart smoke, documentation, version bump, commit/push and optimized
-source-bound release binary. Afterwards restore the external M67 blocker.
+The retained performance evidence is not bound to the current source tree: its
+manifest has 143 source digest mismatches, including changes predating M67.
+Supply a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto` compile
+capture using the documented release workload. Do not rewrite historical
+digests or substitute fake-process startup timings for live evidence.
 
 ```bash
-cargo test -p yoctui-model hardware_project
-cargo test -p yoctui-app hardware
-cargo test -p yoctui-ui hardware
-cargo test -p yoctui --bin yoctui hardware
-cargo fmt --all --check
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-./scripts/verify-roadmap.sh
-python3 scripts/check-version-bump.py
-cargo build --release -p yoctui --bin yoctui
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
 
-Full suite remains deferred per user. M67 stays externally blocked.
+This external validation prerequisite is the only remaining required task.
+The user explicitly deferred the full test suite for the v0.1.255 Hardware
+projects change; do not run the full completion suite without a subsequent
+instruction. Focused product checks and live restart smoke pass.

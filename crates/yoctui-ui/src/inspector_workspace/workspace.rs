@@ -133,6 +133,10 @@ pub(crate) fn inspector(
             ),
         Screen::Packages => package_inspector_text(app),
         Screen::Images => image_artifact_inspector_text(app),
+        Screen::Hardware if app.hardware.projects.visible => app.hardware.projects.project.as_ref().or_else(|| app.hardware.projects.catalog.get(app.hardware.projects.selection)).map_or_else(
+            || "Hardware Projects · n New project · Enter open".into(),
+            |project| format!("Project: {}\nFolder: {}\nManual bring-up: {}%\nProgress is user-reported, not BitBake state.\nn subfolder · a import · s bring-up", project.name, project.root.display(), project.percent()),
+        ),
         Screen::Hardware => app.hardware.selected_document().map_or_else(
             || "No Hardware document selected.".into(),
             |document| format!(
@@ -188,7 +192,8 @@ pub(crate) fn inspector(
     };
     let status = (app.screen == Screen::Dashboard)
         .then(|| system_status_text(app, area.width.saturating_sub(2)));
-    let show_actions = !(app.screen == Screen::Dashboard && area.height < 30);
+    let show_actions = !(app.screen == Screen::Dashboard && area.height < 30)
+        && !(app.screen == Screen::Hardware && app.hardware.projects.visible);
     let document = inspector_document(
         app,
         InspectorDocumentSections {

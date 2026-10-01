@@ -4646,11 +4646,15 @@ folder, import and progress keys. UI only renders this typed state and reuses
 the embedded Hardware viewer. CLI owns an independent background filesystem
 worker and project store under the user data directory. Project manifests are
 private, bounded, atomically replaced; directory navigation validates containment
-and refuses symlinks. Import uses exclusive destination creation and bounded
-copying, never shell commands. Any file may be stored, but model and backend
+and refuses symlinks. Import stages a bounded copy privately and exclusively
+publishes the completed file without overwrites, never shell commands. Any file
+may be stored, but model and backend
 both enforce the restricted project preview kinds. Existing library/session and
 daemon protocol semantics are unchanged. Manual progress never derives from
 BitBake state. No project deletion or overwrite operation is introduced.
+The backend revalidates the registered project root and preview path before
+reading. Worker and runtime dispatch are split into bounded modules without
+changing daemon ownership or the existing terminal/notification input priority.
 
 ## M81 Hardware library and document rendering
 

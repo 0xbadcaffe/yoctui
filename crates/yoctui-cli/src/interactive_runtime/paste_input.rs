@@ -3,6 +3,20 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) fn handle_paste(&mut self, text: String) -> Result<()> {
         let runtime = self;
+        if runtime.app.screen == Screen::Hardware
+            && runtime.app.hardware.projects.visible
+            && runtime.app.hardware.projects.form.is_some()
+            && runtime.app.active_dialog().is_none()
+        {
+            for character in text.chars().filter(|c| !c.is_control()).take(128) {
+                if let Some(action) =
+                    yoctui_app::hardware_workspace_action(&runtime.app, Input::Char(character))
+                {
+                    let _ = compatibility_workspace_action(&mut runtime.app, action);
+                }
+            }
+            return Ok(());
+        }
         if runtime.app.saved_builds.environment.loading {
             return Ok(());
         }

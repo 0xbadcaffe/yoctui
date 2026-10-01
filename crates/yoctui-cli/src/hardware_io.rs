@@ -9,6 +9,7 @@ use std::{
 };
 
 use anyhow::{Context, Result, anyhow, bail};
+use std::io::Read;
 use tokio::{process::Command, task::JoinHandle};
 use yoctui_model::{
     Action, App, Effect, HardwareAction, HardwareBrowserEntry, HardwareDocumentKind,
@@ -17,136 +18,15 @@ use yoctui_model::{
     MAX_HARDWARE_TEXT_BYTES,
 };
 mod projects;
+mod schematics;
 mod text;
 use text::{bounded_lines, readable_pdf_lines};
 
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
 const DOCUMENT_TOOL_TIMEOUT: Duration = Duration::from_secs(30);
 
-enum HardwareWork {
-    Project(yoctui_model::HardwareProjectRequest),
-    Browse { generation: u64, directory: PathBuf },
-    Load(HardwareLoadRequest),
-}
-
-#[derive(Default)]
-pub(crate) struct HardwareIo {
-    worker: Option<JoinHandle<Action>>,
-    queued: Option<HardwareWork>,
-}
-
-impl HardwareIo {
-    pub(crate) fn submit(&mut self, effect: Effect) {
-        self.queued = match effect {
-            Effect::Hardware(HardwareEffect::Project(request)) => {
-                Some(HardwareWork::Project(request))
-            }
-            Effect::Hardware(HardwareEffect::Browse {
-                generation,
-                directory,
-            }) => Some(HardwareWork::Browse {
-                generation,
-                directory,
-            }),
-            Effect::Hardware(HardwareEffect::Load(request)) => Some(HardwareWork::Load(request)),
-            _ => self.queued.take(),
-        };
-        self.start();
-    }
-
-    fn start(&mut self) {
-        if self.worker.is_some() {
-            return;
-        }
-        self.worker = self.queued.take().map(|work| {
-            tokio::spawn(async move {
-                match work {
-                    HardwareWork::Project(request) => {
-                        let generation = request.generation;
-                        tokio::task::spawn_blocking(move || projects::run(request))
-                            .await
-                            .unwrap_or_else(|error| {
-                                Action::Hardware(HardwareAction::Project(
-                                    yoctui_model::HardwareProjectAction::Finished {
-                                        generation,
-                                        result: Err(format!("Project worker failed: {error}")),
-                                    },
-                                ))
-                            })
-                    }
-                    HardwareWork::Browse {
-                        generation,
-                        directory,
-                    } => match tokio::task::spawn_blocking(move || browse_directory(&directory))
-                        .await
-                    {
-                        Ok(Ok((directory, entries))) => {
-                            Action::Hardware(HardwareAction::BrowserLoaded {
-                                generation,
-                                directory,
-                                entries,
-                            })
-                        }
-                        Ok(Err(error)) => Action::Hardware(HardwareAction::BrowserFailed {
-                            generation,
-                            message: error.to_string(),
-                        }),
-                        Err(error) => Action::Hardware(HardwareAction::BrowserFailed {
-                            generation,
-                            message: format!("Hardware browser worker failed: {error}"),
-                        }),
-                    },
-                    HardwareWork::Load(request) => {
-                        let generation = request.generation;
-                        match load_document(request).await {
-                            Ok((page_count, preview, searchable_text)) => {
-                                Action::Hardware(HardwareAction::PreviewLoaded {
-                                    generation,
-                                    page_count,
-                                    preview,
-                                    searchable_text,
-                                })
-                            }
-                            Err(error) => Action::Hardware(HardwareAction::PreviewFailed {
-                                generation,
-                                message: error.to_string(),
-                            }),
-                        }
-                    }
-                }
-            })
-        });
-    }
-
-    pub(crate) async fn poll(&mut self, app: &mut App) -> bool {
-        if !self
-            .worker
-            .as_ref()
-            .is_some_and(|worker| worker.is_finished())
-        {
-            return false;
-        }
-        let action = self
-            .worker
-            .take()
-            .expect("finished Hardware worker")
-            .await
-            .unwrap_or_else(|error| {
-                let generation = app
-                    .hardware
-                    .viewer
-                    .as_ref()
-                    .map_or(0, |value| value.generation);
-                Action::Hardware(HardwareAction::PreviewFailed {
-                    generation,
-                    message: format!("Hardware worker failed: {error}"),
-                })
-            });
-        let _ = yoctui_model::update(app, action);
-        self.start();
-        true
-    }
-}
+mod worker;
+pub(crate) use worker::HardwareIo;
 
 pub(crate) fn browse_directory(directory: &Path) -> Result<(PathBuf, Vec<HardwareBrowserEntry>)> {
     let directory = fs::canonicalize(directory)
@@ -203,16 +83,14 @@ async fn load_document(
             ))
         }
         HardwareDocumentKind::Altium | HardwareDocumentKind::Expedition => {
-            bail!(
-                "Native schematic conversion is unavailable; import a same-stem PDF export to view graphically."
-            )
+            schematics::load_export(&request.document.path, request.page).await
         }
         HardwareDocumentKind::Pdf => load_pdf(&request.document.path, request.page).await,
         HardwareDocumentKind::Raster => {
             let raster = decode_raster(request.document.path.clone()).await?;
             Ok((1, HardwarePreview::Raster(raster), Vec::new()))
         }
-        HardwareDocumentKind::Kicad => load_kicad(&request.document.path).await,
+        HardwareDocumentKind::Kicad => load_kicad(&request.document.path, request.page).await,
         HardwareDocumentKind::Svg => load_svg(&request.document.path).await,
     }
 }
@@ -319,8 +197,17 @@ async fn render_pdf_page(path: &Path, page: usize) -> Result<HardwareRaster> {
     decoded
 }
 
-async fn load_kicad(path: &Path) -> Result<(usize, HardwarePreview, Vec<String>)> {
+async fn load_kicad(path: &Path, page: usize) -> Result<(usize, HardwarePreview, Vec<String>)> {
     let text = bounded_source_text(path)?;
+    if path
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("sch"))
+        && !text
+            .first()
+            .is_some_and(|line| line.starts_with("EESchema Schematic File Version"))
+    {
+        return schematics::load_export(path, page).await;
+    }
     if program_exists("kicad-cli") {
         let pdf = temporary_path("kicad").with_extension("pdf");
         let result = run_command(
@@ -336,7 +223,7 @@ async fn load_kicad(path: &Path) -> Result<(usize, HardwarePreview, Vec<String>)
         )
         .await;
         if result.is_ok() {
-            let rendered = load_pdf(&pdf, 1).await;
+            let rendered = load_pdf(&pdf, page).await;
             let _ = fs::remove_file(pdf);
             if let Ok((pages, preview, _)) = rendered {
                 return Ok((pages, preview, text));
@@ -394,12 +281,20 @@ async fn load_svg(path: &Path) -> Result<(usize, HardwarePreview, Vec<String>)> 
 }
 
 fn bounded_source_text(path: &Path) -> Result<Vec<String>> {
-    let metadata = fs::metadata(path)?;
+    let file = projects::regular_file(path)?;
+    let metadata = file.metadata()?;
     if metadata.len() > MAX_HARDWARE_TEXT_BYTES as u64 {
         bail!("Hardware source text exceeds the 2 MiB preview limit.");
     }
-    let text = fs::read_to_string(path)
+    let mut text = String::new();
+    file.take(MAX_HARDWARE_TEXT_BYTES as u64 + 1)
+        .read_to_string(&mut text)
         .with_context(|| format!("Hardware source is not valid UTF-8: {}", path.display()))?;
+    anyhow::ensure!(
+        text.len() <= MAX_HARDWARE_TEXT_BYTES,
+        "Hardware source text grew beyond the 2 MiB preview limit"
+    );
+    anyhow::ensure!(!text.contains('\0'), "binary source is not a text preview");
     Ok(bounded_lines(&text))
 }
 
@@ -476,3 +371,7 @@ fn temporary_path(label: &str) -> PathBuf {
 #[cfg(test)]
 #[path = "tests/hardware_io.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "tests/hardware_project_previews.rs"]
+mod project_preview_tests;

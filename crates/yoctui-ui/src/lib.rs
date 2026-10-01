@@ -3,6 +3,7 @@ use yoctui_utils::format_duration;
 mod dialogs;
 mod environment_setup;
 mod hardware_native_projection;
+mod hardware_projects_render;
 mod hardware_raster_render;
 mod hardware_render;
 mod layout;

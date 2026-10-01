@@ -1,5 +1,30 @@
 use super::*;
 
+#[test]
+fn hardware_project_preview_revalidates_registration_and_format_on_disk() {
+    let temporary = fixture("preview-root");
+    let root = temporary.join("store");
+    let created = project(
+        execute(
+            &root,
+            HardwareProjectOperation::Create {
+                name: "board".into(),
+            },
+        )
+        .unwrap(),
+    );
+    let txt = created.root.join("notes.txt");
+    fs::write(&txt, "notes").unwrap();
+    assert!(validate_preview_in_store(&root, &created.root, &txt).is_ok());
+    let binary = created.root.join("firmware.bin");
+    fs::write(&binary, "stored only").unwrap();
+    assert!(validate_preview_in_store(&root, &created.root, &binary).is_err());
+    let foreign = temporary.join("foreign.txt");
+    fs::write(&foreign, "outside").unwrap();
+    assert!(validate_preview_in_store(&root, &created.root, &foreign).is_err());
+    fs::remove_dir_all(temporary).unwrap();
+}
+
 fn fixture(label: &str) -> PathBuf {
     let path = std::env::temp_dir().join(format!(
         "yoctui-hardware-project-{label}-{}-{}",
