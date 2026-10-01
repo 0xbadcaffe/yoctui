@@ -5410,9 +5410,15 @@ directories first, hidden-file toggle, paging, collapse/parent navigation,
 search, numbered bounded content preview and explicit `e` editor action.
 `Enter` on a RootFS file focuses its preview, rather than opening the editor.
 The tree shows ls-style type/permissions, four-digit octal chmod mode,
-owner/user and group (names with numeric IDs), and exact byte size. These are
-explicitly host/on-disk IMAGE_ROOTFS attributes, not claimed fakeroot/image
-ownership. Symlink targets are displayed but never followed; special files
+owner/user and group (names with numeric IDs), and exact byte size. Ownership
+and permission mode come from the exact IMAGE_ROOTFS's sibling Pseudo database,
+correlated by absolute path, device and inode, excluding deleting/ambiguous
+records. Names resolve only through the image's contained regular `/etc/passwd`
+and `/etc/group`; unknown names retain numeric IDs. Missing, locked, corrupt,
+stale or uncorrelated metadata shows target attributes as unavailable, never
+host ownership or an assumed root identity. Size and navigation use the on-disk
+tree. This is generated-image metadata, not a booted-system observation or a
+claim about a different deployed artifact. Symlink targets are displayed but never followed; special files
 are listed but never read. Missing metadata stays explicitly unavailable.
 Wide terminals pair the tree with preview; narrow terminals stack them and
 retain full selected-file attributes in the information panel. Tab/Shift-Tab

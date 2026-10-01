@@ -1,23 +1,36 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** ROOTFS-TARGET-OWNERSHIP-001
+**Title:** Display target RootFS owner/group and mode rather than host metadata
+**Status:** IN_PROGRESS
 
-The retained performance evidence is not bound to the current source tree: its
-manifest has 143 documented source digest mismatches, including changes predating
-M67. Supply a new genuine source/binary-bound Yocto 6.0.2 linux-yocto compile
-capture using the documented release workload. Do not rewrite historical
-digests or substitute fake-process startup timings for live evidence.
+Dependency ROOTFS-FILES-BROWSER-001 is DONE. User request supersedes M100 host
+ownership presentation; unrelated M67 performance evidence remains BLOCKED.
+
+Relevant files: bitbake RootFS browser/target metadata adapter and tests, model
+RootfsFileMetadata/tests, shared RootFS renderer/tests, workspace versions.
+Done when exact-root read-only Pseudo attributes match path/device/inode,
+target passwd/group resolve root and non-root names, unavailable/corrupt/stale
+data never falls back to host/root, navigation/preview/chart/Layers regressions
+pass, real Romulus evidence is recorded, version is bumped and change committed,
+pushed and source-bound release binary built. Update UI, architecture, roadmap,
+registry and status in the coherent implementation commit.
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-bitbake rootfs_browser
+cargo test -p yoctui-model rootfs_browser
+cargo test -p yoctui-model layer_tree
+cargo test -p yoctui-app rootfs_browser
+cargo test -p yoctui-ui rootfs_browser
+cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks
+cargo test -p yoctui --bin yoctui rootfs_browser
+cargo fmt --all --check
+cargo clippy -p yoctui --all-targets --all-features -- -D warnings
+python3 scripts/check-version-bump.py
+./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
 ```
 
-This external prerequisite is the only remaining required task. The user
-explicitly deferred the full suite; do not run the full completion suite without
-a subsequent instruction. The v0.1.257 Kernel QEMU → GDB request passes focused
-checks and genuine Linux guest/embedded reconnect debugging smokes. That does
-not certify current-source Yocto compile performance. All M104 tasks are DONE;
-final push and source-bound release delivery are the handoff.
+Do not run the full suite or completion gate; the user deferred it. Live check
+must read genuine Romulus Pseudo/account data without restarting the daemon,
+mutating a build or starting BitBake.

@@ -1,3 +1,9 @@
+ROOTFS-TARGET-OWNERSHIP-001 is IN_PROGRESS. Actual Romulus lstat UID/GID
+1000/1000 differs from its exact Pseudo records (0/0); the current browser also
+resolves host rather than target account names. Replace both sources with
+validated read-only target evidence and explicit unavailable handling. Preserve
+the existing daemon, builds and user captures; focused verification only.
+
 M104 is DONE in v0.1.257. Genuine Linux 6.18.24 / Poky 6.0.2 qemux86-64 with
 QEMU 10.2.0 and GDB 17.1 passed managed attach, start_kernel breakpoint,
 backtrace, resume to login, interrupt, idle backtrace and clean exit. Kernel

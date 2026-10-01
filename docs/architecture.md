@@ -3636,9 +3636,14 @@ records. Opening the rootfs reuses the existing lazy directory effects,
 connects to D-Bus, or mounts a deploy artifact.
 
 The Files tab reuses the typed LayerBrowser reducer and tree/preview renderer
-inline. Optional RootFS-only entry attributes carry lstat type, mode, numeric
-UID/GID, resolved host account names and link target. The BitBake adapter owns
-contained lazy directory acquisition and bounded host-account lookup. RootFS
+inline. Optional RootFS-only entry attributes carry lstat type/link target and
+optional target mode/UID/GID resolved from the exact root's sibling Pseudo
+`files.db`. The BitBake adapter uses read-only bundled SQLite with bounded
+lock/query time, exact path/device/inode matching and no deleting/ambiguous
+records. It never starts Pseudo or changes build metadata. Bounded contained
+regular image account files provide names; host NSS/passwd/group are never
+consulted. Unavailable target metadata remains absent, without lstat ownership
+fallback or an assumed root. Size remains on-disk evidence. RootFS
 preview reads revalidate containment and require a non-symlink regular file;
 neither special files nor links are opened. Layers entries omit these optional
 attributes and retain their existing Git and editor behavior.

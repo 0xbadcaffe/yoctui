@@ -1,5 +1,14 @@
 # Yoctui Product Roadmap
 
+## M105 — Correct target RootFS owner/group and mode
+
+ROOTFS-TARGET-OWNERSHIP-001 supersedes M100's host attribute presentation.
+Use read-only exact-root Pseudo metadata and image account names, retain real
+non-root identities, and expose missing/stale metadata without inventing root
+or falling back to the build host. Keep navigation, previews, charts and Layers
+unchanged. Focused checks only; the full suite remains deferred and M67 blocked.
+Pseudo authority: [Yocto fakeroot/Pseudo](https://docs.yoctoproject.org/dev/overview-manual/concepts.html#fakeroot-and-pseudo).
+
 ## M104 — From Kernel guides to managed debug sessions
 
 The user requested documentation of this roadmap and implementation of the
