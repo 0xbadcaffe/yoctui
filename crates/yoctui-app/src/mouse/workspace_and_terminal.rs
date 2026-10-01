@@ -29,6 +29,7 @@ pub(crate) fn workspace_tab_click(
         Screen::Kernel if (20..36).contains(&column) => {
             Some(Action::SetKernelView(yoctui_model::PlatformView::DeviceTrees))
         }
+        Screen::Kernel if (39..54).contains(&column) => Some(Action::KernelDebug(yoctui_model::KernelDebugAction::Open)),
         Screen::Firmware if column < 17 => Some(Action::SetFirmwareView(
             yoctui_model::PlatformView::Configuration,
         )),

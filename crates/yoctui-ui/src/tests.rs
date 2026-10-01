@@ -21,6 +21,7 @@ mod hardware;
 mod hardware_projects;
 mod header_status;
 mod inspector_shell_names_modes_and_orders_typed_sections;
+mod kernel_debug;
 mod keymap_preferences_render_search_custom_capture_errors_and_narrow_state;
 mod log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely;
 mod palette_retains_typed_facts_at_every_breakpoint;

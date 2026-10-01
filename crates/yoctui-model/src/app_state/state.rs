@@ -87,6 +87,7 @@ pub struct App {
     pub images_view: ImagesView,
     pub hardware: HardwareState,
     pub kernel: PlatformWorkbench,
+    pub kernel_debug: KernelDebugState,
     pub firmware: PlatformWorkbench,
     pub rootfs_composition: RootfsCompositionState,
     pub overview_image_size_history: VecDeque<OverviewImageSizeSnapshot>,

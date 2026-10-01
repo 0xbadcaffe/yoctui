@@ -3,6 +3,13 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) fn handle_paste(&mut self, text: String) -> Result<()> {
         let runtime = self;
+        if matches!(runtime.app.active_dialog(), Some(Dialog::KernelDebug(_))) {
+            let _ = compatibility_workspace_action(
+                &mut runtime.app,
+                Action::KernelDebug(yoctui_model::KernelDebugAction::Insert(text)),
+            );
+            return Ok(());
+        }
         if runtime.app.screen == Screen::Hardware
             && runtime.app.hardware.projects.visible
             && runtime.app.hardware.projects.form.is_some()

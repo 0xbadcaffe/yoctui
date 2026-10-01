@@ -3,6 +3,7 @@
 pub enum Action {
 
     Hardware(HardwareAction),
+    KernelDebug(KernelDebugAction),
 
     // Lifecycle and project state.
     SavedBuild(SavedBuildAction), OpenGitUi, GitUiDetected(Option<PathBuf>),

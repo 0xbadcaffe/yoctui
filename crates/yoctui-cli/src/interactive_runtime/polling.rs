@@ -15,6 +15,10 @@ impl InteractiveRuntime {
             RenderCause::State,
         );
         let recipe_metadata_changed = runtime.poll_recipe_inspection().await;
+        runtime.render_scheduler.invalidate_if(
+            runtime.kernel_debug_io.poll(&mut runtime.app).await,
+            RenderCause::State,
+        );
         runtime
             .render_scheduler
             .invalidate_if(recipe_metadata_changed, RenderCause::State);

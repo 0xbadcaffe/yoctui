@@ -5,7 +5,10 @@ use crate::{TerminalCreationKind, TerminalLaunchRequest};
 
 mod catalogue;
 mod plan;
+mod state;
 pub use catalogue::*;
+pub(crate) use state::reduce;
+pub use state::*;
 
 pub const MAX_KERNEL_DEBUG_FIELD_BYTES: usize = 4096;
 

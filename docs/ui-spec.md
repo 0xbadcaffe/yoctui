@@ -108,7 +108,10 @@ Launch forms trap focus. Tab/Up/Down chooses a field, characters edit bounded
 text, Backspace removes, Ctrl+U clears, Left/Right/Space chooses Host or SSH
 target, Enter validates and opens the existing exact-argv embedded/detached
 terminal chooser, Esc cancels. Runtime inspection and preparation are owned
-background workers with generation-correlated typed results; stale completion
+background workers. PageUp/PageDown scrolls guidance in forms and exact argv in
+the review; field/destination hints and scope warnings retain separate regions.
+Hosts and GDB endpoints currently accept DNS/IPv4, not serial/IPv6 syntax.
+Workers return generation-correlated typed results; stale completion
 cannot replace another dialog. Opening/cancelling never launches a debugger.
 Runtime target tools default to SSH with an empty required host, not the build
 host. Host mode is explicitly labeled YOCTUI HOST, NOT TARGET. SSH accepts
@@ -118,7 +121,8 @@ Offline GDB/crash/trace reports and remote GDB clients run on the host; their
 symbol/core/report paths must be explicit existing regular files. GDB executable
 discovery prefers gdb-multiarch then gdb; tool discovery is executable presence,
 not proof of architecture/kernel compatibility. Missing tools block launch with
-installation guidance. GDB startup disables init files and auto-loaded scripts;
+installation guidance. GDB startup disables init files, auto-loaded scripts and
+automatic debuginfod downloads/prompts before loading symbols;
 remote GDB uses an explicit TCP endpoint and never starts a local inferior.
 
 All launch previews identify scope and warn that debugger attach/breakpoints

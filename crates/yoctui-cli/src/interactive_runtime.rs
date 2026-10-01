@@ -415,6 +415,7 @@ pub(crate) async fn tui(
         render_scheduler,
         environment_browser_io,
         hardware_io,
+        kernel_debug_io: kernel_debug_io::KernelDebugIo::default(),
         hardware_native_graphics,
         recipe_inspection_operation,
         devtool_status_operation,

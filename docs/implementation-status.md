@@ -1,9 +1,27 @@
-KERNEL-DEBUG-TOOLS-001 is DONE: 16 techniques (12 tools/four guides), bounded
-fixed command plans, explicit host/SSH scope, safe quoting, safe GDB startup and
-non-mutating local executable/file preparation. Four planner and two CLI tests,
-formatting, strict CLI Clippy and roadmap pass. KERNEL-DEBUG-UI-001 is IN_PROGRESS
-with runtime correlation, navigation/forms, terminal integration and a versioned
-release. Focused checks only; M67 remains externally blocked.
+KERNEL-DEBUG-TOOLS-001 and KERNEL-DEBUG-UI-001 are DONE in v0.1.256. Kernel
+`3`/`b` opens 16 techniques (12 typed tool routes/four guides): GDB remote/core,
+strace, perf, trace-cmd, ftrace, dmesg, dynamic debug, kmemleak, bpftrace, LTTng
+and crash analysis. Modal forms validate bounded fields, default runtime tools
+to explicit SSH targets, reject commands/options masquerading as hosts and
+require existing regular offline files. Exact argv and scope are reviewed before
+embedded/detached launch. Missing host/target tools and permissions remain
+honest diagnostics. No packages, privilege escalation, kernel settings or
+crash/reboot operations are applied automatically. GDB disables init scripts,
+auto-load, debuginfod downloads/prompts and implicit native-target connection.
+
+Focused model/app/UI/CLI checks (7/3/2/4 debugging tests), Kernel/U-Boot rendering,
+menuconfig, daemon client, saved environments, QEMU, Hardware and RootFS
+chart/tree regressions pass. Strict affected-crate all-target Clippy, formatting,
+version policy, roadmap and optimized compilation pass. The one RootFS test
+allocation lint was corrected without changing its assertion or behavior.
+Live isolated-client catalogue/guide, missing target and symlink validation,
+exact preview/cancellation, embedded GDB writer control and clean debugger/client
+exit pass. GDB used a harmless host ELF and unused TCP endpoint; no real guest
+or target debugging compatibility is claimed. Startup guards also pass an actual
+installed-GDB check. The existing daemon remains alive; user captures and kernel
+configuration are untouched. Push and the final source-bound optimized rebuild
+complete delivery. The full suite remains deferred per user; M67 evidence stays
+externally blocked.
 
 HARDWARE-PROJECT-STORE-001 and HARDWARE-PROJECT-UI-001 are DONE in v0.1.255.
 Hardware `p` opens persistent named projects, `n` creates real project/subfolders,

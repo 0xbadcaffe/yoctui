@@ -146,6 +146,7 @@ pub(crate) fn inspector(
                 document.path.display()
             ),
         ),
+        Screen::Kernel if app.kernel_debug.visible => format!("{}\n\n{}\n\nReference: {}\n\nNo automatic installation, sudo, kernel settings or target reboot.", app.kernel_debug.tool().label(), app.kernel_debug.tool().guide(), app.kernel_debug.tool().reference()),
         Screen::Kernel => platform_inspector_text(&app.kernel, "Kernel"),
         Screen::Firmware => platform_inspector_text(&app.firmware, "U-Boot / BIOS"),
         Screen::Sdk => sdk_inspector_text(app),
@@ -193,7 +194,8 @@ pub(crate) fn inspector(
     let status = (app.screen == Screen::Dashboard)
         .then(|| system_status_text(app, area.width.saturating_sub(2)));
     let show_actions = !(app.screen == Screen::Dashboard && area.height < 30)
-        && !(app.screen == Screen::Hardware && app.hardware.projects.visible);
+        && !(app.screen == Screen::Hardware && app.hardware.projects.visible)
+        && !(app.screen == Screen::Kernel && app.kernel_debug.visible);
     let document = inspector_document(
         app,
         InspectorDocumentSections {

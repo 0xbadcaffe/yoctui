@@ -147,6 +147,19 @@ pub fn mouse_action_for_app(
             if let Some(action) = workspace_tab_click(app, region.area, mouse) {
                 return Some(action);
             }
+            if app.screen == Screen::Kernel && app.kernel_debug.visible {
+                let capacity = usize::from(region.area.height.saturating_sub(6)).max(1);
+                let viewport = yoctui_model::centered_viewport_range(Some(app.kernel_debug.selection), yoctui_model::KernelDebugTool::ALL.len(), capacity);
+                let first = region.area.y.saturating_add(3);
+                if mouse.row >= first && mouse.row < first.saturating_add(capacity as u16) {
+                    let index = viewport.start + usize::from(mouse.row - first);
+                    if index < yoctui_model::KernelDebugTool::ALL.len() {
+                        return Some(Action::KernelDebug(if index == app.kernel_debug.selection {
+                            yoctui_model::KernelDebugAction::OpenSelected
+                        } else { yoctui_model::KernelDebugAction::SelectAt(index) }));
+                    }
+                }
+            }
             if app.screen == Screen::Tasks
                 && let Some(action) = task_row_click(app, region.area, mouse)
             {

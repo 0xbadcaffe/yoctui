@@ -103,7 +103,7 @@ impl KernelDebugTool {
                 "Live CPU sampling for an explicit PID. Requires perf plus permitted perf_event access, matching kernel support and symbols. Sampling adds overhead. Kernel symbols/stack unwinding can require debug symbols and kernel configuration. This route does not change perf_event_paranoid or elevate privileges."
             }
             Self::TraceCmd => {
-                "Offline trace-cmd report of an existing trace.dat. Recording is manual: select relevant events and a bounded capture rather than tracing everything. Enable kernel tracing options and install trace-cmd on the capture system. Report files must match the capture and can contain sensitive workload details."
+                "Offline trace-cmd report of an existing trace.dat; automatic plugins are disabled. Recording is manual: select relevant events and a bounded capture rather than tracing everything. Enable kernel tracing options and install trace-cmd on the capture system. Report files must match the capture and can contain sensitive workload details."
             }
             Self::Ftrace => {
                 "Reads /sys/kernel/tracing/trace without clearing or enabling it. Requires mounted tracefs and read permission. Configure tracers/events manually; this route neither mounts tracefs nor writes controls. A snapshot during active tracing may be inconsistent. Function/function_graph and sched/IRQ events help latency analysis."
@@ -124,7 +124,7 @@ impl KernelDebugTool {
                 "List available kernel events, not a recording. Requires LTTng tools and kernel tracer modules/permissions on the selected system. Configure sessions, channels and bounded recording manually; no tracing session is created here."
             }
             Self::Crash => {
-                "Offline kernel dump analysis with crash. Supply matching vmlinux/debug symbols and vmcore, architecture-compatible crash and a previously collected kdump. Useful commands: bt, log, ps, kmem. Collection/reboot is not automatic; vmcore may contain secrets."
+                "Offline kernel dump analysis with crash; crashrc startup files are disabled. Supply matching vmlinux/debug symbols and vmcore, architecture-compatible crash and a previously collected kdump. Useful commands: bt, log, ps, kmem. Collection/reboot is not automatic; vmcore may contain secrets."
             }
             Self::Kgdb => {
                 "GUIDE ONLY. Enable KGDB and debug information; optionally KDB and KGDB serial-console support. Use matching vmlinux on the debugger host. Configure the target transport/boot arguments intentionally; kgdbwait/breakpoints stop execution. QEMU can provide its own GDB stub. Yoctui remote GDB uses TCP; serial KGDB transport setup remains manual."

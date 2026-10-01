@@ -6,6 +6,7 @@ mod hardware_native_projection;
 mod hardware_projects_render;
 mod hardware_raster_render;
 mod hardware_render;
+mod kernel_debug_render;
 mod layout;
 mod overview;
 pub mod primitives;

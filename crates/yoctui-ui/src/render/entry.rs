@@ -48,6 +48,7 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     let _overlay_rendered = render_shell_overlays(frame, app, area)
         || render_workflow_dialogs(frame, app, area)
         || render_project_dialogs(frame, app, area)
+        || crate::kernel_debug_render::dialog(frame, app, area)
         || render_development_dialogs(frame, app, area)
         || render_setup_dialogs(frame, app, area);
     if !app.command_palette_open

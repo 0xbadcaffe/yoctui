@@ -32,6 +32,7 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
         | Dialog::BbmaskConfirmation(_)
         | Dialog::ImageConsole(_)
         | Dialog::DtcCompile(_)
+        | Dialog::KernelDebug(_)
         | Dialog::DtcDecompile(_)
         | Dialog::YoctoUtility(_)
         | Dialog::TerminalLaunch(_)

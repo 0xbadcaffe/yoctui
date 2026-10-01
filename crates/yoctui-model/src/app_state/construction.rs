@@ -92,6 +92,7 @@ impl App {
             images_view: ImagesView::Artifacts,
             hardware: HardwareState::default(),
             kernel: PlatformWorkbench::default(),
+            kernel_debug: KernelDebugState::default(),
             firmware: PlatformWorkbench::default(),
             rootfs_composition: RootfsCompositionState::NotLoaded,
             overview_image_size_history: VecDeque::new(),

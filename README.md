@@ -347,7 +347,8 @@ Editors and terminals retain literal `/`; use their own search controls.
 ## Kernel, firmware and build analysis
 
 Open **Kernel** or **U-Boot / BIOS** in the Navigator. Tab switches Configuration
-and Device trees. Enter/`e` opens a text file; `m` opens menuconfig when the
+and Device trees; Kernel also has **3 Debugging** (`b`). Enter/`e` opens a text
+file; `m` opens menuconfig when the
 selected provider supports it. Kernel and U-Boot menuconfig retain their native
 ncurses layout, colors and key handling inside Terminal Sessions. The selected
 session uses the full workspace beside the Navigator, omits the passive
@@ -358,6 +359,16 @@ options for symbols, stable sorting, padding and reserve entries before the
 command preview; `d` decompiles DTB/DTBO. Output uses a
 `.yoctui` name and refuses overwrites.
 [Kernel and firmware guide](docs/platform-workbenches.md).
+
+Kernel Debugging provides typed launch forms for GDB remote QEMU/KGDB and core
+analysis, strace PID attach, perf, trace-cmd reports, ftrace snapshots, dmesg,
+dynamic-debug and kmemleak reports, bpftrace syscall counts, LTTng event discovery
+and crash/vmcore analysis. Runtime tools default to an explicit SSH target; Host
+mode clearly refers to the **Yoctui host, not the target**. GDB clients/offline
+analysis run on the host with explicit matching symbols/files. Enter reviews
+exact argv before embedded/detached launch. Tools, target permissions and kernel
+support are prerequisites, not automatically installed or enabled. KGDB/KDB,
+sanitizers, lockdep and SysRq/kdump have clearly labeled setup guides.
 
 Open **Overview → Insights** and choose `1`–`8` for timeline, rebuild causes,
 sstate/downloads, image size, metadata provenance, package dependencies,

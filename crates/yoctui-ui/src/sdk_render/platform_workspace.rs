@@ -36,7 +36,7 @@ pub(crate) fn platform_workspace(
                 Style::default()
             },
         ),
-        Span::raw("  Tab switches"),
+        Span::raw(if app.screen == Screen::Kernel { " │  3 Debugging   Tab switches" } else { "  Tab switches" }),
     ]);
     let mut lines = vec![tabs];
     match &workbench.inventory {

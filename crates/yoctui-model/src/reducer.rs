@@ -19,6 +19,7 @@ mod yocto_utility_dialog;
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     let action = match action {
         Action::Hardware(action) => return reduce_hardware(app, action),
+        Action::KernelDebug(action) => return crate::kernel_debug::reduce(app, action),
         action => action,
     };
     if modal_focus(app).is_some()
@@ -384,6 +385,6 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::WorkspaceLoaded(..) | Action::RecipesLoaded(..) | Action::LayersLoaded(..)
         | Action::VariableLoaded(..) | Action::RecipeSourcesLoaded { .. } | Action::HostTelemetryUpdated(..)
         | Action::Failure(..) | Action::Tick => set_layer_inspector_mode::reduce_actions(app, action),
-        Action::Hardware(_) => unreachable!("Hardware actions are routed before the shared reducer"),
+        Action::Hardware(_) | Action::KernelDebug(_) => unreachable!("Local workspace actions are routed before the shared reducer"),
     }
 }

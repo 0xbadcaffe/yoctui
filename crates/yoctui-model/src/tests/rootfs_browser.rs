@@ -55,7 +55,7 @@ fn rootfs_browser_opens_on_files_tab_and_correlated_composition_completion() {
         },
     );
     assert!(
-        matches!(effect, Some(Effect::LoadLayerBrowserDirectory { root, directory, .. }) if root == PathBuf::from("/build/rootfs") && directory == root)
+        matches!(effect, Some(Effect::LoadLayerBrowserDirectory { root, directory, .. }) if root == std::path::Path::new("/build/rootfs") && directory == root)
     );
     app.layer_browser = Some(LayerBrowser::new(
         "Rootfs: image".into(),

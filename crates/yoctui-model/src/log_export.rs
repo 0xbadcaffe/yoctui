@@ -221,6 +221,7 @@ impl Dialog {
             | Self::DevtoolUndeploy(_)
             | Self::BbmaskEdit(_)
             | Self::DtcCompile(_)
+            | Self::KernelDebug(_)
             | Self::DtcDecompile(_)
             | Self::YoctoUtility(_)
             | Self::TerminalLaunch(_)

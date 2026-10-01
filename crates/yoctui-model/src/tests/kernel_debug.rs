@@ -1,4 +1,8 @@
 use super::*;
+use crate::{
+    Action, App, Dialog, Effect, FocusTarget, KernelDebugAction as A, KernelDebugOperation as Op,
+    KernelDebugResult as R, PlatformView, Screen, update,
+};
 
 fn tools() -> KernelDebugTools {
     KernelDebugTools {
@@ -62,6 +66,8 @@ fn kernel_debug_gdb_disables_startup_scripts_and_remote_local_inferiors() {
             "-q",
             "-iex",
             "set auto-load off",
+            "-iex",
+            "set debuginfod enabled off",
             "-iex",
             "set auto-connect-native-target off",
             "--symbols=/work/vmlinux",
@@ -133,4 +139,124 @@ fn kernel_debug_bpf_and_file_fields_are_bounded_not_shell_text() {
     assert!(draft.plan(&tools()).is_err());
     draft.symbols = format!("/{}", "x".repeat(4096));
     assert!(draft.plan(&tools()).is_err());
+}
+
+#[test]
+fn kernel_debug_reducer_preview_is_correlated_and_cancel_drops_late_preparation() {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    let Some(Effect::KernelDebug(request)) = update(&mut app, Action::KernelDebug(A::Open)) else {
+        panic!("discovery requested")
+    };
+    update(
+        &mut app,
+        Action::KernelDebug(A::Finished {
+            generation: request.generation,
+            result: Ok(R::Tools(tools())),
+        }),
+    );
+    assert!(app.kernel_debug.visible);
+    update(&mut app, Action::KernelDebug(A::SelectAt(2)));
+    update(&mut app, Action::KernelDebug(A::OpenSelected));
+    update(&mut app, Action::Open(Screen::Dashboard));
+    assert_eq!(app.screen, Screen::Kernel); // modal focus trap
+    update(&mut app, Action::KernelDebug(A::Field(1)));
+    update(&mut app, Action::KernelDebug(A::Insert("board".into())));
+    update(&mut app, Action::KernelDebug(A::Field(3)));
+    update(&mut app, Action::KernelDebug(A::Insert("123".into())));
+    let Some(Effect::KernelDebug(request)) = update(&mut app, Action::KernelDebug(A::Review))
+    else {
+        panic!("preparation requested")
+    };
+    let Op::Prepare { draft, tools } = &request.operation else {
+        panic!()
+    };
+    let prepared = draft.plan(tools).unwrap();
+    update(&mut app, Action::KernelDebug(A::Cancel));
+    update(
+        &mut app,
+        Action::KernelDebug(A::Finished {
+            generation: request.generation,
+            result: Ok(R::Prepared(prepared)),
+        }),
+    );
+    assert!(app.active_dialog().is_none());
+    assert!(app.kernel_debug.pending.is_none());
+    assert!(app.kernel_debug.prepared.is_none());
+}
+
+#[test]
+fn kernel_debug_reducer_preparation_failure_preserves_draft_and_success_only_opens_preview() {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    app.kernel_debug.tools = Some(tools());
+    app.kernel_debug.selection = 6; // dmesg
+    update(&mut app, Action::KernelDebug(A::OpenSelected));
+    update(&mut app, Action::KernelDebug(A::ChangeScope)); // explicit host
+    let Some(Effect::KernelDebug(request)) = update(&mut app, Action::KernelDebug(A::Review))
+    else {
+        panic!()
+    };
+    update(
+        &mut app,
+        Action::KernelDebug(A::Finished {
+            generation: request.generation,
+            result: Err("missing executable".into()),
+        }),
+    );
+    assert!(
+        matches!(app.active_dialog(), Some(Dialog::KernelDebug(dialog)) if !dialog.draft.ssh && dialog.error.as_deref() == Some("missing executable"))
+    );
+    let Some(Effect::KernelDebug(request)) = update(&mut app, Action::KernelDebug(A::Review))
+    else {
+        panic!()
+    };
+    let Op::Prepare { draft, tools } = request.operation else {
+        panic!()
+    };
+    update(
+        &mut app,
+        Action::KernelDebug(A::Finished {
+            generation: request.generation,
+            result: Ok(R::Prepared(draft.plan(&tools).unwrap())),
+        }),
+    );
+    assert!(matches!(
+        app.active_dialog(),
+        Some(Dialog::TerminalLaunch(_))
+    ));
+    assert_eq!(app.focus, FocusTarget::Dialog);
+    assert!(app.daemon.pty_sessions.is_empty());
+    let expected = app.kernel_debug.prepared.clone().unwrap();
+    assert!(
+        matches!(update(&mut app, Action::ConfirmTerminalLaunch), Some(Effect::Terminal(crate::TerminalEffect::Create { program, arguments, .. })) if program == expected.program && arguments == expected.arguments)
+    );
+    assert_eq!(app.screen, Screen::TerminalSessions);
+    assert_eq!(app.focus, FocusTarget::Workspace);
+}
+
+#[test]
+fn kernel_debug_three_kernel_views_preserve_two_firmware_views_and_guides_never_launch() {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    update(&mut app, Action::CycleKernelView);
+    assert_eq!(app.kernel.view, PlatformView::DeviceTrees);
+    update(&mut app, Action::CycleKernelView);
+    assert!(app.kernel_debug.visible);
+    update(&mut app, Action::CycleKernelView);
+    assert!(!app.kernel_debug.visible);
+    assert_eq!(app.kernel.view, PlatformView::Configuration);
+    update(&mut app, Action::CycleFirmwareView);
+    update(&mut app, Action::CycleFirmwareView);
+    assert_eq!(app.firmware.view, PlatformView::Configuration);
+    app.kernel_debug.selection = 15;
+    app.kernel_debug.pending = None;
+    update(&mut app, Action::KernelDebug(A::OpenSelected));
+    assert_eq!(update(&mut app, Action::KernelDebug(A::Review)), None);
+    assert!(
+        matches!(app.active_dialog(), Some(Dialog::KernelDebug(dialog)) if dialog.draft.tool == KernelDebugTool::SysrqKdump)
+    );
 }

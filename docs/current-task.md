@@ -1,28 +1,22 @@
 # Current Task
 
-**ID:** KERNEL-DEBUG-UI-001
-**Title:** Expose Kernel debugging tab, forms, guides and terminal launches
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Dependency KERNEL-DEBUG-TOOLS-001 is DONE. Relevant files: model debugging
-state/reducer/dialog, app controls, Kernel/UI forms, CLI worker/runtime routing.
-Done requires the third Kernel tab, typed forms and guides, correlated background
-discovery/preparation, exact terminal chooser, focused normal/failure/regression
-checks, harmless PTY smoke, version bump, commit/push and source-bound optimized
-release binary. Update UI spec, architecture, roadmap, status and registry, then
-restore the externally blocked M67 task.
+The retained performance evidence is not bound to the current source tree: its
+manifest has 143 documented source digest mismatches, including changes predating
+M67. Supply a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto` compile
+capture using the documented release workload. Do not rewrite historical
+digests or substitute fake-process startup timings for live evidence.
 
 ```bash
-cargo test -p yoctui-model kernel_debug
-cargo test -p yoctui-app kernel_debug
-cargo test -p yoctui-ui kernel_debug
-cargo test -p yoctui --bin yoctui kernel_debug
-cargo test -p yoctui --bin yoctui platform
-cargo fmt --all --check
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-./scripts/verify-roadmap.sh
-python3 scripts/check-version-bump.py
-cargo build --release -p yoctui --bin yoctui
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
 
-Full suite remains deferred per user.
+This external prerequisite is the only remaining required task. The user
+explicitly deferred the full test suite; do not run the full completion suite
+without a subsequent instruction. The v0.1.256 Kernel debugging request passes
+focused checks and harmless live GDB terminal smoke. No live target debugging
+or source-bound Yocto performance certification is claimed by that smoke.

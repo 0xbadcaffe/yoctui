@@ -27,6 +27,7 @@ impl InteractiveRuntime {
             )
         {
             match compatibility_workspace_action(&mut runtime.app, action) {
+                Some(effect @ Effect::KernelDebug(_)) => runtime.kernel_debug_io.submit(effect),
                 Some(Effect::InspectKernel) => {
                     runtime.begin_platform_inspection(
                         platform_inspection_operation::PlatformInspectionRequest::Kernel,

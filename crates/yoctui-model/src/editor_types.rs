@@ -202,6 +202,7 @@ pub enum Dialog {
     BbmaskEdit(PopupEditor),
     BbmaskConfirmation(String),
     DtcCompile(DtcCompileDialog),
+    KernelDebug(KernelDebugDialog),
     DtcDecompile(DtcDecompileDialog),
     YoctoUtility(YoctoUtilityDialog),
     TerminalLaunch(TerminalLaunchDialog),

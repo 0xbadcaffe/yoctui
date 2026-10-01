@@ -2,12 +2,14 @@
 
 ## M103 — Kernel debugging techniques and tools
 
-The user request overrides the blocked M67 queue. KERNEL-DEBUG-TOOLS-001 owns
-the closed technique catalogue, validated command plans, executable discovery
-and file preparation. KERNEL-DEBUG-UI-001 owns the Kernel tab, forms/guides,
-terminal integration, focused regressions and versioned release delivery.
-Host versus target is explicit; dangerous kernel setup remains manual guidance.
-No full suite is run during this manual bug/change pass.
+KERNEL-DEBUG-TOOLS-001 and KERNEL-DEBUG-UI-001 are DONE in v0.1.256. Kernel has
+a third Debugging tab with 12 typed tool routes and four non-executable guides,
+explicit host/SSH scope, correlated preparation and exact embedded/detached
+launch review. GDB disables init/auto-load, automatic debuginfod downloads and
+implicit native target connection. Focused model/app/UI/CLI and regression
+checks, strict affected-crate Clippy and harmless live GDB PTY smoke pass.
+Actual target/kernel compatibility is not claimed by host-tool presence.
+No full suite was run; M67 live performance evidence remains externally blocked.
 
 ## M102 — Persistent Hardware projects and bring-up
 

@@ -5,6 +5,72 @@ use std::{
 };
 static NEXT: AtomicU64 = AtomicU64::new(0);
 
+#[tokio::test]
+async fn kernel_debug_worker_installs_typed_tool_presence_without_process_launch() {
+    use yoctui_model::{Action, App, Effect, KernelDebugAction as A, Screen};
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    let effect = yoctui_model::update(&mut app, Action::KernelDebug(A::Open)).unwrap();
+    assert!(matches!(effect, Effect::KernelDebug(_)));
+    let mut io = KernelDebugIo::default();
+    io.submit(effect);
+    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while !io.poll(&mut app).await {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(app.kernel_debug.tools.is_some());
+    assert!(app.kernel_debug.pending.is_none());
+    assert!(app.daemon.pty_sessions.is_empty());
+}
+
+#[cfg(unix)]
+#[test]
+fn kernel_debug_fake_ssh_preserves_typed_argv_without_local_shell_evaluation() {
+    use std::os::unix::fs::PermissionsExt;
+    let root = std::env::temp_dir().join(format!(
+        "yoctui-kernel-debug-argv-{}-{}",
+        std::process::id(),
+        NEXT.fetch_add(1, Ordering::Relaxed)
+    ));
+    fs::create_dir(&root).unwrap();
+    let program = root.join("fake-ssh");
+    fs::write(&program, "#!/bin/sh\nprintf '%s\\n' \"$@\"\n").unwrap();
+    fs::set_permissions(&program, fs::Permissions::from_mode(0o700)).unwrap();
+    let tools = KernelDebugTools {
+        cwd: root.clone(),
+        programs: [("ssh".into(), program)].into(),
+    };
+    let mut draft = KernelDebugDraft::new(KernelDebugTool::Bpftrace);
+    draft.host = "example.invalid".into();
+    let request = prepare(&draft, &tools).unwrap();
+    let output = std::process::Command::new(&request.program)
+        .args(&request.arguments)
+        .current_dir(&request.cwd)
+        .output()
+        .unwrap();
+    assert!(output.status.success());
+    assert_eq!(
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .lines()
+            .collect::<Vec<_>>(),
+        request
+            .arguments
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        request.arguments.last().unwrap(),
+        "exec 'bpftrace' '-e' 'tracepoint:syscalls:sys_enter_openat { @[comm] = count(); }'"
+    );
+    fs::remove_dir_all(root).unwrap();
+}
+
 #[test]
 fn kernel_debug_discovery_is_presence_only_and_planning_runs_no_tool() {
     let tools = discover().unwrap();

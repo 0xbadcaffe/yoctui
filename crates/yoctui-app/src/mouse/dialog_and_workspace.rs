@@ -57,6 +57,14 @@ pub(crate) fn dialog_mouse_action(
         }
         yoctui_model::Dialog::WicDevicePicker(_) => Some(Action::SelectWicDevice { delta }),
         yoctui_model::Dialog::DtcCompile(_) => Some(Action::SelectDtcCompileOption { delta }),
+        yoctui_model::Dialog::KernelDebug(dialog) => Some(Action::KernelDebug(
+            if dialog.draft.tool.program().is_none() {
+                yoctui_model::KernelDebugAction::ScrollGuide(delta * 3)
+            } else { yoctui_model::KernelDebugAction::Field(delta) }
+        )),
+        yoctui_model::Dialog::TerminalLaunch(dialog) if Some(&dialog.request) == app.kernel_debug.prepared.as_ref() => {
+            Some(Action::KernelDebug(yoctui_model::KernelDebugAction::ScrollPreview(delta * 3)))
+        }
         _ => None,
     }
 }
@@ -112,6 +120,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
             images_workspace_action_for_view(app.image_artifact_searching, app.images_view, key)
         }
         Screen::Hardware => hardware_workspace_action(app, key),
+        Screen::Kernel if app.kernel_debug.visible => crate::kernel_debug_action(app, key),
         Screen::Kernel => platform_workspace_action(key),
         Screen::Firmware => firmware_workspace_action(key),
         Screen::Sdk => sdk_workspace_action(app.sdk_artifact_searching, key),

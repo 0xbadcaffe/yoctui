@@ -26,12 +26,16 @@ own worker inventory from retained rows.
 Model owns the closed debugging catalogue, bounded typed drafts, deterministic
 argv planning, navigation/dialog state and correlated requests/results. App
 maps keyboard and mouse controls. UI renders typed catalogue, prerequisites,
-scope warnings and forms without parsing debugger output. CLI owns cancellable
-local filesystem discovery/preparation workers, executable/file revalidation
-and existing terminal launch lifecycle. SSH executes only safely quoted fixed
+scope warnings and forms without parsing debugger output. CLI owns
+generation-correlated background filesystem discovery/preparation workers,
+executable/file revalidation and existing terminal launch lifecycle. SSH executes only safely quoted fixed
 tool argv built from validated fields; no shell-command text is accepted.
+GDB startup disables init/auto-load and debuginfod downloads before symbols;
+remote mode also disables implicit native-target connection.
 Sessions use existing Utility PTYs and terminal wire types, not a second process
 supervisor. No daemon protocol change or kernel configuration mutation is needed.
+Cancelling invalidates preparation results; worker drop aborts queued work
+best-effort. An already-running filesystem syscall may finish after cancellation.
 
 ## Purpose
 

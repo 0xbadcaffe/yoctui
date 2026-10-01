@@ -332,6 +332,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                             app.focus = FocusTarget::Workspace;
                             app.focus_return = None;
                             app.notification = None;
+                        } else if app.kernel_debug.prepared.as_ref() == Some(&dialog.request) {
+                            app.screen = Screen::TerminalSessions;
+                            app.focus = FocusTarget::Workspace;
+                            app.focus_return = None;
+                            app.pty_selection = app.daemon.pty_sessions.len();
+                            app.notification = Some("Debug tool requested. Press o to take writer control; Ctrl+B returns to Yoctui terminal controls.".into());
                         }
                         Effect::Terminal(TerminalEffect::Create {
                             name: dialog.request.name,

@@ -44,6 +44,15 @@ impl InteractiveRuntime {
             runtime.handle_saved_environment_input(input);
             return Ok(true);
         }
+        if yoctui_app::kernel_debug_owns_input(&runtime.app, input) {
+            if let Some(action) = yoctui_app::kernel_debug_action(&runtime.app, input)
+                && let Some(effect) = compatibility_workspace_action(&mut runtime.app, action)
+            {
+                runtime.kernel_debug_io.submit(effect);
+            }
+            runtime.render_scheduler.invalidate(RenderCause::State);
+            return Ok(true);
+        }
         if input == Input::Esc
             && runtime.app.screen == Screen::BuildEnvironment
             && runtime.app.active_dialog().is_none()

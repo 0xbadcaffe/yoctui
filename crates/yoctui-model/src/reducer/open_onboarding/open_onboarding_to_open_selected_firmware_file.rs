@@ -187,8 +187,20 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.kernel.inventory = PlatformInventoryState::Failed(message.clone());
             app.notification = Some(format!("Kernel inspection failed: {message}"));
         }
-        Action::CycleKernelView => app.kernel.cycle_view(),
-        Action::SetKernelView(view) => app.kernel.view = view,
+        Action::CycleKernelView => {
+            if app.kernel_debug.visible {
+                app.kernel_debug.visible = false;
+                app.kernel.view = PlatformView::Configuration;
+            } else if app.kernel.view == PlatformView::DeviceTrees {
+                return update(app, Action::KernelDebug(KernelDebugAction::Open));
+            } else {
+                app.kernel.cycle_view();
+            }
+        }
+        Action::SetKernelView(view) => {
+            app.kernel_debug.visible = false;
+            app.kernel.view = view;
+        }
         Action::SelectKernelFile { delta } => app.kernel.select(delta),
         Action::LaunchKernelMenuconfig => {
             app.reconcile_platform_menuconfigs();

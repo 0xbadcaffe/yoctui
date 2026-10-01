@@ -15,6 +15,7 @@ pub(crate) fn next_filter<T: Clone + PartialEq>(values: &[T], current: Option<T>
 pub enum Effect {
     SavedEnvironment(SavedEnvironmentRequest),
     Hardware(HardwareEffect),
+    KernelDebug(KernelDebugRequest),
     ReadEnvironmentDirectory {
         request: u64,
         path: PathBuf,

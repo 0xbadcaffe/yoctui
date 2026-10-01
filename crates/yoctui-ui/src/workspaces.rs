@@ -40,6 +40,9 @@ pub(super) fn workspace(
         Screen::Kernel if app.platform_menuconfig_visible() => {
             terminal_sessions_workspace(frame, app, area)
         }
+        Screen::Kernel if app.kernel_debug.visible => {
+            crate::kernel_debug_render::workspace(frame, app, area)
+        }
         Screen::Kernel => platform_workspace(frame, app, &app.kernel, area, "Kernel"),
         Screen::Firmware if app.platform_menuconfig_visible() => {
             terminal_sessions_workspace(frame, app, area)

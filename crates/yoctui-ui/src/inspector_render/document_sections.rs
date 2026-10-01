@@ -121,6 +121,7 @@ pub(crate) fn inspector_related_paths(app: &App) -> Vec<String> {
             .map(|artifact| artifact.identity.path.clone()),
         Screen::Hardware if app.hardware.projects.visible => app.hardware.projects.project.as_ref().map(|project| project.root.join(&app.hardware.projects.relative)),
         Screen::Hardware => app.hardware.selected_document().map(|document| document.path.clone()),
+        Screen::Kernel if app.kernel_debug.visible => None,
         Screen::Kernel => app.kernel.selected_file().map(|file| file.path.clone()),
         Screen::Firmware => app.firmware.selected_file().map(|file| file.path.clone()),
         Screen::Sdk => app

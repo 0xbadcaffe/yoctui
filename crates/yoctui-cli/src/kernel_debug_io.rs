@@ -1,6 +1,8 @@
 //! Local tool presence discovery and non-mutating launch preparation.
 use std::{collections::BTreeMap, path::Path};
 use yoctui_model::{KernelDebugDraft, KernelDebugTool, KernelDebugTools, TerminalLaunchRequest};
+mod worker;
+pub(crate) use worker::KernelDebugIo;
 
 pub(crate) fn discover() -> Result<KernelDebugTools, String> {
     let cwd = std::env::current_dir()

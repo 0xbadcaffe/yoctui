@@ -94,6 +94,8 @@ fn arguments(draft: &KernelDebugDraft) -> Result<Vec<String>, String> {
             "-q".into(),
             "-iex".into(),
             "set auto-load off".into(),
+            "-iex".into(),
+            "set debuginfod enabled off".into(),
         ]
     };
     Ok(match draft.tool {
@@ -129,7 +131,12 @@ fn arguments(draft: &KernelDebugDraft) -> Result<Vec<String>, String> {
         T::Perf => vec!["top".into(), "-p".into(), pid()?],
         T::TraceCmd => {
             path(&draft.data)?;
-            vec!["report".into(), "-i".into(), draft.data.clone()]
+            vec![
+                "report".into(),
+                "-N".into(),
+                "-i".into(),
+                draft.data.clone(),
+            ]
         }
         T::Ftrace => vec!["--".into(), "/sys/kernel/tracing/trace".into()],
         T::Dmesg => vec!["-w".into()],
@@ -160,7 +167,11 @@ fn arguments(draft: &KernelDebugDraft) -> Result<Vec<String>, String> {
         T::Crash => {
             path(&draft.symbols)?;
             path(&draft.data)?;
-            vec![draft.symbols.clone(), draft.data.clone()]
+            vec![
+                "--no_crashrc".into(),
+                draft.symbols.clone(),
+                draft.data.clone(),
+            ]
         }
         _ => return Err("Guidance-only technique".into()),
     })
