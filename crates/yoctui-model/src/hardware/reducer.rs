@@ -1,8 +1,12 @@
 use super::*;
 
 pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<Effect> {
+    if let HardwareAction::Project(action) = action {
+        return projects::reduce_hardware_project(app, action);
+    }
     let state = &mut app.hardware;
     match action {
+        HardwareAction::Project(_) => unreachable!("project actions are routed above"),
         HardwareAction::GraphicsCapabilityDetected(capability) => {
             state.graphics_capability = capability;
         }

@@ -45,6 +45,9 @@ impl HardwareCategory {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum HardwareDocumentKind {
+    Text,
+    Altium,
+    Expedition,
     Pdf,
     Kicad,
     Svg,
@@ -55,21 +58,39 @@ impl HardwareDocumentKind {
     pub fn from_path(path: &Path) -> Option<Self> {
         let extension = path.extension()?.to_str()?.to_ascii_lowercase();
         match extension.as_str() {
+            "txt" => Some(Self::Text),
+            "schdoc" => Some(Self::Altium),
+            "prj" => Some(Self::Expedition),
             "pdf" => Some(Self::Pdf),
             "kicad_sch" | "sch" => Some(Self::Kicad),
             "svg" => Some(Self::Svg),
             "png" | "jpg" | "jpeg" | "gif" | "bmp" | "tif" | "tiff" | "webp" => Some(Self::Raster),
+            value if !value.is_empty() && value.chars().all(|c| c.is_ascii_digit()) => {
+                Some(Self::Expedition)
+            }
             _ => None,
         }
     }
 
     pub const fn label(self) -> &'static str {
         match self {
+            Self::Text => "TXT",
+            Self::Altium => "Altium schematic",
+            Self::Expedition => "Xpedition schematic",
             Self::Pdf => "PDF",
             Self::Kicad => "KiCad schematic",
             Self::Svg => "SVG",
             Self::Raster => "Image",
         }
+    }
+
+    pub fn project_kind(path: &Path) -> Option<Self> {
+        Self::from_path(path).filter(|kind| !matches!(kind, Self::Svg | Self::Raster))
+    }
+
+    pub fn library_kind(path: &Path) -> Option<Self> {
+        Self::from_path(path)
+            .filter(|kind| !matches!(kind, Self::Text | Self::Altium | Self::Expedition))
     }
 }
 
@@ -245,6 +266,7 @@ pub struct HardwareLoadRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HardwareState {
+    pub projects: HardwareProjectsState,
     pub documents: Vec<HardwareDocument>,
     pub missing_paths: BTreeSet<PathBuf>,
     pub category: HardwareCategory,
@@ -275,6 +297,7 @@ impl HardwareState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HardwareAction {
+    Project(HardwareProjectAction),
     GraphicsCapabilityDetected(HardwareGraphicsCapability),
     Install(Vec<HardwareDocument>),
     SelectCategory {
@@ -346,6 +369,7 @@ pub enum HardwareAction {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HardwareEffect {
+    Project(HardwareProjectRequest),
     Browse { generation: u64, directory: PathBuf },
     Load(HardwareLoadRequest),
     Persist(Vec<HardwareDocument>),

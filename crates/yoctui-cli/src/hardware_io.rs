@@ -16,11 +16,15 @@ use yoctui_model::{
     MAX_HARDWARE_BROWSER_ENTRIES, MAX_HARDWARE_RASTER_EDGE, MAX_HARDWARE_RASTER_PIXELS,
     MAX_HARDWARE_TEXT_BYTES,
 };
+mod projects;
+mod text;
+use text::{bounded_lines, readable_pdf_lines};
 
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
 const DOCUMENT_TOOL_TIMEOUT: Duration = Duration::from_secs(30);
 
 enum HardwareWork {
+    Project(yoctui_model::HardwareProjectRequest),
     Browse { generation: u64, directory: PathBuf },
     Load(HardwareLoadRequest),
 }
@@ -34,6 +38,9 @@ pub(crate) struct HardwareIo {
 impl HardwareIo {
     pub(crate) fn submit(&mut self, effect: Effect) {
         self.queued = match effect {
+            Effect::Hardware(HardwareEffect::Project(request)) => {
+                Some(HardwareWork::Project(request))
+            }
             Effect::Hardware(HardwareEffect::Browse {
                 generation,
                 directory,
@@ -54,6 +61,19 @@ impl HardwareIo {
         self.worker = self.queued.take().map(|work| {
             tokio::spawn(async move {
                 match work {
+                    HardwareWork::Project(request) => {
+                        let generation = request.generation;
+                        tokio::task::spawn_blocking(move || projects::run(request))
+                            .await
+                            .unwrap_or_else(|error| {
+                                Action::Hardware(HardwareAction::Project(
+                                    yoctui_model::HardwareProjectAction::Finished {
+                                        generation,
+                                        result: Err(format!("Project worker failed: {error}")),
+                                    },
+                                ))
+                            })
+                    }
                     HardwareWork::Browse {
                         generation,
                         directory,
@@ -147,7 +167,7 @@ pub(crate) fn browse_directory(directory: &Path) -> Result<(PathBuf, Vec<Hardwar
         let path = child.path();
         let is_directory = metadata.is_dir();
         let kind = (!is_directory)
-            .then(|| HardwareDocumentKind::from_path(&path))
+            .then(|| HardwareDocumentKind::library_kind(&path))
             .flatten();
         if !is_directory && kind.is_none() {
             continue;
@@ -171,6 +191,22 @@ async fn load_document(
 ) -> Result<(usize, HardwarePreview, Vec<String>)> {
     validate_source(&request.document.path, request.document.kind)?;
     match request.document.kind {
+        HardwareDocumentKind::Text => {
+            let text = bounded_source_text(&request.document.path)?;
+            Ok((
+                1,
+                HardwarePreview::Text {
+                    lines: text.clone(),
+                    limitation: None,
+                },
+                text,
+            ))
+        }
+        HardwareDocumentKind::Altium | HardwareDocumentKind::Expedition => {
+            bail!(
+                "Native schematic conversion is unavailable; import a same-stem PDF export to view graphically."
+            )
+        }
         HardwareDocumentKind::Pdf => load_pdf(&request.document.path, request.page).await,
         HardwareDocumentKind::Raster => {
             let raster = decode_raster(request.document.path.clone()).await?;
@@ -365,37 +401,6 @@ fn bounded_source_text(path: &Path) -> Result<Vec<String>> {
     let text = fs::read_to_string(path)
         .with_context(|| format!("Hardware source is not valid UTF-8: {}", path.display()))?;
     Ok(bounded_lines(&text))
-}
-
-fn bounded_lines(text: &str) -> Vec<String> {
-    let mut bytes = 0usize;
-    text.lines()
-        .take_while(|line| {
-            bytes = bytes.saturating_add(line.len() + 1);
-            bytes <= MAX_HARDWARE_TEXT_BYTES
-        })
-        .map(str::to_owned)
-        .collect()
-}
-
-fn readable_pdf_lines(text: &str) -> Vec<String> {
-    let cleaned = text
-        .chars()
-        .filter(|character| {
-            matches!(character, '\n' | '\t')
-                || (!character.is_control()
-                    && !is_private_use(*character)
-                    && *character != '\u{fffd}')
-        })
-        .collect::<String>();
-    if !cleaned.chars().any(char::is_alphanumeric) {
-        return Vec::new();
-    }
-    bounded_lines(&cleaned)
-}
-
-fn is_private_use(character: char) -> bool {
-    matches!(character as u32, 0xe000..=0xf8ff | 0xf0000..=0xffffd | 0x100000..=0x10fffd)
 }
 
 async fn decode_raster(path: PathBuf) -> Result<HardwareRaster> {

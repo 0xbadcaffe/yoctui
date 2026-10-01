@@ -10190,18 +10190,18 @@ notes = "DONE in v0.1.254. Typed reviewed History loading starts/attaches or saf
 id = "HARDWARE-PROJECT-STORE-001"
 milestone = "M102"
 title = "Persist real Hardware project folders, files and manual stage values"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3200
 required = true
 depends_on = ["SAVED-ENV-LOAD-001"]
 verify = ["cargo test -p yoctui-model hardware_project", "cargo test -p yoctui --bin yoctui hardware_project", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "Model project types and CLI filesystem store: real named folders, bounded contained browsing, arbitrary regular-file import without overwrites, private atomic manifests and manually reported stage values. Done requires normal/failure/containment/restart coverage and documentation."
+notes = "DONE. Model project types and correlated results, real named folders, contained bounded browsing, arbitrary regular-file import without overwrites, private atomic manifests and manually reported stage values. Two model and four CLI filesystem tests cover restart, collisions, invalid progress, oversize, missing sources, symlinks, traversal and preview policy. Formatting, strict CLI Clippy and roadmap pass. Existing library browsing still filters its original kinds. Full suite deferred; project UI follows immediately."
 
 [[task]]
 id = "HARDWARE-PROJECT-UI-001"
 milestone = "M102"
 title = "Expose Hardware projects, restricted previews and manual bring-up controls"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3201
 required = true
 depends_on = ["HARDWARE-PROJECT-STORE-001"]

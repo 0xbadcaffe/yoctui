@@ -1,22 +1,26 @@
 # Current Task
 
-**ID:** HARDWARE-PROJECT-STORE-001
-**Title:** Persist real Hardware project folders, files and manual stage values
+**ID:** HARDWARE-PROJECT-UI-001
+**Title:** Expose Hardware projects, restricted previews and manual bring-up controls
 **Status:** IN_PROGRESS
 
-Dependency SAVED-ENV-LOAD-001 is DONE. Relevant files: new model project types,
-CLI filesystem project store and focused tests. Definition of done: private
-bounded manifests, named project/subfolders, contained navigation, arbitrary
-regular-file import without overwrite, restart-safe stage persistence and
-normal/error/containment tests. Update architecture, UI specification, registry
-and implementation status. Follow immediately with HARDWARE-PROJECT-UI-001.
+Dependency HARDWARE-PROJECT-STORE-001 is DONE. Relevant files: model project
+reducer, app input, Hardware renderers, CLI lifecycle routing and document adapter.
+Implement specified project/folder/import forms, restricted embedded preview and
+manual stage controls. Done requires focused reducer/input/TestBackend/adapter
+tests, restart smoke, documentation, version bump, commit/push and optimized
+source-bound release binary. Afterwards restore the external M67 blocker.
 
 ```bash
 cargo test -p yoctui-model hardware_project
-cargo test -p yoctui --bin yoctui hardware_project
+cargo test -p yoctui-app hardware
+cargo test -p yoctui-ui hardware
+cargo test -p yoctui --bin yoctui hardware
 cargo fmt --all --check
 cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
+python3 scripts/check-version-bump.py
+cargo build --release -p yoctui --bin yoctui
 ```
 
 Full suite remains deferred per user. M67 stays externally blocked.
