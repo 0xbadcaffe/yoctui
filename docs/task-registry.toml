@@ -10168,18 +10168,18 @@ notes = "DONE in v0.1.253. Files opens the shared lazy tree inline with director
 id = "SAVED-ENV-DAEMON-001"
 milestone = "M101"
 title = "Honor exact profiles in independent diagnosable daemon startup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3190
 required = true
 depends_on = ["ROOTFS-FILES-BROWSER-001"]
 verify = ["cargo test -p yoctui --bin yoctui daemon_start", "cargo test -p yoctui --bin yoctui daemon_build_directory", "cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "Reusable quiet exact-profile startup, independent session and private default log; no daemon stop. Full suite deferred."
+notes = "DONE. Quiet reusable startup honors explicit paths over inherited BUILDDIR, creates an independent Unix session and writes private no-follow regular-file diagnostics by default. Focused fake-profile, independent-session, log safety, failed-child cleanup and startup inventory tests, formatting, strict CLI Clippy and roadmap validation pass. No daemon was stopped. Full suite deferred."
 
 [[task]]
 id = "SAVED-ENV-LOAD-001"
 milestone = "M101"
 title = "Load a reviewed saved environment into the live daemon workbench"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3191
 required = true
 depends_on = ["SAVED-ENV-DAEMON-001"]

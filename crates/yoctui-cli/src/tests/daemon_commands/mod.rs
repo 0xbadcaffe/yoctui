@@ -1,6 +1,55 @@
 use super::*;
 
 #[test]
+fn daemon_start_explicit_directory_overrides_inherited_environment() {
+    assert!(!use_inherited_daemon_environment(
+        Some(Path::new("/chosen/build")),
+        true
+    ));
+    assert!(use_inherited_daemon_environment(None, true));
+    assert!(!use_inherited_daemon_environment(None, false));
+}
+
+#[test]
+fn daemon_start_owns_an_independent_session() {
+    let mut command = ProcessCommand::new("sh");
+    command.args(["-c", "printf '%s ' \"$$\"; ps -o sid= -p $$"]);
+    detach_daemon_session(&mut command);
+    let output = command.output().unwrap();
+    assert!(output.status.success());
+    let text = String::from_utf8(output.stdout).unwrap();
+    let ids: Vec<i32> = text
+        .split_whitespace()
+        .map(|id| id.parse().unwrap())
+        .collect();
+    assert_eq!(ids.len(), 2);
+    assert_eq!(ids[0], ids[1]);
+    assert_ne!(ids[1], unsafe { libc::getsid(0) });
+}
+
+#[test]
+fn daemon_start_diagnostics_are_private_and_reject_symlinks() {
+    use std::os::unix::fs::symlink;
+    let root = std::env::temp_dir().join(format!(
+        "yoctui-daemon-log-{}-{}",
+        std::process::id(),
+        yoctui_utils::unix_ms()
+    ));
+    fs::create_dir(&root).unwrap();
+    let log = root.join("daemon.log");
+    open_daemon_log(&log).unwrap();
+    assert_eq!(
+        fs::metadata(&log).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+    let link = root.join("link");
+    symlink(&log, &link).unwrap();
+    assert!(open_daemon_log(&link).is_err());
+    assert!(open_daemon_log(&root).is_err());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn daemon_start_infers_initialized_build_directory_and_canonical_script() {
     use std::os::unix::fs::symlink;
     let root = std::env::temp_dir().join(format!(

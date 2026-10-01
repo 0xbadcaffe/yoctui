@@ -67,6 +67,21 @@ impl Drop for DaemonStartupChild {
 
 #[cfg(unix)]
 pub(crate) async fn start_daemon(build_dir: Option<PathBuf>) -> Result<()> {
+    let environment = daemon_launch_environment(build_dir.as_deref()).await?;
+    let record = start_daemon_with_environment(environment, true).await?;
+    println!(
+        "Yoctui daemon started (pid {}, instance {})",
+        record.pid,
+        format_instance(record.daemon_instance_id)
+    );
+    Ok(())
+}
+
+#[cfg(unix)]
+pub(crate) async fn start_daemon_with_environment(
+    environment: Option<BTreeMap<String, String>>,
+    show_progress: bool,
+) -> Result<yoctui_protocol::daemon_lifecycle::DaemonRuntimeRecord> {
     use yoctui_protocol::daemon_ipc::{DaemonConnection, runtime_paths};
     let paths = runtime_paths()?;
     if DaemonConnection::connect(&paths, Duration::from_millis(50)).is_ok() {
@@ -78,22 +93,21 @@ pub(crate) async fn start_daemon(build_dir: Option<PathBuf>) -> Result<()> {
     let executable = env::current_exe().context("could not resolve the Yoctui executable")?;
     let mut command = ProcessCommand::new(executable);
     command.args(["daemon", "foreground"]).stdin(Stdio::null());
-    if let Some(environment) = daemon_launch_environment(build_dir.as_deref()).await? {
+    if let Some(environment) = environment {
         command.env_clear().envs(environment);
     }
-    if let Some(log_path) = env::var_os("YOCTUI_DAEMON_LOG") {
-        let log = fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(log_path)
-            .context("could not open YOCTUI_DAEMON_LOG")?;
-        command
-            .stdout(Stdio::from(log.try_clone()?))
-            .stderr(Stdio::from(log));
-    } else {
-        command.stdout(Stdio::null()).stderr(Stdio::null());
-    }
-    command.process_group(0);
+    let log_path = env::var_os("YOCTUI_DAEMON_LOG")
+        .map(PathBuf::from)
+        .unwrap_or(
+            yoctui_protocol::daemon_persist::persist_paths_for(&daemon_state_root()?)?
+                .directory
+                .join("daemon.log"),
+        );
+    let log = open_daemon_log(&log_path)?;
+    command
+        .stdout(Stdio::from(log.try_clone()?))
+        .stderr(Stdio::from(log));
+    detach_daemon_session(&mut command);
     let child = command
         .spawn()
         .context("could not start the Yoctui daemon")?;
@@ -102,7 +116,7 @@ pub(crate) async fn start_daemon(build_dir: Option<PathBuf>) -> Result<()> {
         ready: false,
     };
     let deadline = Instant::now() + DAEMON_STARTUP_TIMEOUT;
-    let interactive = io::stderr().is_terminal();
+    let interactive = show_progress && io::stderr().is_terminal();
     let mut indicator_phase = 0usize;
     let mut next_indicator_frame = Instant::now();
     loop {
@@ -119,7 +133,10 @@ pub(crate) async fn start_daemon(build_dir: Option<PathBuf>) -> Result<()> {
             if interactive {
                 eprint!("\r\x1b[2K");
             }
-            anyhow::bail!("Yoctui daemon exited during startup with {status}");
+            anyhow::bail!(
+                "Yoctui daemon exited during startup with {status}; diagnostics: {}",
+                log_path.display()
+            );
         }
         if let Ok(record) = daemon_is_available() {
             anyhow::ensure!(
@@ -130,12 +147,7 @@ pub(crate) async fn start_daemon(build_dir: Option<PathBuf>) -> Result<()> {
             if interactive {
                 eprint!("\r\x1b[2K");
             }
-            println!(
-                "Yoctui daemon started (pid {}, instance {})",
-                record.pid,
-                format_instance(record.daemon_instance_id)
-            );
-            return Ok(());
+            return Ok(record);
         }
         if Instant::now() >= deadline {
             if interactive {
@@ -147,7 +159,40 @@ pub(crate) async fn start_daemon(build_dir: Option<PathBuf>) -> Result<()> {
                 DAEMON_STARTUP_TIMEOUT.as_secs()
             );
         }
-        std::thread::sleep(Duration::from_millis(25));
+        tokio::time::sleep(Duration::from_millis(25)).await;
+    }
+}
+
+#[cfg(unix)]
+fn open_daemon_log(path: &Path) -> Result<fs::File> {
+    use std::os::unix::fs::OpenOptionsExt;
+    let log = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .mode(0o600)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK)
+        .open(path)
+        .with_context(|| format!("could not open daemon diagnostics {}", path.display()))?;
+    anyhow::ensure!(
+        log.metadata()?.is_file(),
+        "daemon diagnostics must be a regular file"
+    );
+    log.set_permissions(fs::Permissions::from_mode(0o600))?;
+    Ok(log)
+}
+
+#[cfg(unix)]
+fn detach_daemon_session(command: &mut ProcessCommand) {
+    // setsid is async-signal-safe; the child owns neither the parent's session
+    // nor its controlling terminal. Foreground mode intentionally remains attached.
+    unsafe {
+        command.pre_exec(|| {
+            if libc::setsid() == -1 {
+                Err(io::Error::last_os_error())
+            } else {
+                Ok(())
+            }
+        });
     }
 }
 
@@ -155,7 +200,7 @@ pub(crate) async fn start_daemon(build_dir: Option<PathBuf>) -> Result<()> {
 async fn daemon_launch_environment(
     explicit_build_dir: Option<&Path>,
 ) -> Result<Option<BTreeMap<String, String>>> {
-    if env::var_os("BUILDDIR").is_some() {
+    if use_inherited_daemon_environment(explicit_build_dir, env::var_os("BUILDDIR").is_some()) {
         return Ok(None);
     }
     let current_dir = env::current_dir()?;
@@ -171,6 +216,11 @@ async fn daemon_launch_environment(
         return Ok(None);
     };
     initialize_daemon_build_environment(profile).await.map(Some)
+}
+
+#[cfg(unix)]
+fn use_inherited_daemon_environment(explicit: Option<&Path>, inherited: bool) -> bool {
+    explicit.is_none() && inherited
 }
 
 #[cfg(unix)]

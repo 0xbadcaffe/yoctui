@@ -1,4 +1,7 @@
-SAVED-ENV-DAEMON-001 and SAVED-ENV-LOAD-001 are prioritized for the user's
+SAVED-ENV-DAEMON-001 is DONE: reusable quiet startup honors exact profiles over
+inherited BUILDDIR, detaches the daemon session and writes private regular-file
+diagnostics. Focused startup/profile/process tests, formatting and strict CLI
+Clippy pass. SAVED-ENV-LOAD-001 is now active for the user's
 saved-environment workflow. The prior daemon PID 1086776 is absent on the same
 boot, its socket/record are stale, no service is installed, and no daemon output
 or matching OOM/segfault record was retained. A crash is not established. The
