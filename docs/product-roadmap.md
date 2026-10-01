@@ -11,12 +11,34 @@ delivery includes all queued fixes. Full-suite deferral and M67 blocker remain.
 
 ## M105 — Correct target RootFS owner/group and mode
 
-ROOTFS-TARGET-OWNERSHIP-001 supersedes M100's host attribute presentation.
+ROOTFS-TARGET-OWNERSHIP-001 is DONE in v0.1.258 and supersedes M100's host attribute presentation.
 Use read-only exact-root Pseudo metadata and image account names, retain real
 non-root identities, and expose missing/stale metadata without inventing root
 or falling back to the build host. Keep navigation, previews, charts and Layers
 unchanged. Focused checks only; the full suite remains deferred and M67 blocked.
 Pseudo authority: [Yocto fakeroot/Pseudo](https://docs.yoctoproject.org/dev/overview-manual/concepts.html#fakeroot-and-pseudo).
+
+### M105 real Romulus read-only ownership evidence
+
+The adapter smoke on 2026-10-01 used the exact root
+`/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs`
+and sibling `pseudo/files.db`. Host lstat reports UID/GID 1000/1000. The adapter
+reports `/etc/passwd` and `/etc/group` as `0644 root(0) root(0)`, and
+`/etc/shadow` as `0400 root(0) root(0)` (host mode is 0600). No shadow contents
+were read. Pseudo database bytes remained identical; daemon PID 1729515 stayed
+alive. No BitBake job, mount, guest boot or daemon restart was required.
+
+```bash
+YOCTUI_ROOTFS_SMOKE_ROOT=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs \
+  CARGO_INCREMENTAL=0 cargo test -p yoctui-bitbake rootfs_browser_live_target_metadata_read_only_smoke -- --ignored --nocapture
+```
+
+Non-root 4242:73, target-only account names, numeric-only unknown names,
+unavailable/stale/deleting/duplicate/corrupt/locked records, unsafe account
+files and unchanged database bytes are independently covered by focused
+fixtures. Live Romulus has no non-root Pseudo records; no live non-root claim
+is made. This corrects generated-rootfs evidence, not a different deployed
+artifact or running device. Custom/missing Pseudo locations remain unavailable.
 
 ## M104 — From Kernel guides to managed debug sessions
 

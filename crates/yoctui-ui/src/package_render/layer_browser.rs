@@ -214,7 +214,7 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
             .block(
                 Block::default()
                     .title(if rootfs {
-                        "Host IMAGE_ROOTFS attributes (not fakeroot)"
+                        "Target IMAGE_ROOTFS attributes (Pseudo)"
                     } else if info_open {
                         "File information · i hide"
                     } else {

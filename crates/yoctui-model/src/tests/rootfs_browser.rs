@@ -111,9 +111,9 @@ fn rootfs_browser_opens_on_files_tab_and_correlated_composition_completion() {
 fn attributes(kind: RootfsEntryKind, mode: u32) -> RootfsFileMetadata {
     RootfsFileMetadata {
         kind,
-        mode,
-        uid: 123,
-        gid: 456,
+        mode: Some(mode),
+        uid: Some(123),
+        gid: Some(456),
         owner: None,
         group: None,
         link_target: None,
@@ -136,8 +136,19 @@ fn rootfs_browser_modes_cover_special_bits_and_unknown_accounts() {
     assert!(
         attributes(RootfsEntryKind::Directory, 0o755)
             .listing(Some(4096))
-            .contains("0755 ?(123) ?(456) 4096 B")
+            .contains("0755 123 456 4096 B")
     );
+    let mut unknown = attributes(RootfsEntryKind::RegularFile, 0o644);
+    unknown.mode = None;
+    unknown.uid = None;
+    unknown.gid = None;
+    assert_eq!(unknown.permissions(), "??????????");
+    assert_eq!(
+        unknown.listing(Some(13)),
+        "?????????? mode unavailable unavailable unavailable 13 B"
+    );
+    unknown.owner = Some("bspguy-dev".into());
+    assert!(!unknown.listing(None).contains("bspguy-dev"));
 }
 
 #[test]

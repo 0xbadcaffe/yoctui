@@ -52,20 +52,23 @@ pub struct LayerBrowserEntry {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RootfsFileMetadata {
     pub kind: RootfsEntryKind,
-    pub mode: u32,
-    pub uid: u32,
-    pub gid: u32,
+    pub mode: Option<u32>,
+    pub uid: Option<u32>,
+    pub gid: Option<u32>,
     pub owner: Option<String>,
     pub group: Option<String>,
     pub link_target: Option<PathBuf>,
 }
 impl RootfsFileMetadata {
     pub fn permissions(&self) -> String {
+        let Some(mode) = self.mode else {
+            return "??????????".into();
+        };
         let mut result = String::from(match self.kind {
             RootfsEntryKind::Directory => "d",
             RootfsEntryKind::RegularFile => "-",
             RootfsEntryKind::Symlink => "l",
-            RootfsEntryKind::Other => match self.mode & 0o170000 {
+            RootfsEntryKind::Other => match mode & 0o170000 {
                 0o010000 => "p",
                 0o020000 => "c",
                 0o060000 => "b",
@@ -74,24 +77,15 @@ impl RootfsFileMetadata {
             },
         });
         for shift in [6, 3, 0] {
-            result.push(if self.mode & (4 << shift) != 0 {
-                'r'
-            } else {
-                '-'
-            });
-            result.push(if self.mode & (2 << shift) != 0 {
-                'w'
-            } else {
-                '-'
-            });
-            let executable = self.mode & (1 << shift) != 0;
-            let special = self.mode
-                & match shift {
+            result.push(if mode & (4 << shift) != 0 { 'r' } else { '-' });
+            result.push(if mode & (2 << shift) != 0 { 'w' } else { '-' });
+            let executable = mode & (1 << shift) != 0;
+            let special =
+                mode & match shift {
                     6 => 0o4000,
                     3 => 0o2000,
                     _ => 0o1000,
-                }
-                != 0;
+                } != 0;
             result.push(match (special, executable, shift) {
                 (true, true, 0) => 't',
                 (true, false, 0) => 'T',
@@ -105,16 +99,23 @@ impl RootfsFileMetadata {
     }
     pub fn listing(&self, size: Option<u64>) -> String {
         format!(
-            "{} {:04o} {}({}) {}({}) {} B",
+            "{} {} {} {} {} B",
             self.permissions(),
-            self.mode & 0o7777,
-            self.owner.as_deref().unwrap_or("?"),
-            self.uid,
-            self.group.as_deref().unwrap_or("?"),
-            self.gid,
+            self.mode.map_or_else(
+                || "mode unavailable".into(),
+                |mode| format!("{:04o}", mode & 0o7777)
+            ),
+            account_label(self.owner.as_deref(), self.uid),
+            account_label(self.group.as_deref(), self.gid),
             size.map_or_else(|| "?".into(), |value| value.to_string())
         )
     }
+}
+fn account_label(name: Option<&str>, id: Option<u32>) -> String {
+    id.map_or_else(
+        || "unavailable".into(),
+        |id| name.map_or_else(|| id.to_string(), |name| format!("{name}({id})")),
+    )
 }
 impl LayerBrowserEntry {
     pub fn can_preview(&self) -> bool {

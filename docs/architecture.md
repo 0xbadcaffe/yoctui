@@ -3647,6 +3647,10 @@ fallback or an assumed root. Size remains on-disk evidence. RootFS
 preview reads revalidate containment and require a non-symlink regular file;
 neither special files nor links are opened. Layers entries omit these optional
 attributes and retain their existing Git and editor behavior.
+SQLite opens with read-only/no-follow flags, 50-ms busy timeout, a two-second
+query deadline, 1-MiB value limit and 256-MiB database bound. Missing/invalid
+schema is rejected once per scan, not retried with a busy timeout per child.
+Account reads are capped at 1 MiB and reject controls and ambiguous ID names.
 
 Daemon-attached rootfs acquisition uses a capability-advertised, read-only
 InspectRootfsSources request and request-scoped typed command result, never

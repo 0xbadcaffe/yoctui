@@ -5424,6 +5424,9 @@ Wide terminals pair the tree with preview; narrow terminals stack them and
 retain full selected-file attributes in the information panel. Tab/Shift-Tab
 and numbered Images tabs remain available while the tree is open. Package
 composition charts and the Layers workspace behavior are unchanged.
+The attributes panel is labeled `Target IMAGE_ROOTFS attributes (Pseudo)`;
+unresolved names show numeric IDs, while absent IDs/mode explicitly say
+`unavailable`. No host-only fallback is presented as target evidence.
 
 The systemd tab lists `.service` unit files in the standard system and local
 unit search directories, reports `Description=` and `BusName=`, and derives

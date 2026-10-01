@@ -10267,22 +10267,22 @@ notes = "DONE. Genuine Poky 6.0.2 qemux86-64 Linux 6.18.24 matching build-tree b
 id = "ROOTFS-TARGET-OWNERSHIP-001"
 milestone = "M105"
 title = "Display target RootFS ownership and mode from exact Pseudo evidence"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3230
 required = true
 depends_on = ["ROOTFS-FILES-BROWSER-001"]
 verify = ["cargo test -p yoctui-bitbake rootfs_browser", "cargo test -p yoctui-model rootfs_browser", "cargo test -p yoctui-model layer_tree", "cargo test -p yoctui-app rootfs_browser", "cargo test -p yoctui-ui rootfs_browser", "cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks", "cargo test -p yoctui --bin yoctui rootfs_browser", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: read-only genuine Romulus target attributes against Pseudo and image accounts"]
-notes = "Requested correction to M100 host metadata. Exact-root read-only Pseudo mode/UID/GID, contained image account names, stale/missing/corrupt/locked/ambiguous evidence unavailable with no host/root fallback. Preserve normal Layers, RootFS tree/preview/chart and daemon; focused checks only, full suite deferred."
+notes = "DONE in v0.1.258. Exact-root read-only Pseudo path/device/inode mode/UID/GID and contained image account names; unknown names numeric, stale/missing/corrupt/locked/ambiguous data unavailable without host/root fallback. Adapter/model/app/UI/CLI focused tests 5/3/1/3/1, four Layers navigation tests, pie/list regression, strict affected all-target Clippy, fmt, version, roadmap and optimized build pass. Genuine Romulus passwd/group/shadow metadata smoke matches target root and 0400 shadow mode with identical DB bytes, untouched daemon and builds. Non-root covered by fixtures, not claimed live. Source-bound final release/push follow queued independent fixes; full suite deferred and M67 blocked."
 
 [[task]]
 id = "ROOTFS-SYSTEMD-SCROLL-001"
 milestone = "M106"
 title = "Keep the selected systemd service visible beyond the first viewport"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3240
 required = true
 depends_on = ["ROOTFS-TARGET-OWNERSHIP-001"]
-verify = ["cargo test -p yoctui-model rootfs_systemd", "cargo test -p yoctui-app rootfs_systemd", "cargo test -p yoctui-ui rootfs_systemd", "cargo test -p yoctui-ui ux_rootfs_system_views_render_offline_service_and_bus_authority", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+verify = ["cargo test -p yoctui-model rootfs_systemd", "cargo test -p yoctui-app rootfs_systemd", "cargo test -p yoctui-ui rootfs_systemd", "cargo test -p yoctui-ui ux_rootfs_system_tabs_show_offline_service_and_bus_file_evidence", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
 notes = "User reports the service list sticks at the bottom of the first screen. Relevant files: rootfs_services.rs and focused UI/model/app tests. Done when bounded viewport follows existing selection, title cue exposes position, paging/wheel/reverse/resize/empty/tiny cases pass with unchanged edit/explorer behavior; docs/status/version updated, committed, pushed and release built. Full suite deferred."
 
 [[task]]

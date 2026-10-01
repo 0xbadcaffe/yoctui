@@ -12,7 +12,7 @@ pub(crate) fn layer_entry_metadata(
             || "Permissions / Mode / Owner / Group: unavailable".into(),
             |metadata| {
                 format!(
-                    "Permissions / Mode / Owner / Group / Size:\n{}",
+                    "Target permissions / Mode / Owner / Group / Size:\n{}",
                     metadata.listing(entry.size)
                 )
             },

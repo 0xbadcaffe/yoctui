@@ -1,14 +1,19 @@
-ROOTFS-SYSTEMD-SCROLL-001 and GLOBAL-SEARCH-MARKER-001 are queued after the
-in-progress ownership fix, as separate small commits with focused tests and
-versioned release delivery. Disk cleanup reclaimed 10.7 GiB of regenerable
+ROOTFS-SYSTEMD-SCROLL-001 is IN_PROGRESS; GLOBAL-SEARCH-MARKER-001 follows
+as a separate small commit with focused tests and versioned release delivery.
+Disk cleanup reclaimed 10.7 GiB of regenerable
 Cargo debug/test artifacts; Yocto builds, sources, captures and release were
 preserved. Subsequent checks disable incremental caching.
 
-ROOTFS-TARGET-OWNERSHIP-001 is IN_PROGRESS. Actual Romulus lstat UID/GID
-1000/1000 differs from its exact Pseudo records (0/0); the current browser also
-resolves host rather than target account names. Replace both sources with
-validated read-only target evidence and explicit unavailable handling. Preserve
-the existing daemon, builds and user captures; focused verification only.
+ROOTFS-TARGET-OWNERSHIP-001 is DONE in v0.1.258. RootFS ownership/mode use
+read-only exact-path/device/inode Pseudo records and image-local account names,
+with numeric unknown names and explicit unavailable metadata, never host/root
+fallback. Adapter/model/app/UI/CLI focused checks (5/3/1/3/1), four Layers
+navigation tests, chart/list regression, strict affected-crate all-target
+Clippy, formatting, version policy, roadmap and optimized build pass. Genuine
+Romulus account/mode smoke passes without changing database bytes or restarting
+daemon PID 1729515. Non-root and failure cases are covered by fixtures; live
+non-root is not claimed. Final queued delivery will push and bind the release
+to its final commit. Full suite remains deferred; M67 remains blocked.
 
 M104 is DONE in v0.1.257. Genuine Linux 6.18.24 / Poky 6.0.2 qemux86-64 with
 QEMU 10.2.0 and GDB 17.1 passed managed attach, start_kernel breakpoint,

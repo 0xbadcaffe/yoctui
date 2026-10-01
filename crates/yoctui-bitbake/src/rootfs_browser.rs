@@ -1,11 +1,12 @@
 //! Read-only, contained acquisition for the on-disk RootFS file browser.
 use std::{
-    collections::HashMap,
     fs,
     io::{self, Read},
     path::Path,
 };
 use yoctui_model::{LayerBrowserEntry, PreviewKind, RootfsEntryKind, RootfsFileMetadata};
+
+mod target_metadata;
 
 fn contained(root: &Path, path: &Path) -> io::Result<()> {
     if !root.is_absolute()
@@ -21,33 +22,14 @@ fn contained(root: &Path, path: &Path) -> io::Result<()> {
     Ok(())
 }
 
-fn host_accounts(path: &Path) -> HashMap<u32, String> {
-    let mut bytes = Vec::new();
-    let Ok(file) = fs::File::open(path) else {
-        return HashMap::new();
-    };
-    if file.take(1024 * 1024 + 1).read_to_end(&mut bytes).is_err() || bytes.len() > 1024 * 1024 {
-        return HashMap::new();
-    }
-    String::from_utf8_lossy(&bytes)
-        .lines()
-        .filter_map(|line| {
-            let mut fields = line.split(':');
-            let name = fields.next()?;
-            fields.next()?;
-            let id = fields.next()?.parse().ok()?;
-            Some((id, name.to_owned()))
-        })
-        .collect()
-}
-
 pub fn scan_rootfs_browser_directory(
     root: &Path,
     directory: &Path,
 ) -> io::Result<Vec<LayerBrowserEntry>> {
     contained(root, directory)?;
-    let owners = host_accounts(Path::new("/etc/passwd"));
-    let groups = host_accounts(Path::new("/etc/group"));
+    let owners = target_metadata::accounts(root, "etc/passwd");
+    let groups = target_metadata::accounts(root, "etc/group");
+    let target = target_metadata::PseudoMetadata::open(root);
     let mut entries = Vec::new();
     for child in fs::read_dir(directory)? {
         if entries.len() == yoctui_model::MAX_ROOTFS_ENTRIES {
@@ -59,22 +41,27 @@ pub fn scan_rootfs_browser_directory(
         let is_dir = metadata.as_ref().is_some_and(|value| value.is_dir());
         #[cfg(unix)]
         let attributes = metadata.as_ref().map(|value| {
-            use std::os::unix::fs::MetadataExt;
+            let recorded = target.as_ref().and_then(|db| db.attributes(&path, value));
+            let (mode, uid, gid) = recorded.map_or((None, None, None), |(mode, uid, gid)| {
+                (Some(mode), Some(uid), Some(gid))
+            });
             RootfsFileMetadata {
-                kind: if value.is_dir() {
+                kind: if mode.is_some_and(|mode| mode & 0o170000 == 0o040000) || value.is_dir() {
                     RootfsEntryKind::Directory
-                } else if value.is_file() {
-                    RootfsEntryKind::RegularFile
                 } else if value.file_type().is_symlink() {
                     RootfsEntryKind::Symlink
+                } else if mode.is_some_and(|mode| mode & 0o170000 != 0o100000) {
+                    RootfsEntryKind::Other
+                } else if value.is_file() {
+                    RootfsEntryKind::RegularFile
                 } else {
                     RootfsEntryKind::Other
                 },
-                mode: value.mode(),
-                uid: value.uid(),
-                gid: value.gid(),
-                owner: owners.get(&value.uid()).cloned(),
-                group: groups.get(&value.gid()).cloned(),
+                mode,
+                uid,
+                gid,
+                owner: uid.and_then(|id| owners.get(&id).cloned()),
+                group: gid.and_then(|id| groups.get(&id).cloned()),
                 link_target: value
                     .file_type()
                     .is_symlink()
@@ -84,7 +71,7 @@ pub fn scan_rootfs_browser_directory(
         });
         #[cfg(not(unix))]
         let attributes = {
-            let _ = (&owners, &groups);
+            let _ = (&owners, &groups, &target);
             None
         };
         entries.push(LayerBrowserEntry {
