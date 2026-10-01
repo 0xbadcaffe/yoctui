@@ -3,6 +3,10 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) async fn poll_runtime(&mut self) -> Result<bool> {
         let runtime = self;
+        runtime.render_scheduler.invalidate_if(
+            runtime.editor_gitui_io.poll(&mut runtime.app).await,
+            RenderCause::State,
+        );
         #[cfg(unix)]
         runtime.poll_saved_environment().await;
         let (internal_records, ingress_dropped) = runtime.internal_tracing_capture.drain(256);

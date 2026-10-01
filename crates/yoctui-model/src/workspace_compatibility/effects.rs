@@ -39,6 +39,7 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         | Effect::GetWicOutputs(_)
         | Effect::GetWicDevices(_)
         | Effect::LoadRecipeEditorFile(_)
+        | Effect::InspectRecipeEditorGitUi { .. }
         | Effect::SaveRecipeEditorFile { .. }
         | Effect::WriteConfigAssignment(_)
         | Effect::WriteBbmask(_) => Requirement::ClientLocal,

@@ -3856,6 +3856,12 @@ user override parsing round-trips them. Terminal writers retain native Alt bytes
 Editor GitUI preparation is a client-local asynchronous read-only adapter;
 correlated typed root/results flow to the reducer, which opens the existing
 terminal chooser without mutating the retained document. No widget parses Git.
+The model tracks an editor/probe generation and pending typed launch. The client
+cancels covered/replaced probes and drops stale results. Validation rejects
+symlink/traversal/non-directory roots and mismatched reported repository ancestors,
+with an eight-second overall deadline and existing Git five-second/1 MiB bounds.
+Embedded GitUI moves the editor into one typed retained slot, not an input-trapping
+dialog. `Ctrl+B e` restores it; no daemon/wire changes or automatic saves occur.
 
 The image-console model owns only bounded form state, validation, selected
 artifact correlation, and an argv-preserving terminal launch projection. QEMU

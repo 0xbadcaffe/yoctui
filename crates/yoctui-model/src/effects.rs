@@ -131,6 +131,11 @@ pub enum Effect {
     WriteConfigAssignment(ConfigEditRequest),
     GetLayerRelationships,
     LoadRecipeEditorFile(PathBuf),
+    InspectRecipeEditorGitUi {
+        generation: u64,
+        root: PathBuf,
+        cwd: PathBuf,
+    },
     SaveRecipeEditorFile {
         root: PathBuf,
         path: PathBuf,

@@ -354,6 +354,9 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenErrors => Action::Open(Screen::Errors),
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
         CommandId::OpenRawMode => Action::Open(Screen::RawMode),
+        CommandId::OpenGitUi if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) => {
+            Action::OpenRecipeEditorGitUi
+        }
         CommandId::OpenGitUi => Action::OpenGitUi,
         CommandId::OpenDevtool(command) => {
             Action::OpenYoctoUtility(YoctoUtilityCommand::Devtool(command))

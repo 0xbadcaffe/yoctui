@@ -100,6 +100,7 @@ Daemon-owned Terminal Sessions reserve `Ctrl+B` as a one-second prefix:
 | `Ctrl+B ?` | Prefix help |
 | `Ctrl+B o` / `Ctrl+B Alt+o` | Take / release writer control |
 | `Ctrl+B t` | Terminal Sessions |
+| `Ctrl+B e` | Return to the retained editor without ending GitUI |
 | `Ctrl+B [` / `Ctrl+B /` | Copy / search mode |
 | `Ctrl+B r` | Rename session |
 | `Ctrl+B Alt+k` | Confirmed process-group termination |

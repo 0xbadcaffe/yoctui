@@ -286,6 +286,7 @@ pub(super) fn prefix_daemon_command(
         | PrefixCommand::ReleaseControl
         | PrefixCommand::Kill
         | PrefixCommand::Zoom => return Ok(None),
+        PrefixCommand::RestoreEditor => return Ok(None),
         PrefixCommand::NextSession
         | PrefixCommand::PreviousSession
         | PrefixCommand::SplitHorizontal

@@ -1,10 +1,24 @@
+EDITOR-GITUI-CONTEXT-001 is DONE in v0.1.262. GitUI opens from the active
+source/layer editor without requiring unrelated Devtool/global source state.
+Bounded read-only asynchronous checks reject invalid paths, stale/covered
+results and missing tools/nonrepositories without losing edits. Embedded GitUI
+no longer leaves the editor modal intercepting PTY input; Ctrl+B then e restores
+the whole retained editor without stopping GitUI. Detached/offline/cancel retain
+the editor, and a dirty retained editor cannot silently be replaced.
+Focused model/app/UI/CLI checks and real GitUI 0.28.1 PTY input/resize/exit pass,
+including unchanged unsaved file contents. Workspace, prefix, keymap, RootFS
+tree/chart/systemd, global-search, QEMU and saved-environment regressions pass.
+Strict affected all-target Clippy, fmt, UI contract, version policy, roadmap
+and optimized release build pass. Final push/commit-bound rebuild delivers
+both M107 fixes. Full suite remains deferred; M67 alone remains blocked.
+
 MODIFIER-SHORTCUTS-001 is DONE in v0.1.261. Alt+w workspace, Alt+g GitUI and
 Alt+f workspace search have typed routes and matching modifier hints. Uppercase
 aliases and literal text/native terminal ownership remain. Focused input,
 keymap, Devtool UI/CLI checks, strict Clippy, fmt/version/roadmap pass; generic
-editor-context GitUI follows now. Final push/source-bound release delivers both.
+editor-context GitUI is completed separately in v0.1.262.
 
-M107 user request is active: portable modifier shortcuts, reliable workspace
+Historical M107 planning: portable modifier shortcuts, reliable workspace
 opening/search and context-correct editor GitUI. MODIFIER-SHORTCUTS-001 precedes
 EDITOR-GITUI-CONTEXT-001; focused checks only, then version bumps/commits/push and
 source-bound optimized release. Existing daemon/builds/captures are preserved.

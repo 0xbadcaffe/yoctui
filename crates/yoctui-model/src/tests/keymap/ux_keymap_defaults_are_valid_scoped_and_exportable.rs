@@ -32,6 +32,8 @@ fn modifier_keymap_round_trips_and_exposes_portable_defaults() {
             sequence
         );
     }
+    let shifted = KeyStroke::Alt('G');
+    assert_eq!(shifted.to_string().parse::<KeyStroke>().unwrap(), shifted);
     for invalid in ["Alt+", "Alt+enter", "Alt+1", "Alt+gg", "Ctrl+Alt+f"] {
         assert!(invalid.parse::<KeyStroke>().is_err());
     }

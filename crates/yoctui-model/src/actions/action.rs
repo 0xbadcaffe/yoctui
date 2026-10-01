@@ -414,6 +414,8 @@ pub enum Action {
     BackspaceRecipeEditorSearch, FinishRecipeEditorSearch,
     NextRecipeEditorMatch { backwards: bool, },
     ToggleRecipeEditorEditing, OpenRecipeEditorExternal, OpenRecipeEditorGitUi, AppendRecipeEditor(char),
+    RecipeEditorGitUiInspected { generation: u64, root: PathBuf, result: SourceGitStatus },
+    RestoreRecipeEditor,
     BackspaceRecipeEditor, SaveRecipeEditor, RecipeEditorSaved,
     BeginRecipeEditorBuild, CloseRecipeEditor, ConfirmRecipeTask,
     CancelRecipeTask, ConfirmDevtoolReset, CancelDevtoolReset,

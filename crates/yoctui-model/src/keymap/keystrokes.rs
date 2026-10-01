@@ -97,10 +97,11 @@ impl FromStr for KeyStroke {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         let value = value.trim();
-        if let Some(letter) = value.to_ascii_lowercase().strip_prefix("alt+") {
+        if value.to_ascii_lowercase().starts_with("alt+") {
+            let letter = &value[4..];
             let mut characters = letter.chars();
             if let Some(character) = characters.next()
-                && character.is_ascii_lowercase()
+                && character.is_ascii_alphabetic()
                 && characters.next().is_none()
             {
                 return Ok(Self::Alt(character));

@@ -16,6 +16,19 @@ impl App {
                     CommandId::OpenGitUi if self.gitui_program.is_none() => {
                         Some("GitUI is not installed; install gitui and restart Yoctui")
                     }
+                    CommandId::OpenGitUi
+                        if matches!(self.active_dialog(), Some(Dialog::RecipeEditor(_))) =>
+                    {
+                        match self.active_dialog() {
+                            Some(Dialog::RecipeEditor(editor)) if self.layer_browser.as_ref().is_some_and(
+                                |browser| browser.is_rootfs() && browser.root == editor.root
+                            ) => Some("Generated RootFS is image content, not a source Git worktree"),
+                            Some(Dialog::RecipeEditor(editor)) if !editor.root.is_absolute() => {
+                                Some("The editor repository root must be absolute")
+                            }
+                            _ => None,
+                        }
+                    }
                     CommandId::OpenGitUi if self.source_repository_path().is_none() => {
                         Some("Select a source directory in Build Environment")
                     }

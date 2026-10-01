@@ -110,6 +110,8 @@ impl InteractiveRuntime {
                 .await;
             } else if let Some(Effect::LoadRecipeEditorFile(path)) = effect {
                 load_recipe_editor_file(&mut runtime.app, path).await;
+            } else if let Some(effect @ Effect::InspectRecipeEditorGitUi { .. }) = effect {
+                runtime.editor_gitui_io.submit(effect);
             } else if let Some(Effect::OpenInEditor(path)) = effect {
                 open_in_editor(
                     &runtime.guard,

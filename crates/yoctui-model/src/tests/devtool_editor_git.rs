@@ -40,7 +40,20 @@ fn devtool_editor_git_opens_exact_repository_root_without_recipe_selection() {
         },
     );
 
-    assert_eq!(update(&mut app, Action::OpenRecipeEditorGitUi), None);
+    let effect = update(&mut app, Action::OpenRecipeEditorGitUi);
+    assert!(
+        matches!(effect, Some(Effect::InspectRecipeEditorGitUi { ref cwd, .. })
+        if cwd == Path::new("/workspace/busybox"))
+    );
+    let generation = app.editor_gitui_generation;
+    update(
+        &mut app,
+        Action::RecipeEditorGitUiInspected {
+            generation,
+            root: "/workspace/busybox/source".into(),
+            result: SourceGitStatus::Ready(SourceGitSummary::default()),
+        },
+    );
     assert!(matches!(
         app.active_dialog(),
         Some(Dialog::TerminalLaunch(TerminalLaunchDialog { request, .. }))

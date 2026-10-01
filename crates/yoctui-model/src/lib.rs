@@ -13,6 +13,7 @@ mod compatibility_ui;
 mod daemon_state;
 mod dashboard;
 mod devtool_utility;
+mod editor_gitui;
 mod embedded_shell;
 mod environment_setup;
 mod focus;

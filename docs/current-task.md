@@ -1,20 +1,20 @@
 # Current Task
 
-**ID:** EDITOR-GITUI-CONTEXT-001
-**Title:** Open GitUI at the active integrated editor repository
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
 MODIFIER-SHORTCUTS-001 is DONE in v0.1.261 with focused app/model/UI/CLI
 verification, strict Clippy, formatting, version policy and roadmap passing.
-Enable GitUI for all integrated editor contexts with exact-root bounded
-asynchronous read-only inspection, correlated results, retained dirty state and
-contextual F12 routing. Check missing tool/nonrepository/invalid/stale failure
-paths and existing Devtool/terminal flows. Run the registry's focused editor
-GitUI checks, formatting, strict Clippy, version policy and roadmap. Bump version,
-build optimized release, commit, push and bind the final binary to that commit.
-Do not run the full test suite.
+EDITOR-GITUI-CONTEXT-001 is DONE in v0.1.262 with exact-context bounded
+asynchronous read-only inspection, correlated cancellation, retained dirty
+editor state, contextual F12 routing and Ctrl+B then e restoration. Focused
+model/app/UI/CLI checks, real GitUI 0.28.1 input/resize/exit smoke, workspace,
+RootFS, search, QEMU and saved-environment regressions pass. Formatting, strict
+Clippy, UI contract, version policy, roadmap and optimized build pass. Final
+push and commit-bound optimized rebuild deliver both tasks. No full suite ran.
 
-The separate external blocker remains:
+The remaining external blocker is:
 
 The retained performance evidence is not bound to the current source tree: it
 has 143 previously documented source digest mismatches, including changes

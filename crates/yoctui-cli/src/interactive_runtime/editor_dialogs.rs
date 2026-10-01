@@ -150,6 +150,9 @@ impl InteractiveRuntime {
                 Some(Effect::LoadRecipeEditorFile(path)) => {
                     load_recipe_editor_file(&mut runtime.app, path).await;
                 }
+                Some(effect @ Effect::InspectRecipeEditorGitUi { .. }) => {
+                    runtime.editor_gitui_io.submit(effect);
+                }
                 Some(Effect::SaveRecipeEditorFile {
                     root,
                     path,

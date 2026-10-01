@@ -5806,6 +5806,11 @@ Cancellation and launch retain unsaved document/mode/cursor/tree state; no
 automatic save, staging or commit occurs. F12 Tools GitUI targets the active
 editor too. Late probe results cannot launch after the editor is replaced or
 covered by another dialog. Read-only RootFS/non-Git directories fail explicitly.
+Embedded confirmation retains the complete editor outside the dialog stack so
+native GitUI can own Terminal Sessions input. `Ctrl+B e` restores its original
+screen, buffer, mode, cursor and selection without ending GitUI. A dirty retained
+editor cannot be replaced by opening another workspace. Detached and offline
+launches keep the editor in place; cancelling a chooser never suspends it.
 
 ### Interactive-session destination chooser
 

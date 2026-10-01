@@ -17,12 +17,12 @@ notes = "DONE in v0.1.261. Typed Alt input/keymaps, lowercase modifier alternati
 id = "EDITOR-GITUI-CONTEXT-001"
 milestone = "M107"
 title = "Open GitUI at the active integrated editor repository"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3261
 required = true
 depends_on = ["MODIFIER-SHORTCUTS-001"]
 verify = ["cargo test -p yoctui-model editor_gitui", "cargo test -p yoctui-app devtool_editor_git", "cargo test -p yoctui-ui devtool_editor_git", "cargo test -p yoctui --bin yoctui editor_gitui", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
-notes = "Definition: all integrated editor contexts use exact root and bounded asynchronous read-only Git checks; missing tool/nonrepository/invalid root/stale result failures are visible; direct and menu shortcuts work in editing modes; launch/cancel preserves dirty buffer and existing embedded/detached/offline terminal lifecycle. Relevant files: model actions/effects/reducer/menu availability, CLI editor worker/runtime polling, app/UI editor routes. Update UI spec, architecture, roadmap, status and current task. Full suite deferred; final commit push and source-bound release required."
+notes = "DONE in v0.1.262. Exact active editor context uses bounded correlated asynchronous read-only Git inspection with visible missing-tool/nonrepository/invalid-path failures and stale/covered cancellation. Embedded launch retains the full dirty editor outside the dialog stack, allowing native GitUI input; Ctrl+B then e restores it without stopping the terminal. Detached/offline/cancel preserve the editor. Six new model cases, existing Devtool/search regressions, four CLI worker tests, narrow TestBackend/menu checks and actual GitUI 0.28.1 PTY input/resize/exit smoke pass. Workspace, prefix, keymap, RootFS tree/chart/systemd, global-search, QEMU and saved-environment focused regressions pass. Formatting, strict CLI dependency/all-target Clippy, UI contract, version policy, roadmap and optimized release build pass. Full suite deferred; final push and commit-bound rebuild deliver both M107 tasks."
 
 [[task]]
 id = "M72-IPC-001"

@@ -118,6 +118,7 @@ impl InteractiveRuntime {
                         PrefixCommand::ReleaseControl => Some(Action::TerminalReleaseControl),
                         PrefixCommand::Kill => Some(Action::TerminalBeginKill),
                         PrefixCommand::Zoom => Some(Action::TogglePaneZoom),
+                        PrefixCommand::RestoreEditor => Some(Action::RestoreRecipeEditor),
                         _ => None,
                     };
                     if let Some(action) = terminal_action
@@ -208,6 +209,11 @@ impl InteractiveRuntime {
                         PrefixCommand::ReleaseControl => "Terminal writer release requested".into(),
                         PrefixCommand::Kill => "Terminal kill confirmation opened".into(),
                         PrefixCommand::Zoom => "Terminal pane zoom toggled".into(),
+                        PrefixCommand::RestoreEditor => runtime
+                            .app
+                            .notification
+                            .clone()
+                            .unwrap_or_else(|| "Returned to retained editor".into()),
                     });
                     return Ok(true);
                 }
@@ -224,7 +230,9 @@ impl InteractiveRuntime {
                 Some(MenuInputResult::ActivateCommand(command)) => {
                     let _ = compatibility_workspace_action(&mut runtime.app, Action::CloseMenu);
                     let action = yoctui_model::command_action(&runtime.app, command);
-                    let _ = compatibility_workspace_action(&mut runtime.app, action);
+                    if let Some(effect) = compatibility_workspace_action(&mut runtime.app, action) {
+                        runtime.editor_gitui_io.submit(effect);
+                    }
                     return Ok(true);
                 }
                 Some(MenuInputResult::ActivateContext(replay)) => {

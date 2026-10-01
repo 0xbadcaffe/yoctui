@@ -7,6 +7,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             root,
             mut files,
         } => {
+            if crate::editor_gitui::retain_dirty_editor(app) {
+                return None;
+            }
+            app.editor_gitui_generation = app.editor_gitui_generation.wrapping_add(1);
+            app.editor_gitui_pending = None;
             let file_inventory_truncated = files.len() > MAX_RECIPE_EDITOR_FILES;
             files.truncate(MAX_RECIPE_EDITOR_FILES);
             let language = files.first().map_or(SourceLanguage::PlainText, |path| {
@@ -152,59 +157,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some("No recipe file is selected for the external editor.".into());
         }
         Action::OpenRecipeEditorGitUi => {
-            let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() else {
-                return None;
-            };
-            let recipe = editor.recipe.clone();
-            let workspace_root = editor.root.clone();
-            let Some(program) = app.gitui_program.clone() else {
-                app.notification =
-                    Some("Install GitUI before opening the Devtool workspace repository.".into());
-                return None;
-            };
-            let Some(status) = app.devtool_statuses.values().find(|status| {
-                status.identity.name == recipe
-                    && matches!(
-                        &status.workspace,
-                        DevtoolWorkspace::Present { source_path, .. }
-                            if source_path == &workspace_root
-                    )
-            }) else {
-                app.notification = Some(
-                    "Refresh this recipe's Devtool status before opening its repository.".into(),
-                );
-                return None;
-            };
-            let repository_root = match &status.git {
-                DevtoolGitState::Available {
-                    repository_root: Some(repository_root),
-                    ..
-                } if repository_root.is_absolute() => repository_root.clone(),
-                DevtoolGitState::Available { .. } => workspace_root,
-                DevtoolGitState::NotRepository => {
-                    app.notification =
-                        Some("This Devtool workspace is not a Git repository.".into());
-                    return None;
-                }
-                _ => {
-                    app.notification =
-                        Some("Refresh Git status before opening this workspace in GitUI.".into());
-                    return None;
-                }
-            };
-            app.dialogs
-                .push_front(Dialog::TerminalLaunch(TerminalLaunchDialog {
-                    request: TerminalLaunchRequest {
-                        name: format!("GitUI · devtool {recipe}"),
-                        kind: TerminalCreationKind::GitUi,
-                        cwd: repository_root,
-                        program,
-                        arguments: Vec::new(),
-                        completion: None,
-                    },
-                    destination: TerminalLaunchDestination::Embedded,
-                    output_must_not_exist: None,
-                }));
+            return crate::editor_gitui::begin(app);
         }
         Action::AppendRecipeEditor(character) => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut()

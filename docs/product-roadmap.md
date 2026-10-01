@@ -15,7 +15,26 @@ checks (3/24/38), six keymap tests, 18 Devtool UI tests and native Alt/Unicode/
 control/shift/release CLI checks pass, as do formatting, affected strict
 all-target Clippy, version policy and roadmap. Text/PTY input and legacy
 bindings remain unchanged; longer hints retain the action list and Git facts
-in the responsive preview. Generic editor GitUI follows separately.
+in the responsive preview. Generic editor GitUI is completed separately below.
+
+EDITOR-GITUI-CONTEXT-001 is DONE in v0.1.262. Exact-context bounded read-only
+asynchronous inspection replaces the Devtool-only editor restriction. Missing
+tool/nonrepository/invalid-path failures preserve edits; covered/replaced/stale
+results cannot open a chooser. Embedded launch suspends the whole editor outside
+the modal stack so native GitUI receives input. Ctrl+B then e restores the same
+buffer/mode/cursor without stopping the terminal; detached/offline/cancel retain
+the editor, and dirty retained state cannot silently be replaced.
+
+Six new model cases and existing Devtool/search cases, four CLI worker cases,
+menu/TestBackend checks across terminal sizes and actual GitUI 0.28.1 PTY smoke
+pass. The native smoke exercises typed editor inspection/chooser/embedded launch,
+Tab input, resize and clean exit, restores the dirty editor and verifies unsaved
+disk contents are unchanged. Workspace/prefix/keymap, RootFS tree/chart/systemd,
+global search, QEMU and saved-environment focused regressions pass. Formatting,
+strict CLI dependency/all-target Clippy, UI contract, version policy, roadmap
+and optimized release build pass. No full suite or live BitBake claim. Final
+commit/push and commit-bound rebuild deliver both fixes; the daemon and user
+builds/captures remain untouched. M67 remains separately blocked.
 
 ## M106 — Systemd list viewport and single search activity marker
 

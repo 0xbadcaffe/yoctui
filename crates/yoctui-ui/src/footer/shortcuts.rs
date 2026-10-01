@@ -152,7 +152,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             }
         }
         Screen::TerminalSessions => {
-            "Ctrl+B prefix | [ copy | / search | r rename | Alt+o release | Alt+k confirmed kill | z zoom | paste review | o take (viewer)"
+            "Ctrl+B prefix | Ctrl+B e editor | [ copy | / search | r rename | Alt+o release | Alt+k confirmed kill | z zoom | paste review | o take (viewer)"
         }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | Alt+r relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"

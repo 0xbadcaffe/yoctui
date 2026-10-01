@@ -1,5 +1,7 @@
 //! Recipe editor.
 use super::*;
+mod gitui;
+pub(crate) use gitui::EditorGitUiIo;
 
 pub(crate) async fn load_recipe_editor_file(app: &mut App, path: PathBuf) {
     let result = tokio::task::spawn_blocking(move || fs::read_to_string(path)).await;

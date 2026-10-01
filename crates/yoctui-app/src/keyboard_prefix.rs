@@ -23,6 +23,7 @@ pub enum PrefixCommand {
     ReleaseControl,
     Kill,
     Zoom,
+    RestoreEditor,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,6 +85,7 @@ impl PrefixState {
                 Input::Char('?') => PrefixEvent::Command(PrefixCommand::Help),
                 Input::Char('o') => PrefixEvent::Command(PrefixCommand::TakeControl),
                 Input::Char('t') => PrefixEvent::Command(PrefixCommand::OpenTerminalSessions),
+                Input::Char('e') => PrefixEvent::Command(PrefixCommand::RestoreEditor),
                 Input::Char('[') => PrefixEvent::Command(PrefixCommand::CopyMode),
                 Input::Char('/') => PrefixEvent::Command(PrefixCommand::Search),
                 Input::Char('r') => PrefixEvent::Command(PrefixCommand::Rename),

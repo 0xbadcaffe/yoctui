@@ -18,6 +18,11 @@ mod yocto_utility_dialog;
 #[rustfmt::skip]
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     let action = match action {
+        Action::OpenGitUi if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) => Action::OpenRecipeEditorGitUi,
+        Action::RecipeEditorGitUiInspected { generation, root, result } => {
+            return crate::editor_gitui::finish(app, generation, root, result);
+        }
+        Action::RestoreRecipeEditor => return crate::editor_gitui::restore(app),
         Action::Hardware(action) => return reduce_hardware(app, action),
         Action::KernelDebug(action) => return crate::kernel_debug::reduce(app, action),
         action => action,
@@ -385,6 +390,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::WorkspaceLoaded(..) | Action::RecipesLoaded(..) | Action::LayersLoaded(..)
         | Action::VariableLoaded(..) | Action::RecipeSourcesLoaded { .. } | Action::HostTelemetryUpdated(..)
         | Action::Failure(..) | Action::Tick => set_layer_inspector_mode::reduce_actions(app, action),
-        Action::Hardware(_) | Action::KernelDebug(_) => unreachable!("Local workspace actions are routed before the shared reducer"),
+        Action::Hardware(_) | Action::KernelDebug(_)
+        | Action::RecipeEditorGitUiInspected { .. } | Action::RestoreRecipeEditor => unreachable!("Local workspace actions are routed before the shared reducer"),
     }
 }
