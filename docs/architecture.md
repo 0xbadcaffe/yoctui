@@ -3652,6 +3652,12 @@ query deadline, 1-MiB value limit and 256-MiB database bound. Missing/invalid
 schema is rejected once per scan, not retried with a busy timeout per child.
 Account reads are capped at 1 MiB and reject controls and ambiguous ID names.
 
+The systemd renderer projects the existing model-owned service selection through
+`BoundedScroll`, using table-body height minus header/borders as capacity. It
+renders only that bounded slice with global selection styling and the shared
+title cue. Terminal resize is presentation input, never inventory authority;
+no backend, selection action, edit path or other system-view behavior changes.
+
 Daemon-attached rootfs acquisition uses a capability-advertised, read-only
 InspectRootfsSources request and request-scoped typed command result, never
 broadcast metadata or guessed work paths. The daemon binds exact image,

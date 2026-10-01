@@ -152,6 +152,66 @@ fn rootfs_browser_modes_cover_special_bits_and_unknown_accounts() {
 }
 
 #[test]
+fn rootfs_systemd_selection_is_bounded_through_scroll_pages_and_inventory_shrink() {
+    let mut app = App::new(20, 2000);
+    let image = ImageArtifactIdentity {
+        image: "image".into(),
+        machine: "qemu".into(),
+        path: "/build/image.ext4".into(),
+    };
+    app.rootfs_composition = RootfsCompositionState::Available {
+        request: RootfsCompositionRequest {
+            image: image.clone(),
+            generation: 1,
+        },
+        composition: RootfsComposition {
+            image,
+            root_directory: Some("/build/rootfs".into()),
+            installed_packages: RootfsAuthority::Available(Default::default()),
+            filesystem_tree: RootfsAuthority::Available(Default::default()),
+            system_inventory: RootfsAuthority::Available(RootfsSystemInventory {
+                systemd_services: (0..80)
+                    .map(|index| RootfsSystemdService {
+                        name: format!("service-{index}.service"),
+                        logical_path: RootfsPathIdentity(
+                            format!("/usr/lib/systemd/system/service-{index}.service").into(),
+                        ),
+                        host_path: "/build/rootfs/service".into(),
+                        description: None,
+                        bus_name: None,
+                        enabled_by: vec![],
+                        preview: String::new(),
+                        preview_truncated: false,
+                    })
+                    .collect(),
+                ..Default::default()
+            }),
+        },
+    };
+    for (delta, selected) in [
+        (10, 10),
+        (10, 20),
+        (-1, 19),
+        (isize::MAX, 79),
+        (1, 79),
+        (-10, 69),
+        (isize::MIN, 0),
+        (-1, 0),
+    ] {
+        assert!(update(&mut app, Action::SelectRootfsSystemdService { delta }).is_none());
+        assert_eq!(app.rootfs_systemd_selection, selected);
+    }
+    if let RootfsCompositionState::Available { composition, .. } = &mut app.rootfs_composition {
+        composition.system_inventory = RootfsAuthority::Available(Default::default());
+    }
+    update(
+        &mut app,
+        Action::SelectRootfsSystemdService { delta: isize::MAX },
+    );
+    assert_eq!(app.rootfs_systemd_selection, 0);
+}
+
+#[test]
 fn rootfs_browser_reuses_lazy_navigation_and_preview_without_changing_layers_enter() {
     let mut app = App::new(20, 2000);
     app.screen = Screen::Images;

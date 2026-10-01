@@ -10278,18 +10278,18 @@ notes = "DONE in v0.1.258. Exact-root read-only Pseudo path/device/inode mode/UI
 id = "ROOTFS-SYSTEMD-SCROLL-001"
 milestone = "M106"
 title = "Keep the selected systemd service visible beyond the first viewport"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3240
 required = true
 depends_on = ["ROOTFS-TARGET-OWNERSHIP-001"]
 verify = ["cargo test -p yoctui-model rootfs_systemd", "cargo test -p yoctui-app rootfs_systemd", "cargo test -p yoctui-ui rootfs_systemd", "cargo test -p yoctui-ui ux_rootfs_system_tabs_show_offline_service_and_bus_file_evidence", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
-notes = "User reports the service list sticks at the bottom of the first screen. Relevant files: rootfs_services.rs and focused UI/model/app tests. Done when bounded viewport follows existing selection, title cue exposes position, paging/wheel/reverse/resize/empty/tiny cases pass with unchanged edit/explorer behavior; docs/status/version updated, committed, pushed and release built. Full suite deferred."
+notes = "DONE in v0.1.259. Systemd table uses bounded selection-following viewport and shared clipped title cue; header/borders reserve capacity, short titles unchanged. Model/app/UI tests 1/1/2 cover bounds, all 80 services, up/down/pages/Home/End, wheel, edit/explorer, resize, empty/short/stale/tiny views. RootFS ownership/tree and offline systemd/D-Bus regressions, affected strict all-target Clippy, fmt, version, roadmap and optimized build pass. No backend or other system-view change; daemon/build data preserved, full suite deferred. Push and final source-bound binary delivery follow the independent search marker fix."
 
 [[task]]
 id = "GLOBAL-SEARCH-MARKER-001"
 milestone = "M106"
 title = "Show one loading activity marker in global and workspace content search"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3250
 required = true
 depends_on = ["ROOTFS-SYSTEMD-SCROLL-001"]

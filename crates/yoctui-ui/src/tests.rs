@@ -2,6 +2,7 @@
 
 use super::*;
 mod rootfs_browser;
+mod rootfs_systemd;
 mod saved_environment;
 use ratatui::{Terminal, backend::TestBackend};
 use std::{fs, path::PathBuf};

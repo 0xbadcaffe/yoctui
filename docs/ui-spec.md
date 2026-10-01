@@ -5443,6 +5443,9 @@ wheel navigation passes the bottom/top of the viewport. Its bounded title cue
 reports the selected position and visible range when clipped. Resizing preserves
 selection and visibility; empty/short lists and tiny terminals remain safe.
 This is viewport behavior only: selection, edit and explorer actions are unchanged.
+The service table reserves one header row and its border before computing the
+visible range; the selected service never disappears merely by moving past
+the initial bottom row. Short un-clipped tables keep the existing title.
 
 The filesystem traversal requires canonical build containment, never follows symlinks,
 deduplicates hard links, identifies special files, and enforces entry, depth,

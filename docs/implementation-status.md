@@ -1,8 +1,16 @@
-ROOTFS-SYSTEMD-SCROLL-001 is IN_PROGRESS; GLOBAL-SEARCH-MARKER-001 follows
-as a separate small commit with focused tests and versioned release delivery.
+ROOTFS-SYSTEMD-SCROLL-001 is DONE in v0.1.259; GLOBAL-SEARCH-MARKER-001 is
+IN_PROGRESS as the next independent focused/versioned fix. The systemd table
+now follows selection through all 80 fixture services and reverse/page/Home/End
+navigation, with a clipped position/range cue and safe resize/empty/short/tiny
+views. Model/app/UI checks 1/1/2, wheel/edit/explorer routes, RootFS attributes
+and offline systemd/D-Bus regressions, strict affected all-target Clippy,
+formatting, version policy, roadmap and optimized build pass. No backend or
+other system-view behavior changed. Final push/source-bound delivery follows
+the search marker correction.
 Disk cleanup reclaimed 10.7 GiB of regenerable
-Cargo debug/test artifacts; Yocto builds, sources, captures and release were
-preserved. Subsequent checks disable incremental caching.
+Cargo debug/test artifacts; another 3.9 GiB of obsolete workspace debug
+artifacts was reclaimed after successful systemd verification. Yocto builds,
+sources, captures and release were preserved. Checks disable incremental caching.
 
 ROOTFS-TARGET-OWNERSHIP-001 is DONE in v0.1.258. RootFS ownership/mode use
 read-only exact-path/device/inode Pseudo records and image-local account names,

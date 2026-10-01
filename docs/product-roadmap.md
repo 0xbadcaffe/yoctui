@@ -8,6 +8,11 @@ viewport; GLOBAL-SEARCH-MARKER-001 removes the duplicate static loading marker
 beside the existing activity spinner. Preserve actions, focus and scope.
 Each gets focused normal/boundary regressions and a version bump; release
 delivery includes all queued fixes. Full-suite deferral and M67 blocker remain.
+ROOTFS-SYSTEMD-SCROLL-001 is DONE in v0.1.259: selection-following bounded
+rows, clipped title cue, all 80-service/page/reverse/wheel/resize and boundary
+tests pass with unchanged typed actions. RootFS attributes and offline service/
+bus regressions, strict affected Clippy and optimized build pass. Search marker
+correction is the next independent commit.
 
 ## M105 — Correct target RootFS owner/group and mode
 

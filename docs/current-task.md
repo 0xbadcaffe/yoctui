@@ -1,23 +1,23 @@
 # Current Task
 
-**ID:** ROOTFS-SYSTEMD-SCROLL-001
-**Title:** Keep the selected systemd service visible beyond the first viewport
+**ID:** GLOBAL-SEARCH-MARKER-001
+**Title:** Show one loading activity marker in global and workspace search
 **Status:** IN_PROGRESS
 
-Dependency ROOTFS-TARGET-OWNERSHIP-001 is DONE in v0.1.258. Unrelated M67
-performance evidence remains BLOCKED; global search marker correction follows.
+Dependency ROOTFS-SYSTEMD-SCROLL-001 is DONE in v0.1.259. Ownership is DONE
+in v0.1.258. M67 performance evidence remains externally BLOCKED.
 
-Relevant files: rootfs_services.rs and focused UI/model/app tests, workspace
-versions. Done when the bounded viewport follows existing service selection
-through paging/wheel/reverse navigation and resize, clipped title cues and
-empty/short/tiny cases pass with unchanged edit/explorer behavior. Update UI,
-architecture, roadmap, registry and status; bump, commit, push and build release.
+Relevant files: palette_render.rs, state primitive and focused search tests,
+workspace versions. Replace only the search loading state's default static
+ellipsis with its existing client-local activity marker. Done when Unicode
+frames animate exactly one marker, reduced-motion/ASCII fallbacks are safe,
+other states/scopes remain unchanged, docs/status/version are updated, focused
+checks and release build pass, and coherent commit/push/release handoff finish.
 
 ```bash
-cargo test -p yoctui-model rootfs_systemd
-cargo test -p yoctui-app rootfs_systemd
-cargo test -p yoctui-ui rootfs_systemd
-cargo test -p yoctui-ui ux_rootfs_system_tabs_show_offline_service_and_bus_file_evidence
+cargo test -p yoctui-ui global_search
+cargo test -p yoctui-ui devtool_editor_search
+cargo test -p yoctui-ui primitives
 cargo fmt --all --check
 cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 python3 scripts/check-version-bump.py
@@ -25,6 +25,6 @@ python3 scripts/check-version-bump.py
 cargo build --release -p yoctui --bin yoctui
 ```
 
-Do not run the full suite or completion gate; the user deferred it. Preserve
-daemon/build data and user captures. Continue to the search marker correction
-immediately after the coherent commit.
+Full suite and completion gate remain deferred per user. Preserve running
+daemon/build data and captures. Final release must include all three fixes;
+reclaim only regenerable caches as needed and report final free space.
