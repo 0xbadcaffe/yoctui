@@ -288,7 +288,7 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
             StateView {
                 kind: StateKind::Loading,
                 summary: format!(
-                    "{activity} Searching {} text files…",
+                    "Searching {} text files…",
                     if workspace_search {
                         "workspace"
                     } else {
@@ -298,7 +298,8 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
                 detail: Some("Results are bounded and generated caches are excluded.".into()),
                 action: Some("Keep typing to replace this search; Esc cancels it.".into()),
             }
-            .paragraph(
+            .paragraph_with_marker(
+                activity,
                 palette.role(palette.informational, Modifier::BOLD),
                 palette.role(palette.secondary_foreground, Modifier::DIM),
             )

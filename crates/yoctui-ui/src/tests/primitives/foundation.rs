@@ -1,4 +1,26 @@
     #[test]
+    fn primitives_state_marker_override_keeps_default_loading_and_details_unchanged() {
+        let state = StateView {
+            kind: StateKind::Loading,
+            summary: "Busy".into(),
+            detail: Some("Details".into()),
+            action: Some("Action".into()),
+        };
+        let default = state.text(Style::default(), Style::default());
+        assert_eq!(default.lines[0].spans[0].content, "… Busy");
+        let mut terminal = Terminal::new(TestBackend::new(24, 4)).unwrap();
+        terminal.draw(|frame| {
+            frame.render_widget(state.paragraph_with_marker("*", Style::default().fg(Color::Cyan), Style::default()), frame.area());
+        }).unwrap();
+        let buffer = terminal.backend().buffer();
+        let text = buffer.content.iter().map(|cell| cell.symbol()).collect::<String>();
+        assert!(text.contains("* Busy") && text.contains("Details") && text.contains("Action"), "{text}");
+        assert!(!text.contains('…'), "{text}");
+        assert_eq!(buffer[(0, 0)].fg, Color::Cyan);
+        assert_eq!(state.text(Style::default(), Style::default()).lines[0].spans[0].content, "… Busy");
+    }
+
+    #[test]
     fn foundation_ui_primitives_render_focus_header_separator_and_states() {
         let styles = styles();
         let shell = PaneShell::new(

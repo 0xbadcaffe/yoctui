@@ -5760,6 +5760,8 @@ An empty loading global/workspace content search shows exactly one activity
 marker before `Searching …`, not a static loading ellipsis beside a spinner.
 Unicode uses the existing animated Braille set; reduced motion stays static;
 ASCII uses one plain marker. Error/empty/results states retain their behavior.
+Only the loading marker is replaced; the `Searching …` scope text, bounded-
+results explanation and keep-typing/cancel action remain visible as before.
 
 The editor inspector shows the selected recipe workspace repository root,
 branch, upstream, clean/dirty counts, and `synced`, `ahead N`, `behind N`,

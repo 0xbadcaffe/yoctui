@@ -11,8 +11,37 @@ delivery includes all queued fixes. Full-suite deferral and M67 blocker remain.
 ROOTFS-SYSTEMD-SCROLL-001 is DONE in v0.1.259: selection-following bounded
 rows, clipped title cue, all 80-service/page/reverse/wheel/resize and boundary
 tests pass with unchanged typed actions. RootFS attributes and offline service/
-bus regressions, strict affected Clippy and optimized build pass. Search marker
-correction is the next independent commit.
+bus regressions, strict affected Clippy and optimized build pass.
+GLOBAL-SEARCH-MARKER-001 is DONE in v0.1.260: six global search, one workspace
+search and twelve primitive tests pass, with RootFS regressions and genuine
+Romulus ownership smoke passing again. Strict UI all-target Clippy, formatting,
+version policy, roadmap and optimized build pass. Final commit/push and
+source-bound release handoff include all three fixes; M67 remains separate.
+
+### M106 focused verification and baseline limits
+
+Systemd tests cover every selected row in an 80-service typed fixture, reverse
+navigation, pages, Home/End, wheel mapping, resize, empty/short/stale and tiny
+views. Search tests render global/workspace loading at multiple Unicode frames
+with exactly one activity glyph, static reduced motion, ASCII, error/results,
+cancel guidance and narrow safety. Default StateView markers remain unchanged.
+No live-systemd management or search backend/scope changes are claimed.
+
+The optional wider check `cargo test -p yoctui-ui palette_retains_typed_facts_at_every_breakpoint`
+reports 17 pass / seven fail. A clean detached checkout of baseline 426f4e21
+reproduces the same seven failures (16 pass / eight fail including its stale
+global loading-scope assertion). The seven unrelated assertions remain unchanged:
+`dialog_focus_is_trapped_then_visibly_restored_to_actionable_workspace`,
+`next_generation_palette_bounds_scroll_and_clears_stale_empty_detail`,
+`next_generation_palette_is_explicit_in_accessible_modes`,
+`dashboard_renders_host_cpu_and_build_disk_space`,
+`next_generation_palette_retains_typed_facts_at_every_breakpoint`,
+`ux_command_center_unifies_bounded_source_contexts_without_bypassing_workspaces`,
+and `compact_resource_meters_remain_visible_across_workspace_sizes`.
+Baseline log: `/tmp/yoctui-palette-baseline-check.log`; its temporary checkout
+was removed after verification. The relevant search assertion now requires the
+already-existing `build and generated rootfs` scope and rejects the duplicate
+static marker; scope itself was not changed. No full-suite pass is claimed.
 
 ## M105 — Correct target RootFS owner/group and mode
 

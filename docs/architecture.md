@@ -3658,6 +3658,12 @@ renders only that bounded slice with global selection styling and the shared
 title cue. Terminal resize is presentation input, never inventory authority;
 no backend, selection action, edit path or other system-view behavior changes.
 
+Global/workspace content-search loading uses StateView's explicit presentation
+marker override instead of prefixing an activity glyph into the summary while
+also emitting the default loading ellipsis. Existing StateView text/paragraph
+callers retain their default markers and styles. Activity frames and reduced
+motion remain client-local; no search backend, state transition or focus change.
+
 Daemon-attached rootfs acquisition uses a capability-advertised, read-only
 InspectRootfsSources request and request-scoped typed command result, never
 broadcast metadata or guessed work paths. The daemon binds exact image,

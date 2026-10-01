@@ -1,30 +1,27 @@
 # Current Task
 
-**ID:** GLOBAL-SEARCH-MARKER-001
-**Title:** Show one loading activity marker in global and workspace search
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Dependency ROOTFS-SYSTEMD-SCROLL-001 is DONE in v0.1.259. Ownership is DONE
-in v0.1.258. M67 performance evidence remains externally BLOCKED.
-
-Relevant files: palette_render.rs, state primitive and focused search tests,
-workspace versions. Replace only the search loading state's default static
-ellipsis with its existing client-local activity marker. Done when Unicode
-frames animate exactly one marker, reduced-motion/ASCII fallbacks are safe,
-other states/scopes remain unchanged, docs/status/version are updated, focused
-checks and release build pass, and coherent commit/push/release handoff finish.
+The retained performance evidence is not bound to the current source tree: it
+has 143 previously documented source digest mismatches, including changes
+predating M67. Supply a new genuine source/binary-bound Yocto 6.0.2 linux-yocto
+compile capture using the documented release workload. Do not rewrite historical
+digests or substitute fake-process startup timings for live evidence.
 
 ```bash
-cargo test -p yoctui-ui global_search
-cargo test -p yoctui-ui devtool_editor_search
-cargo test -p yoctui-ui primitives
-cargo fmt --all --check
-cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
-python3 scripts/check-version-bump.py
-./scripts/verify-roadmap.sh
-cargo build --release -p yoctui --bin yoctui
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
 
-Full suite and completion gate remain deferred per user. Preserve running
-daemon/build data and captures. Final release must include all three fixes;
-reclaim only regenerable caches as needed and report final free space.
+This external prerequisite is the only remaining required task. The user
+explicitly deferred the full suite; do not run the full completion suite without
+a subsequent instruction. All M105/M106 requested corrections are DONE:
+v0.1.258 target RootFS owner/group/mode, v0.1.259 systemd viewport scrolling,
+and v0.1.260 single search activity marker. Focused verification and genuine
+read-only Romulus ownership smoke pass. Seven optional wider UI assertions
+fail identically on the previous commit and are documented, not weakened.
+No overall completion/performance certification is claimed. Final push and
+source-bound optimized binary handoff deliver these fixes; installed PATH
+binary is still v0.1.250, so use target/release/yoctui explicitly.

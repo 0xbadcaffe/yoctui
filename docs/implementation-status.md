@@ -1,12 +1,24 @@
-ROOTFS-SYSTEMD-SCROLL-001 is DONE in v0.1.259; GLOBAL-SEARCH-MARKER-001 is
-IN_PROGRESS as the next independent focused/versioned fix. The systemd table
+GLOBAL-SEARCH-MARKER-001 is DONE in v0.1.260. Search loading renders exactly
+one activity marker; existing default states, scopes, backend and focus remain
+unchanged. Six global search, one workspace search and twelve primitive tests,
+RootFS scrolling/attributes/chart regressions, five backend cases and genuine
+read-only Romulus smoke pass, along with fmt, strict UI all-target Clippy,
+version policy, roadmap and optimized build. Optional wider palette-module
+checks have seven pre-existing failures reproduced on clean baseline 426f4e21;
+they remain unchanged (see product-roadmap.md). Its relevant stale search
+scope assertion now matches the existing generated-rootfs scope and rejects
+the duplicate marker. Final commit/push/source-bound rebuild delivers all
+three independent fixes. Installed PATH binary remains v0.1.250; use the new
+workspace release explicitly. Full suite stays deferred; M67 stays blocked.
+
+ROOTFS-SYSTEMD-SCROLL-001 is DONE in v0.1.259. The systemd table
 now follows selection through all 80 fixture services and reverse/page/Home/End
 navigation, with a clipped position/range cue and safe resize/empty/short/tiny
 views. Model/app/UI checks 1/1/2, wheel/edit/explorer routes, RootFS attributes
 and offline systemd/D-Bus regressions, strict affected all-target Clippy,
 formatting, version policy, roadmap and optimized build pass. No backend or
-other system-view behavior changed. Final push/source-bound delivery follows
-the search marker correction.
+other system-view behavior changed. It is included in the final v0.1.260
+source-bound release delivery.
 Disk cleanup reclaimed 10.7 GiB of regenerable
 Cargo debug/test artifacts; another 3.9 GiB of obsolete workspace debug
 artifacts was reclaimed after successful systemd verification. Yocto builds,

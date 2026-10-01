@@ -163,8 +163,12 @@ pub struct StateView {
 
 impl StateView {
     pub fn text(&self, summary_style: Style, detail_style: Style) -> Text<'static> {
+        self.text_with_marker(self.kind.marker(), summary_style, detail_style)
+    }
+
+    fn text_with_marker(&self, marker: &str, summary_style: Style, detail_style: Style) -> Text<'static> {
         let mut lines = vec![Line::from(Span::styled(
-            format!("{} {}", self.kind.marker(), self.summary),
+            format!("{marker} {}", self.summary),
             summary_style,
         ))];
         if let Some(detail) = self.detail.as_ref().filter(|detail| !detail.is_empty()) {
@@ -178,6 +182,12 @@ impl StateView {
 
     pub fn paragraph(&self, summary_style: Style, detail_style: Style) -> Paragraph<'static> {
         Paragraph::new(self.text(summary_style, detail_style)).wrap(Wrap { trim: false })
+    }
+
+    /// Replace the default state marker, e.g. with an owned activity frame.
+    /// The caller must not also prefix that marker to the summary.
+    pub fn paragraph_with_marker(&self, marker: &str, summary_style: Style, detail_style: Style) -> Paragraph<'static> {
+        Paragraph::new(self.text_with_marker(marker, summary_style, detail_style)).wrap(Wrap { trim: false })
     }
 }
 

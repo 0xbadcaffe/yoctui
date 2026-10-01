@@ -38,9 +38,10 @@ fn global_search_loading_uses_the_shared_braille_activity_phase() {
     let activity = startup_activity_symbol(app.animation_frame as usize);
     let output = rendered_text(&app, 100, 30);
     assert!(
-        output.contains(&format!("{activity} Searching build text files")),
+        output.contains(&format!("{activity} Searching build and generated rootfs text files")),
         "{output}"
     );
+    assert!(!output.contains(&format!("… {activity} Searching")), "duplicate loading marker: {output}");
 }
 
 #[test]
