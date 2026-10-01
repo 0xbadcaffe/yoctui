@@ -6,18 +6,18 @@ status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 id = "KGDB-SERIAL-PLAN-001"
 milestone = "M108"
 title = "Validate a closed read-only KGDB serial attachment plan"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3270
 required = true
 depends_on = ["QEMU-GDB-LIVE-001"]
 verify = ["cargo test -p yoctui-model kgdb_serial", "cargo test -p yoctui --bin yoctui kgdb_serial", "cargo test -p yoctui --bin yoctui qemu_debug", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Definition: closed spec and fixed GDB serial argv; bounded pure config checks; regular ELF/DWARF/config and lstat-only Linux tty prerequisite validation without opening port; launch-time revalidation/exec helper, no target writes. Files: model kgdb_serial, CLI helper/arguments and tests; update UI spec/architecture/roadmap/status/current task. Test invalid config, paths, tool/symbol/device failures, unchanged inputs and fake launch failures. Full suite deferred."
+notes = "DONE in v0.1.263. Closed bounded spec/fixed serial GDB argv, pure config observations with required built-in/debug and optional settings, no-follow/nonblocking regular input reads, bounded ELF/DWARF checks and lstat-only tty metadata. Confirmed helper revalidates then execs only reviewed GDB. Three model and four CLI checks pass; private helper subprocess is exercised by its parent. Tests verify unchanged config/symbols, no serial bytes in preflight, bad config/path/tool/symbol/device/symlink/oversize and no spawn on changed prerequisites. Eight managed QEMU regressions, formatting, strict affected all-target Clippy, version policy and roadmap pass. No board state or compatibility inferred; no full suite. UI task follows immediately."
 
 [[task]]
 id = "KGDB-SERIAL-UI-001"
 milestone = "M108"
 title = "Review and launch KGDB serial clients in the Kernel workbench"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3271
 required = true
 depends_on = ["KGDB-SERIAL-PLAN-001"]

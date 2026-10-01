@@ -2,6 +2,14 @@
 
 ## M108 — Physical-board KGDB serial attachment
 
+KGDB-SERIAL-PLAN-001 is DONE in v0.1.263. Three pure planner/config tests and
+four CLI input/device/fake-process checks pass, with eight existing QEMU backend
+regressions and strict affected all-target Clippy, fmt/version/roadmap passing.
+Preflight reads no serial bytes and changes no inputs; launch-time checks reject
+changed prerequisites before executing fixed GDB argv. The private helper child
+test is invoked by the parent test, not substitute hardware evidence. Kernel UI
+integration follows in KGDB-SERIAL-UI-001; board verification remains blocked.
+
 The user requested continuing the Kernel debugging roadmap. The next authorized
 slice is read-only prerequisite inspection and an explicitly reviewed serial
 GDB client for an already configured/halted board. KGDB-SERIAL-PLAN-001 owns the

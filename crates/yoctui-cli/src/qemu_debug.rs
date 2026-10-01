@@ -3,6 +3,7 @@ use anyhow::{Context, Result, bail};
 use yoctui_model::QemuDebugSpec;
 mod validation;
 pub(crate) use validation::validate_files;
+pub(crate) use validation::validate_symbol_file;
 #[cfg(unix)]
 mod runtime;
 

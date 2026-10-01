@@ -4,6 +4,7 @@ use yoctui_utils::unix_ms;
 mod build_archive;
 mod error_log;
 mod graphics_terminal_handoff;
+mod kgdb_serial;
 mod qemu_debug;
 use graphics_terminal_handoff::uses_interactive_terminal;
 mod hardware_native_graphics;
@@ -248,6 +249,9 @@ async fn main() -> Result<()> {
     if let Some(Command::QemuGdbSession { spec }) = &cli.command {
         return qemu_debug::run(spec).await;
     }
+    if let Some(Command::KgdbSerialSession { spec }) = &cli.command {
+        return kgdb_serial::run(spec);
+    }
     if uses_interactive_terminal(&cli) && graphics_terminal_handoff::handoff_if_needed()?.is_some()
     {
         return Ok(());
@@ -308,6 +312,7 @@ async fn main() -> Result<()> {
         Some(Command::Daemon { .. }) => unreachable!("daemon command handled before config"),
         Some(
             Command::QemuGdbSession { .. }
+            | Command::KgdbSerialSession { .. }
             | Command::MenuconfigRelay { .. }
             | Command::MenuconfigHandoff { .. },
         ) => unreachable!("internal helper handled before config"),

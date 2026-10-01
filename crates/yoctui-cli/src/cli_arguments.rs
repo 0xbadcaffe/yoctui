@@ -39,6 +39,11 @@ impl std::fmt::Display for Backend {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum Command {
+    #[command(name = "__kgdb-serial-session", hide = true)]
+    KgdbSerialSession {
+        #[arg(long)]
+        spec: String,
+    },
     #[command(name = "__qemu-gdb-session", hide = true)]
     QemuGdbSession {
         #[arg(long)]

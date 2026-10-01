@@ -1,17 +1,16 @@
 # Current Task
 
-**ID:** KGDB-SERIAL-PLAN-001
-**Title:** Validate a closed read-only KGDB serial attachment plan
+**ID:** KGDB-SERIAL-UI-001
+**Title:** Review and launch KGDB serial clients in the Kernel workbench
 **Status:** IN_PROGRESS
 
-New user priority: continue the Kernel debugging roadmap with its next physical
-board attach slice. Implement the closed typed spec, pure bounded kernel config
-checks, fixed safe GDB serial argv and non-opening file/device checks. A confirmed
-launch helper revalidates then execs GDB; no configuration, SysRq, serial break,
-rebuild/deploy/reset or privilege changes. Add normal/failure/fake-process tests.
-Run the registry's focused kgdb_serial checks, formatting, affected strict Clippy
-and roadmap, then commit independently with a version bump. Continue immediately
-to KGDB-SERIAL-UI-001 and final push/source-bound release. Full suite deferred.
+KGDB-SERIAL-PLAN-001 is DONE in v0.1.263: three model/four CLI tests, eight
+QEMU backend regressions, formatting, strict Clippy, version policy and roadmap
+pass. Add the appended technique, six-field form, typed config/GDB template
+preview and correlated worker integration. Test trapped/narrow forms, cancellation,
+stale/covered errors and unchanged QEMU/TCP-GDB/terminal lifecycle. Run the
+registry's focused checks, bump version, build optimized release, commit/push and
+rebuild bound to the final commit. Do not run the full suite or alter the board.
 KGDB-SERIAL-LIVE-001 separately needs a compatible board and exact inputs.
 
 Previous user fixes (completed):

@@ -73,6 +73,10 @@ fn validate_qemuboot(path: &Path) -> Result<()> {
 
 fn validate_symbols(path: &Path) -> Result<()> {
     let mut file = File::open(path)?;
+    validate_symbol_file(&mut file)
+}
+
+pub(crate) fn validate_symbol_file(file: &mut File) -> Result<()> {
     let length = file.metadata()?.len();
     let mut header = [0_u8; 64];
     file.read_exact(&mut header)
