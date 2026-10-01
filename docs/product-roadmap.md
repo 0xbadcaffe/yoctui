@@ -34,8 +34,86 @@ QEMU-GDB-SESSION-001 owns the typed plan/backend, QEMU-GDB-UI-001 owns Kernel
 integration and versioned delivery, and QEMU-GDB-LIVE-001 owns genuine matching
 Linux guest evidence. Tests do not substitute for unavailable real artifacts.
 The existing M67 external evidence blocker and deferred full suite are retained.
-The plan/backend and Kernel integration tasks are DONE in v0.1.257. Genuine
-Linux guest verification is the active task; final source-bound delivery follows.
+All three QEMU → GDB tasks are DONE in v0.1.257. Final push and source-bound
+optimized delivery follow; M67 performance certification remains separate.
+
+### M104 live Linux verification — 2026-10-01
+
+The genuine Poky 6.0.2 qemux86-64 guest used GDB 17.1 (Ubuntu 17.1-2ubuntu1)
+and existing Yocto-native QEMU 10.2.0. No rebuild, daemon restart, deployment,
+installation or configuration write was needed. Exact inputs below
+`/home/bspguy-dev/src/build`:
+
+| Input | Relative path | SHA-256 |
+| --- | --- | --- |
+| qemuboot | `tmp/deploy/images/qemux86-64/core-image-minimal-qemux86-64.rootfs-20260904162153.qemuboot.conf` | `c4329790944c2424a2ba1b9cd6622edc7a52876849c3ecbb35380c96adbfbaa2` |
+| Boot kernel | `tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/linux-qemux86_64-standard-build/arch/x86/boot/bzImage` | `642f72d65de1cf6f09fe72ff08e47a3a99355615398a6ce0123ac0376fc51a43` |
+| Symbols | `tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/linux-qemux86_64-standard-build/vmlinux` | `e178509f643ce040de0247df75d9b95bdae38d7d3b7bc5903b163cdd9a7995f6` |
+| Rootfs | `tmp/deploy/images/qemux86-64/core-image-minimal-qemux86-64.rootfs-20260904162153.ext4.zst` | `ae8ab7187a802c11c9d4acb3b690a57ff7444897379803d2244163de7d8f02de` |
+
+Runqemu: `/home/bspguy-dev/src/poky/scripts/runqemu`. Native QEMU relative path:
+`tmp/work/x86_64-linux/qemu-helper-native/1.0/recipe-sysroot-native/usr/bin/qemu-system-x86_64`.
+Memory 1024 MiB, TCG, four CPUs; vmlinux build ID
+`826485cb9fd378a843ab7d1c57b0fadc1453e4a3`. The boot kernel comes from the
+same build directory as vmlinux, not a newer unmatched deploy symlink.
+Smoke debug binary SHA-256:
+`adfefb5f0921d709aa141679b7c79ca25e3455076a305895d9ca512c437f9487`;
+final optimized release is a separate source-bound delivery artifact.
+
+Commands/results (backtrace excerpt):
+
+```text
+set pagination off
+break start_kernel
+Breakpoint 1 at 0xffffffff82e8ba60: file /usr/src/kernel/init/main.c, line 913.
+continue
+Thread 1 hit Breakpoint 1, start_kernel () at /usr/src/kernel/init/main.c:913
+bt
+#0 start_kernel
+#1 x86_64_start_reservations
+#2 x86_64_start_kernel
+#3 secondary_startup_64
+continue
+[serial log] Run /sbin/init as init process
+[serial log] Poky (Yocto Project Reference Distro) 6.0.2 qemux86-64 /dev/ttyS0
+[serial log] qemux86-64 login:
+Ctrl+C
+Thread 4 received signal SIGINT, Interrupt.
+bt
+#0 pv_native_safe_halt
+#1 arch_safe_halt
+#2 default_idle
+quit
+y
+Owned QEMU stopped. Console log retained.
+```
+
+Both managed helper and real Kernel form → preview → embedded daemon PTY routes
+passed. Session 26 survived client exit at the kernel breakpoint; a fresh client
+selected it, took writer control with Workspace focus, resumed to login,
+interrupted and quit. Session became `Exited`; helper/runqemu/QEMU/GDB/guardian
+PIDs were gone, socket and staged images were removed, and the 0700 directory
+retained only its 0600 bounded log. Daemon PID 1729515 stayed alive throughout.
+
+Retained local logs and SHA-256:
+
+- Helper: `/tmp/yoctui-qgdb-7f6342a13105345fcb300056239f6d09/qemu.log` — `436b3c269d936d8cb9357f81187c447b921b529cf41011fc4d31d8c183ea3635`.
+- Embedded/reconnect: `/tmp/yoctui-qgdb-9c23634fdd477e7504d4fa82a505b6aa/qemu.log` — `1cd199153ca1cbba0f0eadfd7886cb1753126621b1cc66b4b5d9b72adb1fa217`.
+- Invalid boot header: `/tmp/yoctui-qgdb-26f79ee6c0456e089de6d5bb9122462f/qemu.log` — `41d3390fa0d4fd14a22b1f2a26f1a700edff765b00e582263050190fd2749331`.
+
+The invalid-header smoke used a separate intentionally invalid `/tmp` image,
+not the user's kernel. QEMU reported `invalid kernel header`; despite upstream
+runqemu returning zero, the helper rejected early exit, stopped GDB and removed
+owned socket/staging. Forced-helper-death cleanup passed focused fake-process
+tests; no real-guest SIGKILL claim is made. Kernel/symbol/rootfs and Poky/Romulus
+configuration hashes stayed unchanged. No smoke guest remains.
+
+Limitations: DWARF points to unavailable `/usr/src/kernel`; source display needs
+manual `set substitute-path`, while symbols/backtraces work. GDB's no-executable
+warning is expected with symbols-only loading; native inferiors stay disabled.
+No board, non-x86 or flash-only compatibility is claimed. The detached chooser
+reuses the existing launcher; these boot smokes cover embedded/helper routes,
+not a detached desktop window. They do not satisfy the M67 performance gate.
 
 ## M103 — Kernel debugging techniques and tools
 

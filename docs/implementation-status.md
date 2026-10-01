@@ -1,3 +1,15 @@
+M104 is DONE in v0.1.257. Genuine Linux 6.18.24 / Poky 6.0.2 qemux86-64 with
+QEMU 10.2.0 and GDB 17.1 passed managed attach, start_kernel breakpoint,
+backtrace, resume to login, interrupt, idle backtrace and clean exit. Kernel
+embedded form/preview and session 26 survived client exit/reattach; the same
+guest resumed and stopped without restarting daemon PID 1729515. An invalid
+separate temporary boot header also produced visible failure and owned cleanup.
+Inputs/configuration hashes stayed unchanged; no smoke guest remains. Exact
+paths/hashes/logs/limitations are in product-roadmap.md M104. Source display needs
+manual DWARF substitution; no board/non-x86 or detached desktop boot claim.
+Final push/source-bound optimized build completes delivery. M67 alone remains
+externally blocked and the full suite remains deferred.
+
 QEMU-GDB-UI-001 is DONE in v0.1.257. Kernel Debugging now has the seventeenth
 managed QEMU → GDB technique, initialized tool/current-build seeding, seven
 explicit fields and typed child-command review through the existing terminal
@@ -17,7 +29,7 @@ checks, private socket launch, bounded logs and Linux owned-group cleanup are
 implemented. Focused model and CLI normal/failure/cancel/forced-death coverage,
 formatting, strict CLI Clippy and roadmap pass. UI integration follows now.
 
-M104 is IN_PROGRESS. The Kernel guide-to-session roadmap is documented, with
+Historical M104 planning: the Kernel guide-to-session roadmap is documented, with
 only QEMU → GDB authorized now. QEMU-GDB-SESSION-001 owns closed plans and managed
 backend/cleanup; QEMU-GDB-UI-001 follows with forms/review and release delivery;
 QEMU-GDB-LIVE-001 separately requires genuine matching Linux guest evidence.
