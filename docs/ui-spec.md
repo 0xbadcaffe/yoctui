@@ -84,6 +84,36 @@ Yoctui is not a collection of unrelated screens. It is a persistent workbench wi
 
 BitBake remains authoritative. Yoctui presents, controls, and organizes BitBake state.
 
+### M108 Physical-board KGDB serial client
+
+Append `KGDB → GDB · serial board` to Kernel Debugging without changing existing
+technique indices. Use the existing trapped form and six-row viewport with
+explicit matching vmlinux, exact kernel .config, host serial device, baud rate,
+target UART name and manual readiness (`yes` only after the board is already
+configured/halted and other serial-console clients are closed). No device is
+guessed. Baud defaults to 115200. Existing field/navigation/clear/review/cancel
+combinations remain; no new uppercase-letter shortcut is required.
+
+Background preparation reads bounded regular config/symbol files and device
+metadata only; it never opens the serial port. Require built-in CONFIG_KGDB and
+CONFIG_KGDB_SERIAL_CONSOLE, debug information and ELF/DWARF symbols. Review shows
+typed config observations (including optional KDB/frame pointers/SysRq/RWX),
+exact host serial path and target UART, manual boot-argument guidance, and fixed
+GDB argv through the existing embedded/detached chooser. These observations do
+not prove the board runs the selected kernel. Use an explicit existing Linux
+character tty device, not a symlink or non-tty path. Permission/busy-port and
+architecture/protocol failures remain native GDB diagnostics after launch.
+
+Final helper revalidates prerequisites before execing native GDB. Init/auto-load,
+native inferior and debuginfod remain disabled; serial baud and remote timeout
+are explicit. The board must already be stopped: kgdboc cannot reliably interrupt
+a running board via GDB Ctrl+C. Use native break/bt/continue/detach/quit; re-entry
+after continue may require a manually authorized SysRq-G. No automatic serial
+break, SysRq, boot-argument/config write, rebuild, deployment or reboot occurs.
+Killing/detaching the host terminal is not a promise to resume/reset the board.
+Cancelled, invalid, stale or covered preparation launches nothing. Board live
+verification stays separately BLOCKED until exact hardware/inputs are available.
+
 ### M104 Managed QEMU → GDB
 
 Kernel Debugging adds a launchable `QEMU → GDB · managed boot` technique while

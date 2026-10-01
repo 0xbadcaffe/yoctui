@@ -3,6 +3,39 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "KGDB-SERIAL-PLAN-001"
+milestone = "M108"
+title = "Validate a closed read-only KGDB serial attachment plan"
+status = "IN_PROGRESS"
+priority = 3270
+required = true
+depends_on = ["QEMU-GDB-LIVE-001"]
+verify = ["cargo test -p yoctui-model kgdb_serial", "cargo test -p yoctui --bin yoctui kgdb_serial", "cargo test -p yoctui --bin yoctui qemu_debug", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Definition: closed spec and fixed GDB serial argv; bounded pure config checks; regular ELF/DWARF/config and lstat-only Linux tty prerequisite validation without opening port; launch-time revalidation/exec helper, no target writes. Files: model kgdb_serial, CLI helper/arguments and tests; update UI spec/architecture/roadmap/status/current task. Test invalid config, paths, tool/symbol/device failures, unchanged inputs and fake launch failures. Full suite deferred."
+
+[[task]]
+id = "KGDB-SERIAL-UI-001"
+milestone = "M108"
+title = "Review and launch KGDB serial clients in the Kernel workbench"
+status = "NOT_STARTED"
+priority = 3271
+required = true
+depends_on = ["KGDB-SERIAL-PLAN-001"]
+verify = ["cargo test -p yoctui-model kernel_debug", "cargo test -p yoctui-app kernel_debug", "cargo test -p yoctui-ui kernel_debug", "cargo test -p yoctui --bin yoctui kernel_debug", "cargo test -p yoctui --bin yoctui kgdb_serial", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Definition: append serial technique, six explicit fields including manual readiness; typed config/template preview, correlated workers, stale/cancel safety and existing embedded/detached lifecycle. Files: model catalogue/draft/state/planner, CLI worker, app/UI/tests, README/keymap. Cover trapped/narrow forms, no launch before confirmation, QEMU/TCP-GDB regressions. Update all governance documents; bump version, commit/push and commit-bound release; full suite deferred."
+
+[[task]]
+id = "KGDB-SERIAL-LIVE-001"
+milestone = "M108"
+title = "Verify KGDB attach backtrace resume and re-entry on a real board"
+status = "BLOCKED"
+priority = 3272
+required = true
+depends_on = ["KGDB-SERIAL-UI-001"]
+verify = ["Manual: approved already-configured KGDB board, exact running-kernel .config/vmlinux, exclusive serial transport; attach, breakpoint/backtrace, continue, approved manual re-entry, detach and reconnect", "./scripts/verify-roadmap.sh"]
+notes = "External prerequisite: no /dev/serial, ttyUSB or ttyACM target currently present; no board identity, matching running-kernel config/symbols or approval to halt/reset/configure one supplied. Provide an approved already-configured/halted board plus host device/baud/target UART and exact inputs. Fake serial/PTY tests do not certify board compatibility. Do not flash, reset or trigger SysRq to manufacture evidence. Other eligible implementation tasks continue; M67 remains separately blocked."
+
+[[task]]
 id = "MODIFIER-SHORTCUTS-001"
 milestone = "M107"
 title = "Use portable modifier shortcuts with consistent workspace routes"

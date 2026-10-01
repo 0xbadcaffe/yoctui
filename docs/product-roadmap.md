@@ -1,5 +1,21 @@
 # Yoctui Product Roadmap
 
+## M108 — Physical-board KGDB serial attachment
+
+The user requested continuing the Kernel debugging roadmap. The next authorized
+slice is read-only prerequisite inspection and an explicitly reviewed serial
+GDB client for an already configured/halted board. KGDB-SERIAL-PLAN-001 owns the
+closed specification, bounded config/symbol/device checks and launch-time
+revalidation helper; KGDB-SERIAL-UI-001 owns the existing Kernel form/preview
+integration and versioned release. KGDB-SERIAL-LIVE-001 requires a real compatible
+board, exact running-kernel config/vmlinux and approved serial transport. No
+USB serial target is currently present; that verification is externally blocked.
+Mocks/PTYs cannot certify board compatibility. Rebuild/deploy/reset, automatic
+SysRq, serial break, privilege changes and configuration writes remain out of
+scope. Sanitizers/lockdep and SysRq/kdump remain proposals, not queued tasks.
+Focused checks only, then independent versioned commits, push and commit-bound
+release. The M67 performance blocker and user captures/daemon remain unchanged.
+
 ## M107 — Portable shortcuts and context-correct editor GitUI
 
 User priority: MODIFIER-SHORTCUTS-001 adds typed Alt combinations and fixes
@@ -113,14 +129,15 @@ artifact or running device. Custom/missing Pseudo locations remain unavailable.
 ## M104 — From Kernel guides to managed debug sessions
 
 The user requested documentation of this roadmap and implementation of the
-first QEMU → GDB step. Only that first step is authorized for implementation;
-later steps below are proposals, not eligible tasks in the autonomous queue.
+first QEMU → GDB step, now completed. The subsequent continuation request
+authorizes M108's non-mutating physical-board serial attach slice; remaining
+build/deploy/reset and later steps are proposals, not eligible queue tasks.
 
 1. **QEMU → GDB (current):** explicit deployed boot inputs and matching vmlinux,
    validated preparation, private debug transport, snapshot guest paused at
    startup, managed interactive GDB with bounded console logs, failure cleanup
    and real Linux guest breakpoint/backtrace/resume verification.
-2. **Physical-board KGDB/KDB (proposed):** inspect kernel/transport prerequisites,
+2. **Physical-board KGDB/KDB (M108 attach slice):** inspect kernel/transport prerequisites,
    review persistent Yocto configuration fragments and boot arguments, serial
    or approved proxy transport, explicit halt/resume and reconnect semantics.
    Board-specific build/deploy/reset actions need separate authorization.

@@ -1,8 +1,20 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** KGDB-SERIAL-PLAN-001
+**Title:** Validate a closed read-only KGDB serial attachment plan
+**Status:** IN_PROGRESS
+
+New user priority: continue the Kernel debugging roadmap with its next physical
+board attach slice. Implement the closed typed spec, pure bounded kernel config
+checks, fixed safe GDB serial argv and non-opening file/device checks. A confirmed
+launch helper revalidates then execs GDB; no configuration, SysRq, serial break,
+rebuild/deploy/reset or privilege changes. Add normal/failure/fake-process tests.
+Run the registry's focused kgdb_serial checks, formatting, affected strict Clippy
+and roadmap, then commit independently with a version bump. Continue immediately
+to KGDB-SERIAL-UI-001 and final push/source-bound release. Full suite deferred.
+KGDB-SERIAL-LIVE-001 separately needs a compatible board and exact inputs.
+
+Previous user fixes (completed):
 
 MODIFIER-SHORTCUTS-001 is DONE in v0.1.261 with focused app/model/UI/CLI
 verification, strict Clippy, formatting, version policy and roadmap passing.

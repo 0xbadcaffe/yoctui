@@ -4733,3 +4733,9 @@ extracted text, opens unusable extraction as a fit-width page preview, and makes
 both Escape and Backspace return to the retained Hardware library. Release
 v0.1.246 will follow focused Hardware and live reported-document checks. Full
 workspace tests remain deferred at the user's request.
+M108 is active: continue the Kernel roadmap with read-only KGDB serial
+prerequisite checks and an explicitly reviewed GDB client for an already halted
+board. KGDB-SERIAL-PLAN-001 then KGDB-SERIAL-UI-001 are independent focused tasks.
+Real board verification is separate and blocked on hardware/matching inputs;
+no build/deploy/reset or SysRq/configuration changes are authorized. Full suite
+remains deferred; the daemon, user builds/captures and M67 blocker are preserved.

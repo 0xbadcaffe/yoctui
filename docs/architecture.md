@@ -21,6 +21,18 @@ identity and lost authority produce None; authoritative idle/terminal builds
 produce zero. The UI formats this typed optional count and does not derive its
 own worker inventory from retained rows.
 
+## M108 KGDB serial boundary
+
+Model owns the closed serial specification, pure bounded .config observations,
+deterministic safe GDB argv and typed form/preview results. Existing Kernel
+generation correlation and terminal lifecycle are reused. CLI preparation reads
+config/symbol files and lstat-only serial metadata without opening a port; a
+hidden typed helper revalidates on confirmed launch and execs GDB in the existing
+daemon Utility PTY/detached launcher. No protocol change or second supervisor.
+No target state, halt/readiness or matching build is inferred from host files.
+Board interruption/resume/reset is native/manual, not helper cleanup. UI consumes
+typed observations/templates, never raw config, process text or helper JSON.
+
 ## M104 Managed QEMU → GDB boundary
 
 The managed runtime currently requires Linux. A close-on-exec lifetime pipe and
