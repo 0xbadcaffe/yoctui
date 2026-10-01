@@ -21,6 +21,18 @@ identity and lost authority produce None; authoritative idle/terminal builds
 produce zero. The UI formats this typed optional count and does not derive its
 own worker inventory from retained rows.
 
+## M103 Kernel debugging boundary
+
+Model owns the closed debugging catalogue, bounded typed drafts, deterministic
+argv planning, navigation/dialog state and correlated requests/results. App
+maps keyboard and mouse controls. UI renders typed catalogue, prerequisites,
+scope warnings and forms without parsing debugger output. CLI owns cancellable
+local filesystem discovery/preparation workers, executable/file revalidation
+and existing terminal launch lifecycle. SSH executes only safely quoted fixed
+tool argv built from validated fields; no shell-command text is accepted.
+Sessions use existing Utility PTYs and terminal wire types, not a second process
+supervisor. No daemon protocol change or kernel configuration mutation is needed.
+
 ## Purpose
 
 Yoctui is a Rust/Ratatui terminal workbench for Yocto and BitBake. BitBake remains the authority for metadata and build state. Yoctui requests operations, normalizes events, stores bounded state, and renders typed views.

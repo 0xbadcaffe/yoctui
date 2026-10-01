@@ -1,3 +1,7 @@
+KERNEL-DEBUG-TOOLS-001 is IN_PROGRESS for the user's Kernel debugging request;
+KERNEL-DEBUG-UI-001 follows with navigation/forms, terminal integration and a
+versioned release. Focused checks only; M67 remains externally blocked.
+
 HARDWARE-PROJECT-STORE-001 and HARDWARE-PROJECT-UI-001 are DONE in v0.1.255.
 Hardware `p` opens persistent named projects, `n` creates real project/subfolders,
 `a` imports arbitrary regular files without overwriting, and Enter opens folders

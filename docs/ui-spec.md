@@ -84,6 +84,53 @@ Yoctui is not a collection of unrelated screens. It is a persistent workbench wi
 
 BitBake remains authoritative. Yoctui presents, controls, and organizes BitBake state.
 
+### M103 Kernel debugging workbench
+
+Kernel gains a third `3 Debugging` tab (`b` also opens it); Configuration and
+Device trees retain their existing actions, and U-Boot remains two-tab. Tab
+cycles the three Kernel views. Debugging is usable without provider inspection:
+arrows/paging select a technique, Enter opens its typed launch form or guide,
+`r` refreshes local executable discovery. Clicking the tab/technique and mouse
+wheel selection have keyboard equivalents. The Inspector explains prerequisites,
+scope, risks and a primary documentation URL; guides scroll without spawning.
+
+The catalogue includes GDB remote QEMU/KGDB, GDB userspace core analysis,
+strace attach, perf top, trace-cmd report, ftrace snapshot, dmesg follow,
+dynamic-debug callsite inventory, kmemleak report, bpftrace syscall counts,
+LTTng kernel-event discovery and crash/vmcore analysis. KGDB/KDB setup,
+KASAN/KCSAN/UBSAN, lockdep and SysRq/kdump are guidance-only techniques, clearly
+distinguished from launchable tools. No tool is claimed installed on a target
+merely because it is found on the host. strace is explicitly userspace syscall
+tracing, not a kernel source debugger. Read-only ftrace/report views do not enable
+tracing or mount filesystems; empty/missing/denied results remain tool diagnostics.
+
+Launch forms trap focus. Tab/Up/Down chooses a field, characters edit bounded
+text, Backspace removes, Ctrl+U clears, Left/Right/Space chooses Host or SSH
+target, Enter validates and opens the existing exact-argv embedded/detached
+terminal chooser, Esc cancels. Runtime inspection and preparation are owned
+background workers with generation-correlated typed results; stale completion
+cannot replace another dialog. Opening/cancelling never launches a debugger.
+Runtime target tools default to SSH with an empty required host, not the build
+host. Host mode is explicitly labeled YOCTUI HOST, NOT TARGET. SSH accepts
+host/user/port, uses the detected absolute OpenSSH client, normal host-key
+policy and safely quoted fixed remote argv, not a user shell-command field.
+Offline GDB/crash/trace reports and remote GDB clients run on the host; their
+symbol/core/report paths must be explicit existing regular files. GDB executable
+discovery prefers gdb-multiarch then gdb; tool discovery is executable presence,
+not proof of architecture/kernel compatibility. Missing tools block launch with
+installation guidance. GDB startup disables init files and auto-loaded scripts;
+remote GDB uses an explicit TCP endpoint and never starts a local inferior.
+
+All launch previews identify scope and warn that debugger attach/breakpoints
+can pause execution and tracing/profiling can add overhead or expose sensitive
+data. Manual prerequisites include matching vmlinux/debug symbols, architecture,
+KGDB/QEMU stub configuration and required kernel options/permissions. Yoctui
+does not install packages, run sudo, write trace/debugfs controls, trigger SysRq,
+reboot, collect a crash dump or change a kernel configuration automatically.
+Live sessions reuse daemon-owned PTYs and existing writer, detach/reconnect and
+confirmed termination behavior; detached launch retains its existing checks.
+The existing Kernel/U-Boot menuconfig and device-tree workflows are unchanged.
+
 ### M102 Persistent Hardware projects
 
 Hardware retains its existing document library. `p` switches to Projects without

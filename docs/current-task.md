@@ -1,21 +1,22 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** KERNEL-DEBUG-TOOLS-001
+**Title:** Plan and prepare typed Kernel debugging tools
+**Status:** IN_PROGRESS
 
-The retained performance evidence is not bound to the current source tree: its
-manifest has 143 source digest mismatches, including changes predating M67.
-Supply a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto` compile
-capture using the documented release workload. Do not rewrite historical
-digests or substitute fake-process startup timings for live evidence.
+Dependency HARDWARE-PROJECT-UI-001 is DONE. Relevant files: model debugging
+catalogue/drafts/reducer and CLI discovery/preparation adapter. Done requires
+bounded typed plans, explicit host/SSH scope, safe quoting, GDB startup safety,
+regular-file/executable checks, correlated results and focused normal/failure
+tests. Required docs: UI spec, architecture, roadmap, status, registry and next
+current task. KERNEL-DEBUG-UI-001 follows immediately; M67 stays blocked.
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model kernel_debug
+cargo test -p yoctui --bin yoctui kernel_debug
+cargo fmt --all --check
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+./scripts/verify-roadmap.sh
 ```
 
-This external validation prerequisite is the only remaining required task.
-The user explicitly deferred the full test suite for the v0.1.255 Hardware
-projects change; do not run the full completion suite without a subsequent
-instruction. Focused product checks and live restart smoke pass.
+Full suite remains deferred per user.

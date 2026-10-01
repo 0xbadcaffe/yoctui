@@ -1,5 +1,14 @@
 # Yoctui Product Roadmap
 
+## M103 — Kernel debugging techniques and tools
+
+The user request overrides the blocked M67 queue. KERNEL-DEBUG-TOOLS-001 owns
+the closed technique catalogue, validated command plans, executable discovery
+and file preparation. KERNEL-DEBUG-UI-001 owns the Kernel tab, forms/guides,
+terminal integration, focused regressions and versioned release delivery.
+Host versus target is explicit; dangerous kernel setup remains manual guidance.
+No full suite is run during this manual bug/change pass.
+
 ## M102 — Persistent Hardware projects and bring-up
 
 HARDWARE-PROJECT-STORE-001 and HARDWARE-PROJECT-UI-001 are DONE in v0.1.255:
