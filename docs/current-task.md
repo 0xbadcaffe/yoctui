@@ -1,30 +1,29 @@
 # Current Task
 
-**ID:** DEMO-PLATFORM-CONFIG-001
-**Title:** Retain authoritative kernel configuration within bounded artifact scans
+**ID:** DEMO-CONTRACT-FIXTURES-001
+**Title:** Reconcile stale full-suite fixtures with authoritative current UI contracts
 **Status:** IN_PROGRESS
 
-Dependency DEMO-PLATFORM-PROFILE-001 DONE in product20a2f409/v271: focused
-platform7/daemon7/saved7 and strictCLI lint pass; actual source-bound debug
-client resolves linux-aspeed/u-boot-aspeed-sdk providers and firmware .config.
-Real Kernel scan hits4096files before showing existing authoritative shared
-kernel .config. Relevant kernel_inspection.rs STAGING_KERNEL_BUILDDIR query
-and PlatformArtifactAdapter root-level config priority across all roots before
-broad recursion. Preserve file/directory/depth quotas, symlink protections,
-dedup/order and explicit limitations. No guessed machine/path/quota increase.
-Add fake-bridge and large-root/starvation/failure tests, show real exact retained
-OpenBMC kernel .config path/size/hash. Bump, document and commit coherent fix.
+Dependency DEMO-PLATFORM-CONFIG-001 DONE product0e749f9e/v272: focused checks
+pass; actual kernel105069byte .config visible/opened, matching hash unchanged.
+Baseline full suite88failures include stale modifier shortcuts, LocalHH:MM,
+current navigator indices/header geometry and obsolete positive action setup.
+Relevant model/app/UI fixture helpers/cases/snapshots only for confirmed drift.
+Compare every expectation against current spec and exact typed route. Keep exact
+semantic/style/negative authority assertions; no blanket golden accept, dropped
+checks, old contract restoration or weakened deadlines. Separate actual product
+defects before code. Real Dashboard B/E labels are currently wrong versus Alt
+catalog and remain a UI polish task, not a fixture-only expected-value update.
+Document mappings, run model/app/UI full suites; use two compile workers.
 
 ```bash
-cargo test -p yoctui-bitbake platform
-cargo test -p yoctui --bin yoctui kernel_inspection
-cargo test -p yoctui --bin yoctui firmware_workbench
-cargo test -p yoctui-ui kernel
+cargo test -p yoctui-model --all-features
+cargo test -p yoctui-app --all-features
+cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
-cargo clippy -p yoctui -p yoctui-bitbake --all-targets --all-features -- -D warnings
-python3 scripts/check-version-bump.py
+./scripts/verify-ui-spec.sh
 ./scripts/verify-roadmap.sh
-# Manual: actual retained kernel .config remains visible alongside bounded DTS.
+# Manual: exact changed test-contract evidence; actual product defects separate.
 ```
 
 Completed local polling fix: source040a23d0/v270 exact optimized49f75463 release,

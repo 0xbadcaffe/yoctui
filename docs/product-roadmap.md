@@ -21,6 +21,9 @@ test-module violations before full release verification; no checker exemptions.
 Selected-source init DONE v271 with real provider/firmware .config evidence;
 DEMO-PLATFORM-CONFIG-001 fixes separately observed kernel config starvation
 within existing bounded scans before contract fixtures; no quota increase.
+That discovery fix is DONE v272 with exact unchanged105069byte live config
+and focused scanner/fake bridge/UI tests; current task reconciles true contract
+fixture drift while separating real Dashboard hint/footer/dialog defects.
 Measured fixture stress is not real runtime/build-performance certification.
 Unrelated physical/instrumentation/M67 gates stay explicit; ZCU102 deferred.
 

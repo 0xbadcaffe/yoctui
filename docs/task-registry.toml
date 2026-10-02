@@ -50,18 +50,18 @@ notes = "DONE product20a2f409/v271: exact selected sibling source, absent-source
 id = "DEMO-PLATFORM-CONFIG-001"
 milestone = "M114"
 title = "Retain authoritative kernel configuration within bounded artifact scans"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3516
 required = true
 depends_on = ["DEMO-PLATFORM-PROFILE-001"]
 verify = ["cargo test -p yoctui-bitbake platform", "cargo test -p yoctui --bin yoctui kernel_inspection", "cargo test -p yoctui --bin yoctui firmware_workbench", "cargo test -p yoctui-ui kernel", "cargo fmt --all --check", "cargo clippy -p yoctui -p yoctui-bitbake --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "Manual: real retained OpenBMC Kernel configuration path/size/hash remains discoverable alongside bounded device tree inventory", "./scripts/verify-roadmap.sh"]
-notes = "Real v271 Kernel resolves exactprovider but scanner exhausts4096files before showing .config; retained tmp/work-shared/romulus/kernel-build-artifacts/.config exists and matches accepted image. Relevant kernel_inspection.rs authoritative STAGING_KERNEL_BUILDDIR query and PlatformArtifactAdapter bounded root traversal. Prefer root-level configs across all authoritative roots before broad recursion, preserve file/directory/depth limits/no symlink following/dedup/order; no hardcoded machine/path or quota increase. Fake bridge and large-root/starvation/failure tests plus actual config view required; versioned coherent fix with boundary/spec notes."
+notes = "DONE product0e749f9e/v272: metadata STAGING_KERNEL_BUILDDIR plus regular root configs before bounded recursion, unique exact-path dedup and one explicit global quota notice including flat roots. Focused scanner5/CLIinspection3/firmware3/UIkernel8, strictaffectedClippy/fmt/UI/version/roadmap PASS. Actual current-source debug1112f49a client sees3roots/4096files/.config105069bytes, opens actual content, SHA2560f809ea0 unchanged. artifacts/live-openbmc/romulus/kernel-config-discovery-v272.txt. Quotas/depth/order/entry symlink exclusions preserved, no guessedpath/imagebuild. Not final optimized demo/fullsuite/publication claim."
 
 [[task]]
 id = "DEMO-CONTRACT-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile stale full-suite fixtures with authoritative current UI contracts"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3512
 required = true
 depends_on = ["DEMO-PLATFORM-CONFIG-001"]
@@ -77,7 +77,7 @@ priority = 3513
 required = true
 depends_on = ["DEMO-CONTRACT-FIXTURES-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "Manual: real demo and TestBackend narrow/medium/wide controls remain visible with no new layouts/shortcuts", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires all selected narrow/failure paths verified, not merely test expectation replacement. If no actual defect remains, record that evidence rather than inventing a feature."
+notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Real v272 Dashboard Quick Actions still hardcodes B/E while current catalog routes Alt+b/Alt+e: truthful existing hints need correction, not restoring capital routes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires selected narrow/failure paths verified, not merely expectation replacement. If no defect remains, record evidence rather than invent a feature."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

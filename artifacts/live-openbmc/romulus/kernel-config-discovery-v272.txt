@@ -1,0 +1,30 @@
+M114 real retained OpenBMC kernel configuration discovery, 2026-10-02 20:46 UTC.
+Product0e749f9e894ad50c12d8e7aa36af2880835ecc8f/v0.1.272; exact current-source
+debug CLI SHA2561112f49a3fade1c89e01fea5de773d0633d7c4f515f336c8440c44af7667d581.
+Functional current-source verification, not final optimized demo/performance.
+Independent Ubuntu validation container, unchanged daemon host2125313/container3142,
+new client host2208479/container10411. No native image build or source edit.
+
+Real navigator Kernel selection then Enter starts the bounded typed inspection.
+Provider /home/bspguy-dev/src/openbmc/meta-aspeed/recipes-kernel/linux/linux-aspeed_git.bb.
+Metadata-reported STAGING_KERNEL_BUILDDIR adds the exact shared artifact root.
+Configuration view now shows .config105069bytes; inspector exact selected path:
+/home/bspguy-dev/src/build-openbmc-romulus/tmp/work-shared/romulus/kernel-build-artifacts/.config.
+3roots/4096files, unchanged global quota, one explicit partial-scan limitation.
+Before v271:2roots/4096files and no .config despite retained matching file.
+After Enter, actual config content opens in the existing clean in-app editor,
+including CONFIG_UNWINDER_ARM=y and CONFIG_ARM_UNWIND=y. No keys saved edits.
+SHA256 before/after unchanged:
+0f809ea0922169c20ad329e51f580a16ac8e5b9b1f1393847e2732d663f2fc5c.
+Actual .txt/.cells/.ansi outside Git in presentation assets:
+demo-v272-kernel-config-loaded and demo-v272-kernel-config-content.
+Presentation itself untouched/uncommitted/unpushed.
+
+Focused scanner5/kernel-inspection3/firmware3/UI-kernel8 PASS. Fake process bridge
+checks recipe scope, exact staging config with purged ordinary workdir, missing/
+relative staging without guesses and metadata failure. Scanner regressions keep
+later-root configs under source-file starvation, no entry-symlink following,
+overlapping-root exact-path dedup and flat-single-root partial notice exactly once.
+Strict affected all-target/all-feature Clippy/fmt/UI/version271->272/roadmap PASS.
+No full-suite, installed release, registry publication or optional capability
+acceptance claimed; final release tasks remain pending.
