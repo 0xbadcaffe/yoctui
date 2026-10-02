@@ -23,6 +23,11 @@ associations; source/documents unchanged. Desktop service is runtime-masked only
 and must be restored after validation. Scoped older sstate cleanup preserved
 old outputs/debug/images/native QEMU. Exact cleanup/backup/restore evidence is
 in artifacts/live-xilinx/zcu102/storage-cleanup.txt, not a successful image claim.
+Pinned kernel cache preparation now avoids the fetcher's initial full Git mirror:
+272-MiB depth-one exact recipe commit/tree, verified full fsck and installed only
+under the real BitBake fetch lock into an absent cache. Five local Git guard
+tests pass; no recipe/config/stamp changes or older source-cache removal. Evidence
+is kernel-cache-preseed.txt. Real native kernel/image outcomes remain pending.
 
 Historical pause/resume handoff (superseded by completed ENV above):
 M111 was resumed by the user after laptop shutdown (2026-10-02), with

@@ -24,6 +24,13 @@ All 216 tags/349 file associations are privately backed up; personal files are
 untouched. `artifacts/live-xilinx/zcu102/storage-cleanup.txt` records cleanup,
 private backup identity and REQUIRED runtime-mask removal/service restore after
 validation. Desktop indexing remains temporarily paused, not permanently disabled.
+Exact pinned Linux source is safely preseeded as a 272-MiB shallow Git cache:
+`kernel-cache-preseed.txt` records source/tree identity, real fetch/lock install
+and five focused Git guard checks. No active fetch/cache was overwritten, no
+recipe/config revision or task stamp changed. This avoids an initial full-history
+clone; actual daemon kernel fetch/unpack/build is still required. At 11:07 UTC
+job 1 remained Running, 2411/10994, zero fetch failures, ~9.5 GiB free. Optional
+older archive-cache cleanup (~4.4 GiB) awaits user approval; do not remove it yet.
 Monitor real daemon tasks/outcome with `./scripts/live-zcu102.sh status` and
 `./scripts/live-zcu102.sh attach`; preserve stdout/error/task logs. Keep two
 task/make workers, four-GiB stop/one-GiB halt disk guards and rm_work exclusions
