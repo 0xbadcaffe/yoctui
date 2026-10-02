@@ -1780,6 +1780,14 @@ UI rendering must not infer error types from raw strings.
 
 ## Configuration and persistence
 
+The model owns presentation-only startup screen restoration, synchronizing the
+typed screen, first matching Navigator catalog destination and Navigator focus.
+Non-catalog screens retain Dashboard navigation context. The CLI chooses the
+saved screen for configured startup (Dashboard when absent), or Build Environment
+when unconfigured, after snapshot installation and before onboarding. This does
+not route `Action::Open`: its metadata effects must not be silently discarded.
+Platform inspection still begins through its existing post-first-frame worker.
+
 Precedence:
 
 ```text

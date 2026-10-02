@@ -1,4 +1,13 @@
-M114 current: DEMO-INTEGRATION-001 IN_PROGRESS; UI/contract parents DONE v286.
+M114 current: DEMO-STARTUP-NAVIGATION-001 IN_PROGRESS, split before source.
+Governance reconciles established saved-screen continuity/unconfigured startup
+with stale unconditional Dashboard prose. Live v286 restored Kernel body with
+Dashboard Navigator is a real presentation defect; no startup execution should
+be added or Action::Open metadata effects discarded. Integration resumes after
+this atomic correction. Current CLI376PASS/2fail/5ignored; daemon4PASS/1fail;
+snapshot fails. Exact isolated timing diagnosis confirms two attachments PASS
+with existing graphics-none override and hello-selected current offered protocol,
+within unchanged8second budget/1.2second stability, not a runtime fix. Git watcher
+passes current full CLI run; no adapter change inferred. UI/contract DONE v286.
 Full UI376/app250/model584 plus integrations1+5, strictUIClippy/fmt/UI/version/
 roadmap/current CLI build PASS. Reviewed26 external fixture files and34 exact
 goldens preserve negative/semantic/style/identity checks with current nav,

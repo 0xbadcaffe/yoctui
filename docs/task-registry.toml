@@ -234,13 +234,24 @@ verify = ["cargo test -p yoctui-ui demo_error_recovery_hints", "cargo test -p yo
 notes = "DONE v285: actual Alt+b advertised in Errors workspace/Inspector, same Enter/l/o controls compact below70cells to avoid clipping trailing actions. External UI1 exhaustively80..200 plus minimum/ASCII/colorless/reduced-motion, existing failed recovery UI1/app route1 and strictUIClippy/fmt/UI/version/roadmap PASS. Same layout/keys/aliases/native protection; review/confirmation warnings retained. No live rebuild launched. Full fixture/identity/golden acceptance resumes separately."
 
 [[task]]
+id = "DEMO-STARTUP-NAVIGATION-001"
+milestone = "M114"
+title = "Align restored startup screen and typed Navigator without execution"
+status = "IN_PROGRESS"
+priority = 3533
+required = true
+depends_on = ["DEMO-UI-CLIPPING-001"]
+verify = ["cargo test -p yoctui-model startup_screen", "cargo test -p yoctui startup_screen", "cargo test -p yoctui restored_platform_workspace", "cargo test -p yoctui-ui startup_screen", "cargo clippy -p yoctui-model -p yoctui -p yoctui-ui --all-targets --all-features -- -D warnings", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Observed genuine v286 live inherited Kernel body with Dashboard Navigator. Relevant model startup presentation method, CLI initialization and external model/CLI/TestBackend tests. Preserve saved-screen continuity and unconfigured Build Environment, synchronize catalog destination/focus without losing Action::Open effects or making execution claims. Governance reconciles old unconditional Dashboard prose with established saved-session/unconfigured implementation before source. Update UI/architecture/status/registry and bump product version; no new workflow or automatic operation."
+
+[[task]]
 id = "DEMO-INTEGRATION-001"
 milestone = "M114"
 title = "Resolve full-suite daemon watcher and production snapshot integration failures"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 3514
 required = true
-depends_on = ["DEMO-UI-CLIPPING-001"]
+depends_on = ["DEMO-UI-CLIPPING-001", "DEMO-STARTUP-NAVIGATION-001"]
 verify = ["cargo test -p yoctui --all-features --no-fail-fast", "python3 -m pytest bridge/tests", "Manual: reproduce isolated current contract for daemon failed capability log, production snapshot duration and Git watcher delivery; do not extend budgets or fabricate readiness", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "BaselineCLI3 + daemon1 + snapshot1 failures include obsolete or real asynchronous integration assumptions. Relevant failed cases/helpers and actual adapters only if demonstrated. Retain deadlines/normal/failure semantics and use hermetic exact initialized profile/typed authority. Split unrelated runtime fixes before code; version-bump product changes, never hide flakes or run external long builds to pass fixtures."
 

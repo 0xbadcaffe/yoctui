@@ -1,36 +1,32 @@
 # Current Task
 
-**ID:** DEMO-INTEGRATION-001
-**Title:** Resolve full-suite daemon watcher and production snapshot integration failures
+**ID:** DEMO-STARTUP-NAVIGATION-001
+**Title:** Align restored startup screen and typed Navigator without execution
 **Status:** IN_PROGRESS
 
-Dependencies UI clipping and contract parents DONE v286. Full UI376/app250/
-model584 plus integrations1+5, strictUIClippy/fmt/UI/version/roadmap/current CLI
-build PASS. Twenty-six external fixture files and34 exact goldens reconcile
-current typed navigator/modifiers/five-row header/bounded panes; negative/style/
-semantic assertions and exact identity retained. Current real OpenBMC control
-review recorded in artifacts/live-openbmc/romulus/ui-controls-v286.txt, explicitly
-interim container-backed debug rendering, not final native/optimized readiness.
-Resolve baselineCLI3/daemon1/snapshot1 failures using exact typed positive
-fixtures/hermetic production harnesses; retain budgets/failure/authority paths.
-Reproduce Git worktree-event flake before any adapter change, no timeout bump.
-Also diagnose observed inherited-session Kernel body versus Dashboard Navigator
-on first live frame, and retain old-daemon unverified image/SDK state as native
-rehearsal requirements. Split genuine unrelated runtime defects before source.
-No source/image/symbol loss, guessed compatibility, long image build or native
-install/publication until their verification stages. Next source/library hygiene,
-full suite/docs/native reboot-ready real OpenBMC QEMU/GDB, then exact-source CI.
+Dependencies UI clipping parent DONE v286. Source-bound live review confirms
+restored Kernel body with Dashboard Navigator. Preserve existing saved-screen
+continuity, select Build Environment when unconfigured, and synchronize typed
+catalog selection and Navigator focus before onboarding. Restoration is pure
+presentation: no automatic build/PTY or discarded Action::Open metadata effects.
+Governance clarifies first-run Dashboard versus returning/unconfigured startup
+in UI/architecture before source. Add external model/CLI/TestBackend coverage
+for all catalog destinations, non-catalog fallback, unconfigured override,
+modal onboarding and unchanged platform inventory/authority. Bump product,
+verify focused gates, then resume full integration fixture corrections and
+Git event diagnosis. Native optimized reboot-ready demo/CI/publication pending.
 
 ```bash
-cargo test -p yoctui --all-features --no-fail-fast
-python3 -m pytest bridge/tests
-# Manual: exact initialized daemon profile/failure log, production snapshot
-# timing and Git event delivery; source-bound startup/session state review.
+cargo test -p yoctui-model startup_screen
+cargo test -p yoctui startup_screen
+cargo test -p yoctui restored_platform_workspace
+cargo test -p yoctui-ui startup_screen
+cargo clippy -p yoctui-model -p yoctui -p yoctui-ui --all-targets --all-features -- -D warnings
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```
 
-Completed local polling fix: source040a23d0/v270 exact optimized49f75463 release,
+Completed local polling fix:
 same idle Layers/unchanged daemon10s warm60samples: client15.276970->0.270380%
 oneCPU (98.23% reduction); combined16.256828->1.354049%. Actual after188samples/
 zero lost/App::clone0.89% inclusive with legitimate guarded copies preserved.

@@ -6148,7 +6148,15 @@ every other terminal session. The dialog never claims that SSH boots an image.
 
 ## 42. Unified dashboard and integrated content previews
 
-The interactive client starts on `Overview / Dashboard` with Navigator focus.
+Configured first-run startup defaults to `Overview / Dashboard` with Navigator
+focus. A configured returning client preserves its existing saved last screen;
+the initial Workspace and Navigator selection must agree for destinations in
+the Navigator catalog, with Navigator focus. Non-catalog destinations retain the
+Dashboard navigation context. An unconfigured client starts on Build Environment
+with that destination selected, regardless of the saved screen. Restoration is
+presentation-only: it must not start a build, launch a PTY or consume/discard a
+metadata effect. Existing post-first-frame platform inspection and onboarding
+remain separate and retain their authority gates and modal focus.
 Focus traversal includes only panes that currently offer a selectable,
 scrollable, or editable target. Dashboard is always Navigator-only: live,
 completed, or retained build evidence does not turn its read-only Tasks cockpit

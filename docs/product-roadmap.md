@@ -2,6 +2,11 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+DEMO-STARTUP-NAVIGATION-001 is an atomic child before integration acceptance:
+restore saved-screen continuity with aligned typed Navigator/focus, or select
+Build Environment when unconfigured, without automatic operations or lost
+metadata effects. This corrects a genuinely observed first-frame discrepancy.
+
 New user instruction selects profiling and measured hotspot fixes, correctness
 polish without new features, full suite, README screenshots/flamegraph report,
 operator guide, version bump, optimized installation, real OpenBMC screen/session
