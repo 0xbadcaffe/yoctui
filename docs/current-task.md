@@ -1,32 +1,32 @@
 # Current Task
 
-**ID:** KERNEL-INSTRUMENTATION-PLAN-001
-**Title:** Inspect sanitizer and lockdep configurations and export reviewed presets
+**ID:** KERNEL-INSTRUMENTATION-UI-001
+**Title:** Review sanitizer and lockdep presets from Kernel Debugging
 **Status:** IN_PROGRESS
 
-New Kernel roadmap continuation supersedes the blocked live-board task.
-Dependency KGDB-SERIAL-UI-001 is DONE. Implement only the closed preset/report
-model and bounded non-mutating inspection/create-new export adapter first;
-Kernel form/input/render/worker integration follows in its independent UI task.
-Relevant files: model kernel_instrumentation module, CLI kernel_instrumentation
-adapter, focused pure/config/filesystem tests and authoritative documentation.
-Done: deterministic KASAN generic/outline, KCSAN strict, UBSAN bounds/report and
-lockdep/atomic-sleep fragments; explicit y/n/m/absent observations; no unsupported
-architecture/compiler/runtime claims; bounded regular config reads; exact
-snapshot revalidation and no-overwrite .cfg export. Existing .config/builds/
-layers/targets are never modified. Normal/failure/collision/change tests pass.
-Version bump/coherent commit, then begin UI integration immediately.
+Dependency KERNEL-INSTRUMENTATION-PLAN-001 is DONE in v0.1.266. Implement the
+existing trapped Kernel form, typed background inspection, exact scrollable
+report/fragment review and explicit second Enter create-new export. Preserve
+catalogue indices and all existing debug launch workflows. Seed only reported
+exact .config; destination stays explicit. Editing/cancel invalidate inspection;
+confirmed export cannot pretend to be cancelled. No automatic config/layer
+edits, builds, boots or detector self-tests. Relevant model/app/UI/CLI worker
+and focused reducer/input/TestBackend/adapter tests plus authoritative docs.
+Version bump, coherent commit/push and commit-bound optimized release required.
 
 Verification (CARGO_INCREMENTAL=0; full suite deferred):
 ```bash
-cargo test -p yoctui-model kernel_instrumentation
+cargo test -p yoctui-model kernel_debug
+cargo test -p yoctui-app kernel_debug
+cargo test -p yoctui-ui kernel_debug
+cargo test -p yoctui --bin yoctui kernel_debug
 cargo test -p yoctui --bin yoctui kernel_instrumentation
-cargo test -p yoctui-model kgdb_serial
-cargo test -p yoctui --bin yoctui kgdb_serial
 cargo fmt --all --check
-cargo clippy -p yoctui-model -p yoctui --all-targets --all-features -- -D warnings
+cargo clippy -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui --all-targets --all-features -- -D warnings
+./scripts/verify-ui-spec.sh
 python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
 ```
 
 Prior completed work and external blockers are retained below:

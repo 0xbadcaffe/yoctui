@@ -40,6 +40,12 @@ impl KernelDebugState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum KernelDebugOperation {
     Inspect,
+    InspectInstrumentation {
+        draft: crate::KernelInstrumentationDraft,
+    },
+    ExportInstrumentation {
+        expected: Box<crate::KernelInstrumentationPreview>,
+    },
     Prepare {
         draft: Box<KernelDebugDraft>,
         tools: KernelDebugTools,
@@ -55,6 +61,8 @@ pub struct KernelDebugRequest {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum KernelDebugResult {
     Tools(KernelDebugTools),
+    InstrumentationPrepared(crate::KernelInstrumentationPreview),
+    InstrumentationExported(std::path::PathBuf),
     Prepared(TerminalLaunchRequest),
     PreparedSerial {
         request: TerminalLaunchRequest,

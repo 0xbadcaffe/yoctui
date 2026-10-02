@@ -1,6 +1,8 @@
-M110 Kernel instrumentation preparation is IN_PROGRESS. Closed preset/config
-inspection and safe reviewed new .cfg export precede Kernel UI integration in
-two independently verified/versioned commits. Live instrumented kernel evidence,
+M110 Kernel instrumentation preparation is IN_PROGRESS. The closed preset/config
+inspection and safe reviewed new .cfg exporter are DONE in v0.1.266. Four pure
+model and four filesystem checks, existing serial regressions, formatting,
+strict Clippy, version policy and roadmap pass. Kernel UI integration follows.
+Live instrumented kernel evidence,
 physical-board KGDB and M67 remain externally blocked. No automatic config/layer
 edits, build/deploy/boot or self-tests; full suite remains deferred.
 

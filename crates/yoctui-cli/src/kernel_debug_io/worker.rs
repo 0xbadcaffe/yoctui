@@ -33,6 +33,16 @@ impl KernelDebugIo {
             tokio::task::spawn_blocking(move || {
                 let result = match request.operation {
                     KernelDebugOperation::Inspect => discover().map(KernelDebugResult::Tools),
+                    KernelDebugOperation::InspectInstrumentation { draft } => {
+                        crate::kernel_instrumentation::inspect(&draft)
+                            .map(KernelDebugResult::InstrumentationPrepared)
+                            .map_err(|error| format!("{error:#}"))
+                    }
+                    KernelDebugOperation::ExportInstrumentation { expected } => {
+                        crate::kernel_instrumentation::export(&expected)
+                            .map(KernelDebugResult::InstrumentationExported)
+                            .map_err(|error| format!("{error:#}"))
+                    }
                     KernelDebugOperation::Prepare { draft, tools } => {
                         if draft.tool == KernelDebugTool::KgdbSerial {
                             prepare(&draft, &tools).and_then(|request| {

@@ -6,18 +6,18 @@ status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 id = "KERNEL-INSTRUMENTATION-PLAN-001"
 milestone = "M110"
 title = "Inspect sanitizer and lockdep configurations and export reviewed presets"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3290
 required = true
 depends_on = ["KGDB-SERIAL-UI-001"]
 verify = ["cargo test -p yoctui-model kernel_instrumentation", "cargo test -p yoctui --bin yoctui kernel_instrumentation", "cargo test -p yoctui-model kgdb_serial", "cargo test -p yoctui --bin yoctui kgdb_serial", "cargo fmt --all --check", "cargo clippy -p yoctui-model -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Relevant model kernel_instrumentation and local CLI adapter/tests. Done: four deterministic requested presets, bounded y/n/m/absent config evidence, snapshot-bound .cfg create-new export with revalidation and no overwrite or .config/layer mutation. Config match never proves compiler/architecture or running-kernel support. Test normal/duplicate/invalid/oversize/symlink/special/outside/collision/changed input failures. Docs/version/coherent commit required; UI follows immediately. No full suite or live target action."
+notes = "DONE in v0.1.266. Four closed requested presets and bounded y/n/m/absent reports; exclusive mode-0600 .cfg export revalidates exact config snapshot and directory identity. No .config/layer edits, overwrite, process launch or target changes. Four model/four filesystem adapter and existing serial checks pass, with formatting/strict Clippy/version policy/roadmap verification. Config match is file evidence only, not architecture/compiler/runtime support. UI task follows immediately; full suite deferred."
 
 [[task]]
 id = "KERNEL-INSTRUMENTATION-UI-001"
 milestone = "M110"
 title = "Review sanitizer and lockdep presets from Kernel Debugging"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3291
 required = true
 depends_on = ["KERNEL-INSTRUMENTATION-PLAN-001"]

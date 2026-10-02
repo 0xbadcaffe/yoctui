@@ -4,6 +4,7 @@ use yoctui_utils::unix_ms;
 mod build_archive;
 mod error_log;
 mod graphics_terminal_handoff;
+mod kernel_instrumentation;
 mod kgdb_serial;
 mod qemu_debug;
 use graphics_terminal_handoff::uses_interactive_terminal;
