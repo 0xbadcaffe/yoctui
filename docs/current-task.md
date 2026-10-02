@@ -10,7 +10,14 @@ environment is initialized in private Ubuntu 24.04 daemon instance
 is ready; real release UI shows Connected/Local and zynqmp-zcu102-sdt-full.
 ENV evidence/config/layer backups are in artifacts/live-xilinx/zcu102.
 
-Immediately request the actual image with `./scripts/live-zcu102.sh build`.
+The actual image was accepted at 08:50 UTC on 2026-10-02 as daemon job 1.
+After a separate cold build-backend parse it is RUNNING, not merely requested.
+Real PTY captured 286/10994 tasks, two active workers and zero errors at 09:07;
+read-only framed IPC reported 461 completed, no retained task failures and no
+failed fetches at 09:13. These checkpoints do not certify a successful image.
+Do not submit a duplicate build or restart the active daemon. Read current
+aggregate authority with `python3 scripts/inspect-zcu102-build.py` (six focused
+framing/identity/read-only checks pass); preserve the existing build to completion.
 Monitor real daemon tasks/outcome with `./scripts/live-zcu102.sh status` and
 `./scripts/live-zcu102.sh attach`; preserve stdout/error/task logs. Keep two
 task/make workers, four-GiB stop/one-GiB halt disk guards and rm_work exclusions

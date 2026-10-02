@@ -2,6 +2,14 @@
 
 ## M111 — Current AMD PetaLinux ZCU102 live acceptance
 
+BUILD job 1 is actually RUNNING through the private daemon (requested 08:50 UTC,
+2026-10-02). Real release PTY recorded 286/10994 tasks, two workers and no errors;
+subsequent framed IPC recorded 461 aggregate completions and no fetch failures.
+Read-only inspector guards peer/workspace/instance and bounded partial frames;
+six focused checks pass. Active-build evidence is retained, but deploy/matching
+kernel and actual QEMU/GDB acceptance are still pending. Keep this build alive;
+do not restart for the observed startup-versus-build terminal/cache mismatch.
+
 ENV is DONE after resumed real verification: ready isolated daemon workspace,
 exact ZCU102 machine displayed in real release PTY, coherent AMD source/config
 identities and bounded workers/storage, validation-only fixed-address debug

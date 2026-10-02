@@ -8,7 +8,13 @@ optional ROS excluded only from BBLAYERS, matching-environment parse preflight
 passed 16539 files/0 errors and warmed the cache. Guards were not weakened;
 vendor dangling qt-gui append warning retained. Five helper checks, shell syntax/
 failure paths, fmt/diff/roadmap pass. No product code/full suite; unchanged
-source-bound release. Request actual image through daemon next, then prove
+source-bound release. Actual image job 1 was accepted at 08:50 UTC and is RUNNING:
+real UI checkpoint 286/10994, two workers/zero errors; later read-only daemon
+aggregate 461 completions/zero failed fetches. Six focused inspector checks pass,
+covering partial/oversized/EOF frames, wrong instance/workspace and no command
+emission. Keep the active daemon/build alive; image success is not yet proven.
+Active UI/source-bound identities are retained alongside resumed ENV evidence.
+Next prove
 deployed image/matching symbols/config and reviewed live QEMU/GDB separately.
 
 Historical pause/resume handoff (superseded by completed ENV above):
