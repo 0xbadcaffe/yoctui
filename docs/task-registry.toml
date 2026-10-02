@@ -17,12 +17,12 @@ notes = "DONE in v0.1.266. Four closed requested presets and bounded y/n/m/absen
 id = "KERNEL-INSTRUMENTATION-UI-001"
 milestone = "M110"
 title = "Review sanitizer and lockdep presets from Kernel Debugging"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3291
 required = true
 depends_on = ["KERNEL-INSTRUMENTATION-PLAN-001"]
 verify = ["cargo test -p yoctui-model kernel_debug", "cargo test -p yoctui-app kernel_debug", "cargo test -p yoctui-ui kernel_debug", "cargo test -p yoctui --bin yoctui kernel_debug", "cargo test -p yoctui --bin yoctui kernel_instrumentation", "cargo fmt --all --check", "cargo clippy -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
-notes = "Relevant existing Kernel draft/state/worker, app input and UI plus focused reducer/worker/TestBackend tests. Done: preserve catalogue indices; sanitizer/lockdep enter typed config/preset/destination form, background correlated read-only inspection, scrollable exact report/fragment review, explicit second Enter create-new export. Missing settings are unknown, matched config not live readiness. Editing/cancel invalidate review; no writes before confirmation and no cancellation pretending in-flight export stopped. Seed only exact reported .config; output remains explicit. Config/build/deploy/reboot controls unchanged. Update all docs, version, commit/push and commit-bound optimized binary."
+notes = "DONE in v0.1.267. Existing catalogue indices preserved; trapped typed forms, sanitizer preset cycle/fixed lockdep, exact reported-config seed and explicit empty output. Correlated bounded read-only worker inspection, scrollable typed options/capabilities/exact fragment review, second Enter exclusive export, Esc edit/cancel and locked confirmed-write result. Errors preserve draft but require reinspection. Keyboard/mouse/footer and narrow layouts verified. Kernel model/app/UI/CLI 16/6/6/7, pure/adapter instrumentation 4/4, serial 3/4, eight QEMU, four saved-environment, RootFS tree/systemd/chart and Images regressions pass. Strict affected all-target/all-feature Clippy, fmt, UI spec, version policy, roadmap and optimized build pass. No full suite, live target action, config/layer changes or daemon restart. Documentation/version/source/tests committed together; final push and commit-bound rebuild deliver. Live instrumentation/physical board/M67 evidence remain explicitly BLOCKED, not DONE."
 
 [[task]]
 id = "KERNEL-INSTRUMENTATION-LIVE-001"

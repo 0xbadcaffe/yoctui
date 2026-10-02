@@ -22,6 +22,106 @@ fn app() -> App {
 }
 
 #[test]
+fn kernel_debug_instrumentation_form_and_scrollable_exact_review_render_safely() {
+    let mut app = app();
+    app.kernel_debug.selection = 13;
+    assert!(rendered_text(&app, 160, 42).contains("Config prep"));
+    let mut draft = KernelDebugDraft::new(KernelDebugTool::Sanitizers);
+    draft.instrumentation.config = "/work/exact/.config".into();
+    draft.instrumentation.output = "/work/approved.cfg".into();
+    app.dialogs
+        .push_front(Dialog::KernelDebug(KernelDebugDialog {
+            draft: draft.clone(),
+            selection: 2,
+            guide_scroll: 0,
+            error: None,
+        }));
+    let text = rendered_text(&app, 160, 42);
+    for value in [
+        "CONFIG PREP",
+        "KASAN generic",
+        "NEW absolute .cfg",
+        "approved.cfg",
+        "Enter inspect",
+        "no write",
+        "Esc cancel",
+    ] {
+        assert!(text.contains(value), "{value}: {text}");
+    }
+    app.kernel_debug.instrumentation_preview = Some(yoctui_model::KernelInstrumentationPreview {
+        draft: *draft.instrumentation.clone(),
+        report: yoctui_model::KernelInstrumentationReport::inspect(
+            draft.instrumentation.preset,
+            "CONFIG_KASAN=m\n# CONFIG_KCSAN is not set\n",
+        )
+        .unwrap(),
+        destination_parent: "/work".into(),
+        parent_identity: None,
+    });
+    let text = rendered_text(&app, 160, 42);
+    for value in [
+        "NEEDS RESOLUTION",
+        "observed m; requested y",
+        "observed n; requested n",
+        "absent/unknown",
+        "NOT proven",
+        "Enter export NEW .cfg",
+        "Esc back to edit",
+    ] {
+        assert!(text.contains(value), "{value}: {text}");
+    }
+    let Some(Dialog::KernelDebug(d)) = app.active_dialog_mut() else {
+        panic!()
+    };
+    d.guide_scroll = 19;
+    let text = rendered_text(&app, 160, 42);
+    assert!(text.contains("Exact requested fragment"), "{text}");
+    assert!(text.contains("CONFIG_KASAN_GENERIC=y"), "{text}");
+    for (w, h) in [(80, 24), (60, 15), (20, 5), (1, 1)] {
+        let _ = rendered_text(&app, w, h);
+    }
+}
+
+#[test]
+fn kernel_debug_instrumentation_lockdep_match_and_export_pending_never_claim_live_session() {
+    let mut app = app();
+    let mut draft = KernelDebugDraft::new(KernelDebugTool::Lockdep);
+    draft.instrumentation.config = "/work/.config".into();
+    draft.instrumentation.output = "/work/lockdep.cfg".into();
+    let preview = yoctui_model::KernelInstrumentationPreview {
+        draft: *draft.instrumentation.clone(),
+        report: yoctui_model::KernelInstrumentationReport::inspect(
+            draft.instrumentation.preset,
+            &draft.instrumentation.preset.fragment(),
+        )
+        .unwrap(),
+        destination_parent: "/work".into(),
+        parent_identity: None,
+    };
+    app.dialogs
+        .push_front(Dialog::KernelDebug(KernelDebugDialog {
+            draft,
+            selection: 0,
+            guide_scroll: 0,
+            error: None,
+        }));
+    app.kernel_debug.instrumentation_preview = Some(preview.clone());
+    let text = rendered_text(&app, 160, 42);
+    assert!(text.contains("CONFIG MATCH (this file only)"), "{text}");
+    assert!(text.contains("NOT runtime readiness"), "{text}");
+    app.kernel_debug.pending = Some(yoctui_model::KernelDebugOperation::ExportInstrumentation {
+        expected: Box::new(preview),
+    });
+    let text = rendered_text(&app, 160, 42);
+    assert!(text.contains("wait for result"), "{text}");
+    assert!(text.contains("input locked"), "{text}");
+    assert!(!text.contains("Esc cancel"), "{text}");
+    for (w, h) in [(80, 24), (20, 5), (1, 1)] {
+        let _ = rendered_text(&app, w, h);
+    }
+}
+
+#[test]
 fn kernel_debug_catalogue_and_target_scope_are_visible_without_metadata() {
     let mut app = app();
     let output = rendered_text(&app, 160, 42);

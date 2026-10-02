@@ -2,6 +2,7 @@ use super::*;
 use crate::{
     App, Dialog, Effect, FocusTarget, Screen, TerminalLaunchDestination, TerminalLaunchDialog,
 };
+mod instrumentation;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KernelDebugDialog {
@@ -22,6 +23,7 @@ pub struct KernelDebugState {
     pub prepared: Option<TerminalLaunchRequest>,
     pub qemu_preview: Option<crate::QemuDebugSpec>,
     pub serial_preview: Option<KgdbSerialPreview>,
+    pub instrumentation_preview: Option<crate::KernelInstrumentationPreview>,
     pub preview_scroll: u16,
 }
 
@@ -99,6 +101,14 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
             return None;
         }
         let pending = app.kernel_debug.pending.take()?;
+        if matches!(
+            pending,
+            KernelDebugOperation::InspectInstrumentation { .. }
+                | KernelDebugOperation::ExportInstrumentation { .. }
+        ) {
+            instrumentation::finished(app, pending, result);
+            return None;
+        }
         match (pending, result) {
             (KernelDebugOperation::Inspect, Ok(KernelDebugResult::Tools(tools))) => {
                 app.kernel_debug.tools = Some(tools);
@@ -192,7 +202,22 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
         if matches!(app.active_dialog(), Some(Dialog::KernelDebug(_))) {
             if matches!(
                 app.kernel_debug.pending,
-                Some(KernelDebugOperation::Prepare { .. })
+                Some(KernelDebugOperation::ExportInstrumentation { .. })
+            ) {
+                return None;
+            }
+            if app.kernel_debug.instrumentation_preview.take().is_some() {
+                if let Some(Dialog::KernelDebug(dialog)) = app.active_dialog_mut() {
+                    dialog.guide_scroll = 0;
+                }
+                return None;
+            }
+            if matches!(
+                app.kernel_debug.pending,
+                Some(
+                    KernelDebugOperation::Prepare { .. }
+                        | KernelDebugOperation::InspectInstrumentation { .. }
+                )
             ) {
                 app.kernel_debug.pending = None;
                 app.kernel_debug.generation = app.kernel_debug.generation.saturating_add(1);
@@ -206,6 +231,10 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
         return None;
     }
     if let Some(Dialog::KernelDebug(_)) = app.active_dialog() {
+        if matches!(app.active_dialog(), Some(Dialog::KernelDebug(dialog)) if dialog.draft.tool.configuration_prep())
+        {
+            return instrumentation::input(app, action);
+        }
         if app.kernel_debug.pending.is_some() {
             return None;
         }
@@ -310,7 +339,21 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
             app.kernel_debug.prepared = None;
             app.kernel_debug.qemu_preview = None;
             app.kernel_debug.serial_preview = None;
+            app.kernel_debug.instrumentation_preview = None;
             let mut draft = KernelDebugDraft::new(app.kernel_debug.tool());
+            if draft.tool.configuration_prep() {
+                draft.instrumentation.config = app
+                    .kernel
+                    .inventory()
+                    .and_then(|inventory| {
+                        inventory
+                            .files
+                            .iter()
+                            .find(|file| file.kind == crate::PlatformFileKind::DotConfig)
+                    })
+                    .map(|file| file.path.display().to_string())
+                    .unwrap_or_default();
+            }
             if draft.tool == KernelDebugTool::QemuGdb {
                 draft.qemu.build_dir = app
                     .workspace

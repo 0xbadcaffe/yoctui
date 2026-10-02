@@ -1,20 +1,41 @@
 # Current Task
 
-**ID:** KERNEL-INSTRUMENTATION-UI-001
-**Title:** Review sanitizer and lockdep presets from Kernel Debugging
-**Status:** IN_PROGRESS
+**ID:** KGDB-SERIAL-LIVE-001
+**Title:** Verify KGDB breakpoint, continue, detach and reconnect on a physical board
+**Status:** BLOCKED
 
-Dependency KERNEL-INSTRUMENTATION-PLAN-001 is DONE in v0.1.266. Implement the
-existing trapped Kernel form, typed background inspection, exact scrollable
-report/fragment review and explicit second Enter create-new export. Preserve
-catalogue indices and all existing debug launch workflows. Seed only reported
-exact .config; destination stays explicit. Editing/cancel invalidate inspection;
-confirmed export cannot pretend to be cancelled. No automatic config/layer
-edits, builds, boots or detector self-tests. Relevant model/app/UI/CLI worker
-and focused reducer/input/TestBackend/adapter tests plus authoritative docs.
-Version bump, coherent commit/push and commit-bound optimized release required.
+No eligible implementation task remains. An approved already-configured/halted
+board, exact running-kernel .config/vmlinux and exclusive serial device/baud plus
+target UART have not been supplied. No /dev/serial, ttyUSB or ttyACM target was
+present on the read-only recheck. Do not flash/reset/configure, halt via SysRq,
+or guess matching inputs to manufacture evidence. Manual verification: with
+those exact approved inputs, review/attach and verify breakpoint/backtrace,
+continue, separately approved manual re-entry, deliberate detach and reconnect.
+Dependencies KGDB-SERIAL-PLAN-001/KGDB-SERIAL-UI-001 are DONE; mocks are not
+physical-board evidence. Verification: manual approved-board workflow above
+and ./scripts/verify-roadmap.sh; the user still defers the full suite.
 
-Verification (CARGO_INCREMENTAL=0; full suite deferred):
+KERNEL-INSTRUMENTATION-PLAN-001/UI-001 are DONE in v0.1.266/v0.1.267. Typed
+closed presets and bounded reports, existing trapped form, correlated worker,
+exact scrollable config/capability/fragment review, explicit second Enter
+create-new export and edit/cancel/in-flight write boundaries are verified.
+Only reported .config seeds input; output stays explicit. Missing is unknown;
+matched config is not live compatibility. Failed export preserves inputs but
+requires reinspection. No .config/layer edits, build/boot or detector self-tests.
+Kernel model/app/UI/CLI 16/6/6/7, instrumentation pure/adapter 4/4, serial 3/4,
+eight QEMU and four saved-environment checks pass. RootFS tree/systemd/chart
+and Images scrolling regressions also pass. Strict affected Clippy, formatting,
+UI spec, version policy, roadmap and optimized release pass. Final commit/push
+and source-bound optimized rebuild deliver; installed PATH remains v0.1.250.
+Use target/release/yoctui explicitly; daemon and user captures remain untouched.
+
+KERNEL-INSTRUMENTATION-LIVE-001 is separately BLOCKED: provide an approved test
+build/provider/version/architecture/compiler, supported fragment integration
+and resolved .config, approved build/boot/reproduction and matching diagnostic
+logs for each preset. Export/config match is not runtime evidence. M67's genuine
+current-source Yocto performance capture remains independently blocked below.
+
+Completed preparation verification (CARGO_INCREMENTAL=0; full suite deferred):
 ```bash
 cargo test -p yoctui-model kernel_debug
 cargo test -p yoctui-app kernel_debug
@@ -88,8 +109,9 @@ form with those exact inputs, review and attach; verify breakpoint/backtrace,
 continue, separately approved manual re-entry, deliberate detach and reconnect.
 Fake-process/PTY checks are not physical-board evidence. Do not flash/reset,
 trigger SysRq, change configuration or guess matching symbols to bypass this.
-No other eligible implementation task remains. Sanitizers/lockdep and SysRq/
-kdump remain proposals requiring independently scoped tasks. Full suite deferred.
+At this earlier M108 handoff no other implementation task was eligible. M110
+now completes sanitizer/lockdep preparation only; live instrumentation remains
+blocked and SysRq/kdump is still a proposal. Full suite remains deferred.
 
 Previous user fixes (completed):
 

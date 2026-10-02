@@ -81,6 +81,10 @@ impl KernelDebugTool {
         }
     }
 
+    pub const fn configuration_prep(self) -> bool {
+        matches!(self, Self::Sanitizers | Self::Lockdep)
+    }
+
     pub const fn runtime_target(self) -> bool {
         matches!(
             self,
@@ -143,10 +147,10 @@ impl KernelDebugTool {
                 "GUIDE ONLY. Enable KGDB and debug information; optionally KDB and KGDB serial-console support. Use matching vmlinux on the debugger host. Configure the target transport/boot arguments intentionally; kgdbwait/breakpoints stop execution. QEMU can provide its own GDB stub. Use GDB remote for an approved TCP stub or KGDB → GDB serial board for an already configured/halted serial target. Transport setup and KDB console commands remain manual."
             }
             Self::Sanitizers => {
-                "GUIDE ONLY. KASAN detects memory-access bugs, KCSAN samples data races, UBSAN reports undefined behavior. Enable the architecture-supported options in menuconfig, rebuild/deploy deliberately and inspect reports via dmesg. Instrumentation changes memory/performance characteristics; no configuration is enabled automatically."
+                "CONFIG PREP. Inspect an exact kernel .config, review a requested KASAN, KCSAN or UBSAN fragment and explicitly export a NEW .cfg. Config match is file evidence only, not architecture/compiler/runtime support. Integrate using your provider's supported fragment workflow, check the resolved config, then deliberately build/boot and inspect matching dmesg reports. Memory/performance overhead changes; no automatic config/layer edits, build, boot or self-tests."
             }
             Self::Lockdep => {
-                "GUIDE ONLY. CONFIG_PROVE_LOCKING/lockdep can expose lock ordering problems; DEBUG_ATOMIC_SLEEP helps sleeping-in-atomic bugs. Hung-task and RCU-stall diagnostics complement stack traces. Enable supported options manually, reproduce under controlled load and inspect dmesg. Debug options add overhead."
+                "CONFIG PREP. Review a lockdep/atomic-sleep fragment from an exact .config and explicitly export a NEW .cfg. PROVE_LOCKING checks lock ordering; DEBUG_ATOMIC_SLEEP diagnoses sleeping-in-atomic bugs. Hung-task/RCU-stall checks remain manual. Resolve supported settings through your kernel provider, deliberately build/boot, reproduce under controlled load and inspect matching dmesg. Overhead increases; no automatic config edits, boot or locking self-tests."
             }
             Self::SysrqKdump => {
                 "GUIDE ONLY. SysRq stack/task dumps aid hang analysis; some SysRq actions crash or reboot the system. Configure crashkernel reservation, kexec/kdump and dump storage deliberately before collecting vmcore. Yoctui never writes sysrq-trigger, crashes/reboots the target or modifies crash settings."

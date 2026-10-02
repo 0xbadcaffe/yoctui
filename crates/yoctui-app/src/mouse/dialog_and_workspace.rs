@@ -58,7 +58,8 @@ pub(crate) fn dialog_mouse_action(
         yoctui_model::Dialog::WicDevicePicker(_) => Some(Action::SelectWicDevice { delta }),
         yoctui_model::Dialog::DtcCompile(_) => Some(Action::SelectDtcCompileOption { delta }),
         yoctui_model::Dialog::KernelDebug(dialog) => Some(Action::KernelDebug(
-            if dialog.draft.tool.program().is_none() {
+            if (dialog.draft.tool.program().is_none() && !dialog.draft.tool.configuration_prep())
+                || app.kernel_debug.instrumentation_preview.is_some() {
                 yoctui_model::KernelDebugAction::ScrollGuide(delta * 3)
             } else { yoctui_model::KernelDebugAction::Field(delta) }
         )),

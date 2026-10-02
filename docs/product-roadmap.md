@@ -6,8 +6,11 @@ The new continuation request activates step 3's preparation slice independently
 of blocked physical-board verification. KERNEL-INSTRUMENTATION-PLAN-001 owns
 closed presets/config report and bounded inspect/create-new export adapter;
 KERNEL-INSTRUMENTATION-UI-001 owns existing Kernel form/review/worker integration.
-Each gets a focused verified versioned commit, followed by push and final
-commit-bound optimized release. KERNEL-INSTRUMENTATION-LIVE-001 stays BLOCKED:
+Preparation tasks are DONE in v0.1.266/v0.1.267 with focused model/app/UI/CLI,
+real filesystem-worker and existing QEMU/serial/saved-environment/RootFS/Images
+regressions passing, plus strict Clippy/fmt/spec/version/roadmap/release checks.
+Each has its own versioned commit, followed by push and a final commit-bound
+optimized binary. KERNEL-INSTRUMENTATION-LIVE-001 stays BLOCKED:
 provider/compiler/architecture-specific supported fragment integration, approved
 build/boot/reproduction and matching runtime evidence have not been supplied.
 No automatic layer/config edits, kernel build/deploy/reset or detector self-test.
@@ -70,7 +73,9 @@ board, exact running-kernel config/vmlinux and approved serial transport. No
 USB serial target is currently present; that verification is externally blocked.
 Mocks/PTYs cannot certify board compatibility. Rebuild/deploy/reset, automatic
 SysRq, serial break, privilege changes and configuration writes remain out of
-scope. Sanitizers/lockdep and SysRq/kdump remain proposals, not queued tasks.
+scope. Sanitizers/lockdep were proposals at this M108 handoff; M110 now delivers
+their configuration-preparation slice. Live instrumentation and SysRq/kdump
+remain separate future/blocked work, not automatically completed by preparation.
 Focused checks only, then independent versioned commits, push and commit-bound
 release. The M67 performance blocker and user captures/daemon remain unchanged.
 
@@ -200,10 +205,13 @@ step-3 configuration preparation. It does not authorize a live target change.
    review persistent Yocto configuration fragments and boot arguments, serial
    or approved proxy transport, explicit halt/resume and reconnect semantics.
    Board-specific build/deploy/reset actions need separate authorization.
-3. **Sanitizers and lockdep (M110 preparation slice):** requested configuration presets,
-   reviewed build/deployment, controlled reproduction, typed report capture and
-   source navigation. These are instrumented-kernel diagnostics, not interactive
-   debugger sessions; each technique needs independent compatibility evidence.
+3. **Sanitizers and lockdep (M110 preparation slice):** exact .config inspection,
+   typed observations and reviewed standalone create-new .cfg presets. Manual
+   provider-supported integration and resolved-config validation come next.
+   Reviewed build/deployment, controlled reproduction, typed diagnostic capture
+   and source navigation remain future slices. These are instrumented-kernel
+   diagnostics, not interactive debugger sessions; each technique needs its own
+   compatibility evidence. Preparation alone does not complete this broad step.
 4. **SysRq/kdump (proposed):** separate read-only diagnostic collection from
    disruptive actions, inspect crash-kernel/memory/storage prerequisites, require
    explicit confirmation for halt/panic/reboot, then capture vmcore and hand off

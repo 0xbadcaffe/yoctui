@@ -62,6 +62,15 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
         .map(str::to_owned)
         .collect();
     }
+    if matches!(app.active_dialog(), Some(Dialog::KernelDebug(d)) if d.draft.tool.configuration_prep()) {
+        return if matches!(app.kernel_debug.pending, Some(yoctui_model::KernelDebugOperation::ExportInstrumentation { .. })) {
+            vec!["Exporting confirmed file; wait for result".into()]
+        } else if app.kernel_debug.instrumentation_preview.is_some() {
+            vec!["Enter export NEW .cfg".into(), "PgUp/PgDn review".into(), "Esc edit".into()]
+        } else {
+            vec!["Tab field".into(), "Enter inspect".into(), "Esc cancel".into()]
+        };
+    }
     if app.active_dialog().is_some() || app.focus == FocusTarget::Dialog {
         return ["Enter select/confirm", "Esc cancel"]
             .into_iter()

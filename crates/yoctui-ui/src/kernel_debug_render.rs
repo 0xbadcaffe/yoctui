@@ -33,25 +33,32 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
     for index in viewport {
         let tool = KernelDebugTool::ALL[index];
-        let status = tool.program().map_or("Guide only", |program| {
-            if state
-                .tools
-                .as_ref()
-                .is_some_and(|tools| tools.programs.contains_key(program))
-                || (tool == KernelDebugTool::QemuGdb
-                    && app
-                        .workspace_compatibility
-                        .authority()
-                        .and_then(|authority| {
-                            authority.snapshot.environment.available_tools.value()
-                        })
-                        .is_some_and(|tools| tools.iter().any(|tool| tool.id == "runqemu")))
-            {
-                "Host found"
+        let status = tool.program().map_or(
+            if tool.configuration_prep() {
+                "Config prep"
             } else {
-                "Host missing"
-            }
-        });
+                "Guide only"
+            },
+            |program| {
+                if state
+                    .tools
+                    .as_ref()
+                    .is_some_and(|tools| tools.programs.contains_key(program))
+                    || (tool == KernelDebugTool::QemuGdb
+                        && app
+                            .workspace_compatibility
+                            .authority()
+                            .and_then(|authority| {
+                                authority.snapshot.environment.available_tools.value()
+                            })
+                            .is_some_and(|tools| tools.iter().any(|tool| tool.id == "runqemu")))
+                {
+                    "Host found"
+                } else {
+                    "Host missing"
+                }
+            },
+        );
         lines.push(Line::styled(
             format!(
                 "{} {:<40} {status}",
@@ -82,7 +89,9 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
         );
         let inner = block.inner(popup);
         frame.render_widget(block, popup);
-        if tool.program().is_none() {
+        if tool.configuration_prep() {
+            crate::kernel_instrumentation_render::dialog(frame, app, dialog, inner);
+        } else if tool.program().is_none() {
             let rows = Layout::vertical([Constraint::Min(1), Constraint::Length(2)]).split(inner);
             frame.render_widget(
                 Paragraph::new(format!(

@@ -182,6 +182,20 @@ fn saved_environment_switch_clears_path_bound_inspection_not_preferences_or_arch
     let preferences = app.preferences.clone();
     app.kernel_debug.generation = 12;
     app.kernel_debug.pending = Some(crate::KernelDebugOperation::Inspect);
+    app.kernel_debug.instrumentation_preview = Some(crate::KernelInstrumentationPreview {
+        draft: crate::KernelInstrumentationDraft {
+            config: "/old/.config".into(),
+            output: "/old/debug.cfg".into(),
+            ..Default::default()
+        },
+        report: crate::KernelInstrumentationReport::inspect(
+            crate::KernelInstrumentationPreset::Kasan,
+            "",
+        )
+        .unwrap(),
+        destination_parent: "/old".into(),
+        parent_identity: None,
+    });
     app.kernel_debug.tools = Some(crate::KernelDebugTools {
         cwd: "/old-build".into(),
         programs: Default::default(),
@@ -191,6 +205,7 @@ fn saved_environment_switch_clears_path_bound_inspection_not_preferences_or_arch
     assert!(app.kernel_debug.tools.is_none());
     assert!(app.kernel_debug.pending.is_none());
     assert!(app.kernel_debug.qemu_preview.is_none());
+    assert!(app.kernel_debug.instrumentation_preview.is_none());
     assert!(app.recipe_sources.is_empty());
     assert!(app.layer_browser.is_none());
     assert_eq!(app.saved_builds.records, records);

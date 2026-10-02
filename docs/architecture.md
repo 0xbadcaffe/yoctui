@@ -11,6 +11,12 @@ used. Existing Kernel generation-correlated worker, trapped draft and review
 state are reused; UI formats typed evidence, never raw config/process text.
 Absent options and architecture/compiler/runtime support remain unknown unless
 actually observed; config matching is not runtime compatibility. No wire change.
+Instrumentation worker operations/results are separate typed variants from tool
+discovery and terminal preparation. Inspection checks generation/draft/modal
+ownership before review; explicit export uses the reviewed snapshot. Confirmed
+exports remain locked until completion, and errors discard review without
+discarding the draft. Unix create-new uses the reviewed directory descriptor
+identity and openat/O_EXCL/O_NOFOLLOW with mode 0600; output is never applied.
 
 M109 artifact viewing: model emits an exact path/root local viewing effect;
 CLI performs no-follow bounded regular-file reads within the authoritative

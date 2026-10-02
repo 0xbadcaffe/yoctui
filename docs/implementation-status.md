@@ -1,10 +1,17 @@
-M110 Kernel instrumentation preparation is IN_PROGRESS. The closed preset/config
-inspection and safe reviewed new .cfg exporter are DONE in v0.1.266. Four pure
-model and four filesystem checks, existing serial regressions, formatting,
-strict Clippy, version policy and roadmap pass. Kernel UI integration follows.
-Live instrumented kernel evidence,
-physical-board KGDB and M67 remain externally blocked. No automatic config/layer
-edits, build/deploy/boot or self-tests; full suite remains deferred.
+M110 configuration preparation is DONE in v0.1.266/v0.1.267, not the broad live
+instrumentation milestone. Kernel → 3 Debugging → Sanitizers/lockdep opens typed
+forms; choose a preset/exact .config/new .cfg, Enter to inspect/review, then Enter
+again to export. Escape from review returns to edit without writing. Inspection
+is read-only, export never overwrites/applies, and config matching proves only
+file settings, not compiler/architecture/runtime support. Missing options stay
+unknown. Confirmed writes wait for results rather than pretending cancellation.
+Focused Kernel model/app/UI/CLI 16/6/6/7 and pure/adapter instrumentation 4/4 pass;
+serial 3/4, eight QEMU, four saved-environment, RootFS tree/systemd/chart and
+Images regressions pass. Strict affected all-target/all-feature Clippy, fmt,
+UI spec, version policy, roadmap and optimized release pass. Final commit/push
+and commit-bound rebuild deliver. Live instrumented kernel evidence, physical
+KGDB board and M67 remain externally BLOCKED. No automatic config/layer edits,
+build/deploy/boot, self-tests or daemon restart; full suite remains deferred.
 
 IMAGES-ARTIFACT-VIEW-001 is DONE in v0.1.265 (M109). Every selected artifact
 stays visible with long names, navigation and resize; table shows exact bytes

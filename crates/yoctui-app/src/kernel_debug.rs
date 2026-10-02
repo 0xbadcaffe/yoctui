@@ -44,7 +44,15 @@ fn action(app: &App, input: Input) -> Option<A> {
         if app.kernel_debug.pending.is_some() {
             return None;
         }
-        if dialog.draft.tool.program().is_none() {
+        if app.kernel_debug.instrumentation_preview.is_some() {
+            return match input {
+                Input::Enter => Some(A::Review),
+                Input::Up | Input::PageUp => Some(A::ScrollGuide(-3)),
+                Input::Down | Input::PageDown => Some(A::ScrollGuide(3)),
+                _ => None,
+            };
+        }
+        if dialog.draft.tool.program().is_none() && !dialog.draft.tool.configuration_prep() {
             return match input {
                 Input::Up | Input::PageUp => Some(A::ScrollGuide(-3)),
                 Input::Down | Input::PageDown => Some(A::ScrollGuide(3)),
@@ -57,8 +65,17 @@ fn action(app: &App, input: Input) -> Option<A> {
             Input::BackTab | Input::Up => Some(A::Field(-1)),
             Input::Left | Input::Right => Some(A::ChangeScope),
             Input::Char(' ')
-                if dialog.draft.fields().get(dialog.selection)
-                    == Some(&yoctui_model::KernelDebugField::Destination) =>
+                if dialog
+                    .draft
+                    .fields()
+                    .get(dialog.selection)
+                    .is_some_and(|field| {
+                        matches!(
+                            field,
+                            yoctui_model::KernelDebugField::Destination
+                                | yoctui_model::KernelDebugField::InstrumentationPreset
+                        )
+                    }) =>
             {
                 Some(A::ChangeScope)
             }

@@ -34,6 +34,9 @@ pub enum KernelDebugField {
     SerialBaud,
     TargetUart,
     Ready,
+    InstrumentationPreset,
+    InstrumentationConfig,
+    InstrumentationOutput,
 }
 
 impl KernelDebugField {
@@ -59,6 +62,9 @@ impl KernelDebugField {
             Self::SerialBaud => "Serial baud (matches target)",
             Self::TargetUart => "Target UART name (not host device)",
             Self::Ready => "Target configured/halted; console closed? yes",
+            Self::InstrumentationPreset => "Requested preset",
+            Self::InstrumentationConfig => "Exact kernel .config to inspect",
+            Self::InstrumentationOutput => "NEW absolute .cfg destination",
         }
     }
 }
@@ -77,6 +83,7 @@ pub struct KernelDebugDraft {
     pub event: String,
     pub qemu: crate::QemuDebugDraft,
     pub serial: KgdbSerialDraft,
+    pub instrumentation: Box<crate::KernelInstrumentationDraft>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -115,6 +122,14 @@ impl KernelDebugDraft {
             event: "syscalls:sys_enter_openat".into(),
             qemu: crate::QemuDebugDraft::default(),
             serial: KgdbSerialDraft::default(),
+            instrumentation: Box::new(crate::KernelInstrumentationDraft {
+                preset: if tool == KernelDebugTool::Lockdep {
+                    crate::KernelInstrumentationPreset::Lockdep
+                } else {
+                    crate::KernelInstrumentationPreset::Kasan
+                },
+                ..Default::default()
+            }),
         }
     }
 
@@ -128,6 +143,14 @@ impl KernelDebugDraft {
             }
         }
         match self.tool {
+            KernelDebugTool::Sanitizers => fields.extend([
+                F::InstrumentationPreset,
+                F::InstrumentationConfig,
+                F::InstrumentationOutput,
+            ]),
+            KernelDebugTool::Lockdep => {
+                fields.extend([F::InstrumentationConfig, F::InstrumentationOutput])
+            }
             KernelDebugTool::KgdbSerial => fields.extend([
                 F::Symbols,
                 F::KernelConfig,
@@ -159,6 +182,9 @@ impl KernelDebugDraft {
 
     pub fn value(&self, field: KernelDebugField) -> &str {
         match field {
+            KernelDebugField::InstrumentationPreset => self.instrumentation.preset.label(),
+            KernelDebugField::InstrumentationConfig => &self.instrumentation.config,
+            KernelDebugField::InstrumentationOutput => &self.instrumentation.output,
             KernelDebugField::Destination => {
                 if self.ssh {
                     "SSH TARGET"
@@ -190,6 +216,9 @@ impl KernelDebugDraft {
 
     pub fn value_mut(&mut self, field: KernelDebugField) -> Option<&mut String> {
         match field {
+            KernelDebugField::InstrumentationPreset => None,
+            KernelDebugField::InstrumentationConfig => Some(&mut self.instrumentation.config),
+            KernelDebugField::InstrumentationOutput => Some(&mut self.instrumentation.output),
             KernelDebugField::Destination => None,
             KernelDebugField::Host => Some(&mut self.host),
             KernelDebugField::User => Some(&mut self.user),
@@ -277,3 +306,7 @@ impl KernelDebugTools {
 #[cfg(test)]
 #[path = "tests/kernel_debug.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "tests/kernel_debug_instrumentation.rs"]
+mod instrumentation_tests;

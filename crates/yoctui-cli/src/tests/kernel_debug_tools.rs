@@ -5,6 +5,114 @@ use std::{
 };
 static NEXT: AtomicU64 = AtomicU64::new(0);
 
+#[tokio::test]
+async fn kernel_debug_instrumentation_worker_inspects_then_only_exports_after_confirmation() {
+    use yoctui_model::{Action, App, Dialog, KernelDebugAction as A, Screen};
+    for scenario in [
+        "success",
+        "cancel",
+        "covered",
+        "bad-config",
+        "changed",
+        "collision",
+        "export-escape",
+    ] {
+        let root = std::env::temp_dir().join(format!(
+            "yoctui-instrumentation-worker-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir(&root).unwrap();
+        let config = root.join(".config");
+        let output = root.join("debug.cfg");
+        let contents = if scenario == "bad-config" {
+            "CONFIG_KASAN=y\nCONFIG_KASAN=n\n"
+        } else {
+            "CONFIG_DEBUG_KERNEL=y\n"
+        };
+        fs::write(&config, contents).unwrap();
+        let mut app = App::new(32, 4096);
+        app.onboarding.open = false;
+        app.screen = Screen::Kernel;
+        app.kernel_debug.selection = 13;
+        yoctui_model::update(&mut app, Action::KernelDebug(A::OpenSelected));
+        let Some(Dialog::KernelDebug(d)) = app.active_dialog_mut() else {
+            panic!()
+        };
+        d.draft.instrumentation.config = config.display().to_string();
+        d.draft.instrumentation.output = output.display().to_string();
+        let mut io = KernelDebugIo::default();
+        io.submit(yoctui_model::update(&mut app, Action::KernelDebug(A::Review)).unwrap());
+        if scenario == "cancel" {
+            yoctui_model::update(&mut app, Action::KernelDebug(A::Cancel));
+        }
+        if scenario == "covered" {
+            app.command_palette_open = true;
+        }
+        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            while !io.poll(&mut app).await {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(!output.exists());
+        assert_eq!(fs::read_to_string(&config).unwrap(), contents);
+        if matches!(scenario, "cancel" | "covered" | "bad-config") {
+            assert!(
+                app.kernel_debug.instrumentation_preview.is_none(),
+                "{scenario}"
+            );
+        } else {
+            let preview = app.kernel_debug.instrumentation_preview.clone().unwrap();
+            if scenario == "changed" {
+                fs::write(&config, "CONFIG_KASAN=y\n").unwrap();
+            }
+            if scenario == "collision" {
+                fs::write(&output, "user-owned file").unwrap();
+            }
+            io.submit(yoctui_model::update(&mut app, Action::KernelDebug(A::Review)).unwrap());
+            if scenario == "export-escape" {
+                yoctui_model::update(&mut app, Action::KernelDebug(A::Cancel));
+                assert!(app.active_dialog().is_some());
+                assert!(app.kernel_debug.pending.is_some());
+            }
+            tokio::time::timeout(std::time::Duration::from_secs(5), async {
+                while !io.poll(&mut app).await {
+                    tokio::task::yield_now().await;
+                }
+            })
+            .await
+            .unwrap();
+            match scenario {
+                "changed" => {
+                    assert!(!output.exists());
+                    assert!(
+                        app.kernel_debug
+                            .error
+                            .as_deref()
+                            .unwrap()
+                            .contains("changed since review")
+                    );
+                }
+                "collision" => assert_eq!(fs::read_to_string(&output).unwrap(), "user-owned file"),
+                _ => {
+                    assert_eq!(
+                        fs::read_to_string(&output).unwrap(),
+                        preview.draft.preset.fragment()
+                    );
+                    assert_eq!(fs::read_to_string(&config).unwrap(), contents);
+                    assert!(app.active_dialog().is_none());
+                    assert!(app.notification.as_deref().unwrap().contains("Not applied"));
+                }
+            }
+        }
+        assert!(app.daemon.pty_sessions.is_empty());
+        assert!(app.kernel_debug.prepared.is_none());
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
 #[cfg(target_os = "linux")]
 #[tokio::test]
 async fn kernel_debug_serial_worker_preserves_typed_report_and_cancel_error_boundaries() {

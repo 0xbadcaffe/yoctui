@@ -93,6 +93,7 @@ with reporting), exact .config and new absolute .cfg destination. Lockdep uses
 a fixed lockdep/atomic-sleep preset. Left/Right/Space on preset cycles choices;
 other existing text/field/clear controls remain. Only an exact inventory-reported
 .config may seed input; export destination starts empty and is not guessed.
+Mouse wheel follows fields in the form and scrolls the report in review.
 
 Enter performs background bounded read-only config/destination inspection.
 Typed scrollable review shows requested options, observed y/n/m/absent values,
@@ -101,10 +102,19 @@ unsupported. CONFIG MATCH means these requested settings match this file only,
 not that the kernel is running or the selected provider/compiler/architecture
 supports a rebuild. Architecture/compiler capability observations remain
 separate. No build/target tool is invoked to obtain or manufacture a match.
+KASAN requests generic/outline and disables KCSAN; KCSAN requests strict mode
+and disables KASAN. Detector self-tests are explicitly disabled (including
+KCSAN_SELFTEST, which some kernels default on). UBSAN requests bounds checks
+and reporting rather than traps; it does not claim other UBSAN checks are off.
+Lockdep requests PROVE_LOCKING/LOCKDEP and DEBUG_ATOMIC_SLEEP with locking
+self-tests disabled. Invisible/version-specific missing settings remain unknown.
 Enter again explicitly confirms export; only that new .cfg file is created.
 Escape from review returns to editing; edits clear review; Escape from editing
 cancels. Inspection cancellation invalidates its generation. An in-flight
 confirmed export is not falsely cancelled: controls wait for its result.
+The footer distinguishes inspection, export confirmation, and locked in-flight
+export. Successful export reports its exact path and "Not applied"; a failed
+export preserves inputs, discards review and requires a new inspection.
 Covered/stale inspection results cannot replace another dialog. Narrow panes
 retain confirmation/cancel controls and use the existing safe resize guard.
 

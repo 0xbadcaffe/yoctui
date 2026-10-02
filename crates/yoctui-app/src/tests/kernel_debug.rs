@@ -2,6 +2,87 @@ use super::*;
 use yoctui_model::{KernelDebugDialog, KernelDebugDraft, KernelDebugTool};
 
 #[test]
+fn kernel_debug_instrumentation_form_review_and_confirmed_export_trap_input() {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    let mut draft = KernelDebugDraft::new(KernelDebugTool::Sanitizers);
+    draft.instrumentation.config = "/work/.config".into();
+    draft.instrumentation.output = "/work/debug.cfg".into();
+    app.dialogs
+        .push_front(Dialog::KernelDebug(KernelDebugDialog {
+            draft: draft.clone(),
+            selection: 0,
+            guide_scroll: 0,
+            error: None,
+        }));
+    for input in [Input::Left, Input::Right, Input::Char(' ')] {
+        assert_eq!(
+            kernel_debug_action(&app, input),
+            Some(Action::KernelDebug(A::ChangeScope))
+        );
+    }
+    assert_eq!(
+        kernel_debug_action(&app, Input::Enter),
+        Some(Action::KernelDebug(A::Review))
+    );
+    let mouse = crate::MouseInput {
+        kind: crate::MouseKind::ScrollDown,
+        column: 70,
+        row: 15,
+    };
+    assert_eq!(
+        crate::mouse_action_for_app(mouse, &app, 160, 42),
+        Some(Action::KernelDebug(A::Field(1)))
+    );
+    let preview = yoctui_model::KernelInstrumentationPreview {
+        report: yoctui_model::KernelInstrumentationReport::inspect(
+            draft.instrumentation.preset,
+            "",
+        )
+        .unwrap(),
+        draft: *draft.instrumentation.clone(),
+        destination_parent: "/work".into(),
+        parent_identity: None,
+    };
+    app.kernel_debug.instrumentation_preview = Some(preview.clone());
+    assert_eq!(
+        crate::mouse_action_for_app(mouse, &app, 160, 42),
+        Some(Action::KernelDebug(A::ScrollGuide(3)))
+    );
+    for input in [
+        Input::Char('q'),
+        Input::Tab,
+        Input::CtrlU,
+        Input::CtrlB,
+        Input::F12,
+    ] {
+        assert!(kernel_debug_owns_input(&app, input));
+        assert_eq!(kernel_debug_action(&app, input), None);
+    }
+    assert_eq!(
+        kernel_debug_action(&app, Input::PageDown),
+        Some(Action::KernelDebug(A::ScrollGuide(3)))
+    );
+    assert_eq!(
+        kernel_debug_action(&app, Input::Esc),
+        Some(Action::KernelDebug(A::Cancel))
+    );
+    app.kernel_debug.pending = Some(yoctui_model::KernelDebugOperation::ExportInstrumentation {
+        expected: Box::new(preview),
+    });
+    assert_eq!(kernel_debug_action(&app, Input::Enter), None);
+    // Escape reaches the reducer, which keeps confirmed writes locked until the result.
+    assert_eq!(
+        kernel_debug_action(&app, Input::Esc),
+        Some(Action::KernelDebug(A::Cancel))
+    );
+    yoctui_model::update(&mut app, Action::KernelDebug(A::Cancel));
+    assert!(app.kernel_debug.pending.is_some());
+    assert!(app.active_dialog().is_some());
+}
+
+#[test]
 fn kernel_debug_serial_readiness_uses_lowercase_text_and_combination_controls() {
     let mut app = App::new(32, 4096);
     app.onboarding.open = false;
