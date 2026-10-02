@@ -1,5 +1,14 @@
 # Yoctui Architecture
 
+M109 artifact viewing: model emits an exact path/root local viewing effect;
+CLI performs no-follow bounded regular-file reads within the authoritative
+deploy directory, returning typed text or DTB/DTBO/tool observations. Model
+rejects stale inventory identities and opens the shared integrated viewer or
+reviewed decompile dialog. Widgets only render typed size/mtime and never read
+files or discover tools. Files-tab navigation reuses IMAGE_ROOTFS authority,
+not disk-image mounts or extraction. Existing terminal completion correlation
+and no-overwrite guards remain the only decompile execution path.
+
 M72 cache observations cross the adapter boundary as a validated typed
 `SstateSummary`: Wanted equals Local + Mirrors + Missed with checked arithmetic.
 Only native unscoped informational sstate logs are normalized; widgets never

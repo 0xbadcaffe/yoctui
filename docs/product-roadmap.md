@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+## M109 — Usable deployed-artifact browsing
+
+IMAGES-ARTIFACT-VIEW-001 is IN_PROGRESS: nonwrapping selected-row viewport,
+readable size/mtime, bounded internal text/DTS viewer, reviewed DTB decompile
+and existing authoritative RootFS Files navigation. No image mounts or daemon
+mutation; focused checks only. M108 live board and M67 evidence remain blocked.
+
 ## M108 — Physical-board KGDB serial attachment
 
 KGDB-SERIAL-UI-001 is DONE in v0.1.264. Kernel model/app/UI/CLI checks

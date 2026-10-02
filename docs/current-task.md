@@ -1,8 +1,36 @@
 # Current Task
 
-**ID:** KGDB-SERIAL-LIVE-001
-**Title:** Verify KGDB attach backtrace resume and re-entry on a real board
-**Status:** BLOCKED
+**ID:** IMAGES-ARTIFACT-VIEW-001
+**Title:** Keep deployed artifacts visible and safely view their files
+**Status:** IN_PROGRESS
+
+User request supersedes the blocked live-board queue. Dependencies: none.
+Relevant files: image renderer/inspector/footer, Images input/model reducers,
+local CLI artifact viewer and focused model/app/UI/CLI tests.
+Done: selection-visible single-line rows, byte size/readable UTC mtime,
+bounded internal text/DTS viewing, reviewed DTB/DTBO decompile and existing
+IMAGE_ROOTFS Files navigation. Unsafe/binary/oversized files and absent dtc
+fail explicitly. No mounts/extraction, daemon restart or automatic file writes.
+Update all authoritative docs; bump version, commit/push, build optimized binary.
+
+Verification (CARGO_INCREMENTAL=0; full suite explicitly deferred):
+```bash
+cargo test -p yoctui-model image_artifact
+cargo test -p yoctui-app images_workspace
+cargo test -p yoctui-ui image_artifact
+cargo test -p yoctui --bin yoctui image_artifact
+cargo test -p yoctui-model device_tree
+cargo test -p yoctui-ui dtc_decompile
+cargo test -p yoctui --bin yoctui dtc_decompile
+cargo fmt --all --check
+cargo clippy -p yoctui --all-targets --all-features -- -D warnings
+./scripts/verify-ui-contract.sh
+python3 scripts/check-version-bump.py
+./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
+```
+
+Blocked queue and previous completed work retained below:
 
 KGDB-SERIAL-PLAN-001 and KGDB-SERIAL-UI-001 are DONE in v0.1.263/v0.1.264.
 Closed non-opening prerequisites, launch-time revalidation/exec, six-field form,

@@ -1,3 +1,9 @@
+IMAGES-ARTIFACT-VIEW-001 is IN_PROGRESS (M109). User request supersedes the
+blocked live-board queue: artifact viewport/metadata and bounded internal
+text/DTS viewing with reviewed DTB decompile and existing RootFS Files tab.
+No disk-image mounting/extraction or daemon/build mutation. Focused tests,
+version bump, commit/push and optimized binary are required; full suite deferred.
+
 EDITOR-GITUI-CONTEXT-001 is DONE in v0.1.262. GitUI opens from the active
 source/layer editor without requiring unrelated Devtool/global source state.
 Bounded read-only asynchronous checks reject invalid paths, stale/covered

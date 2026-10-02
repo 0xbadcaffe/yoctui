@@ -2738,6 +2738,24 @@ The Packages footer is:
 
 ### Images
 
+Artifact rows are single physical lines (truncate cells, never wrap), with a
+selection-centered viewport sized from the actual remaining pane height after
+tabs, headings and partial-state notices. Long recipe/file names cannot hide
+the selection. Prefer filename, byte size and last-modified UTC timestamp in
+the responsive table; wider panes add kind and image target. Inspector retains
+exact paths, byte counts and readable UTC mtime. Unavailable metadata is explicit.
+o/e views the selected artifact in the existing integrated normal-mode text
+viewer (including DTS/DTSI); m/l/s/w views the authoritative associated text
+path internally. DTB/DTBO instead opens the existing trapped decompile form,
+including destination, view-after checkbox, reviewed fixed argv and no-overwrite
+guard. Missing dtc reports install/PATH guidance without running a shell.
+Binary, oversized, symlink, special and outside-deploy-root inputs are refused
+with a clear message. v opens the Files tab using exact IMAGE_ROOTFS metadata
+and its existing directory/file navigation. Enter/p still opens composition.
+This does not mount/extract filesystem images or imply unavailable rootfs
+metadata exists. The explicit external-editor option inside the integrated
+viewer remains. Artifact viewing itself never modifies a deployed file.
+
 Images combines buildable image recipe targets with deployed artifacts without
 presenting one as evidence for the other. The Workspace header shows the
 effective `MACHINE`, selected/current build target, artifact search query, and
@@ -2791,13 +2809,13 @@ buildable image recipe. When no artifact is selected, `b` preserves the
 existing current-image behavior. `o` opens the selected artifact path. `m`,
 `l`, `s`, and `w` open the first exact typed manifest, license, SPDX/SBOM, or
 Wic path respectively. Missing selection or typed path leaves the action inert
-and shows a stable explanation. All opens use the configured editor and normal
-terminal restoration.
+and shows a stable explanation. Opens use the integrated viewer/decompile
+workflow above; external editing remains an explicit viewer option.
 
 The Images footer is:
 
 ```text
-↑/↓ select | / search | R refresh | c cancel | b build | i image picker | o artifact | m manifest | l license | s SPDX | w Wic
+↑/↓ select | / search | Alt+r refresh | c cancel | b build | i image picker | o/e view/decompile | v rootfs files | m manifest | l license | s SPDX | w Wic
 ```
 
 Search edits only while search mode is active; Enter or Esc finishes editing.

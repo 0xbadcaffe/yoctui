@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "IMAGES-ARTIFACT-VIEW-001"
+milestone = "M109"
+title = "Keep deployed artifacts visible and safely view their files"
+status = "IN_PROGRESS"
+priority = 3280
+required = true
+depends_on = []
+verify = ["cargo test -p yoctui-model image_artifact", "cargo test -p yoctui-app images_workspace", "cargo test -p yoctui-ui image_artifact", "cargo test -p yoctui --bin yoctui image_artifact", "cargo test -p yoctui-model device_tree", "cargo test -p yoctui-ui dtc_decompile", "cargo test -p yoctui --bin yoctui dtc_decompile", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-contract.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "User requested artifact scrolling, file viewing, DTB decompile/DTS viewing and size/mtime. Relevant files: image UI/inspector/footer, Images app input/model reducers and local CLI viewer with focused tests. Done requires selection-visible nonwrapping rows at responsive widths, readable UTC mtime/exact bytes, bounded internal text viewer, reviewed no-overwrite DTB/DTBO flow, existing IMAGE_ROOTFS Files navigation, explicit unsafe/binary/missing-tool failures, docs, version bump, commit/push and optimized binary. No mounting/extraction or daemon/build mutations; full suite deferred."
+
+[[task]]
 id = "KGDB-SERIAL-PLAN-001"
 milestone = "M108"
 title = "Validate a closed read-only KGDB serial attachment plan"
