@@ -567,10 +567,19 @@ Tasks workspace uses this exact application-controlled cell geometry:
 | Region | Rectangle |
 | --- | --- |
 | Header | `x=0, y=0, width=160, height=5` |
-| Navigator | `x=0, y=5, width=26, height=42` |
-| Tasks Workspace | `x=26, y=5, width=89, height=42` |
-| Task Inspector | `x=115, y=5, width=45, height=42` |
-| Command rail | `x=0, y=47, width=160, height=3` |
+| Navigator | `x=0, y=5, width=26, height=40` |
+| Tasks Workspace | `x=26, y=5, width=89, height=40` |
+| Task Inspector | `x=115, y=5, width=45, height=40` |
+| Command rail | `x=0, y=45, width=160, height=3` |
+
+The five-row Header and three-row Footer leave exactly 40 body rows at this
+size, not the impossible earlier 42-row body plus Footer at y=47. Existing
+shared responsive allocation gives table/log/history/meters heights 16/10/10/4,
+at y=5/21/31/41. The 40-row Inspector uses primary/context/recent/actions/system
+heights 10/10/6/8/6 at y=5/15/25/31/39. Selection follows the visible Tasks
+workspace in the canonical fixture; a selected Layers row is a separate typed
+Navigator-state test. At160x50 the body is42rows and the concept Inspector has
+one outer shell, as defined in the later concept-layout contract.
 
 The machine acceptance artifact serializes every Ratatui cell's symbol,
 foreground, background, underline color, and modifiers. The reference fixture
@@ -581,7 +590,7 @@ automatically accepts new goldens.
 
 The canonical scene shows `core-image-minimal`, `qemux86-64`, `poky`, a
 connected daemon, and an active `bash:do_compile` task at 72 percent. Because
-that task is active, the header says `BitBake: Running`; the contradictory
+that task is active, the Wide-tier header says `BB: Running`; the contradictory
 `Idle` label in the illustrative raster is deliberately corrected. Test-only
 fixture values never enter production state. Live rendering uses the same
 geometry with authoritative BitBake values.

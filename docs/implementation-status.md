@@ -1,10 +1,14 @@
 M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; dependency verdict DONE v278.
 Why-built block now follows identity/position before long metadata. UI2 plus
-existing dependency UI3/model9, strictUIClippy/fmt/UI/version/roadmap PASS;
+existing dependency UI3/model17, strictUIClippy/fmt/UI/version/roadmap PASS;
 every detailed field and64/4096 limits retained. No new actions/layout/scroll
 or accepted goldens. Native PATH lacks ARM QEMU, but retained durable build's
 QEMU11.0.2 runs on host; BitBake imports under native Python3.14 with exact
 PYTHONPATH. Native GDB/service/cold-start still require verification.
+Canonical160x48 spec reconciled before more fixture changes: five-row Header
+and three-row Footer leave40body rows, not42 with Footer outside terminal.
+Shared current table/log/history/meters16/10/10/4 and Inspector10/10/6/8/6
+recorded explicitly. No renderer/layout change or accepted golden in governance.
 UI path-bounds assertion exposes real narrow Inspector clipping: typed
 LimitReached is after provider/log/relationships and cannot be seen at80x24.
 Split before source changes; promote existing why-built block before lengthy

@@ -10,12 +10,16 @@ version/roadmap PASS; compact typed actions/state precede long details, exact
 fields/reasons preserved. No new workflow/backend authority or accepted goldens.
 Dependency DEMO-DEPENDENCY-VERDICT-001 DONE v278: why-built block follows selected
 identity/position before long metadata, existing Alt+l hint corrected. External
-UI2/root/reachable/unreachable/limit/longpath and existing UI3/model9, strictUI
+UI2/root/reachable/unreachable/limit/longpath and existing UI3/model17, strictUI
 Clippy/fmt/UI/version/roadmap PASS;64/4096 limits/full fields preserved.
 Resume external UI fixtures/current typed positives and exact styled goldens.
 Every expectation must match current authoritative contract; retain negative/
 style/authority checks and split further real defects before product code.
 Parent still requires full UI PASS; no accepted goldens or removed assertions.
+Governance reconciliation: earlier canonical160x48 table incorrectly retained
+42body rows plus3row Footer at y47 after the five-row Header update. Current
+contract is40body rows and Footer y45; existing allocations unchanged. Reviewed
+semantic/geometry fixtures must precede any corresponding exact golden refresh.
 User additionally requests GitHub CI repair after demo readiness; registry
 queues DEMO-GITHUB-CI-001 before immutable publication, with exact pushed-source
 required job success and no weakened gates. Current task remains UI fixtures.

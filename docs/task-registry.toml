@@ -165,7 +165,7 @@ priority = 3526
 required = true
 depends_on = ["DEMO-CONFIG-CONTROLS-001"]
 verify = ["cargo test -p yoctui-ui demo_dependency_verdict", "cargo test -p yoctui-ui ux_dependency_graph", "cargo test -p yoctui-model dependency_graph", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "DONE v278: existing why-built block follows identity/position before long metadata; every exact field/path/relationship/limitation retained, task-log hint Alt+l. New external UI2 root/reachable/unreachable/limit/long path and existing UI dependency3/model dependency9 PASS, strictUIClippy/fmt/UI/version/roadmap PASS. Limits64edges/4096nodes unchanged; unreachable fixture genuinely exhausts short graph instead of falsely claiming unreachable after bound. No new layout/action/scrolling/backend semantics. Full UI/current native optimized demo remain pending."
+notes = "DONE v278: existing why-built block follows identity/position before long metadata; every exact field/path/relationship/limitation retained, task-log hint Alt+l. New external UI2 root/reachable/unreachable/limit/long path and existing UI dependency3/model dependency17 PASS, strictUIClippy/fmt/UI/version/roadmap PASS. Limits64edges/4096nodes unchanged; unreachable fixture genuinely exhausts short graph instead of falsely claiming unreachable after bound. No new layout/action/scrolling/backend semantics. Full UI/current native optimized demo remain pending."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"
