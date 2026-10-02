@@ -1,4 +1,18 @@
-M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Errors recovery hints DONE v285.
+M114 current: DEMO-INTEGRATION-001 IN_PROGRESS; UI/contract parents DONE v286.
+Full UI376/app250/model584 plus integrations1+5, strictUIClippy/fmt/UI/version/
+roadmap/current CLI build PASS. Reviewed26 external fixture files and34 exact
+goldens preserve negative/semantic/style/identity checks with current nav,
+modifiers, five-row chrome and bounded panes; no global identity normalization.
+Actual160x50 current debug2ae3ee60 OpenBMC controls checked: Dashboard cache/
+outcome, SDK cancel, Build Environment, Config priority and Errors recovery.
+Evidence ui-controls-v286.txt explicitly interim container rendering, not native
+optimized/boot/debug/reboot/full-suite/CI/publication acceptance. Initial saved
+Kernel/Nav-Dashboard mismatch retained for integration diagnosis; no selected
+image/locked verification/missing SDK metadata retained for native rehearsal.
+Only attaching client2252601 terminated; existing daemon/other clients preserved.
+Removed78 obsolete generated Rust library files before v282 commit989585657B
+from session temporary cache; sources/images/symbols/installed tools retained.
+Errors recovery hints DONE v285.
 Workspace/Inspector advertise actual Alt+b, with concise same-action controls
 below70cells instead of trailing clipping. Every key/log route and explicit
 review/confirmation warning retained. External UI1 exhaustively80..200 plus

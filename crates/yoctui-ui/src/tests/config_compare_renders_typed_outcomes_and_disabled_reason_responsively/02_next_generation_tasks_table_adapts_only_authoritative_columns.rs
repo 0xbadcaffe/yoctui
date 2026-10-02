@@ -282,7 +282,7 @@ fn workbench_tasks_renders_table_log_history_and_structured_inspector() {
         },
     );
 
-    let output = rendered_text_at(&app, 180, 44, UNIX_EPOCH + Duration::from_secs(3_600));
+    let output = rendered_text_at(&app, 180, 48, UNIX_EPOCH + Duration::from_secs(3_600));
     for expected in [
         "Tasks: core-image-minimal",
         "do_compile",
@@ -317,7 +317,8 @@ fn workbench_tasks_reduced_height_prioritizes_the_task_table() {
     let output = rendered_text(&app, 130, 24);
     assert!(output.contains("Tasks: not selected"), "{output}");
     assert!(output.contains("do_compile"), "{output}");
-    assert!(output.contains("Log Viewer"), "{output}");
+    assert!(output.contains("Resources"), "{output}");
+    assert!(!output.contains("Log Viewer"), "{output}");
     assert!(!output.contains("Job History"), "{output}");
 }
 
@@ -334,7 +335,7 @@ fn workbench_responsive_preserves_task_priority_at_every_breakpoint() {
     );
     app.tasks.insert(task.id.clone(), task);
 
-    let wide = rendered_text(&app, 180, 44);
+    let wide = rendered_text(&app, 180, 50);
     assert!(wide.contains("CONTENT"), "{wide}");
     assert!(wide.contains("Job History"), "{wide}");
     assert!(wide.contains("System Status"), "{wide}");

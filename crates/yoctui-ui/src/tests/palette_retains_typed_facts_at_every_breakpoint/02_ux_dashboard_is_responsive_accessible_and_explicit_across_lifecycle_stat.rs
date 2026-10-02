@@ -140,7 +140,7 @@ fn ux_command_center_unifies_bounded_source_contexts_without_bypassing_workspace
     }
 
     let compact = rendered_text_at(&app, 80, 24, literal_now());
-    for anchor in ["Navigator", "Running", "1 queued"] {
+    for anchor in ["Navigator", "Build running", "1 queued"] {
         assert!(compact.contains(anchor), "missing {anchor}: {compact}");
     }
 }

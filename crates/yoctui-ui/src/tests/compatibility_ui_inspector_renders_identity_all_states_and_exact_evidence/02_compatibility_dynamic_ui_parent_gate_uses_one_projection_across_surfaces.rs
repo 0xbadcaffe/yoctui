@@ -3,7 +3,7 @@ fn compatibility_dynamic_ui_parent_gate_uses_one_projection_across_surfaces() {
     let mut app = compatibility_ui_inspector_app();
     app.screen = Screen::Configuration;
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 12;
+    app.navigator_selection = 13;
     let navigator = rendered_text(&app, 180, 42);
     assert!(navigator.contains("Compatibility: Limited"), "{navigator}");
     assert!(
@@ -87,8 +87,8 @@ fn client_replica_status_renders_without_replacing_local_presentation() {
             viewers: 1,
         });
     let output = rendered_text(&app, 160, 40);
-    assert!(output.contains("Daemon: ✓ Connected"), "{output}");
-    assert!(output.contains("BitBake: ✓ Running"), "{output}");
+    assert!(output.contains("D:✓ Connected/Local"), "{output}");
+    assert!(output.contains("BB:✓ Running"), "{output}");
     assert!(output.contains("Layers"), "{output}");
 }
 
@@ -101,11 +101,11 @@ fn client_runtime_daemon_health_remains_visible_during_navigation() {
         app.screen = screen;
         let output = rendered_text(&app, 160, 40);
         assert!(
-            output.contains("Daemon: ✓ Connected"),
+            output.contains("D:✓ Connected/Local"),
             "{screen:?}: {output}"
         );
         assert!(
-            output.contains("BitBake: … Connecting"),
+            output.contains("BB:… Connecting"),
             "{screen:?}: {output}"
         );
     }
@@ -125,8 +125,8 @@ fn workbench_shell_keeps_daemon_health_compact() {
         recovery: yoctui_model::DaemonRecoveryState::Recovered,
     });
     let output = rendered_text(&app, 160, 40);
-    assert!(output.contains("Daemon: ✓ Connected"), "{output}");
-    assert!(output.contains("BitBake: – Disconnected"), "{output}");
+    assert!(output.contains("D:✓ Connected/Local"), "{output}");
+    assert!(output.contains("BB:– Disconnected"), "{output}");
     assert!(!output.contains("Telemetry --"), "{output}");
 }
 
@@ -148,7 +148,7 @@ fn workbench_shell_renders_project_context_and_reference_command_rail() {
     for expected in [
         "yoctui",
         "Project: poky",
-        "– Idle",
+        "Build: core-image-minimal",
         "Target: core-image-minimal",
         "Machine: qemux86-64",
         "Distro: poky",
@@ -180,7 +180,7 @@ fn next_generation_header_projects_authoritative_context_by_width() {
     app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
 
     let render = |width| {
-        let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(width, 5)).unwrap();
         terminal
             .draw(|frame| workbench_header(frame, &app, frame.area(), literal_now()))
             .unwrap();
@@ -201,10 +201,10 @@ fn next_generation_header_projects_authoritative_context_by_width() {
     );
     for expected in [
         "Project: poky",
-        "▶ Running",
+        "Build running",
         "Target: core-image-minimal",
         "Machine: qemux86-64",
-        "Distro: poky (scarthgap)",
+        "Distro: poky",
         "Daemon: ✓ Connected",
         "BitBake: ✓ Running",
     ] {
@@ -218,11 +218,11 @@ fn next_generation_header_projects_authoritative_context_by_width() {
     );
     for expected in [
         "Project: poky",
-        "▶ Running",
-        "Target: core-image-minimal",
+        "Build running",
+        "T:core-image-minimal",
         "Machine: qemux86-64",
-        "Daemon: ✓ Connected",
-        "BitBake: ✓ Running",
+        "D:✓ Connected/Local",
+        "BB:✓ Running",
     ] {
         assert!(wide.contains(expected), "missing {expected}: {wide}");
     }
@@ -254,7 +254,7 @@ fn next_generation_header_projects_authoritative_context_by_width() {
     );
     for expected in [
         "Project: poky",
-        "▶ Running",
+        "Build running",
         "T:core-image-minimal",
         "D:✓ Connected",
         "BB:✓ Running",
@@ -271,7 +271,7 @@ fn next_generation_header_projects_authoritative_context_by_width() {
     );
     for expected in [
         "yoctui",
-        "▶ Running",
+        "Build running",
         "T:core-image-minimal",
         "D:✓ Connected",
     ] {
@@ -299,7 +299,7 @@ fn next_generation_header_handles_missing_stale_and_accessible_states() {
     app.reduced_motion = true;
 
     let render = |width| {
-        let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(width, 5)).unwrap();
         terminal
             .draw(|frame| workbench_header(frame, &app, frame.area(), literal_now()))
             .unwrap();
@@ -313,16 +313,16 @@ fn next_generation_header_handles_missing_stale_and_accessible_states() {
     };
     let wide = render(160);
     assert!(wide.contains("Project: unavailable"), "{wide}");
-    assert!(wide.contains("Target: not selected"), "{wide}");
-    assert!(wide.contains("Daemon: ! Stale"), "{wide}");
-    assert!(wide.contains("BitBake: – Unavailable"), "{wide}");
-    assert!(!wide.contains("BitBake: ✓ Running"), "{wide}");
+    assert!(wide.contains("T:not selected"), "{wide}");
+    assert!(wide.contains("D:! Stale/Local"), "{wide}");
+    assert!(wide.contains("BB:– Unavailable"), "{wide}");
+    assert!(!wide.contains("BB:✓ Running"), "{wide}");
     assert!(!wide.contains("Machine:"), "{wide}");
     assert!(!wide.contains("Distro:"), "{wide}");
 
     let minimum = render(80);
     assert!(minimum.contains("yoctui"), "{minimum}");
-    assert!(minimum.contains("– Idle"), "{minimum}");
+    assert!(minimum.contains("Build: none"), "{minimum}");
     assert!(minimum.contains("T:not selected"), "{minimum}");
     assert!(minimum.contains("D:! Stale"), "{minimum}");
 }
@@ -348,7 +348,7 @@ fn next_generation_footer_is_contextual_bounded_and_keymap_truthful() {
     for label in [
         "↑/↓ select",
         "f state",
-        "F field",
+        "Alt+f field",
         "/ edit filter",
         "c cancel",
         "Tab Focus",

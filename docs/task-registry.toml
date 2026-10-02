@@ -61,12 +61,12 @@ notes = "DONE product0e749f9e/v272: metadata STAGING_KERNEL_BUILDDIR plus regula
 id = "DEMO-CONTRACT-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile stale full-suite fixtures with authoritative current UI contracts"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 3512
 required = true
 depends_on = ["DEMO-MODEL-APP-FIXTURES-001", "DEMO-UI-FIXTURES-001"]
 verify = ["cargo test -p yoctui-model --all-features", "cargo test -p yoctui-app --all-features", "cargo test -p yoctui-ui --all-features", "Manual: document each changed expected shortcut/row/clock/action/catalog and supply current typed positive/negative authority fixtures without removing assertions", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
-notes = "Planning parent split before further implementation: model/app fixture reconciliation is independently verifiable; UI fixtures follow separately verified rendering fixes so stale golden failures cannot block diagnosis or authorize golden acceptance. DONE only after both children and exact full model/app/UI verification. Preserve negative assertions and current product contract."
+notes = "DONE v286: both model/app and independently polished UI fixture children verified; full model584 plus integrations1+5/app250/UI376, strictUIClippy/fmt/UI/version/roadmap PASS. Current typed positive fixtures, navigator, modifiers, five-row chrome, local clock and bounded panes reconciled without identity masks or removal of negative/style/semantic protections. Thirty-four exact golden files reviewed. No full workspace/native readiness certification."
 
 [[task]]
 id = "DEMO-MODEL-APP-FIXTURES-001"
@@ -83,23 +83,23 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3518
 required = true
 depends_on = ["DEMO-ERROR-RECOVERY-HINTS-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
-notes = "Relevant external UI fixtures and exact styled cell goldens. Compare every expectation with authoritative current contract and correct positive typed fixture state; preserve negative/semantic/style assertions. Reconcile exact version/local clock/current navigator and modifiers only after genuine rendering defects have independent regression proof. Never blanket accept baseline failures or mask dynamic identity fields."
+notes = "DONE v286:26 external fixture files and34 exact styled-cell/text goldens reviewed against current authoritative navigator/modifiers/five-row header/40-row body/3-row footer and bounded panels; complete version/clock identities retained, no renderer normalization or blanket acceptance. Full UI376/app250/model584+integrations1+5, strictUIClippy/fmt/UI/version/roadmap/current CLI build PASS. Actual OpenBMC current160x50 control review explicitly interim container debug evidence ui-controls-v286.txt; native final rehearsal pending."
 
 [[task]]
 id = "DEMO-UI-CLIPPING-001"
 milestone = "M114"
 title = "Resolve verified existing footer dialog and responsive demo clipping"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 3513
 required = true
 depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-HEADER-FIT-001", "DEMO-CONFIG-CONTROLS-001", "DEMO-DEPENDENCY-VERDICT-001", "DEMO-CONFIG-DETAILS-001", "DEMO-ENV-CONTROLS-001", "DEMO-SDK-RAIL-001", "DEMO-TELEMETRY-CACHE-001", "DEMO-DASHBOARD-EXIT-001", "DEMO-ERROR-RECOVERY-HINTS-001", "DEMO-UI-FIXTURES-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "Manual: real demo and TestBackend narrow/medium/wide controls remain visible with no new layouts/shortcuts", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Real v272 Dashboard Quick Actions still hardcodes B/E while current catalog routes Alt+b/Alt+e: truthful existing hints need correction, not restoring capital routes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires selected narrow/failure paths verified, not merely expectation replacement. If no defect remains, record evidence rather than invent a feature."
+notes = "DONE v286 after all independently verified existing-control/rendering children and exact fixture child. Full UI376/app250/model584+integrations1+5, strictUIClippy/fmt/UI/version/roadmap PASS. TestBackend exhaustively narrow/medium/wide controls, authority/failure/accessibility safeguards plus actual current OpenBMC Dashboard/SDK/environment/config/error control review PASS (ui-controls-v286.txt). Existing layouts/key routes retained. Real metadata unavailable states honestly preserved, not final native optimized boot/GDB/reboot certification."
 
 [[task]]
 id = "DEMO-DASHBOARD-HINTS-001"
@@ -237,7 +237,7 @@ notes = "DONE v285: actual Alt+b advertised in Errors workspace/Inspector, same 
 id = "DEMO-INTEGRATION-001"
 milestone = "M114"
 title = "Resolve full-suite daemon watcher and production snapshot integration failures"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3514
 required = true
 depends_on = ["DEMO-UI-CLIPPING-001"]

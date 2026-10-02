@@ -380,9 +380,14 @@ fn settings_workspace_renders_typed_rows_and_controls_on_narrow_terminals() {
     assert!(output.contains("Reduced motion"));
     assert!(output.contains("Log wrap"));
     assert!(output.contains("Log follow"));
-    assert!(output.contains("Keybindings"));
     assert!(output.contains("select"));
     assert!(output.contains("change"));
+    app.settings_selection = app.preference_rows().iter()
+        .position(|row| row.setting == yoctui_model::Setting::Keybindings).unwrap();
+    let keybindings = rendered_text(&app, 100, 30);
+    assert!(keybindings.contains("Keybindings"), "{keybindings}");
+    assert_eq!(app.preference_rows()[app.settings_selection].setting,
+        yoctui_model::Setting::Keybindings);
 }
 
 #[test]
@@ -396,9 +401,9 @@ fn clone_progress_is_visible_across_terminal_widths() {
         },
     );
     for width in [80, 100, 160] {
-        let mut terminal = Terminal::new(TestBackend::new(width, 3)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(width, 5)).unwrap();
         terminal
-            .draw(|frame| workbench_footer(frame, &app, frame.area(), UNIX_EPOCH))
+            .draw(|frame| workbench_header(frame, &app, frame.area(), UNIX_EPOCH))
             .unwrap();
         let text = terminal
             .backend()

@@ -23,7 +23,7 @@ pub(crate) fn readme_device_tree_compile_app() -> App {
 pub(crate) fn readme_menuconfig_app(kernel: bool) -> App {
     let mut app = concept_idle_dashboard_app();
     app.screen = Screen::TerminalSessions;
-    app.navigator_selection = 18;
+    app.navigator_selection = 19;
     app.focus = FocusTarget::Workspace;
     app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
     app.workspace
@@ -244,7 +244,7 @@ pub(crate) fn readme_repaired_workflow_app(scene: &str) -> App {
     match scene {
         "cloning" => {
             app = App::new_unconfigured(512, 1024 * 1024);
-            app.navigator_selection = 22;
+            app.navigator_selection = 23;
             app.focus = FocusTarget::Workspace;
             update(
                 &mut app,
@@ -257,7 +257,7 @@ pub(crate) fn readme_repaired_workflow_app(scene: &str) -> App {
         "cancelling" => {
             app = literal_reference_app();
             app.screen = Screen::Tasks;
-            app.navigator_selection = 9;
+            app.navigator_selection = 10;
             app.focus = FocusTarget::Workspace;
             app.build.status = BuildStatus::Cancelling;
             update(
@@ -280,7 +280,7 @@ pub(crate) fn readme_repaired_workflow_app(scene: &str) -> App {
                 include_bytes!("../../../tests/fixtures/gitui-commit.ansi").as_slice()
             };
             app.screen = Screen::TerminalSessions;
-            app.navigator_selection = 18;
+            app.navigator_selection = 19;
             app.focus = FocusTarget::Workspace;
             app.terminal.client_id = Some([1; 16]);
             app.daemon.pty_sessions = vec![yoctui_model::ClientDaemonPtySummary {

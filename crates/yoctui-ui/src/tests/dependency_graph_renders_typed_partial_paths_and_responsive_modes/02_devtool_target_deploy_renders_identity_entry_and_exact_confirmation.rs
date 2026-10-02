@@ -107,7 +107,7 @@ fn devwork_editor_renders_confirmation_and_workspace_editor_build_shortcut() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(output.contains("Workspace file tree: busybox"));
+    assert!(output.contains("Files 1/1"));
     assert!(output.contains("int main() {}"));
     assert!(output.contains("Ctrl+B build recipe"));
 }

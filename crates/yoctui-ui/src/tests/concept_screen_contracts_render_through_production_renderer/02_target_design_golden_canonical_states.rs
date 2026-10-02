@@ -155,12 +155,12 @@ fn literal_shell_uses_reference_geometry_palette_and_command_rail() {
 
     assert_eq!(symbol(0, 0), "┌");
     assert_eq!(symbol(159, 0), "┐");
-    assert_eq!(symbol(0, 2), "┌");
-    assert_eq!(symbol(25, 2), "┐");
-    assert_eq!(symbol(26, 2), "┌");
-    assert_eq!(symbol(114, 2), "┐");
-    assert_eq!(symbol(115, 2), "┌");
-    assert_eq!(symbol(159, 2), "┐");
+    assert_eq!(symbol(0, 5), "┌");
+    assert_eq!(symbol(25, 5), "┐");
+    assert_eq!(symbol(26, 5), "┌");
+    assert_eq!(symbol(114, 5), "┐");
+    assert_eq!(symbol(115, 5), "┌");
+    assert_eq!(symbol(159, 5), "┐");
     assert_eq!(symbol(0, 47), "└");
     assert_eq!(symbol(159, 47), "┘");
 
@@ -180,10 +180,11 @@ fn literal_shell_uses_reference_geometry_palette_and_command_rail() {
         "F3 History",
         "F12 Menu",
         "q Quit",
-        "▶ Build running · 1 active",
     ] {
         assert!(rail.contains(label), "missing {label}: {rail}");
     }
+    assert!(row(2).contains("Build running · 1 active"), "{}", row(2));
+    assert!(!rail.contains("Build running"), "status must remain in Header");
     for false_label in ["F3 Jobs", "F4 Terminal", "F9 Search"] {
         assert!(
             !rail.contains(false_label),
@@ -202,7 +203,8 @@ fn literal_shell_uses_reference_geometry_palette_and_command_rail() {
 
 #[test]
 fn literal_navigator_projects_typed_project_state_and_full_row_selection() {
-    let app = literal_reference_app();
+    let mut app = literal_reference_app();
+    app.navigator_selection = 2; // Separate Layers selection fixture, not canonical Tasks identity.
     let mut terminal = Terminal::new(TestBackend::new(LITERAL_WIDTH, LITERAL_HEIGHT)).unwrap();
     terminal
         .draw(|frame| render_at(frame, &app, literal_now()))
@@ -257,28 +259,28 @@ fn literal_cockpit_uses_reference_tiers_and_typed_history() {
             .collect::<String>()
     };
 
-    assert!(row(2).contains("Tasks: Build"), "{}", row(2));
-    assert_eq!(buffer[(26, 18)].symbol(), "└");
-    assert!(row(19).contains("Log Viewer"), "{}", row(19));
-    assert_eq!(buffer[(26, 32)].symbol(), "└");
-    assert!(row(33).contains("Job History"), "{}", row(33));
-    assert_eq!(buffer[(26, 41)].symbol(), "└");
-    assert!(row(42).contains("Resources"), "{}", row(42));
+    assert!(row(5).contains("Tasks: core-image-minimal"), "{}", row(5));
+    assert_eq!(buffer[(26, 20)].symbol(), "└");
+    assert!(row(21).contains("Log Viewer"), "{}", row(21));
+    assert_eq!(buffer[(26, 30)].symbol(), "└");
+    assert!(row(31).contains("Job History"), "{}", row(31));
+    assert_eq!(buffer[(26, 40)].symbol(), "└");
+    assert!(row(41).contains("Resources"), "{}", row(41));
     for metric in ["CPU", "RAM", "FS"] {
-        assert!(row(43).contains(metric), "{}", row(43));
+        assert!(row(42).contains(metric), "{}", row(42));
     }
-    assert_eq!(buffer[(26, 45)].symbol(), "└");
+    assert_eq!(buffer[(26, 44)].symbol(), "└");
 
-    assert!(row(2).contains("Inspector: Task"), "{}", row(2));
-    assert_eq!(buffer[(115, 12)].symbol(), "└");
-    assert!(row(13).contains("Secondary facts"), "{}", row(13));
+    assert!(row(5).contains("Inspector: Task"), "{}", row(5));
+    assert_eq!(buffer[(115, 14)].symbol(), "└");
+    assert!(row(15).contains("Secondary facts"), "{}", row(15));
     assert_eq!(buffer[(115, 24)].symbol(), "└");
     assert!(row(25).contains("Recent Log (tail)"), "{}", row(25));
     assert_eq!(buffer[(115, 30)].symbol(), "└");
     assert!(row(31).contains("Actions"), "{}", row(31));
-    assert_eq!(buffer[(115, 39)].symbol(), "└");
-    assert!(row(40).contains("System Status"), "{}", row(40));
-    assert_eq!(buffer[(115, 45)].symbol(), "└");
+    assert_eq!(buffer[(115, 38)].symbol(), "└");
+    assert!(row(39).contains("System Status"), "{}", row(39));
+    assert_eq!(buffer[(115, 44)].symbol(), "└");
 
     let screen = (0..LITERAL_HEIGHT).map(row).collect::<String>();
     for expected in [
@@ -290,10 +292,22 @@ fn literal_cockpit_uses_reference_tiers_and_typed_history() {
         "busybox",
         "✕ Failed",
         "/workspace/yocto/build/tmp/work",
-        "le.85873",
     ] {
         assert!(screen.contains(expected), "missing {expected}: {screen}");
     }
+    // The canonical narrow context pane may clip a long path; the complete
+    // typed context must remain renderable at a larger supported viewport.
+    let rows = app.visible_task_row_refs_at(literal_now());
+    let selected = app.task_inspector(rows.get(app.task_progress_scroll).copied(), 0);
+    let context = crate::inspector_render::task_inspector_context(&selected, literal_now());
+    assert!(context.contains("log.do_compile.85873"), "{context}");
+    let mut detail = Terminal::new(TestBackend::new(80, 24)).unwrap();
+    detail.draw(|frame| frame.render_widget(
+        Paragraph::new(context).wrap(Wrap { trim: false }), frame.area()
+    )).unwrap();
+    let visible: String = detail.backend().buffer().content.iter()
+        .map(|cell| cell.symbol()).collect();
+    assert!(visible.contains("le.85873"), "{visible}");
 }
 
 #[test]

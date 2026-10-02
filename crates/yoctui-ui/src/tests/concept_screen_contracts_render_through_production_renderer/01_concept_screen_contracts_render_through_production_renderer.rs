@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn concept_screen_contracts_render_through_production_renderer() {
     let mut active = literal_reference_app();
-    active.navigator_selection = 9;
+    active.navigator_selection = 10;
     active.focus = FocusTarget::Workspace;
     let scenes = [
         (
@@ -374,7 +374,7 @@ fn readme_gallery_requested_workbenches_render_through_production_renderer() {
 #[test]
 fn concept_screens_keep_navigator_identity_aligned_with_the_visible_workspace() {
     let mut active = literal_reference_app();
-    active.navigator_selection = 9;
+    active.navigator_selection = 10;
     for app in [
         concept_idle_dashboard_app(),
         active,

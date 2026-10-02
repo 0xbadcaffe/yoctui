@@ -212,7 +212,7 @@ pub(crate) fn concept_editor_menu_app() -> App {
 pub(crate) fn concept_terminal_sessions_app() -> App {
     let mut app = concept_idle_dashboard_app();
     app.screen = Screen::TerminalSessions;
-    app.navigator_selection = 18;
+    app.navigator_selection = 19;
     app.focus = FocusTarget::Workspace;
     app.terminal.client_id = Some([1; 16]);
     app.terminal.query = "busybox".into();
@@ -316,7 +316,7 @@ pub(crate) fn readme_platform_app(component: yoctui_model::PlatformComponent) ->
     let (screen, navigator_selection, target, provider, root, files) = match component {
         yoctui_model::PlatformComponent::Kernel => (
             Screen::Kernel,
-            6,
+            7,
             "virtual/kernel",
             "/workspace/yocto/meta-freescale/recipes-kernel/linux/linux-imx_6.6.bb",
             "/workspace/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/linux-imx/6.6/source",
@@ -341,7 +341,7 @@ pub(crate) fn readme_platform_app(component: yoctui_model::PlatformComponent) ->
         ),
         yoctui_model::PlatformComponent::UBoot => (
             Screen::Firmware,
-            7,
+            8,
             "u-boot-fslc",
             "/workspace/yocto/meta-freescale/recipes-bsp/u-boot/u-boot-fslc_2024.01.bb",
             "/workspace/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/u-boot-fslc/2024.01/source",

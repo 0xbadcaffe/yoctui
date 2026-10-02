@@ -6,24 +6,25 @@ fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively
     app.focus = FocusTarget::Workspace;
     let notice = "Profile saved with a deliberately long status that must remain on one line";
     app.notification = Some(notice.into());
-    let render_footer = |app: &App, width| {
-        let mut terminal = Terminal::new(TestBackend::new(width, 3)).unwrap();
+    let render_chrome = |app: &App, width| {
+        let mut terminal = Terminal::new(TestBackend::new(width, 8)).unwrap();
         terminal
-            .draw(|frame| workbench_footer(frame, app, frame.area(), UNIX_EPOCH))
+            .draw(|frame| {
+                workbench_header(frame, app, Rect::new(0, 0, width, 5), UNIX_EPOCH);
+                workbench_footer(frame, app, Rect::new(0, 5, width, 3), UNIX_EPOCH);
+            })
             .unwrap();
-        terminal
-            .backend()
-            .buffer()
-            .content
-            .iter()
-            .map(|cell| cell.symbol())
-            .collect::<String>()
+        let cells = &terminal.backend().buffer().content;
+        let header = cells[..usize::from(width) * 5].iter().map(|cell| cell.symbol()).collect::<String>();
+        let footer = cells[usize::from(width) * 5..].iter().map(|cell| cell.symbol()).collect::<String>();
+        (header, footer)
     };
 
     for width in [200_u16, 160, 130, 100] {
-        let footer = render_footer(&app, width);
-        assert!(footer.contains(notice), "{width}: {footer}");
-        assert!(!footer.contains(&format!("i {notice}")), "{width}: {footer}");
+        let (header, footer) = render_chrome(&app, width);
+        assert!(header.contains(notice), "{width}: {header}");
+        assert!(!header.contains(&format!("i {notice}")), "{width}: {header}");
+        assert!(!footer.contains(notice), "{footer}");
         if width >= 130 {
             assert!(footer.contains("F1 Help"), "{width}: {footer}");
             assert!(footer.contains("F12 Menu"), "{width}: {footer}");
@@ -32,18 +33,21 @@ fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively
             assert!(footer.contains("Ctrl+P Menu"), "{width}: {footer}");
         }
         assert!(footer.contains("q Quit"), "{width}: {footer}");
-        assert!(footer.contains("UTC 00:00:00"), "{width}: {footer}");
+        assert!(header.contains("Local 00:00"), "{width}: {header}");
+        assert!(!footer.contains("Local 00:00"), "{width}: {footer}");
+        assert!(!header.contains("UTC"), "{header}");
     }
-    let narrow = render_footer(&app, 80);
-    assert!(narrow.contains("Profile saved"), "{narrow}");
-    assert!(!narrow.contains("i Profile saved"), "{narrow}");
+    let (narrow_header, narrow) = render_chrome(&app, 80);
+    assert!(narrow_header.contains("Profile saved"), "{narrow_header}");
+    assert!(!narrow_header.contains("i Profile saved"), "{narrow_header}");
+    assert!(!narrow.contains("Profile saved"), "{narrow}");
     assert!(narrow.contains("? Help"), "{narrow}");
     assert!(narrow.contains("Ctrl+P Menu"), "{narrow}");
     assert!(narrow.contains("q Quit"), "{narrow}");
     assert!(!narrow.contains("UTC 00:00:00"), "{narrow}");
 
     app.notification = None;
-    let idle = render_footer(&app, 160);
+    let (_, idle) = render_chrome(&app, 160);
     assert!(!idle.contains("Profile saved"), "{idle}");
     assert!(idle.contains("F3 History"), "{idle}");
 }
@@ -55,9 +59,12 @@ fn transient_status_uses_the_row_above_shortcuts_and_daemon_waiting_is_braille()
     app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
     app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Connecting;
 
-    let mut terminal = Terminal::new(TestBackend::new(120, 3)).unwrap();
+    let mut terminal = Terminal::new(TestBackend::new(120, 8)).unwrap();
     terminal
-        .draw(|frame| workbench_footer(frame, &app, frame.area(), UNIX_EPOCH))
+        .draw(|frame| {
+            workbench_header(frame, &app, Rect::new(0, 0, 120, 5), UNIX_EPOCH);
+            workbench_footer(frame, &app, Rect::new(0, 5, 120, 3), UNIX_EPOCH);
+        })
         .unwrap();
     let row = |y: u16| {
         let start = usize::from(y) * 120;
@@ -70,19 +77,20 @@ fn transient_status_uses_the_row_above_shortcuts_and_daemon_waiting_is_braille()
             .map(|cell| cell.symbol())
             .collect::<String>()
     };
-    let status = row(0);
-    let shortcuts = row(1);
+    let status = row(2);
+    let shortcuts = row(6);
     assert!(
         throbber_widgets_tui::BRAILLE_EIGHT_DOUBLE
             .symbols
             .iter()
-            .any(|symbol| status.starts_with(symbol)),
+            .any(|symbol| status.trim_start_matches('│').starts_with(symbol)),
         "{status}"
     );
     assert!(status.contains("BitBake connecting"), "{status}");
     assert!(!shortcuts.contains("BitBake connecting"), "{shortcuts}");
     assert!(shortcuts.contains("q Quit"), "{shortcuts}");
-    assert!(shortcuts.contains("UTC 00:00:00"), "{shortcuts}");
+    assert!(row(1).contains("Local 00:00"));
+    assert!(!shortcuts.contains("Local 00:00"), "{shortcuts}");
 }
 
 #[test]
@@ -329,7 +337,7 @@ fn workbench_shell_clock_is_a_fixed_width_terminal_clock() {
         clock_text(UNIX_EPOCH + Duration::from_secs(90_061)),
         "01:01:01"
     );
-    assert_eq!(clock_label(UNIX_EPOCH), "UTC 00:00:00");
+    assert_eq!(clock_label(UNIX_EPOCH), "Local 00:00");
 }
 
 #[test]
@@ -373,7 +381,7 @@ fn workbench_navigator_renders_grouped_hierarchy_and_full_row_selection() {
 fn workbench_navigator_scrolls_the_last_destination_into_view() {
     let mut app = App::new(32, 8192);
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 24;
+    app.navigator_selection = 25;
     let output = rendered_text(&app, 80, 24);
     assert!(output.contains("TOOLS"), "{output}");
     assert!(output.contains("Settings"), "{output}");
@@ -400,7 +408,7 @@ fn next_generation_navigator_renders_authoritative_badges_and_collapsed_groups()
     assert!(expanded.contains("Errors         3"), "{expanded}");
     assert!(expanded.contains("Logs        LIVE"), "{expanded}");
 
-    app.navigator_selection = 9;
+    app.navigator_selection = 10;
     app.navigator_groups_expanded[2] = false;
     let collapsed = rendered_text(&app, 180, 40);
     assert!(collapsed.contains("▸ BUILD"), "{collapsed}");
@@ -411,9 +419,9 @@ fn next_generation_navigator_renders_authoritative_badges_and_collapsed_groups()
 fn next_generation_navigator_reports_bounded_scroll_position() {
     let mut app = App::new(32, 8192);
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 24;
+    app.navigator_selection = 25;
     let output = rendered_text(&app, 80, 24);
-    assert!(output.contains("Navigator · 30/30 ↑"), "{output}");
+    assert!(output.contains("Navigator · 31/31 ↑"), "{output}");
     assert!(output.contains("Settings"), "{output}");
 }
 

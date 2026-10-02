@@ -48,7 +48,7 @@ fn next_generation_inspector_shell_names_modes_and_orders_typed_sections() {
 }
 #[test]
 fn recipes_workspace_renders_authoritative_summary_and_inspector_sections() {
-    let mut terminal = Terminal::new(TestBackend::new(180, 44)).unwrap();
+    let mut terminal = Terminal::new(TestBackend::new(180, 60)).unwrap();
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Recipes;
     app.workspace.recipes = vec![
@@ -137,7 +137,7 @@ fn recipes_workspace_renders_authoritative_summary_and_inspector_sections() {
     assert!(output.contains("Preferred"));
     assert!(output.contains("Provider file"));
     assert!(output.contains("Workspace/Devtool: member at"));
-    assert!(output.contains("Git branch devtool"));
+    assert!(output.contains("Branch: devtool"));
     assert!(output.contains("Active tasks: do_compile"));
     assert!(output.contains("virtual/libc"));
     assert!(output.contains("security.patch"));

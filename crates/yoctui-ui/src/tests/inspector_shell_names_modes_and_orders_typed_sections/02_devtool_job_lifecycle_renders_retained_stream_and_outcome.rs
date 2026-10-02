@@ -146,8 +146,8 @@ fn recipe_qa_action_renders_capabilities_confirmation_and_honest_results() {
         "{output}"
     );
     let contextual_footer = footer_shortcuts(&app);
-    assert!(contextual_footer.contains("V CVE"), "{contextual_footer}");
-    assert!(contextual_footer.contains("X SPDX"), "{contextual_footer}");
+    assert!(contextual_footer.contains("Alt+v CVE"), "{contextual_footer}");
+    assert!(contextual_footer.contains("Alt+x SPDX"), "{contextual_footer}");
 
     app.recipe_metadata.get_mut("busybox").unwrap().tasks = Some(vec![]);
     let output = rendered_text(&app, 200, 40);
@@ -361,8 +361,8 @@ fn config_copy_renders_shortcuts_and_exact_availability_responsively() {
         );
         let output = rendered_text(&app, width, height);
         if width >= 80 && height >= 24 {
-            assert!(output.contains("C effective: enabled"), "{output}");
-            assert!(output.contains("U unexpanded: disabled"), "{output}");
+            assert!(output.contains("Alt+c effective: enabled"), "{output}");
+            assert!(output.contains("Alt+u unexpanded: disabled"), "{output}");
         }
     }
 }

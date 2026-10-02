@@ -69,7 +69,7 @@ fn config_edit_preview_renders_availability_editor_and_exact_confirmation_respon
 
         let output = rendered_text(&app, width, height);
         if width >= 80 && height >= 24 {
-            assert!(output.contains("E edit:"), "{output}");
+            assert!(output.contains("Alt+e edit:"), "{output}");
             assert!(output.contains("enabled"), "{output}");
         }
 
@@ -106,7 +106,7 @@ fn config_edit_preview_renders_availability_editor_and_exact_confirmation_respon
         .variables
         .insert("BB_NUMBER_THREADS".into(), "8".into());
     let output = rendered_text(&app, 120, 28);
-    assert!(output.contains("E edit: disabled"), "{output}");
+    assert!(output.contains("Alt+e edit: disabled"), "{output}");
     assert!(output.contains("read-only"), "{output}");
 }
 
@@ -315,7 +315,7 @@ fn next_generation_inspector_actions_are_aligned_typed_and_accessible() {
             .find(|action| action.label == label)
             .unwrap_or_else(|| panic!("missing action {label}"))
     };
-    assert_eq!(action("Build options").shortcut, "B");
+    assert_eq!(action("Build options").shortcut, "Alt+b");
     assert_eq!(action("Open Logs").shortcut, "l");
     assert_eq!(action("Build History").shortcut, "h");
     let cancel = action("Cancel active build");
@@ -342,7 +342,7 @@ fn next_generation_inspector_actions_are_aligned_typed_and_accessible() {
         shortcut_columns.windows(2).all(|pair| pair[0] == pair[1]),
         "{plain}"
     );
-    assert!(plain.contains("[B] — Unknown"), "{plain}");
+    assert!(plain.contains("[Alt+b] — Unknown"), "{plain}");
     assert!(
         plain.contains("No current environment capability snapshot"),
         "{plain}"

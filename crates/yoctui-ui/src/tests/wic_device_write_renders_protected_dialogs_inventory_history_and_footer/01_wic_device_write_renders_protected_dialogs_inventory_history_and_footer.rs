@@ -166,9 +166,9 @@ fn wic_device_write_renders_protected_dialogs_inventory_history_and_footer() {
     assert!(inspector.contains("Dropped output: 0 entries"));
 
     let footer = footer_shortcuts(&app);
-    assert!(footer.contains("D write device"), "{footer}");
+    assert!(footer.contains("Alt+d write device"), "{footer}");
     assert!(
-        responsive_footer_shortcuts(&app, 80).contains("D write"),
+        responsive_footer_shortcuts(&app, 80).contains("Alt+d write"),
         "{}",
         responsive_footer_shortcuts(&app, 80)
     );
@@ -203,12 +203,12 @@ fn wic_workspace_handles_long_source_themes_and_exact_footer_hints() {
     let footer = footer_shortcuts(&app);
     assert_eq!(app.focus, FocusTarget::Workspace);
     for expected in [
-        "Q QEMU",
-        "W create Wic",
-        "D write device",
+        "Alt+q QEMU",
+        "Alt+w create Wic",
+        "Alt+d write device",
         "x cancel",
         "[/] output",
-        "O open output",
+        "Alt+o open output",
         "w Wic",
     ] {
         assert!(footer.contains(expected), "{footer}");

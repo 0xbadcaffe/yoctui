@@ -89,7 +89,7 @@ fn next_generation_system_status_is_authoritative_dense_and_responsive() {
     app.theme = Theme::HighContrast;
     app.color_enabled = false;
     app.screen = Screen::Tasks;
-    let rendered = rendered_text(&app, 180, 44);
+    let rendered = rendered_text(&app, 180, 50);
     assert!(rendered.contains("System Status"), "{rendered}");
     assert!(rendered.contains("Daemon Stale"), "{rendered}");
 }
@@ -247,7 +247,7 @@ fn dashboard_renders_build_exit_code() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(output.contains("Exit code: 1"));
+    assert!(output.contains("Exit code: 1"), "{output}");
 }
 #[test]
 fn build_history_renders_completed_builds() {

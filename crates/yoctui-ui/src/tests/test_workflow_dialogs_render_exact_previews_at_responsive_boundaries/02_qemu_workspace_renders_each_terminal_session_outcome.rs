@@ -148,7 +148,7 @@ fn wic_workspace_renders_capability_dialogs_jobs_outputs_and_responsive_states()
             finished_at: SystemTime::UNIX_EPOCH,
         },
     );
-    let rendered = rendered_text(&app, 160, 40);
+    let rendered = rendered_text(&app, 160, 50);
     assert!(rendered.contains("Status: succeeded"), "{rendered}");
     assert!(rendered.contains("core-image-minimal.wic"), "{rendered}");
     assert!(

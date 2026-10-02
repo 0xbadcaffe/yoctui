@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.257 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64  •  Distro: poky              D:✓ Connected/Local • BB:✓ Running • Local 19:28│
+│yoctui v0.1.286 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
 │⣧ Build running · 1 active                                                                                                                                    │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -12,29 +12,29 @@
 │    Recipes              ││  do_fetch         bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││State       ▶ Running                       │
 │    Packages             ││  do_unpack        bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││Progress    72%                             │
 │    Images               ││  do_patch         bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││                                            │
-│    Kernel               ││  do_configure     bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││Worker      worker-1                        │
-│    U-Boot / BIOS        ││                                                                                     ││PID         35421                           │
-│    SDK                  │└─────────────────────────────────────────────────────────────────────────────────────┘│Started     19:18:37                        │
-│▾ BUILD                  │┌Log Viewer — do_compile (bash_5.2.21-2) · ▶ Follow───────────────────────────────────┐│Elapsed     00:09:50                        │
-│    Tasks               1│││ NOTE: Executing Tasks                                                              ││Workdir     unavailable                     │
-│  ▱ Logs             LIVE│││ NOTE: Started: do_compile                                                          ││Log file                                    │
-│  ▱ Errors               │││ |  CC     builtins/histfile.o                                                      ││/workspace/yocto/build/tmp/work/qemux86-64-p│
-│    Configuration        │││ |  CC     builtins/jobs.o                                                          ││oky-linux/bash/5.2.21-r2/temp/log.do_compile│
-│    Dependencies         │││ |  CC     execute_cmd.o                                                            ││.85873                                      │
-│▾ VALIDATE               │││ [ 72%] Linking bash                                                                ││Dependencies none reported                  │
+│  ▱ Hardware             ││  do_configure     bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││Worker      worker-1                        │
+│    Kernel               ││                                                                                     ││PID         35421                           │
+│    U-Boot / BIOS        │└─────────────────────────────────────────────────────────────────────────────────────┘│Started     19:18:37                        │
+│    SDK                  │┌Log Viewer — do_compile (bash_5.2.21-2) · ▶ Follow───────────────────────────────────┐│Elapsed     00:09:50                        │
+│▾ BUILD                  │││ NOTE: Executing Tasks                                                              ││Workdir     unavailable                     │
+│    Tasks               1│││ NOTE: Started: do_compile                                                          ││Log file                                    │
+│  ▱ Logs             LIVE│││ |  CC     builtins/histfile.o                                                      ││/workspace/yocto/build/tmp/work/qemux86-64-p│
+│  ▱ Errors               │││ |  CC     builtins/jobs.o                                                          ││oky-linux/bash/5.2.21-r2/temp/log.do_compile│
+│    Configuration        │││ |  CC     execute_cmd.o                                                            ││.85873                                      │
+│    Dependencies         │││ [ 72%] Linking bash                                                                ││Dependencies none reported                  │
+│▾ VALIDATE               ││                                                                                     ││                                            │
 │    Testing              ││                                                                                     ││                                            │
 │    Security             ││                                                                                     ││                                            │
 │    QA                   ││                                                                                     ││                                            │
-│▾ TOOLS                  ││                                                                                     ││                                            │
-│    Raw Mode             │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
-│    Terminal Sessions    │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1────┐│                                            │
-│    Devtool              ││Status        Operation     Type         Target / Context         Started   Elapsed  ││Actions─────────────────────────────────────│
-│    QEMU / Wic           ││▶ Running     core-image-mi Build        4/10                     --        --       ││? Cancel active build  [c] — Unknown        │
-│    Maintenance          ││✓ Succeeded   core-image-mi Build        core-image-minimal       19:12:10  00:04:55 ││  Reason: No current environment capability │
-│  ▱ Build environment    ││✓ Succeeded   busybox       Build        busybox                  19:11:42  00:00:17 ││✓ Open Logs            [l] — Local          │
-│  ▱ Compatibility        ││✕ Failed      core-image-mi Build        core-image-minimal       19:08:33  00:01:48 ││✓ Build History        [h] — Local          │
-│  ▱ Settings             ││✓ Succeeded   virtual/kerne Build        virtual/kernel           19:07:18  00:00:54 ││? Build options        [B] — Unknown        │
-│                         ││                                                                                     ││  Reason: No current environment capability │
+│▾ TOOLS                  │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
+│    Raw Mode             │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1────┐│                                            │
+│    Terminal Sessions    ││Status        Operation     Type         Target / Context         Started   Elapsed  ││Actions─────────────────────────────────────│
+│    Devtool              ││▶ Running     core-image-mi Build        4/10                     --        --       ││? Cancel active build  [c] — Unknown        │
+│    QEMU / Wic           ││✓ Succeeded   core-image-mi Build        core-image-minimal       19:12:10  00:04:55 ││  Reason: No current environment capability │
+│    Maintenance          ││✓ Succeeded   busybox       Build        busybox                  19:11:42  00:00:17 ││✓ Open Logs            [l] — Local          │
+│  ▱ Build environment    ││✕ Failed      core-image-mi Build        core-image-minimal       19:08:33  00:01:48 ││✓ Build History        [h] — Local          │
+│  ▱ Compatibility        ││✓ Succeeded   virtual/kerne Build        virtual/kernel           19:07:18  00:00:54 ││? Build options        [Alt+b] — Unknown    │
+│  ▱ Settings             ││                                                                                     ││  Reason: No current environment capability │
 │                         ││                                                                                     ││                                            │
 │                         │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
 │                         │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│                                            │
@@ -46,5 +46,5 @@
 │                         ││        utilization        │                            │                            ││! Build FS unavailable · Workspace /workspa…│
 └─────────────────────────┘└─────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│Tab Focus   ↑/↓ select   f state   F field   / edit filter   d duration   c cancel   F3 History   F4 Dashboard   F5 Logs   F1 Help   F12 Menu   q Quit        │
+│Tab Focus   ↑/↓ select   f state   Alt+f field   / edit filter   d duration   c cancel   F3 History   F4 Dashboard   F5 Logs   F1 Help   F12 Menu   q Quit    │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

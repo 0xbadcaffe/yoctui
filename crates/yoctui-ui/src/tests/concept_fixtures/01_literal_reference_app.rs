@@ -5,7 +5,7 @@ pub(crate) fn literal_reference_app() -> App {
     let source_dir = PathBuf::from("/workspace/yocto");
     app.screen = Screen::Tasks;
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 2;
+    app.navigator_selection = 10;
     app.backend = "bridge".into();
     app.workspace.build_dir = Some(source_dir.join("build"));
     app.workspace.source_dir = Some(source_dir.clone());
@@ -230,7 +230,7 @@ pub(crate) fn concept_idle_dashboard_app() -> App {
 pub(crate) fn concept_failed_errors_app() -> App {
     let mut app = literal_reference_app();
     app.screen = Screen::Errors;
-    app.navigator_selection = 11;
+    app.navigator_selection = 12;
     app.focus = FocusTarget::Workspace;
     app.build.status = BuildStatus::Failed;
     app.build.exit_code = Some(1);

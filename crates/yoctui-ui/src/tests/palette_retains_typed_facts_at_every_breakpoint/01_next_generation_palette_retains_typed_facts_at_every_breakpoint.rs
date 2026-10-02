@@ -9,7 +9,7 @@ fn next_generation_palette_retains_typed_facts_at_every_breakpoint() {
         app.command_palette_query = "Open Dashboard".into();
         let output = rendered_text(&app, width, height);
         for expected in [
-            "Command Palette · focus trapped",
+            "Command Palette",
             "[EDITING]",
             "Commands · 1 match",
             "Open Dashboard",
@@ -23,8 +23,8 @@ fn next_generation_palette_retains_typed_facts_at_every_breakpoint() {
             assert!(output.contains(expected), "{width}x{height}: {output}");
         }
         assert_eq!(output.matches('▶').count(), 1, "{width}x{height}: {output}");
-        assert_eq!(output.contains("Shortcut"), has_columns, "{output}");
-        assert_eq!(output.contains("Availability"), has_columns, "{output}");
+        assert_eq!(output.contains("Location / Shortcut"), has_columns, "{output}");
+        assert_eq!(output.contains("Kind / Availability"), has_columns, "{output}");
     }
 }
 
@@ -72,7 +72,7 @@ fn next_generation_palette_bounds_scroll_and_clears_stale_empty_detail() {
         .unwrap();
     let output = rendered_text(&app, 80, 24);
     assert!(
-        output.contains(&format!("Commands · {0}/{0}", commands.len())),
+        output.contains(&format!("Commands · {}/{}", app.command_palette_selection + 1, commands.len())),
         "{output}"
     );
     assert!(output.contains("Open Help"), "{output}");
@@ -106,7 +106,8 @@ fn next_generation_palette_is_explicit_in_accessible_modes() {
         assert!(output.contains("▶ Open Settings"), "{output}");
         assert!(output.contains("✓ Ready"), "{output}");
         assert!(output.contains("Available: yes"), "{output}");
-        assert!(output.contains("focus trapped"), "{output}");
+        assert!(output.contains("[EDITING]") && output.contains("Esc close"), "{output}");
+        assert_eq!(app.focus, FocusTarget::CommandPalette);
         assert_eq!(output.matches('▶').count(), 1, "{output}");
     }
 }
@@ -160,6 +161,7 @@ fn dialog_focus_is_trapped_then_visibly_restored_to_actionable_workspace() {
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Logs;
     app.focus = FocusTarget::Workspace;
+    app.build.target = Some("core-image-minimal".into());
     let _ = update(&mut app, Action::OpenBuildOptions);
 
     let dialog = rendered_text(&app, 100, 24);
@@ -271,12 +273,16 @@ fn compact_resource_meters_remain_visible_across_workspace_sizes() {
                 "▪",
                 "▫",
                 "do_compile",
-                "Log Viewer",
             ] {
                 assert!(
                     output.contains(expected),
                     "{screen:?} {width}x{height}: missing {expected}: {output}"
                 );
+            }
+            if height >= 30 {
+                assert!(output.contains("Log Viewer"), "{width}x{height}: {output}");
+            } else {
+                assert!(!output.contains("Job History"), "{output}");
             }
             assert_eq!(app.task_progress_scroll, selected);
             assert_eq!(app.focus, FocusTarget::Workspace);
@@ -356,8 +362,8 @@ fn dashboard_renders_host_cpu_and_build_disk_space() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(output.contains("CPU Usage") && output.contains("42%"));
-    assert!(output.contains("8.0 GiB free"));
+    assert!(output.contains("CPU: 42%"), "{output}");
+    assert!(output.contains("8.0 GiB free"), "{output}");
 }
 
 #[test]

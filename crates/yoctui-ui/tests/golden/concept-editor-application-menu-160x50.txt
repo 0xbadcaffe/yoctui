@@ -1,41 +1,40 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.257 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64  •  Distro: poky               D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.286 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator──────────╔Yoctui Application Menu═══════════════════════════════════════════════════════════════════════════╗───────────────────────────────────────┐
 │▾ OVERVIEW         ║ Workspace  Build  Actions  Navigate  View  Devtool  Tools  Help                                  ║────┐┌Recipe Inspector────────────────┐│
 │  ▱ Dashboard      ║No active build is available to cancel.                                                           ║    ││Recipe                          ││
-│  ▱ Insights       ║  Build image                               B          No current environment capability snaps    ║    ││Name: bash                      ││
+│  ▱ Insights       ║  Build image                               Alt+b      No current environment capability snaps    ║    ││Name: bash                      ││
 │▾ CONTENT          ║  Build selected recipe                     b          No current environment capability snaps    ║    ││Layer: poky                     ││
 │    Layers         ║> Cancel active build                       c          No active build is available to cancel.    ║    ││File: bash_5.2.bb               ││
 │    Recipes        ║                                                                                                  ║    ││Language: BitBake               ││
 │    Packages       ║                                                                                                  ║    ││State: modified                 ││
 │    Images         ║                                                                                                  ║    ││                                ││
-│    Kernel         ║                                                                                                  ║    ││Git                             ││
-│    U-Boot / BIOS  ║                                                                                                  ║    ││Git status: unavailable; refresh││
-│    SDK            ║                                                                                                  ║    ││Devtool status                  ││
-│▾ BUILD            ║                                                                                                  ║    ││                                ││
-│    Tasks          ║                                                                                                  ║    ││Actions                         ││
-│  ▱ Logs        LIV║                                                                                                  ║    ││[v] Validate                    ││
-│  ▱ Errors         ║                                                                                                  ║    ││[p] Preview diff                ││
-│    Configuration  ║                                                                                                  ║    ││[Ctrl+S] Save                   ││
-│    Dependencies   ║                                                                                                  ║    ││[Ctrl+B] Build recipe           ││
-│▾ VALIDATE         ║                                                                                                  ║    ││[e] External editor             ││
-│    Testing        ║                                                                                                  ║    ││[G] Open repository in GitUI    ││
+│  ▱ Hardware       ║                                                                                                  ║    ││Git                             ││
+│    Kernel         ║                                                                                                  ║    ││Git status: unavailable; refresh││
+│    U-Boot / BIOS  ║                                                                                                  ║    ││Devtool status                  ││
+│    SDK            ║                                                                                                  ║    ││                                ││
+│▾ BUILD            ║                                                                                                  ║    ││Actions                         ││
+│    Tasks          ║                                                                                                  ║    ││[v] Validate                    ││
+│  ▱ Logs        LIV║                                                                                                  ║    ││[p] Preview diff                ││
+│  ▱ Errors         ║                                                                                                  ║    ││[Ctrl+S] Save                   ││
+│    Configuration  ║                                                                                                  ║    ││[Ctrl+B] Build recipe           ││
+│    Dependencies   ║                                                                                                  ║    ││[e] External editor             ││
+│▾ VALIDATE         ║                                                                                                  ║    ││[Alt+g] Open repository in GitUI││
+│    Testing        ║                                                                                                  ║    ││                                ││
 │    Security       ║                                                                                                  ║    ││                                ││
 │    QA             ║                                                                                                  ║    ││                                ││
 │▾ TOOLS            ║                                                                                                  ║    ││                                ││
 │    Raw Mode       ║                                                                                                  ║    ││                                ││
 │    Terminal Sessio║                                                                                                  ║    ││                                ││
-│    Devtool        ║                                                                                                  ║    ││                                ││
-│    QEMU / Wic     ║Esc/F12 close · Enter open · ↑/↓ select · ←/→ groups                                              ║    ││                                ││
-│    Maintenance    ╚══════════════════════════════════════════════════════════════════════════════════════════════════╝    ││                                ││
+│    Devtool        ║Esc/F12 close · Enter open · ↑/↓ select · ←/→ groups                                              ║    ││                                ││
+│    QEMU / Wic     ╚══════════════════════════════════════════════════════════════════════════════════════════════════╝    ││                                ││
+│    Maintenance     │││                      ││                                                                            ││                                ││
 │  ▱ Build environmen│││                      ││                                                                            ││                                ││
 │  ▱ Compatibility   │││                      ││                                                                            ││                                ││
-│  ▱ Settings        │││                      ││                                                                            ││                                ││
-│                    │││                      ││                                                                            ││                                ││
-│                    │││                      │└────────────────────────────────────────────────────────────────────────────┘│                                ││
+│  ▱ Settings        │││                      │└────────────────────────────────────────────────────────────────────────────┘│                                ││
 │                    │││                      │┌Validation and diff state───────────────────────────────────────────────────┐│                                ││
 │                    │││                      ││Local validation: ✕ line 9: assignment has no value                         ││                                ││
 │                    │││                      ││Diff preview: loaded → buffer                                               ││                                ││
@@ -43,7 +42,8 @@
 │                    │││                      ││Structural diagnostics only; BitBake/compiler output remains authoritative  ││                                ││
 │                    │││                      ││                                                                            ││                                ││
 │                    │││                      │└────────────────────────────────────────────────────────────────────────────┘│                                ││
-│                    ││└──────────────────────┘i insert · Ctrl+F file · Ctrl+Shift+F workspace · / global · G GitUI · Ctrl+S └────────────────────────────────┘│
+│                    │││                      │Ctrl+S save · Ctrl+B build recipe · Tab files                                 │                                ││
+│                    ││└──────────────────────┘Ctrl+F file · Alt+f workspace · / global · Alt+g GitUI                        └────────────────────────────────┘│
 └────────────────────┘└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Enter select/confirm   Esc cancel   F2 Tasks   F3 History   F4 Dashboard   F5 Logs   F6 Layers   F8 Images   F1 Help   F12 Menu   q Quit                      │

@@ -6590,11 +6590,18 @@ M68 application menus use the anchored concept layout from 80×24
 with the existing eight typed groups in order: Workspace, Build, Actions,
 Navigate, View, Devtool, Tools, Help. Earlier six-group reference captures are
 historical, not authority for removing existing menu destinations. The anchored
-geometry continues through wide terminals. The selected action's unavailable reason occupies the
-second menu row when no type-ahead query is active. Arrow keys select groups and
+geometry continues through wide terminals. The selected action's unavailable
+reason occupies the second menu row when no type-ahead query is active.
+Arrow keys select groups and
 items, Enter activates, and Esc/F12 closes. Mouse clicks select group tabs or
 rows; the wheel selects rows and Enter activates the selection. Outside clicks
 remain trapped. Rendering and hit testing share the same geometry.
+
+Exact current production cell/style goldens retain complete version and clock
+identity, the existing eight menu groups and modifier-based controls. Historical
+concept imagery is not authority for stale keys, navigator indices or pane
+positions; semantic/authority/accessibility checks remain independent of the
+explicitly reviewed golden update operation.
 
 The menu uses the available workbench area instead of a compact 60-column cap:
 76×18 cells at 80×24, 96×24 at 100×30, and 100×28 at 160×50. It retains at

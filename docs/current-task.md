@@ -1,27 +1,32 @@
 # Current Task
 
-**ID:** DEMO-UI-FIXTURES-001
-**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
+**ID:** DEMO-INTEGRATION-001
+**Title:** Resolve full-suite daemon watcher and production snapshot integration failures
 **Status:** IN_PROGRESS
 
-Dependency DEMO-ERROR-RECOVERY-HINTS-001 DONE v285. External UI1 exhaustively
-checks80..200 recovery panes/accessibility and modifier/log/confirmation hints;
-existing failed recovery UI1/app route1, strictUIClippy/fmt/UI/version/roadmap
-PASS. Same keys/actions/panes and rebuild protection; capital alias retained
-only for compatibility. No live rebuild launched.
-Resume separate external UI fixtures and six scoped exact golden families.
-Previous v284 full UI375/app250/model584/integrations1+5 PASS; goldens reviewed
-against five-row header/current navigator/modifiers/cell bounds and verified
-Dashboard/cache/exit/editor changes. Refresh exact current version and Errors
-hints only with explicit scoped update flags, never identity masks. Re-run
-full UI/app/model and strictUI/fmt/UI/version/roadmap plus current-source real
-OpenBMC renderer review before parent handoff. Final optimized native boot/GDB,
-reboot/login persistence, full suite, CI and publication remain pending.
+Dependencies UI clipping and contract parents DONE v286. Full UI376/app250/
+model584 plus integrations1+5, strictUIClippy/fmt/UI/version/roadmap/current CLI
+build PASS. Twenty-six external fixture files and34 exact goldens reconcile
+current typed navigator/modifiers/five-row header/bounded panes; negative/style/
+semantic assertions and exact identity retained. Current real OpenBMC control
+review recorded in artifacts/live-openbmc/romulus/ui-controls-v286.txt, explicitly
+interim container-backed debug rendering, not final native/optimized readiness.
+Resolve baselineCLI3/daemon1/snapshot1 failures using exact typed positive
+fixtures/hermetic production harnesses; retain budgets/failure/authority paths.
+Reproduce Git worktree-event flake before any adapter change, no timeout bump.
+Also diagnose observed inherited-session Kernel body versus Dashboard Navigator
+on first live frame, and retain old-daemon unverified image/SDK state as native
+rehearsal requirements. Split genuine unrelated runtime defects before source.
+No source/image/symbol loss, guessed compatibility, long image build or native
+install/publication until their verification stages. Next source/library hygiene,
+full suite/docs/native reboot-ready real OpenBMC QEMU/GDB, then exact-source CI.
 
 ```bash
-cargo test -p yoctui-ui --all-features
+cargo test -p yoctui --all-features --no-fail-fast
+python3 -m pytest bridge/tests
+# Manual: exact initialized daemon profile/failure log, production snapshot
+# timing and Git event delivery; source-bound startup/session state review.
 cargo fmt --all --check
-./scripts/verify-ui-spec.sh
 ./scripts/verify-roadmap.sh
 ```
 

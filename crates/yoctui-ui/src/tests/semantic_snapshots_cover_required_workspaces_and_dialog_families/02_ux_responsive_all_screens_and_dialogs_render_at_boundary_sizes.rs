@@ -150,7 +150,7 @@ fn dialog_families_render_on_narrow_supported_terminals() {
                 },
                 target: "qemu".into(),
             }),
-            "Devtool deploy target",
+            "Deploy build with SSH/SCP",
         ),
         (
             Dialog::DevtoolDeployConfirmation(yoctui_model::DevtoolDeployPlan {
@@ -160,7 +160,7 @@ fn dialog_families_render_on_narrow_supported_terminals() {
                 },
                 target: "qemu".into(),
             }),
-            "Confirm Devtool deploy-target",
+            "Confirm SSH/SCP deployment",
         ),
         (
             Dialog::BbmaskEdit(yoctui_model::PopupEditor::new(

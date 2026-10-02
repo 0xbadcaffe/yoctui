@@ -173,7 +173,7 @@ fn ux_accessibility_m21_surfaces_never_require_color_glyph_shape_or_motion() {
         let _ = update(&mut menu, Action::OpenApplicationMenu);
         let menu_text = rendered_text_at(&menu, 80, 24, literal_now());
         for expected in [
-            "Application menu",
+            "Yoctui Application Menu",
             "Load a Yocto workspace first",
             "Esc/F12 close",
         ] {

@@ -98,7 +98,7 @@ fn ux_menu_renders_groups_context_disabled_safety_and_accessible_responsive_stat
     for (width, height) in [(160, 40), (100, 30), (80, 24)] {
         let output = rendered_text(&app, width, height);
         assert!(
-            output.contains("Application menu"),
+            output.contains("Yoctui Application Menu"),
             "{width}x{height}: {output}"
         );
         assert!(output.contains("Workspace"), "{output}");
@@ -155,7 +155,7 @@ fn ux_viewport_chrome_reports_position_and_available_directions() {
         "{top}"
     );
 
-    navigator_app.navigator_selection = 24;
+    navigator_app.navigator_selection = 25;
     let bottom = rendered_text(&navigator_app, 80, 24);
     assert!(
         bottom.contains(&format!(

@@ -383,12 +383,14 @@ fn raw_responsive_navigation_renders_with_exact_shell_help() {
 
     let _ = update(&mut app, Action::Open(Screen::Help));
     let help = rendered_text(&app, 160, 52);
-    assert!(help.contains("Raw Mode: Left/Right browser pane"), "{help}");
+    assert!(help.contains("Operator guide"), "{help}");
+    assert!(help.contains("Inspect Raw command catalog"), "{help}");
+    assert!(help.contains("F1 Help") && help.contains("F12 Menu"), "{help}");
 
     let _ = update(&mut app, Action::Open(Screen::RawMode));
     app.focus = FocusTarget::Workspace;
     let shortcuts = footer_shortcuts(&app);
-    assert!(shortcuts.contains("f Favorite | H History"), "{shortcuts}");
+    assert!(shortcuts.contains("f Favorite | Alt+h History"), "{shortcuts}");
     assert!(shortcuts.contains("F1 Help | F12 Menu"), "{shortcuts}");
 }
 
