@@ -1,5 +1,16 @@
 # Yoctui Architecture
 
+## M111 Isolated ZCU102 live validation boundary
+
+Use the current coherent AMD manifest and a separate source/build profile,
+private XDG runtime/state roots, and current release binary. Build requests
+belong to the new Yoctui daemon; QEMU/debug sessions use existing reviewed
+typed forms and daemon-owned PTYs. Record exact source/layer/binary/config/
+artifact identities and real task, console, breakpoint/backtrace/resume and
+cleanup evidence. Host/package/license/storage constraints are explicit;
+no existing daemon replacement or fake runtime evidence. Low build parallelism
+and rm_work must preserve the exact debug kernel's build outputs.
+
 ## M110 Kernel instrumentation preparation boundary
 
 Pure model owns closed requested presets, deterministic fragments and bounded

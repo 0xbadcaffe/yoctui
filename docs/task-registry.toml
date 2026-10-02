@@ -3,6 +3,39 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "XILINX-ZCU102-ENV-001"
+milestone = "M111"
+title = "Prepare an isolated current AMD PetaLinux ZCU102 validation environment"
+status = "IN_PROGRESS"
+priority = 3300
+required = true
+depends_on = ["QEMU-GDB-UI-001"]
+verify = ["Manual: preview and reclaim only identified regenerable build caches; retain release binary, user sources/evidence and existing daemon", "Manual: record current AMD manifest/layer commits, source the new build profile, verify exact ZCU102 machine and conservative BB_NUMBER_THREADS/PARALLEL_MAKE", "Manual: initialize independent Yoctui daemon with isolated runtime/state roots and verify matching workspace authority", "./scripts/verify-roadmap.sh"]
+notes = "New user authorizes cloning latest coherent Yocto meta-xilinx/PetaLinux, new ZCU102 image build, QEMU boot and live kernel debugging through Yoctui, after safe filesystem cleanup and reduced make parallelism. Relevant AMD manifest checkout/new build conf, daemon setup and validation evidence/docs. Done: isolated coherent release sources, exact machine/provider, bounded parallelism, sufficient storage and daemon authority; no existing environment replacement or physical board mutation. Host/license/storage prerequisites must be reported, not bypassed."
+
+[[task]]
+id = "XILINX-ZCU102-BUILD-001"
+milestone = "M111"
+title = "Build a real ZCU102 PetaLinux image through the Yoctui daemon"
+status = "NOT_STARTED"
+priority = 3301
+required = true
+depends_on = ["XILINX-ZCU102-ENV-001"]
+verify = ["Manual: request petalinux-image-minimal through the initialized Yoctui daemon; retain real task/failure/progress evidence and terminal outcome", "Manual: verify deployed ZCU102 image, qemuboot config, kernel and exact matching DWARF vmlinux/config hashes; retain kernel work despite rm_work", "./scripts/verify-roadmap.sh"]
+notes = "Relevant isolated validation layer/config and real daemon build. Done requires actual successful image tasks/deploy and matching debug kernel, not a dry run or mocked startup. Use two task workers/make -j2 initially, rm_work for disposable completed work excluding debug kernel, explicit disk guards. Fix in-scope integration failures in separate versioned product commits if needed, with focused tests only."
+
+[[task]]
+id = "XILINX-ZCU102-QEMU-GDB-001"
+milestone = "M111"
+title = "Validate ZCU102 QEMU boot and live kernel debugging inside Yoctui"
+status = "NOT_STARTED"
+priority = 3302
+required = true
+depends_on = ["XILINX-ZCU102-BUILD-001"]
+verify = ["Manual: navigate real Yoctui QEMU/Kernel forms and reviewed managed QEMU to GDB launch for exact new ZCU102 artifacts; verify boot, kernel breakpoint/backtrace, resume, detach/reattach and owned guest cleanup", "Manual: retain immutable binary/source/layer/artifact identities and genuine UI/daemon/GDB/console transcripts", "./scripts/verify-roadmap.sh"]
+notes = "User-selected live validation target is emulated ZCU102, not physical serial KGDB or blanket proof of all sanitizer presets. Relevant existing QEMU/GDB adapters and real capture harness/evidence. Product gaps require atomic spec/model/backend/UI/tests/version/commit/push/release changes before claiming success. Do not synthesize successful boot/backtraces, silently substitute qemuarm64 or bypass Yoctui by calling a separate unmanaged emulator."
+
+[[task]]
 id = "KERNEL-INSTRUMENTATION-PLAN-001"
 milestone = "M110"
 title = "Inspect sanitizer and lockdep configurations and export reviewed presets"

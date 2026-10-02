@@ -1,3 +1,10 @@
+M111 ZCU102 live acceptance is IN_PROGRESS. The user approved a new coherent
+current AMD PetaLinux/meta-xilinx clone, low-parallelism image build through an
+isolated Yoctui daemon, QEMU boot and live kernel debugging. ENV preparation is
+current; actual BUILD and QEMU-GDB verification follow. Retain exact identities
+and genuine evidence; no mocked success, unrelated data deletion or physical
+board action. M108/M110/M67 remain independently gated.
+
 M110 configuration preparation is DONE in v0.1.266/v0.1.267, not the broad live
 instrumentation milestone. Kernel → 3 Debugging → Sanitizers/lockdep opens typed
 forms; choose a preset/exact .config/new .cfg, Enter to inspect/review, then Enter

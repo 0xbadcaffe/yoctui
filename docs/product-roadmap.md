@@ -1,5 +1,16 @@
 # Yoctui Product Roadmap
 
+## M111 — Current AMD PetaLinux ZCU102 live acceptance
+
+The user now explicitly authorizes a separate latest coherent meta-xilinx and
+meta-petalinux checkout, initialization in Yoctui, real ZCU102 image build,
+QEMU boot inside Yoctui and live kernel GDB validation. Safe measured cleanup
+and reduced make/task parallelism precede the build. ENV, BUILD and QEMU-GDB
+are independent atomic tasks; real output is required for each. This does not
+complete physical-board KGDB or all four sanitizer/runtime evidence gates.
+Release selection follows the current official [AMD manifest](https://github.com/Xilinx/yocto-manifests),
+not mixed unrelated layer tips. Preserve existing daemon and user captures.
+
 ## M110 — Sanitizer and lockdep configuration preparation
 
 The new continuation request activates step 3's preparation slice independently

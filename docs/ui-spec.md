@@ -20,6 +20,16 @@ invalid build path fails startup with the exact profile-initialization error.
 
 Status: **Authoritative product and interaction contract**
 
+### M111 User-authorized ZCU102 live validation
+
+The explicit validation request authorizes preparing a new current coherent
+AMD PetaLinux/meta-xilinx environment, low-parallelism ZCU102 image build,
+QEMU boot and live kernel debugging through the existing reviewed Yoctui flows.
+This is test execution authority, not new automatic UI behavior. Use separate
+runtime/state roots so the user's existing daemon/build is not replaced. Keep
+real artifact/config/symbol identities and UI/daemon/console/debug transcripts.
+No physical board flash/reset or silent alternative-machine substitution.
+
 ### M72 live dashboard corrections
 
 Transport failures remain inside the terminal UI and its retained diagnostics;

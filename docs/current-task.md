@@ -1,8 +1,25 @@
 # Current Task
 
-**ID:** KGDB-SERIAL-LIVE-001
-**Title:** Verify KGDB breakpoint, continue, detach and reconnect on a physical board
-**Status:** BLOCKED
+**ID:** XILINX-ZCU102-ENV-001
+**Title:** Prepare an isolated current AMD PetaLinux ZCU102 validation environment
+**Status:** IN_PROGRESS
+
+New user validation supersedes the blocked queue. Dependency QEMU-GDB-UI-001 is
+DONE. First measure/preview cleanup of known regenerable caches, preserving
+user sources/artifacts, current release and existing daemon. Clone the newest
+coherent official AMD PetaLinux manifest/layers; record commits and exact ZCU102
+machine/provider. Prepare a new build with BB_NUMBER_THREADS=2 and make -j2,
+bounded disk guards and rm_work that retains the matching debug kernel. Start
+an independent Yoctui daemon with private runtime/state roots and verify its
+initialized workspace/capabilities. Relevant new sources/build conf and live
+evidence/scripts plus authoritative docs. Verify actual host/storage/license
+prerequisites, config/task limits and daemon identity, then roadmap gate. Commit
+coherent environment/evidence handoff and immediately begin the BUILD task.
+No fake success, physical hardware mutation or full Rust test suite. Product
+fixes, if needed, keep version bump/commit/push/source-bound release workflow.
+
+Previous blockers/completed preparation are retained below; the old statement
+of no eligible task describes the earlier handoff, not the new M111 request.
 
 No eligible implementation task remains. An approved already-configured/halted
 board, exact running-kernel .config/vmlinux and exclusive serial device/baud plus
