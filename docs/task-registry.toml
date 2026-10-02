@@ -20,7 +20,7 @@ title = "Resolve measured performance and existing demo correctness regressions"
 status = "NOT_STARTED"
 priority = 3501
 required = true
-depends_on = ["DEMO-PROFILE-001", "DEMO-BACKGROUND-COPY-001", "DEMO-PLATFORM-PROFILE-001", "DEMO-CONTRACT-FIXTURES-001", "DEMO-UI-CLIPPING-001", "DEMO-INTEGRATION-001"]
+depends_on = ["DEMO-PROFILE-001", "DEMO-BACKGROUND-COPY-001", "DEMO-PLATFORM-PROFILE-001", "DEMO-PLATFORM-CONFIG-001", "DEMO-CONTRACT-FIXTURES-001", "DEMO-UI-CLIPPING-001", "DEMO-INTEGRATION-001"]
 verify = ["Manual: split measured hotspots and baseline correctness failures into independently verified atomic child tasks before implementation", "Manual: focused normal/failure/narrow-terminal regressions and comparable before/after measured workload", "./scripts/verify-roadmap.sh"]
 notes = "Planning parent: no broad completion from one fix. Relevant measured model/app/UI/CLI hot paths and existing tests, not new features/layouts. Each implementation child needs coherent fix/tests, UI/architecture docs if changed, version bump and commit; preserve behavior and benchmark identity. Parent DONE only after all selected children are verified/committed."
 
@@ -39,12 +39,23 @@ notes = "DONE product040a23d0/v270: only local background setters use pure reduc
 id = "DEMO-PLATFORM-PROFILE-001"
 milestone = "M114"
 title = "Initialize Kernel and Firmware inspection from exact selected sibling source"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3511
 required = true
 depends_on = ["DEMO-BACKGROUND-COPY-001"]
 verify = ["cargo test -p yoctui --bin yoctui platform_inspection", "cargo test -p yoctui --bin yoctui daemon_commands", "cargo test -p yoctui --bin yoctui saved_environment", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "Manual: real retained OpenBMC Kernel/Firmware inspection reports exact providers/config without cannot-locate initializer", "./scripts/verify-roadmap.sh"]
-notes = "Actual daemon-attached OpenBMC sibling build fails platform ancestor-only initializer search despite canonical_source authority. Relevant platform_inspection_operation.rs/profile helpers and selected-source/build regression/failure tests. Use exact explicit workspace source/profile and current build, preserve ancestor fallback for legacy callers, reject mismatched/missing profiles; no source guessing/edit/build or changed screen layout. Update architecture/UI contract only if boundary/behavior changes; versioned fix."
+notes = "DONE product20a2f409/v271: exact selected sibling source, absent-source ancestor fallback and redirected-BUILDDIR rejection. Platform7/daemon7/saved7/strictCLIClippy/fmt/UI/version/roadmap PASS. Genuine source-bound debug7de2594a client/kernel providerlinux-aspeed_git.bb resolves; firmwareu-boot-aspeed-sdk_2019.04.bb and exact29979byte .config loaded. No optimized demo/fullsuite completion inferred. Actual kernel scan caps4096files before finding retained shared .config, split DEMO-PLATFORM-CONFIG-001; source initialization itself succeeds. Evidence artifacts/live-openbmc/romulus/platform-inspection-v271.txt."
+
+[[task]]
+id = "DEMO-PLATFORM-CONFIG-001"
+milestone = "M114"
+title = "Retain authoritative kernel configuration within bounded artifact scans"
+status = "IN_PROGRESS"
+priority = 3516
+required = true
+depends_on = ["DEMO-PLATFORM-PROFILE-001"]
+verify = ["cargo test -p yoctui-bitbake platform", "cargo test -p yoctui --bin yoctui kernel_inspection", "cargo test -p yoctui --bin yoctui firmware_workbench", "cargo test -p yoctui-ui kernel", "cargo fmt --all --check", "cargo clippy -p yoctui -p yoctui-bitbake --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "Manual: real retained OpenBMC Kernel configuration path/size/hash remains discoverable alongside bounded device tree inventory", "./scripts/verify-roadmap.sh"]
+notes = "Real v271 Kernel resolves exactprovider but scanner exhausts4096files before showing .config; retained tmp/work-shared/romulus/kernel-build-artifacts/.config exists and matches accepted image. Relevant kernel_inspection.rs authoritative STAGING_KERNEL_BUILDDIR query and PlatformArtifactAdapter bounded root traversal. Prefer root-level configs across all authoritative roots before broad recursion, preserve file/directory/depth limits/no symlink following/dedup/order; no hardcoded machine/path or quota increase. Fake bridge and large-root/starvation/failure tests plus actual config view required; versioned coherent fix with boundary/spec notes."
 
 [[task]]
 id = "DEMO-CONTRACT-FIXTURES-001"
@@ -53,7 +64,7 @@ title = "Reconcile stale full-suite fixtures with authoritative current UI contr
 status = "NOT_STARTED"
 priority = 3512
 required = true
-depends_on = ["DEMO-PLATFORM-PROFILE-001"]
+depends_on = ["DEMO-PLATFORM-CONFIG-001"]
 verify = ["cargo test -p yoctui-model --all-features", "cargo test -p yoctui-app --all-features", "cargo test -p yoctui-ui --all-features", "Manual: document each changed expected shortcut/row/clock/action/catalog and supply current typed positive/negative authority fixtures without removing assertions", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
 notes = "Baseline88failures include confirmed stale UTC clock/capital-letter shortcuts/old navigator indices/header geometry and missing current typed authority in action fixtures. Relevant model/app/UI test helpers/cases/snapshots only for genuine drift. Retain exact behavior and negative paths; no blanket golden accept, broad assertion deletion or product contract reversion. Split any newly identified product defect separately. Coherent test-contract reconciliation and mapped evidence required."
 

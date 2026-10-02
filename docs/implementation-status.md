@@ -1,10 +1,13 @@
-M114 current: DEMO-PLATFORM-PROFILE-001 IN_PROGRESS; background copying DONE.
+M114 current: DEMO-PLATFORM-CONFIG-001 IN_PROGRESS; selected-source init DONE.
 v0.1.271 platform worker now captures exact attached source alongside selected
 build, retains ancestor-only fallback for absent source and rejects redirected
 BUILDDIR. Focused fake initializer/daemon/saved-environment and real inspection
 verification pending; initial platform7/daemon7/saved7 and strictCLI Clippy
 pass. Profile helpers extracted to preserve source-size contract; rerun and
-real current-source inspection pending, no completion or full-suite claim.
+actual source-bound debug7de2594a client now resolves linux-aspeed provider and
+firmwareu-boot-aspeed-sdk/29979byte .config. Kernel initializer succeeds but
+scan reaches4096files without retained shared .config; distinct bounded-discovery
+fix split before implementation. No optimized demo/full-suite readiness claim.
 v0.1.270 local background setters now use pure reducer (no full-App rollback
 copies); new large-inventory equivalent-state test, existing activity1/authority11
 tests and strict affected all-target/all-feature Clippy pass. No external action

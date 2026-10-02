@@ -1,0 +1,35 @@
+M114 actual OpenBMC platform inspection, 2026-10-02 20:28-20:31 UTC.
+Product20a2f40924ff55ad1d45684e279438c85b60ca59/v0.1.271, exact debug binary
+SHA2567de2594a798ad5f9ab5423b34f526323d760abcd6fec2105a72d0a3e7caccfed.
+This is functional live inspection, not optimized demo/performance acceptance.
+Retained independent Ubuntu container yoctui-openbmc-qemu-validation,
+same daemon host2125313/container3142, new current client container8991.
+Exact source /home/bspguy-dev/src/openbmc,
+build /home/bspguy-dev/src/build-openbmc-romulus, backendbridge.
+Actual typed UI navigator selection then Enter, not fabricated rows.
+
+Kernel initialization now succeeds: provider
+/home/bspguy-dev/src/openbmc/meta-aspeed/recipes-kernel/linux/linux-aspeed_git.bb.
+Inventory reports2roots/4096files/dtc/usr/bin/dtc/menuconfig metadata available;
+capability authority still honestly displays Unknown for unverified menuconfig.
+No configuration found: scan stopped at4096files/16384directories. This is a
+separate confirmed bounded-discovery defect, not successful config acceptance.
+Actual retained matching config exists at
+/home/bspguy-dev/src/build-openbmc-romulus/tmp/work-shared/romulus/kernel-build-artifacts/.config,
+SHA2560f809ea0922169c20ad329e51f580a16ac8e5b9b1f1393847e2732d663f2fc5c.
+Split DEMO-PLATFORM-CONFIG-001 before any discovery implementation.
+
+Firmware initialization succeeds: targetu-boot-aspeed-sdk, provider
+/home/bspguy-dev/src/openbmc/meta-aspeed/recipes-bsp/u-boot/u-boot-aspeed-sdk_2019.04.bb.
+Inventory4roots/1437files; exact29979byte .config displayed at
+/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/u-boot-aspeed-sdk/v2019.04+git/sources/build/.config.
+Existing overlapping-root de-duplication limitation visible, not hidden.
+Original real .txt/.cells/.ansi screenshots outsideGit at presentation assets
+demo-v271-kernel-loaded and demo-v271-firmware-loaded; deck itself untouched.
+No image build, source edit, daemon replacement, guest launch or cleanup here.
+
+Focus verification: platform7/daemon7/saved7, strict affected all-target/all-feature
+Clippy, fmt, UI/version270->271/roadmap PASS. New initializer cases cover exact
+sibling source versus valid wrong ancestor, absent explicit script/no fallback,
+missing build metadata, redirected BUILDDIR and legacy ancestor reconstruction.
+All baseline full-suite failures remain queued; no full release/publication claim.

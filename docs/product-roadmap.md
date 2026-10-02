@@ -18,6 +18,9 @@ background copying, selected-source initialization, current-contract fixtures,
 verified UI clipping and isolated integration failures. None is silently DONE.
 DEMO-LAYOUT-HYGIENE-001 separately reconciles the existing source-size/external
 test-module violations before full release verification; no checker exemptions.
+Selected-source init DONE v271 with real provider/firmware .config evidence;
+DEMO-PLATFORM-CONFIG-001 fixes separately observed kernel config starvation
+within existing bounded scans before contract fixtures; no quota increase.
 Measured fixture stress is not real runtime/build-performance certification.
 Unrelated physical/instrumentation/M67 gates stay explicit; ZCU102 deferred.
 
