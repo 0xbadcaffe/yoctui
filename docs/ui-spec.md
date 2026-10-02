@@ -5974,6 +5974,12 @@ Native GitUI, shells and menuconfig retain their own key ownership and receive
 the original Alt escape sequence. The active editor exposes `Alt+f` workspace
 search and `Alt+g` GitUI from file/document and Insert/Visual/Normal modes;
 Ctrl+Shift+F remains an unadvertised alias where terminals distinguish it.
+Dashboard Quick Actions advertise `[Alt+b]` Build image, `[t]` Open terminal
+and `[Alt+e]` Verify environment. Offline setup advertises `[Alt+e]`, retaining
+`[F3]` saved history; empty recent-build history uses `Alt+b` as well. These
+labels describe existing routes, not the optional uppercase compatibility aliases.
+Dashboard Inspector and common-action hints use the same modifier labels,
+including `Alt+m` Sstate readiness; they must not reintroduce capital-only hints.
 `Alt+w` opens the workspace editor from Recipes/Devtool (as does Devtool `e`).
 `Alt+g` consistently opens workspace GitUI from Recipes/Devtool, their menus
 and editors. Alt+g in other application workspaces opens source GitUI.

@@ -48,7 +48,7 @@ pub(crate) fn render_dashboard_actions(
         ),
         Line::from("[F2] Tasks  [l] Logs  [e] Errors  [F3] Recent work"),
         Line::from("[F8] Artifacts  [f] Favorites  [t] Terminals"),
-        Line::from("[E] Environment  [M] Sstate readiness"),
+        Line::from("[Alt+e] Environment  [Alt+m] Sstate readiness"),
     ]);
     frame.render_widget(
         Paragraph::new(lines)
@@ -177,7 +177,7 @@ pub(crate) fn render_dashboard_recent_builds(
         .collect::<Vec<_>>();
     if rows.is_empty() {
         frame.render_widget(
-            Paragraph::new("No completed builds or jobs retained. B opens build options."),
+            Paragraph::new("No completed builds or jobs retained. Alt+b opens build options."),
             inner,
         );
     } else {
@@ -210,14 +210,14 @@ pub(crate) fn render_dashboard_quick_actions(frame: &mut Frame, app: &App, area:
         return;
     }
     if app.is_offline() {
-        frame.render_widget(Paragraph::new("[E] Configure build environment    [F3] Saved build history\n\nStart the daemon from your initialized Yocto shell: yoctui daemon start\nYoctui retries the connection automatically.").wrap(Wrap { trim:true }),inner);
+        frame.render_widget(Paragraph::new("[Alt+e] Configure build environment    [F3] Saved build history\n\nStart the daemon from your initialized Yocto shell: yoctui daemon start\nYoctui retries the connection automatically.").wrap(Wrap { trim:true }),inner);
         return;
     }
     let columns = Layout::horizontal([Constraint::Ratio(1, 3); 3]).split(inner);
     let actions = [
-        ("B", "Build image", "Start the selected BitBake target"),
+        ("Alt+b", "Build image", "Start the selected BitBake target"),
         ("t", "Open terminal", "Use the initialized Yocto shell"),
-        ("E", "Verify environment", "Check layers and configuration"),
+        ("Alt+e", "Verify environment", "Check layers and configuration"),
     ];
     for (index, ((key, label, detail), column)) in
         actions.into_iter().zip(columns.iter().copied()).enumerate()

@@ -105,18 +105,18 @@ notes = "Relevant verified current-contract rendering defects after fixture reco
 id = "DEMO-DASHBOARD-HINTS-001"
 milestone = "M114"
 title = "Advertise existing modifier shortcuts in Dashboard quick actions and empty history"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3519
 required = true
 depends_on = ["DEMO-MODEL-APP-FIXTURES-001"]
 verify = ["cargo test -p yoctui-ui demo_shortcut_hints", "cargo test -p yoctui-app ux_dashboard_operational_shortcuts", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Confirmed actual v272 Dashboard advertises B/E while existing routes use Alt+b/e. Relevant dashboard_render/actions_and_history.rs and external TestBackend regressions. Correct connected/offline quick actions and empty-history hint, preserve terminal t/F3/layout/legacy aliases. No new keys/features. Version/UI-spec and coherent commit required; exact stale goldens handled later."
+notes = "DONE v273: Dashboard connected/offline Quick Actions, Inspector, empty history and common actions now advertise existing Alt+b/e/m, preserving t/F3 and layout. Two external TestBackend regressions PASS at80/100/130/160 and offline/online states, existing app typed shortcut route PASS, strict UI all-target/all-feature Clippy/fmt/UI/version/roadmap PASS. No new keys/features or accepted goldens; final current optimized live rehearsal remains pending."
 
 [[task]]
 id = "DEMO-DIALOG-CONTROLS-001"
 milestone = "M114"
 title = "Retain complete existing build and Devtool dialog controls within bounded popup geometry"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3520
 required = true
 depends_on = ["DEMO-DASHBOARD-HINTS-001"]

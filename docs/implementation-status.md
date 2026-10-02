@@ -1,4 +1,7 @@
-M114 current: DEMO-DASHBOARD-HINTS-001 IN_PROGRESS; model/app fixture child DONE.
+M114 current: DEMO-DIALOG-CONTROLS-001 IN_PROGRESS; Dashboard hints DONE v273.
+Connected/offline Quick Actions/Inspector, empty history and common actions
+now use existing Alt+b/e/m routes, retaining t/F3. TestBackend2/app1/strictUI
+Clippy/fmt/UI/version/roadmap PASS. Current optimized live rehearsal still pending.
 UI polish split into independently verified truthful Dashboard hints, bounded
 dialog controls and editor action rail; exact UI fixtures/goldens follow them.
 External fixture-only18files reconcile Hardware navigator indices, header y+3,

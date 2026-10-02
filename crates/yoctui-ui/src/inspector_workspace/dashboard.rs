@@ -1,7 +1,7 @@
 #[allow(dead_code)]
 pub(crate) fn dashboard_inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     if app.is_offline() {
-        frame.render_widget(Paragraph::new(format!("Offline workspace\n\n[E] Configure build environment\n[F3] Saved build history\n\nSaved builds: {}\n\nStart or reconnect the daemon for live build operations.\n\nLocal files and saved records remain available. Previous observations do not establish current build state.", app.saved_builds.records.len())).wrap(Wrap { trim: true }).block(Block::default().borders(Borders::ALL).title("Project Inspector")), area);
+        frame.render_widget(Paragraph::new(format!("Offline workspace\n\n[Alt+e] Configure build environment\n[F3] Saved build history\n\nSaved builds: {}\n\nStart or reconnect the daemon for live build operations.\n\nLocal files and saved records remain available. Previous observations do not establish current build state.", app.saved_builds.records.len())).wrap(Wrap { trim: true }).block(Block::default().borders(Borders::ALL).title("Project Inspector")), area);
         return;
     }
     let palette = ThemePalette::for_app(app);
@@ -120,11 +120,11 @@ pub(crate) fn dashboard_inspector(frame: &mut Frame, app: &App, area: Rect, now:
             "Enabled Actions",
             palette.role(palette.informational, Modifier::BOLD),
         ),
-        Line::from("[B] Build image"),
+        Line::from("[Alt+b] Build image"),
         Line::from("[F2] Monitor tasks"),
         Line::from("[l] View logs"),
         Line::from("[e] View errors"),
-        Line::from("[E] Verify environment"),
+        Line::from("[Alt+e] Verify environment"),
         Line::from("[t] Open terminal"),
         Line::from("[d] Open devtool"),
         Line::default(),

@@ -1,26 +1,21 @@
 # Current Task
 
-**ID:** DEMO-DASHBOARD-HINTS-001
-**Title:** Advertise existing modifier shortcuts in Dashboard quick actions and empty history
+**ID:** DEMO-DIALOG-CONTROLS-001
+**Title:** Retain complete existing build and Devtool dialog controls within bounded popup geometry
 **Status:** IN_PROGRESS
 
-Dependency DEMO-MODEL-APP-FIXTURES-001 DONE: model584/integrations1+5 and app250
-PASS; exact current indices/modifier routing/mouse geometry/target preconditions
-reconciled without product code or negative assertion deletion. UI286PASS/65
-baseline failures remain. Diagnose current footer/editor/dialog/narrow rendering
-against authoritative later concept-layout contract, not historical layouts.
-Real Dashboard B/E labels are wrong versus Alt+b/Alt+e; confirmed product polish,
-not expected-value replacement. Split independently verified atomic rendering
-fixes before code, add normal/narrow/failure TestBackend regressions and bump
-version/UI spec in each product commit. No new feature or invented layout.
-Split rendering fixes: this child corrects connected/offline Dashboard B/E and
-empty-history B hints to Alt+b/e only, retaining t/F3 and layout. Next child
-fixes confirmed too-short build dialog; then bounded editor hints. UI fixture/
-golden child follows all selected fixes; no blanket acceptance.
+Dependency DEMO-DASHBOARD-HINTS-001 DONE v273: UI2/app1/strictUIClippy/fmt/UI/
+version/roadmap PASS. BuildOptions renders ten content rows into nine interior
+rows; Escape is genuinely hidden at every supported size. Correct bounded
+popup height and add external normal/narrow/authority-failure regressions.
+Devtool deploy confirmation similarly uses eight content rows in six interior
+rows plus wrapping; inspect exact current title/control contract before code.
+No new dialogs/actions/layouts, no remote deployment performed. UI fixtures/
+goldens follow separately; next editor action-rail child is independent.
 
 ```bash
-cargo test -p yoctui-ui demo_shortcut_hints
-cargo test -p yoctui-app ux_dashboard_operational_shortcuts
+cargo test -p yoctui-ui demo_dialog_controls
+cargo test -p yoctui-app mouse_runtime_routes_dialog
 cargo fmt --all --check
 cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
