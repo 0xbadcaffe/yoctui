@@ -4,6 +4,42 @@
 **Title:** Prepare an isolated current AMD PetaLinux ZCU102 validation environment
 **Status:** IN_PROGRESS
 
+**User-requested pause for laptop shutdown — 2026-10-02. Do not continue until
+the user resumes.** Preparation is saved, not certified DONE: initial daemon
+compatibility/recipe discovery had not finished, and image build requests were
+rejected with Conflict while it was loading. No image build, QEMU boot or live
+GDB validation started. The isolated daemon was deliberately stopped and its
+container stopped (not removed). Existing user daemon/environment untouched.
+
+Resume from the retained checkout, not a new clone:
+
+```bash
+docker start yoctui-zcu102-validation-2026-1
+./scripts/live-zcu102.sh start
+./scripts/live-zcu102.sh status
+```
+
+Wait for actual compatibility/recipe authority, verify exact ZCU102 workspace,
+then complete/commit ENV before proceeding to BUILD with
+`./scripts/live-zcu102.sh build`. `./scripts/live-zcu102.sh attach` opens the
+real UI in the supported Ubuntu 24.04 container. Keep two task/make workers,
+disk guards, rm_work kernel retention and DWARF feature. Source/build roots,
+exact commits, checksums, cleanup and captured UI are recorded in
+`artifacts/live-xilinx/zcu102/environment.txt`; local.conf/bblayers.conf and
+paused log/UI copies are committed alongside it. The complete checkout,
+private runtime/state/logs and container-installed gdb-multiarch remain on disk.
+Release v0.1.267 and its source-bound checksum are unchanged.
+
+Known points to investigate, not completed fixes: explicit daemon --build-dir
+discovery misses AMD's sources/poky layout (helper uses the supported inherited
+setupsdk environment); AMD 2026.1 uses a firmware/multi-process QEMU launcher,
+so inspect actual deployed artifacts before claiming the direct-kernel GDB
+workflow supports it. No unmanaged QEMU or substitute qemuarm64 validation.
+Capture health predicate was updated to recognize current Connected/Local
+UI text while retaining legacy matching; focused checks pass. Verification:
+`python3 scripts/test-live-capture-health.py`, `bash -n scripts/live-zcu102.sh`,
+`git diff --check`, `./scripts/verify-roadmap.sh`. Full suite remains deferred.
+
 New user validation supersedes the blocked queue. Dependency QEMU-GDB-UI-001 is
 DONE. First measure/preview cleanup of known regenerable caches, preserving
 user sources/artifacts, current release and existing daemon. Clone the newest

@@ -22,6 +22,15 @@ from terminal_capture import Screen as StyledScreen
 CSI = re.compile(r"\x1b\[([0-9;?]*)([ -/]*)([@-~])")
 
 
+def daemon_connected(text: str) -> bool:
+    """Recognize the current health line and retained historical captures."""
+    return (
+        "Daemon health: ✓ Connected/" in text or "Daemon: ✓ Connected" in text
+    ) and not (
+        "Daemon health: ✕ Disconnected" in text or "Daemon: ✕ Disconnected" in text
+    )
+
+
 class Screen:
     def __init__(self, width: int, height: int) -> None:
         self.width = width
@@ -152,7 +161,7 @@ def main() -> int:
         collect(0.5)
         startup_screen = StyledScreen(args.width, args.height)
         startup_screen.feed(bytes(raw).decode("utf-8", "replace"))
-        if "Daemon: ✓ Connected" in startup_screen.text():
+        if daemon_connected(startup_screen.text()):
             break
     if args.mode == "tasks":
         os.write(master, b"\x1bOQ")
@@ -207,7 +216,7 @@ def main() -> int:
         raise SystemExit("Yoctui did not enter the alternate screen")
     if "F1 Help" not in final_text:
         raise SystemExit(f"final buffer omitted footer:\n{final_text}")
-    if "Daemon: ✓ Connected" not in final_text:
+    if not daemon_connected(final_text):
         raise SystemExit(f"final buffer omitted connected daemon state:\n{final_text}")
     for expected in args.expect:
         if expected not in final_text:

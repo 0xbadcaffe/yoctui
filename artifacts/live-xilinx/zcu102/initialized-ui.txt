@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.267 • Git: unavailable • Project: build • T:not selected                                     D:✓ Connected/Local • BB:– Disconnected • Local 05:58│
+│Daemon health: ✓ Connected/Local · BitBake: – Disconnected                                                                                                    │
+│Workspace: /home/bspguy-dev/src/yoctui-zcu102-2026.1/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                               │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator────────────────┐┌Build Overview───────────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
+│▾ OVERVIEW               ││Overall  build not started · 0%                                                      ││Environment                                 │
+│  ▱ Dashboard            ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                                ││Project          : not selected             │
+│  ▱ Insights             ││Current Build : none                      │Last Build / Job                          ││Machine          : unknown                  │
+│▾ CONTENT                ││Current Task  : none                      │No retained build or job                  ││Distro           : unknown                  │
+│    Layers               ││Build Status  : Idle                      │History appears after a build or job      ││Yocto release    : unknown                  │
+│    Recipes              ││Daemon Status : Connected                 │                                          ││Layers enabled   : 0                        │
+│    Packages             ││Warnings: 0  Errors: 0                    │                                          ││                                            │
+│    Images               │└─────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
+│  ▱ Hardware             │┌Recent Builds · Job History──────────────────────────────────────────────────────────┐│Source           : unavailable              │
+│    Kernel               ││No completed builds or jobs retained. B opens build options.                         ││Build directory  :                          │
+│    U-Boot / BIOS        ││                                                                                     ││/home/bspguy-dev/src/yoctui-zcu102-2026.1/bu│
+│    SDK                  ││                                                                                     ││ild                                         │
+│▾ BUILD                  ││                                                                                     ││Disk             : 23.7 GiB free            │
+│    Tasks                ││                                                                                     ││                                            │
+│  ▱ Logs             LIVE││                                                                                     ││Enabled Actions                             │
+│  ▱ Errors               ││                                                                                     ││[B] Build image                             │
+│    Configuration        ││                                                                                     ││[F2] Monitor tasks                          │
+│    Dependencies         ││                                                                                     ││[l] View logs                               │
+│▾ VALIDATE               ││                                                                                     ││[e] View errors                             │
+│    Testing              ││                                                                                     ││[E] Verify environment                      │
+│    Security             ││                                                                                     ││[t] Open terminal                           │
+│    QA                   ││                                                                                     ││[d] Open devtool                            │
+│▾ TOOLS                  ││                                                                                     ││                                            │
+│    Raw Mode             ││                                                                                     ││Active Tasks                                │
+│    Terminal Sessions    ││                                                                                     ││No active task events                       │
+│    Devtool              │└─────────────────────────────────────────────────────────────────────────────────────┘│Next Action                                 │
+│    QEMU / Wic           │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│Build image [Alt+b]                         │
+│    Maintenance          ││CPU Usage        21%│RAM Usage         15%│Build FS Usage   94%│R 197.7 KiB/s █      ││Attention                                   │
+│  ▱ Build environment    ││                    │                     │                 ▆▆ │W 290.8 KiB/s █      ││No retained warnings or errors              │
+│  ▱ Compatibility        ││                    │                     │                 ██ │                     ││Workbench Center                            │
+│  ▱ Settings             ││                  ▅ │                  ▃▃ │                 ██ │                     ││Context: none retained                      │
+│                         ││ ▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫ │                     ││Active: tasks 0 · jobs 0                    │
+│                         ││       8 cores      │    2.4/15.0 GiB     │    23.7 GiB free   │                     ││Favorite: none                              │
+│                         │└─────────────────────────────────────────────────────────────────────────────────────┘│Terminal: none                              │
+│                         │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│[t] Terminal sessions                       │
+│                         ││[B] Build image            │[t] Open terminal           │[E] Verify environment      ││Artifact: none retained                     │
+│                         ││                           │                            │                            ││Recent: none retained                       │
+│                         ││Start the selected BitBake │Use the initialized Yocto   │Check layers and            ││                                            │
+│                         ││target                     │shell                       │configuration               ││                                            │
+│                         ││                           │                            │                            ││                                            │
+└─────────────────────────┘└─────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   h/l groups   Enter open   Ctrl+B prefix   F2 Tasks   F3 History   F5 Logs   F6 Layers   F7 Recipes   F8 Images   F1 Help   F12 Menu   q Quit     │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

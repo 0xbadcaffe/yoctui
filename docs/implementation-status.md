@@ -1,3 +1,18 @@
+M111 is PAUSED at the user's request for laptop shutdown (2026-10-02), with
+ENV still IN_PROGRESS, not DONE. Official AMD rel-v2026.1 sources and an exact
+zynqmp-zcu102-sdt-full/PetaLinux configuration are retained under
+/home/bspguy-dev/src/yoctui-zcu102-2026.1. Two task/parse/make workers, disk
+guards, rm_work excluding linux-xlnx/image and vendor DWARF5 feature are set.
+Cargo cache and duplicate sstate cleanup raised free space from about 6.8 to
+24 GiB; unchanged source-bound release and existing user daemon were preserved.
+Real isolated Ubuntu 24.04 daemon/UI connected, but compatibility discovery
+was still pending and build requests were rejected with Conflict. No image
+build/boot/debug success claimed. Isolated daemon/container deliberately
+stopped, not removed; start/status/attach/build helper and resume commands are
+saved in current-task. Evidence/config/UI/log copies and exact layer/binary
+hashes are in artifacts/live-xilinx/zcu102. Five focused capture-health checks,
+shell syntax, diff and roadmap checks pass; no full suite or product changes.
+
 M111 ZCU102 live acceptance is IN_PROGRESS. The user approved a new coherent
 current AMD PetaLinux/meta-xilinx clone, low-parallelism image build through an
 isolated Yoctui daemon, QEMU boot and live kernel debugging. ENV preparation is
