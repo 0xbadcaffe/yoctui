@@ -1,6 +1,14 @@
 use super::*;
 use yoctui_model::{CapabilityId, DaemonCompatibilitySnapshot};
 
+fn waiting_backend_diagnostic(custom_bridge: bool) -> &'static str {
+    if custom_bridge {
+        "Waiting for BitBake API discovery; automatic recovery is disabled for an explicit bridge override"
+    } else {
+        "Waiting for BitBake API discovery; retrying the backend probe"
+    }
+}
+
 pub(super) fn poll(services: &mut DaemonServices) -> Result<()> {
     if let Some(result) = services.startup_compatibility.try_result() {
         match result {
@@ -85,7 +93,11 @@ fn install(
         if daemon_compatibility::backend_recovery::needed(&compatibility) {
             publish_startup_metadata_log(
                 &mut services.daemon_journal,
-                "Waiting for BitBake API discovery; retrying the backend probe",
+                waiting_backend_diagnostic(
+                    services
+                        .startup_environment
+                        .contains_key("YOCTUI_BRIDGE_PATH"),
+                ),
                 false,
             )?;
         }
@@ -111,3 +123,7 @@ fn install(
     ));
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "../tests/daemon_server_compatibility.rs"]
+mod tests;

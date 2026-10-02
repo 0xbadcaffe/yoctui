@@ -43,6 +43,10 @@ async fn ux_rootfs_workspace_resolves_exact_artifact_sources_and_updates_model()
         wic_files: yoctui_model::ImageArtifactField::Unavailable,
     };
     let mut app = App::new(10, 1_000);
+    app.workspace.recipes.push(yoctui_model::Recipe {
+        name: "core-image-minimal".into(),
+        ..Default::default()
+    });
     app.image_artifacts = yoctui_model::ImageArtifactInventoryState::Available {
         request: ImageArtifactRequest {
             generation: 1,

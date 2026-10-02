@@ -1,38 +1,23 @@
 # Current Task
 
-**ID:** DEMO-INTEGRATION-001
-**Title:** Resolve full-suite daemon watcher and production snapshot integration failures
+**ID:** DEMO-POLISH-001
+**Title:** Resolve measured performance and existing demo correctness regressions
 **Status:** IN_PROGRESS
 
-Dependencies UI clipping parent and startup navigation child DONE v287. Full
-model586/integrations1+5/UI377, external startup model2/CLI2/UI1/existing platform1,
-strict affected Clippy/fmt/UI/version/roadmap PASS. Exact34 golden files changed
-only286->287 identity. Saved configured screens and unconfigured setup now align
-with the typed Navigator without starting operations; native live acceptance
-still pending. Current CLI376PASS/2fail/5ignored, daemon4PASS/1fail/snapshot fails.
-Repair exact positive fixtures: selected BuildOptions image, rootfs owning recipe,
-initialized failed-probe profile. Timing diagnosis proves two captures PASS with
-current offered protocol and graphics-none test override within unchanged8second
-deadline/1.2second stability. Preserve product handoff and authority failures.
-Current v288 CLI380PASS/5ignored and timing1PASS2.83seconds; initialized failed
-API fixture now proves a typed Unknown compatibility snapshot, not missing
-authority. The existing BackendRecovery explicitly suppresses retries for custom
-bridge overrides, while its startup log falsely promises a retry. Correct that
-diagnostic in this same daemon integration outcome; retain the recovery guard,
-test both message branches, typed Unknown disabled/no implementation and separate
-invalid-profile missing-authority failure. No retry scheduling/policy change.
-Git watcher passes current full run; reproduce the older flake before any adapter
-change. Re-run full CLI/bridge, strict CLI lint and timing; no timeout increase.
-Then source/library hygiene, full suite/docs/native reboot-ready OpenBMC/QEMU/GDB,
-exact-source GitHub CI, package/publication. No new features or long image build.
+Planning parent: selected atomic children now verified; integration completion
+is committed with this handoff. Review source-bound child commits and focused
+normal/failure/narrow evidence, retain measured same-workload270 CPU/flamegraph
+record separately from fixture stress. UI377/model586/app250, CLI381 and all
+integration targets/bridge61 pass at their recorded source versions; affected
+strict Clippy/fmt/UI/version/roadmap pass. Confirm every selected dependency DONE,
+then complete only polish parent and split broad source/library hygiene into
+coherent mechanical children before implementation. Do not certify full release,
+optimized native all-screen/reboot/CI/publication from these focused gates.
+External physical/current-Poky/instrumentation blockers remain separate.
 
 ```bash
-cargo test -p yoctui --all-features --no-fail-fast
-python3 -m pytest bridge/tests
-cargo clippy -p yoctui --all-targets --all-features -- -D warnings
-# Manual: exact initialized daemon failed-probe log, two production timed PTYs,
-# repeated Git event delivery without extending deadlines or masking flakes.
-cargo fmt --all --check
+# Manual: committed atomic children, source/binary/workload-bound profiling,
+# normal/failure/narrow contract and integration evidence reconciliation.
 ./scripts/verify-roadmap.sh
 ```
 

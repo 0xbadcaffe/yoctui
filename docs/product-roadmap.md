@@ -9,6 +9,12 @@ metadata effects. This corrects a genuinely observed first-frame discrepancy.
 DONE v287 with external model/CLI/TestBackend tests, full model586/UI377 and
 strict affected lint gates. Configured saved-screen continuity and unconfigured
 setup destination are preserved; native optimized rehearsal remains required.
+Integration DONE v288: full CLI381 and all integration targets/bridge61/UI377
+pass; current-protocol hermetic timing retains its original deadline. Failed API
+Unknown authority and invalid-profile absent authority remain distinct, custom
+bridge suppression no longer falsely promises retry, and ten isolated Git event
+repetitions pass without an adapter/timeout change. Full release gates still
+follow source hygiene; no native/optimized/reboot/publication claim from fixtures.
 
 New user instruction selects profiling and measured hotspot fixes, correctness
 polish without new features, full suite, README screenshots/flamegraph report,

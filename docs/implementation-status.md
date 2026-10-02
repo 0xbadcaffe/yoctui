@@ -1,4 +1,20 @@
-M114 current: DEMO-INTEGRATION-001 IN_PROGRESS; startup navigation DONE v287.
+M114 current: DEMO-POLISH-001 IN_PROGRESS; integration DONE v288.
+Full CLI381PASS/5existing ignored and every integration target6/1/7/2/1/6/7/1/1
+PASS; production two-attach timing1PASS2.82seconds, bridge61PASS2.70seconds,
+strict CLIClippy/fmt/UI/version/roadmap PASS. Correct positive target/recipe/
+initialized probe fixtures retain failure boundaries. Unknown API authority
+disabled/no implementation is tested separately from invalid-profile absent
+authority. Custom-bridge recovery suppression now has truthful startup message;
+normal retry message/policy unchanged, external pure branch test1PASS.
+Git event test passes full run plus ten isolated unchanged-deadline repetitions;
+no watcher adapter/timeout change. Full UI377PASS and34 exact golden files
+checked byte-identical except287->288 identity; no snapshot masking.
+Logs integration-final-v288, integration-ui-v288 and git-watch-v288 under/tmp.
+Only owned old timing-fixture client2256024/private yoctui-timing-cnhqfwhj and its
+waiting XTerm ended after hermetic correction; other clients/daemon retained.
+Polish parent next validates selected committed child evidence, then source
+layout/full quality/docs/native reboot-ready optimized demo/CI/publication.
+Earlier integration diagnosis:
 Current integration candidate288: CLI380PASS/5ignored, timed reattachment1PASS
 2.83seconds and daemon5PASS/1stale failure. Failed API discovery now installs
 typed Unknown authority; invalid profile remains separate missing-authority

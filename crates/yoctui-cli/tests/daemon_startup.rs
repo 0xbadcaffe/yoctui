@@ -250,18 +250,70 @@ fn daemon_startup_cancels_slow_compatibility_and_reaps_probe() {
 }
 
 #[test]
-fn daemon_startup_reports_failed_compatibility_and_keeps_ipc_available() {
-    let fixture = Fixture::new("failed-probe", "#!/bin/sh\nexit 1\n", false);
+fn daemon_startup_reports_waiting_backend_and_keeps_ipc_available() {
+    let fixture = Fixture::new("failed-probe", "#!/bin/sh\nexit 1\n", true);
     let start = fixture.run("start");
     assert!(start.status.success(), "{start:?}");
+    let diagnostic = "Waiting for BitBake API discovery; automatic recovery is disabled for an explicit bridge override";
     fixture.wait_for(|| {
         fs::read_to_string(fixture.root.join("daemon.log"))
             .unwrap_or_default()
-            .contains("Compatibility authority is unavailable")
+            .contains(diagnostic)
+    });
+    let (_, snapshot) = fixture.attach();
+    let compatibility = snapshot.compatibility.as_ref().unwrap();
+    compatibility.validate().unwrap();
+    let workspace_api = compatibility
+        .capabilities
+        .iter()
+        .find(|record| record.id == "bitbake.workspace_inspection")
+        .unwrap();
+    assert!(matches!(
+        workspace_api.state,
+        CompatibilityStateData::Unknown { .. }
+    ));
+    assert!(!workspace_api.state.is_enabled());
+    assert!(workspace_api.implementation.is_none());
+    assert!(snapshot.workspace.is_none());
+    assert!(snapshot.jobs.is_empty());
+    assert!(
+        snapshot
+            .recent_logs
+            .iter()
+            .any(|log| log.message.contains(diagnostic))
+    );
+    assert!(
+        !snapshot
+            .recent_logs
+            .iter()
+            .any(|log| log.message.contains("retrying the backend probe"))
+    );
+    fixture.stop();
+}
+
+#[test]
+fn daemon_startup_rejects_uninitialized_profile_without_publishing_authority() {
+    let fixture = Fixture::new("invalid-profile", "#!/bin/sh\nexit 1\n", false);
+    let start = fixture.run("start");
+    assert!(start.status.success(), "{start:?}");
+    let diagnostic = format!(
+        "invalid initialized daemon environment: BUILDDIR {} is not an initialized Yocto build",
+        fixture.build.display()
+    );
+    fixture.wait_for(|| {
+        fs::read_to_string(fixture.root.join("daemon.log"))
+            .unwrap_or_default()
+            .contains(&diagnostic)
     });
     let (_, snapshot) = fixture.attach();
     assert!(snapshot.compatibility.is_none());
-    assert!(snapshot.recent_logs.iter().any(|log| {
+    assert!(
+        snapshot
+            .recent_logs
+            .iter()
+            .any(|log| log.message.contains(&diagnostic))
+    );
+    assert!(!snapshot.recent_logs.iter().any(|log| {
         log.message
             .contains("Compatibility authority is unavailable")
     }));

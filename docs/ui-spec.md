@@ -2,16 +2,17 @@
 
 Daemon attachment does not wait for compatibility discovery or the initial recipe inventory. The retained
 daemon logs report metadata loading, completion or failure. Recipe/layer content
-When an explicit custom bridge override suppresses automatic backend recovery,
-the diagnostic reports that limitation rather than promising a scheduled retry.
-Unknown API records remain disabled; detected environment authority alone does
-not imply working build/metadata APIs.
 arrives as a typed workspace update without requiring reattachment. A build
 requested while this scan owns the metadata connection reports a visible
 metadata-loading conflict; it is not silently queued or reported as started.
 On Unix automatic compatibility probes and the inventory scan use background
 process priority, while input, rendering, daemon IPC and requested builds
 retain normal process priority.
+
+When an explicit custom bridge override suppresses automatic backend recovery,
+the diagnostic reports that limitation rather than promising a scheduled retry.
+Unknown API records remain disabled; detected environment authority alone does
+not imply working build/metadata APIs.
 
 Starting or restarting the daemon with `--build-dir PATH` initializes that
 exact Yocto build environment before capability discovery. If no explicit path

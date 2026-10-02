@@ -49,8 +49,11 @@ def serve(listener, failures):
                 connection.settimeout(15)
                 hello = receive(connection)
                 assert hello["type"] == "hello", hello
+                # This fixture tests timing, not obsolete protocol negotiation.
+                version = hello["maximum_version"]
+                assert version["major"] == 1 and version["minor"] >= 3, hello
                 send(connection, {
-                    "type": "hello", "selected_version": {"major": 1, "minor": 3},
+                    "type": "hello", "selected_version": version,
                     "daemon_instance_id": [80] * 16, "boot_id": "timing-fixture",
                     "capabilities": hello["capabilities"],
                     "limits": {
@@ -95,7 +98,9 @@ def capture(binary, root):
     master, slave = pty.openpty()
     fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 50, 160, 0, 0))
     env = {key: value for key, value in os.environ.items() if key not in ("BUILDDIR", "YOCTUI_BUILD_DIR", "PYTHONPATH")}
-    env.update(TERM="xterm-256color", XDG_RUNTIME_DIR=str(root), XDG_CONFIG_HOME=str(root / "config"), XDG_STATE_HOME=str(root / "state"))
+    # The PTY must own the rendered screen even on graphics-enabled desktops;
+    # the product's normal XTerm/PDF handoff remains independently covered.
+    env.update(TERM="xterm-256color", YOCTUI_TERMINAL_GRAPHICS="none", XDG_RUNTIME_DIR=str(root), XDG_CONFIG_HOME=str(root / "config"), XDG_STATE_HOME=str(root / "state"))
     def setup():
         os.setsid()
         fcntl.ioctl(0, termios.TIOCSCTTY, 0)

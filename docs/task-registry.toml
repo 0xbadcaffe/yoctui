@@ -17,7 +17,7 @@ notes = "DONE: fresh optimized source8761f308 fixture flamegraph2299samples/6000
 id = "DEMO-POLISH-001"
 milestone = "M114"
 title = "Resolve measured performance and existing demo correctness regressions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3501
 required = true
 depends_on = ["DEMO-PROFILE-001", "DEMO-BACKGROUND-COPY-001", "DEMO-PLATFORM-PROFILE-001", "DEMO-PLATFORM-CONFIG-001", "DEMO-CONTRACT-FIXTURES-001", "DEMO-UI-CLIPPING-001", "DEMO-INTEGRATION-001"]
@@ -248,12 +248,12 @@ notes = "DONE v287: pure model presentation restore aligns typed first catalog d
 id = "DEMO-INTEGRATION-001"
 milestone = "M114"
 title = "Resolve full-suite daemon watcher and production snapshot integration failures"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3514
 required = true
 depends_on = ["DEMO-UI-CLIPPING-001", "DEMO-STARTUP-NAVIGATION-001"]
 verify = ["cargo test -p yoctui --all-features --no-fail-fast", "python3 -m pytest bridge/tests", "Manual: reproduce isolated current contract for daemon failed capability log, production snapshot duration and Git watcher delivery; do not extend budgets or fabricate readiness", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "BaselineCLI3 + daemon1 + snapshot1 failures include obsolete or real asynchronous integration assumptions. Relevant failed cases/helpers and actual adapters only if demonstrated. Retain deadlines/normal/failure semantics and use hermetic exact initialized profile/typed authority. Split unrelated runtime fixes before code; version-bump product changes, never hide flakes or run external long builds to pass fixtures."
+notes = "DONE v288: exact positive BuildOptions selected target, rootfs owning recipe and initialized failed-API fixture; separate uninitialized profile retains missing-authority failure. Current offered protocol plus graphics-none keep two production PTYs local and timed64seconds at unchanged8second/1.2second budgets. Existing custom-bridge recovery suppression now has honest waiting diagnostic; typed Unknown API disabled/no implementation remains separate from environment authority, guard/retry policy unchanged. Full CLI381PASS/5existingignored plus integration targets6/1/7/2/1/6/7/1/1 PASS, timed PTYs2.82s, bridge61PASS and strict CLIClippy/fmt/UI/version/roadmap PASS. Git watcher passes full run plus ten isolated unchanged-deadline repetitions; no adapter/timeout change. Full UI377PASS and all34 goldens changed only287->288 identity. Logs integration-final-v288, integration-ui-v288 and git-watch-v288. Only orphan owned original timing client2256024/private yoctui-timing-cnhqfwhj plus its waiting XTerm ended; original daemon/other clients untouched. Source/library hygiene next, no native optimized/reboot/CI/pub completion inferred."
 
 [[task]]
 id = "DEMO-LAYOUT-HYGIENE-001"
