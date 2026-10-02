@@ -1,3 +1,38 @@
+pub(crate) fn render_dashboard_telemetry(frame: &mut Frame, app: &App, area: Rect) {
+    if area.width < 64 || area.height < 8 {
+        render_telemetry_strip(frame, app, area);
+        return;
+    }
+    let palette = ThemePalette::for_app(app);
+    let title = if app.is_offline() {
+        "Resource Telemetry · cache last observed"
+    } else {
+        "Resource Telemetry · observed resources and cache"
+    };
+    let block = pane_block(app, title, false).style(palette.base());
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    let rows = Layout::vertical([Constraint::Min(3), Constraint::Length(3)]).split(inner);
+    let cells = Layout::horizontal([Constraint::Ratio(1, 3); 3]).split(rows[0]);
+    let projection = app.host_telemetry_projection();
+    for (index, cell) in [
+        TelemetryCell::Cpu,
+        TelemetryCell::Ram,
+        TelemetryCell::BuildFilesystem,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        render_telemetry_cell(frame, app, &projection, cells[index], cell, index < 2);
+    }
+    let lines = app
+        .cache_status_lines()
+        .into_iter()
+        .map(|line| Line::from(bounded_cell_text(&line, rows[1].width)))
+        .collect::<Vec<_>>();
+    frame.render_widget(Paragraph::new(lines).style(palette.base()), rows[1]);
+}
+
 pub(crate) fn render_telemetry_strip(frame: &mut Frame, app: &App, area: Rect) {
     let mode = telemetry_strip_mode(area);
     if mode == TelemetryStripMode::Hidden {

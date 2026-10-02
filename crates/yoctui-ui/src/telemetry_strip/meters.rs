@@ -140,7 +140,7 @@ pub(crate) fn render_dense_telemetry_meter(
 }
 
 pub(crate) fn dense_telemetry_meter_supported(area: Rect) -> bool {
-    area.width >= 12 && area.height >= 4
+    area.width >= 12 && area.height >= 3
 }
 
 pub(crate) fn render_cpu_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {

@@ -34,9 +34,15 @@ pub(crate) fn render_telemetry_cell(
         }
         TelemetryCell::Sstate => {
             let palette = ThemePalette::for_app(app);
+            let style = if app.build.cache.summary.is_some_and(|summary| summary.valid()) {
+                palette.base()
+            } else {
+                palette.role(palette.disabled, Modifier::DIM)
+            };
             frame.render_widget(
-                Paragraph::new("SSTATE ! unavailable")
-                    .style(palette.role(palette.disabled, Modifier::DIM)),
+                Paragraph::new(app.cache_status_lines()[0].clone())
+                    .wrap(Wrap { trim: false })
+                    .style(style),
                 inner,
             );
         }

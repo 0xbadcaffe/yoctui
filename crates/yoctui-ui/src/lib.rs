@@ -176,7 +176,8 @@ use telemetry_gauges::{
 
 mod telemetry_strip;
 use telemetry_strip::{
-    render_compact_telemetry_strip, render_tasks_context_zoom, render_telemetry_strip,
+    render_compact_telemetry_strip, render_dashboard_telemetry, render_tasks_context_zoom,
+    render_telemetry_strip,
 };
 
 mod dashboard_render;

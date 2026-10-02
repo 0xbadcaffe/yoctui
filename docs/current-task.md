@@ -1,30 +1,27 @@
 # Current Task
 
-**ID:** DEMO-TELEMETRY-CACHE-001
-**Title:** Restore typed cache download and network-policy facts in Dashboard telemetry
+**ID:** DEMO-DASHBOARD-EXIT-001
+**Title:** Keep observed current build exit code visible in compact Dashboard overview
 **Status:** IN_PROGRESS
 
-Dependency DEMO-SDK-RAIL-001 DONE v281. UI2 verifies complete compact tokens,
-cancellation and typed focus at80..200; existing SDK UI3/app2 and strictUIClippy/
-fmt/UI/version/roadmap PASS. Same keys/actions/panes; no accepted goldens.
-Dashboard currently omits existing typed cache_status_lines required by M68/M72;
-its Sstate cell also hardcodes unavailable regardless of actual summary.
-Restore these bounded observations within the existing eight-row Dashboard pane,
-retaining numeric/capacity cards and generic full telemetry history behavior.
-Use typed existing model facts, keep offline readiness unverified, and test
-missing/valid/invalid/offline/policy/narrow cases. No fabricated utilization,
-new capability, layout or workflow; focused version/coherent commit required.
-Then finish observed current Dashboard exit code before UI fixture reconciliation.
-UI fixture changes remain separate; no six golden comparisons accepted.
-User additionally requires plain native laptop attach, reboot/login-ready
-durable setup and exact-source green GitHub CI after demo readiness. Real
-reboot requires coordination and cannot be certified by cold restart alone.
+Dependency DEMO-TELEMETRY-CACHE-001 DONE v282. External UI2 checks cache missing/
+valid/invalid/overflow/offline/policy/narrow observations and exact resources;
+existing telemetry1/Dashboard concept1/resource1/modelcache4, strictUIClippy/
+fmt/UI/version/roadmap PASS. Same eight-row Dashboard/three-row card contract;
+generic history/I/O unchanged, no accepted goldens.
+Current100x25 Build Overview columns omit observed build.exit_code. Retain this
+current typed code beside status, distinguish none/offline without history
+inference, preserve other facts/panes and keep code visible at narrow widths.
+External failed/succeeded/missing/offline/narrow regressions plus existing exit
+UI test and model Dashboard tests required; spec/version/coherent commit.
+Then resume separate UI fixtures and six exact golden comparisons.
+User requires plain native attach, durable reboot/login setup and exact-source
+green GitHub CI; no container launcher or fabricated post-reboot evidence.
 
 ```bash
-cargo test -p yoctui-ui demo_dashboard_cache
-cargo test -p yoctui-ui next_generation_telemetry_strip
-cargo test -p yoctui-ui dashboard_concept
-cargo test -p yoctui-model build_cache
+cargo test -p yoctui-ui demo_dashboard_exit
+cargo test -p yoctui-ui dashboard_renders_build_exit_code
+cargo test -p yoctui-model dashboard
 cargo fmt --all --check
 cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh

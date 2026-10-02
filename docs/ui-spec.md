@@ -121,6 +121,15 @@ cumulative observed do_fetch successes/failures and currently active fetches.
 Disconnected observations are labeled last observed; network policy is disabled,
 premirrors only, allowed, or unknown. Resource meters remain adjacent three-row
 cards in ASCII/no-color modes too; the Dashboard resource region is eight rows.
+Its six-row interior reserves three rows for adjacent CPU/RAM/filesystem cards
+and three for the existing typed sstate/download/network observations. In a
+three-row card, exact percentage, segmented bar and capacity/context take
+priority; bounded history renders only when additional card rows exist. Other
+telemetry strips retain their full history and supported I/O tiers. Cache lines
+are cell-bounded rather than wrapping over another observation; disconnected
+Dashboard cache facts also have a visible last-observed pane title. The optional
+sstate cell in other strips uses the same reported/absent typed summary, never
+hardcoded unavailable or a fabricated reuse percentage.
 
 Overall and task progress use continuous filled bars with exact text. Task
 identity truncates before the progress column; unknown task progress remains

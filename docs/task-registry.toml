@@ -204,18 +204,18 @@ notes = "DONE v281: compact SDK tokens fit78cell minimum interior, whole-cell-sa
 id = "DEMO-TELEMETRY-CACHE-001"
 milestone = "M114"
 title = "Restore typed cache download and network-policy facts in Dashboard telemetry"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3530
 required = true
 depends_on = ["DEMO-SDK-RAIL-001"]
 verify = ["cargo test -p yoctui-ui demo_dashboard_cache", "cargo test -p yoctui-ui next_generation_telemetry_strip", "cargo test -p yoctui-ui dashboard_concept", "cargo test -p yoctui-model build_cache", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Current M68/M72 specification and existing Dashboard test require cache/download/status facts but current Dashboard strip omits all three existing typed cache_status_lines. Sstate cell also hardcodes unavailable regardless of supplied summary. Relevant telemetry rendering within existing eight-row Dashboard pane, existing model projections and external missing/valid/invalid/offline/cache policy/numeric/capacity/narrow regressions. Preserve generic full telemetry chart behavior; Dashboard prioritizes existing numeric/capacity cards plus bounded truthful cache observations and unverified offline readiness, no fake utilization/inventory or new capability. Split any layout change against authoritative spec before source; version/coherent commit required."
+notes = "DONE v282: existing eight-row Dashboard uses three adjacent resource cards and three cell-bounded typed cache observation rows per M72. Numeric/capacity/bar priority in three-row cards; generic full histories/I/O retained. Optional Sstate cell reports typed valid/missing summary instead of hardcoded unavailable, offline cache title explicit and readiness unverified. External UI2 covers valid/missing/invalid/overflow/observed active fetch/all policies/offline/narrow/ascii/tiny fallback, existing telemetry1/concept1/resource1/modelcache4 and strictUIClippy/fmt/UI/version/roadmap PASS. No accepted goldens or full-parent certification."
 
 [[task]]
 id = "DEMO-DASHBOARD-EXIT-001"
 milestone = "M114"
 title = "Keep observed current build exit code visible in compact Dashboard overview"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3531
 required = true
 depends_on = ["DEMO-TELEMETRY-CACHE-001"]

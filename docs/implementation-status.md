@@ -1,4 +1,11 @@
-M114 current: DEMO-TELEMETRY-CACHE-001 IN_PROGRESS; SDK rail DONE v281.
+M114 current: DEMO-DASHBOARD-EXIT-001 IN_PROGRESS; Dashboard cache DONE v282.
+Existing eight-row Dashboard shows three-row resource cards plus bounded typed
+sstate/download/network observations, explicit absent/invalid summaries and
+last-observed offline title; readiness stays unverified. Generic telemetry
+history/I/O unchanged; optional Sstate cell no longer hardcodes unavailable.
+External UI2 and existing telemetry1/concept1/resource1/modelcache4, strictUI
+Clippy/fmt/UI/version/roadmap PASS. No goldens accepted. Current exit code next.
+SDK rail DONE v281.
 SDK compact rail fits all nine complete tokens in78cells and prioritizes cancel
 in wider rails; Navigator/dialog focus no longer advertises inactive SDK keys.
 External UI2 across80..200/tiny helper widths/focus, existing SDK UI3/app2 and

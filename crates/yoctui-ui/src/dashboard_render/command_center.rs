@@ -254,7 +254,7 @@ pub(crate) fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTim
         .split(area);
         render_dashboard_build(frame, app, projection, rows[0], now);
         render_dashboard_recent_builds(frame, app, rows[1], now);
-        render_telemetry_strip(frame, app, rows[2]);
+        render_dashboard_telemetry(frame, app, rows[2]);
         render_dashboard_quick_actions(frame, app, rows[3]);
         return;
     }
