@@ -1,4 +1,9 @@
-M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Configuration controls DONE v277.
+M114 current: DEMO-DEPENDENCY-VERDICT-001 IN_PROGRESS; Configuration DONE v277.
+UI path-bounds assertion exposes real narrow Inspector clipping: typed
+LimitReached is after provider/log/relationships and cannot be seen at80x24.
+Split before source changes; promote existing why-built block before lengthy
+metadata, preserving64/4096 limits/full fields/current pane layout. UI fixtures
+resume afterward; no new scrolling workflow or accepted goldens.
 DEMO-GITHUB-CI-001 queued by user after local demo installation/rehearsal and
 before immutable publication. Current pushed CI failures confirmed read-only;
 repair must preserve gate coverage and verify exact-source required jobs green.
