@@ -83,10 +83,10 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 3518
 required = true
-depends_on = ["DEMO-DASHBOARD-EXIT-001"]
+depends_on = ["DEMO-ERROR-RECOVERY-HINTS-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
 notes = "Relevant external UI fixtures and exact styled cell goldens. Compare every expectation with authoritative current contract and correct positive typed fixture state; preserve negative/semantic/style assertions. Reconcile exact version/local clock/current navigator and modifiers only after genuine rendering defects have independent regression proof. Never blanket accept baseline failures or mask dynamic identity fields."
 
@@ -97,7 +97,7 @@ title = "Resolve verified existing footer dialog and responsive demo clipping"
 status = "NOT_STARTED"
 priority = 3513
 required = true
-depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-HEADER-FIT-001", "DEMO-CONFIG-CONTROLS-001", "DEMO-DEPENDENCY-VERDICT-001", "DEMO-CONFIG-DETAILS-001", "DEMO-ENV-CONTROLS-001", "DEMO-SDK-RAIL-001", "DEMO-TELEMETRY-CACHE-001", "DEMO-DASHBOARD-EXIT-001", "DEMO-UI-FIXTURES-001"]
+depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-HEADER-FIT-001", "DEMO-CONFIG-CONTROLS-001", "DEMO-DEPENDENCY-VERDICT-001", "DEMO-CONFIG-DETAILS-001", "DEMO-ENV-CONTROLS-001", "DEMO-SDK-RAIL-001", "DEMO-TELEMETRY-CACHE-001", "DEMO-DASHBOARD-EXIT-001", "DEMO-ERROR-RECOVERY-HINTS-001", "DEMO-UI-FIXTURES-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "Manual: real demo and TestBackend narrow/medium/wide controls remain visible with no new layouts/shortcuts", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Real v272 Dashboard Quick Actions still hardcodes B/E while current catalog routes Alt+b/Alt+e: truthful existing hints need correction, not restoring capital routes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires selected narrow/failure paths verified, not merely expectation replacement. If no defect remains, record evidence rather than invent a feature."
 
@@ -221,6 +221,17 @@ required = true
 depends_on = ["DEMO-TELEMETRY-CACHE-001"]
 verify = ["cargo test -p yoctui-ui demo_dashboard_exit", "cargo test -p yoctui-ui dashboard_renders_build_exit_code", "cargo test -p yoctui-model dashboard", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE v283: current status/exact observed exit code share existing compact row, redundant label omitted only to keep complete outcome; fallback rows prioritize same outcome before long identity. Missing code none, disconnected current code unavailable, no inference from history. External UI2 normal/failed/zero/cancel/max-code/missing/offline/resize100..200 and52x16 workspace, unchanged passive Navigator-only80x24 shell; existing exit UI1/model Dashboard5 and strictUIClippy/fmt/UI/version/roadmap PASS. Other fields/actions/panes retained. No accepted goldens or full-parent certification."
+
+[[task]]
+id = "DEMO-ERROR-RECOVERY-HINTS-001"
+milestone = "M114"
+title = "Advertise the existing modifier rebuild route in Errors recovery panes"
+status = "IN_PROGRESS"
+priority = 3532
+required = true
+depends_on = ["DEMO-DASHBOARD-EXIT-001"]
+verify = ["cargo test -p yoctui-ui demo_error_recovery_hints", "cargo test -p yoctui-ui concept_failed_build_composes", "cargo test -p yoctui-app compatibility_ui_actions_keep_task_shortcuts_authoritative", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Full UI375/app250/model584 verification and scoped golden review reveal existing Errors recovery workspace/Inspector hardcodes B rather than actual Alt+b route. Relevant error_render.rs/inspector_workspace/concept.rs, external narrow/wide/accessibility hint regression, existing failed recovery and typed app modifier/legacy route tests. Prioritize modifier hint within existing pane and retain Enter/l/o actions and review/confirmation warning; no new binding/layout/effect. Version/coherent focused commit before fixture acceptance; no weaker assertions or identity masks."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

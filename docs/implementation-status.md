@@ -1,4 +1,10 @@
-M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Dashboard exit DONE v283.
+M114 current: DEMO-ERROR-RECOVERY-HINTS-001 IN_PROGRESS; UI fixtures paused.
+Full v284 UI375/app250/model584 plus integrations1+5 PASS; six scoped exact
+golden families regenerated and reviewed after independently verified defects.
+Review finds Errors workspace/Inspector still advertises B despite existing
+Alt+b route. Split before source/fixture acceptance; preserve log controls and
+review/confirmation gates, no new actions/layout. Final fixture acceptance and
+live optimized native demo remain pending. Dashboard exit DONE v283.
 Governance reconciles stale six-group concept prose with existing eight typed
 menu groups before fixture/golden acceptance; no renderer/key/action changes.
 Current status/exact code visible in existing compact overview; redundant label

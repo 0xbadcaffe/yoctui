@@ -6400,6 +6400,11 @@ Tasks uses one inspector border with primary facts/paths, Actions and compact
 System Status. Errors places summary, diagnostic table, correlated log, recovery
 and filters in that order; list times use HH:MM:SS rather than truncated epoch
 strings. Its wide inspector prioritizes selected facts/message and recovery.
+Errors recovery rails advertise the existing `Alt+b` rebuild-options route,
+not the legacy capital-only alias. Workspace recovery places this hint before
+longer log controls and uses bounded concise labels for the same Enter/l/o
+actions. The Inspector uses `[Alt+b] Rebuild options`; both retain the explicit
+review-and-confirmation warning. No rebuild runs merely by rendering a hint.
 Smaller inspectors preserve the complete diagnostic-document fallback.
 
 The integrated recipe editor preserves full-height file-tree and inspector
@@ -6580,8 +6585,8 @@ are initiated by the user in GitUI.
 M68 application menus use the anchored concept layout from 80×24
 with the existing eight typed groups in order: Workspace, Build, Actions,
 Navigate, View, Devtool, Tools, Help. Earlier six-group reference captures are
-historical, not authority for removing existing menu destinations. The layout
-through wide terminals. The selected action's unavailable reason occupies the
+historical, not authority for removing existing menu destinations. The anchored
+geometry continues through wide terminals. The selected action's unavailable reason occupies the
 second menu row when no type-ahead query is active. Arrow keys select groups and
 items, Enter activates, and Esc/F12 closes. Mouse clicks select group tabs or
 rows; the wheel selects rows and Enter activates the selection. Outside clicks
