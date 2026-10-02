@@ -1,5 +1,17 @@
 # Yoctui Architecture
 
+## M110 Kernel instrumentation preparation boundary
+
+Pure model owns closed requested presets, deterministic fragments and bounded
+typed config observations/snapshot identity. CLI reads bounded no-follow regular
+files and validates an explicit absent .cfg destination, then revalidates the
+same snapshot/parent and creates only the reviewed new file after confirmation.
+No shell, BitBake bridge, configuration/layer mutation or target operation is
+used. Existing Kernel generation-correlated worker, trapped draft and review
+state are reused; UI formats typed evidence, never raw config/process text.
+Absent options and architecture/compiler/runtime support remain unknown unless
+actually observed; config matching is not runtime compatibility. No wire change.
+
 M109 artifact viewing: model emits an exact path/root local viewing effect;
 CLI performs no-follow bounded regular-file reads within the authoritative
 deploy directory, returning typed text or DTB/DTBO/tool observations. Model

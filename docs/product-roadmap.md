@@ -1,5 +1,24 @@
 # Yoctui Product Roadmap
 
+## M110 — Sanitizer and lockdep configuration preparation
+
+The new continuation request activates step 3's preparation slice independently
+of blocked physical-board verification. KERNEL-INSTRUMENTATION-PLAN-001 owns
+closed presets/config report and bounded inspect/create-new export adapter;
+KERNEL-INSTRUMENTATION-UI-001 owns existing Kernel form/review/worker integration.
+Each gets a focused verified versioned commit, followed by push and final
+commit-bound optimized release. KERNEL-INSTRUMENTATION-LIVE-001 stays BLOCKED:
+provider/compiler/architecture-specific supported fragment integration, approved
+build/boot/reproduction and matching runtime evidence have not been supplied.
+No automatic layer/config edits, kernel build/deploy/reset or detector self-test.
+
+Requested presets and limitations follow primary kernel documentation:
+[KASAN](https://docs.kernel.org/dev-tools/kasan.html),
+[KCSAN](https://docs.kernel.org/dev-tools/kcsan.html),
+[UBSAN](https://docs.kernel.org/dev-tools/ubsan.html),
+[lockdep](https://docs.kernel.org/locking/lockdep-design.html).
+Vendor/version support must be confirmed by resolved Kconfig, not host tools.
+
 ## M109 — Usable deployed-artifact browsing
 
 IMAGES-ARTIFACT-VIEW-001 is DONE in v0.1.265: selection-visible responsive
@@ -170,7 +189,8 @@ artifact or running device. Custom/missing Pseudo locations remain unavailable.
 The user requested documentation of this roadmap and implementation of the
 first QEMU → GDB step, now completed. The subsequent continuation request
 authorizes M108's non-mutating physical-board serial attach slice; remaining
-build/deploy/reset and later steps are proposals, not eligible queue tasks.
+build/deploy/reset remain proposals; the latest continuation activates M110's
+step-3 configuration preparation. It does not authorize a live target change.
 
 1. **QEMU → GDB (current):** explicit deployed boot inputs and matching vmlinux,
    validated preparation, private debug transport, snapshot guest paused at
@@ -180,7 +200,7 @@ build/deploy/reset and later steps are proposals, not eligible queue tasks.
    review persistent Yocto configuration fragments and boot arguments, serial
    or approved proxy transport, explicit halt/resume and reconnect semantics.
    Board-specific build/deploy/reset actions need separate authorization.
-3. **Sanitizers and lockdep (proposed):** supported configuration presets,
+3. **Sanitizers and lockdep (M110 preparation slice):** requested configuration presets,
    reviewed build/deployment, controlled reproduction, typed report capture and
    source navigation. These are instrumented-kernel diagnostics, not interactive
    debugger sessions; each technique needs independent compatibility evidence.

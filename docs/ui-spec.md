@@ -84,6 +84,39 @@ Yoctui is not a collection of unrelated screens. It is a persistent workbench wi
 
 BitBake remains authoritative. Yoctui presents, controls, and organizes BitBake state.
 
+### M110 Sanitizer and lockdep configuration preparation
+
+Keep catalogue ordering and runtime tools unchanged. Sanitizers and lockdep are
+CONFIG PREP, not GUIDE ONLY or a live session. Enter opens the existing trapped
+Kernel Debugging form: preset (KASAN generic/outline, KCSAN strict, UBSAN bounds
+with reporting), exact .config and new absolute .cfg destination. Lockdep uses
+a fixed lockdep/atomic-sleep preset. Left/Right/Space on preset cycles choices;
+other existing text/field/clear controls remain. Only an exact inventory-reported
+.config may seed input; export destination starts empty and is not guessed.
+
+Enter performs background bounded read-only config/destination inspection.
+Typed scrollable review shows requested options, observed y/n/m/absent values,
+exact new-file path and deterministic fragment. Absent means UNKNOWN, not n or
+unsupported. CONFIG MATCH means these requested settings match this file only,
+not that the kernel is running or the selected provider/compiler/architecture
+supports a rebuild. Architecture/compiler capability observations remain
+separate. No build/target tool is invoked to obtain or manufacture a match.
+Enter again explicitly confirms export; only that new .cfg file is created.
+Escape from review returns to editing; edits clear review; Escape from editing
+cancels. Inspection cancellation invalidates its generation. An in-flight
+confirmed export is not falsely cancelled: controls wait for its result.
+Covered/stale inspection results cannot replace another dialog. Narrow panes
+retain confirmation/cancel controls and use the existing safe resize guard.
+
+Reject invalid/control/duplicate selected config values, inputs over 512 KiB,
+symlinks/nonregular files, unsafe paths, existing or dangling output entries,
+changed input snapshots/parent identities and collisions at final create-new.
+No config, layer or recipe edits, automatic fragment integration, kernel build,
+deployment, boot, self-test, privilege changes or target mutation occur.
+Next steps remain explicit: integrate into the actual provider's supported
+Yocto fragment mechanism, run config validation, inspect the resolved .config,
+then deliberately build/boot and collect reports. Runtime tools stay separate.
+
 ### M108 Physical-board KGDB serial client
 
 Append `KGDB → GDB · serial board` to Kernel Debugging without changing existing
@@ -178,8 +211,9 @@ The catalogue includes GDB remote QEMU/KGDB, GDB userspace core analysis,
 strace attach, perf top, trace-cmd report, ftrace snapshot, dmesg follow,
 dynamic-debug callsite inventory, kmemleak report, bpftrace syscall counts,
 LTTng kernel-event discovery and crash/vmcore analysis. KGDB/KDB setup,
-KASAN/KCSAN/UBSAN, lockdep and SysRq/kdump are guidance-only techniques, clearly
-distinguished from launchable tools. No tool is claimed installed on a target
+SysRq/kdump and transport setup are guidance-only; KASAN/KCSAN/UBSAN and lockdep
+have the separate M110 configuration-preparation workflow, not a live session.
+No tool is claimed installed on a target
 merely because it is found on the host. strace is explicitly userspace syscall
 tracing, not a kernel source debugger. Read-only ftrace/report views do not enable
 tracing or mount filesystems; empty/missing/denied results remain tool diagnostics.

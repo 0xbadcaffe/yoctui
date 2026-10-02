@@ -1,8 +1,35 @@
 # Current Task
 
-**ID:** KGDB-SERIAL-LIVE-001
-**Title:** Verify KGDB attach backtrace resume and re-entry on a real board
-**Status:** BLOCKED
+**ID:** KERNEL-INSTRUMENTATION-PLAN-001
+**Title:** Inspect sanitizer and lockdep configurations and export reviewed presets
+**Status:** IN_PROGRESS
+
+New Kernel roadmap continuation supersedes the blocked live-board task.
+Dependency KGDB-SERIAL-UI-001 is DONE. Implement only the closed preset/report
+model and bounded non-mutating inspection/create-new export adapter first;
+Kernel form/input/render/worker integration follows in its independent UI task.
+Relevant files: model kernel_instrumentation module, CLI kernel_instrumentation
+adapter, focused pure/config/filesystem tests and authoritative documentation.
+Done: deterministic KASAN generic/outline, KCSAN strict, UBSAN bounds/report and
+lockdep/atomic-sleep fragments; explicit y/n/m/absent observations; no unsupported
+architecture/compiler/runtime claims; bounded regular config reads; exact
+snapshot revalidation and no-overwrite .cfg export. Existing .config/builds/
+layers/targets are never modified. Normal/failure/collision/change tests pass.
+Version bump/coherent commit, then begin UI integration immediately.
+
+Verification (CARGO_INCREMENTAL=0; full suite deferred):
+```bash
+cargo test -p yoctui-model kernel_instrumentation
+cargo test -p yoctui --bin yoctui kernel_instrumentation
+cargo test -p yoctui-model kgdb_serial
+cargo test -p yoctui --bin yoctui kgdb_serial
+cargo fmt --all --check
+cargo clippy -p yoctui-model -p yoctui --all-targets --all-features -- -D warnings
+python3 scripts/check-version-bump.py
+./scripts/verify-roadmap.sh
+```
+
+Prior completed work and external blockers are retained below:
 
 IMAGES-ARTIFACT-VIEW-001 is DONE in v0.1.265. Single-line responsive table
 keeps all 80 selected long-name artifacts visible; exact byte sizes/readable

@@ -3,6 +3,39 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "KERNEL-INSTRUMENTATION-PLAN-001"
+milestone = "M110"
+title = "Inspect sanitizer and lockdep configurations and export reviewed presets"
+status = "IN_PROGRESS"
+priority = 3290
+required = true
+depends_on = ["KGDB-SERIAL-UI-001"]
+verify = ["cargo test -p yoctui-model kernel_instrumentation", "cargo test -p yoctui --bin yoctui kernel_instrumentation", "cargo test -p yoctui-model kgdb_serial", "cargo test -p yoctui --bin yoctui kgdb_serial", "cargo fmt --all --check", "cargo clippy -p yoctui-model -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Relevant model kernel_instrumentation and local CLI adapter/tests. Done: four deterministic requested presets, bounded y/n/m/absent config evidence, snapshot-bound .cfg create-new export with revalidation and no overwrite or .config/layer mutation. Config match never proves compiler/architecture or running-kernel support. Test normal/duplicate/invalid/oversize/symlink/special/outside/collision/changed input failures. Docs/version/coherent commit required; UI follows immediately. No full suite or live target action."
+
+[[task]]
+id = "KERNEL-INSTRUMENTATION-UI-001"
+milestone = "M110"
+title = "Review sanitizer and lockdep presets from Kernel Debugging"
+status = "NOT_STARTED"
+priority = 3291
+required = true
+depends_on = ["KERNEL-INSTRUMENTATION-PLAN-001"]
+verify = ["cargo test -p yoctui-model kernel_debug", "cargo test -p yoctui-app kernel_debug", "cargo test -p yoctui-ui kernel_debug", "cargo test -p yoctui --bin yoctui kernel_debug", "cargo test -p yoctui --bin yoctui kernel_instrumentation", "cargo fmt --all --check", "cargo clippy -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Relevant existing Kernel draft/state/worker, app input and UI plus focused reducer/worker/TestBackend tests. Done: preserve catalogue indices; sanitizer/lockdep enter typed config/preset/destination form, background correlated read-only inspection, scrollable exact report/fragment review, explicit second Enter create-new export. Missing settings are unknown, matched config not live readiness. Editing/cancel invalidate review; no writes before confirmation and no cancellation pretending in-flight export stopped. Seed only exact reported .config; output remains explicit. Config/build/deploy/reboot controls unchanged. Update all docs, version, commit/push and commit-bound optimized binary."
+
+[[task]]
+id = "KERNEL-INSTRUMENTATION-LIVE-001"
+milestone = "M110"
+title = "Verify preset retention and diagnostics on a matching instrumented kernel"
+status = "BLOCKED"
+priority = 3292
+required = true
+depends_on = ["KERNEL-INSTRUMENTATION-UI-001"]
+verify = ["Manual: approved separate build, provider/version/architecture/compiler, reviewed fragment integration and resolved .config; verify supported preset retained, deliberate build/boot, controlled authorized reproduction and matching diagnostic logs independently for each preset", "./scripts/verify-roadmap.sh"]
+notes = "External prerequisites: no approved instrumented build/boot/reproduction scope or matching runtime config/logs supplied. Exporting a fragment or config match is not runtime compatibility evidence. Provide provider/version/architecture/compiler and approved test environment/retained resolved config/log evidence. Do not enable destructive sanitizer self-tests, deploy/reset hardware, edit layers/config or fabricate diagnostics to bypass this. KGDB physical-board and M67 evidence remain independently blocked."
+
+[[task]]
 id = "IMAGES-ARTIFACT-VIEW-001"
 milestone = "M109"
 title = "Keep deployed artifacts visible and safely view their files"

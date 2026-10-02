@@ -1,3 +1,9 @@
+M110 Kernel instrumentation preparation is IN_PROGRESS. Closed preset/config
+inspection and safe reviewed new .cfg export precede Kernel UI integration in
+two independently verified/versioned commits. Live instrumented kernel evidence,
+physical-board KGDB and M67 remain externally blocked. No automatic config/layer
+edits, build/deploy/boot or self-tests; full suite remains deferred.
+
 IMAGES-ARTIFACT-VIEW-001 is DONE in v0.1.265 (M109). Every selected artifact
 stays visible with long names, navigation and resize; table shows exact bytes
 and readable last-modified UTC metadata. o/e opens bounded internal text/DTS
