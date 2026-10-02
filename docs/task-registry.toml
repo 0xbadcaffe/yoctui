@@ -223,13 +223,24 @@ verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: inst
 notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed native release, normal workstation endpoint and durable working artifacts; container-only rehearsal and mocks do not meet acceptance. Prepare reproducible two-minute path and real screenshots/recovery checklist; no physical-board actions or long clean image rebuild inferred."
 
 [[task]]
+id = "DEMO-GITHUB-CI-001"
+milestone = "M114"
+title = "Fix remaining GitHub CI failures after local demo release verification"
+status = "NOT_STARTED"
+priority = 3525
+required = true
+depends_on = ["DEMO-INSTALL-LIVE-001"]
+verify = ["./scripts/check-ci.sh", "Manual: inspect failed GitHub Actions jobs/logs for exact pushed source; reproduce affected gates locally and split unrelated fixes before implementation", "Manual: push coherent corrections and verify required GitHub CI jobs green for exact source, not cancelled/older successful runs", "./scripts/verify-roadmap.sh"]
+notes = "User explicitly adds GitHub CI repair when demo polish is done. Relevant .github/workflows/ci.yml, script contracts and failing gates; read-only current logs may guide local diagnosis meanwhile. Keep all existing assertion/coverage/resource budgets and distinction between deterministic hosted gates and genuinely available live/self-hosted prerequisites. Do not disable tests/jobs, delete evidence requirements or mask failures to achieve green. Publication waits for source-bound required CI success; actual external live prerequisite blockers stay explicit."
+
+[[task]]
 id = "DEMO-PUBLISH-001"
 milestone = "M114"
 title = "Publish verified public crate graph to crates.io and verify registry availability"
 status = "NOT_STARTED"
 priority = 3505
 required = true
-depends_on = ["DEMO-INSTALL-LIVE-001"]
+depends_on = ["DEMO-GITHUB-CI-001"]
 verify = ["./scripts/verify-cratesio-package.sh", "Manual: authenticated cargo publish --dry-run public dependency graph and then authorized publish in dependency order; verify exact versions/checksums on registry", "Manual: installed latest optimized release remains ready and attached daemon health after publication", "./scripts/verify-roadmap.sh"]
 notes = "Explicit user authorization to publish (cargo.io interpreted as crates.io); seven public crates only, private e2e/shell remain publish=false. Relevant Cargo manifests/package verification/release evidence. Do not print registry credentials, assume authentication/ownership or overwrite an existing registry version; publication is immutable. Stop this task on missing credentials/external registry and record exact blocker, continue independent eligible work. Version/source/test/docs/demo/packaged bridge must be verified first."
 

@@ -12,6 +12,9 @@ Resume external UI fixtures/current typed positives and exact styled goldens.
 Every changed expectation must match current authoritative contract; retain
 negative/style/authority checks. Split further real defects before product code.
 Parent still requires full UI PASS, not just focused rendering regressions.
+User additionally requests GitHub CI repair after demo readiness; registry
+queues DEMO-GITHUB-CI-001 before immutable publication, with exact pushed-source
+required job success and no weakened gates. Current task remains UI fixtures.
 
 ```bash
 cargo test -p yoctui-ui --all-features

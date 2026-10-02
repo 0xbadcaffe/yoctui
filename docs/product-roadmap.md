@@ -16,7 +16,10 @@ actual laptop reboot requires user coordination; report that post-boot check
 as pending until genuinely observed, not as covered by a simulated restart.
 Atomic order: DEMO-PROFILE-001 -> DEMO-POLISH-001 (split implementation children
 from actual findings) -> DEMO-FULL-VERIFY-001 -> DEMO-DOCS-001 ->
-DEMO-NATIVE-PERSISTENCE-001 -> DEMO-INSTALL-LIVE-001 -> DEMO-PUBLISH-001.
+DEMO-NATIVE-PERSISTENCE-001 -> DEMO-INSTALL-LIVE-001 -> DEMO-GITHUB-CI-001
+-> DEMO-PUBLISH-001. The user's follow-up adds GitHub CI repair after local
+demo readiness; required jobs must be green for exact pushed source before
+immutable publication. Preserve gate coverage and external live prerequisites.
 Preserve prior evidence, existing
 workspaces and matching artifacts; no broad parent DONE from partial checks.
 Profiling baseline DONE: fresh2299sample/6000frame stress plus real1179sample

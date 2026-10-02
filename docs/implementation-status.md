@@ -1,4 +1,7 @@
 M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Configuration controls DONE v277.
+DEMO-GITHUB-CI-001 queued by user after local demo installation/rehearsal and
+before immutable publication. Current pushed CI failures confirmed read-only;
+repair must preserve gate coverage and verify exact-source required jobs green.
 User now requires plain native laptop attach and reboot/login-ready demo.
 DEMO-NATIVE-PERSISTENCE-001 split before installation: durable prerequisites,
 saved exact OpenBMC profile, enabled user service and normal endpoint; cold
