@@ -1,4 +1,8 @@
-M114 current: DEMO-HEADER-FIT-001 IN_PROGRESS; editor hints DONE v275.
+M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; header fitting DONE v276.
+Whole optional Distro/Machine fields omitted only after separator compaction
+and measured health budget; DISTRO Full-only, primary overflow styled/cell-safe
+ellipsis, complete version reserved. External UI3 plus header_status3 and
+strictUIClippy/fmt/UI/version/roadmap PASS. Current optimized rehearsal pending.
 Fresh full UI296PASS/62failures; fixture-only modifier/nav corrections started,
 no goldens accepted. Additional real header defect split before product code:
 low-priority Distro is forced into all width tiers and clipped into health.

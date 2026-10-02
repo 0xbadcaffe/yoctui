@@ -1,6 +1,8 @@
 //! Header.
 use super::*;
 
+include!("header/fitting.rs");
+
 pub(crate) fn daemon_status_label(status: yoctui_model::ClientReplicaStatus) -> &'static str {
     match status {
         yoctui_model::ClientReplicaStatus::Disconnected => "Disconnected",
@@ -145,6 +147,7 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
     let distro = app.workspace.variables.get("DISTRO");
     let release = app.workspace.release.as_deref();
     let build_tone = build_status_tone(app.build.status);
+    let mut optional_context_starts = Vec::new();
     let mut left = vec![Span::styled(
         format!("yoctui v{}", env!("CARGO_PKG_VERSION")),
         palette.role(palette.progress, Modifier::BOLD),
@@ -191,6 +194,7 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
     if matches!(mode, HeaderMode::Full | HeaderMode::Wide)
         && let Some(machine) = machine
     {
+        optional_context_starts.push(left.len());
         left.push(header_separator(&palette, false));
         left.extend(header_identity_spans(
             &palette,
@@ -200,8 +204,9 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
             false,
         ));
     }
-    if mode == HeaderMode::Full || concept_geometry {
+    if mode == HeaderMode::Full {
         if let Some(distro) = distro {
+            optional_context_starts.push(left.len());
             left.push(header_separator(&palette, false));
             left.extend(header_identity_spans(
                 &palette,
@@ -255,9 +260,13 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
         palette.role(palette.primary_foreground, Modifier::BOLD),
     ));
     let right = Line::from(right);
-    let right_width = u16::try_from(right.width())
-        .unwrap_or(inner.width)
-        .min(inner.width.saturating_sub(12));
+    let right_width = u16::try_from(right.width()).unwrap_or(inner.width).min(
+        inner.width.saturating_sub(
+            u16::try_from(left[0].width())
+                .unwrap_or(inner.width)
+                .saturating_add(1),
+        ),
+    );
     // Compact separators before clipping identity values when the release label
     // or backend context grows. Width tiers alone do not guarantee the text fits.
     let left_width = left.iter().map(Span::width).sum::<usize>();
@@ -268,6 +277,13 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
             }
         }
     }
+    let left_budget = inner.width.saturating_sub(right_width);
+    for start in optional_context_starts.into_iter().rev() {
+        if left.iter().map(Span::width).sum::<usize>() > usize::from(left_budget) {
+            left.truncate(start);
+        }
+    }
+    let left = fit_header_spans(left, left_budget);
     if !concept_geometry {
         let columns =
             Layout::horizontal([Constraint::Min(12), Constraint::Length(right_width)]).split(inner);
@@ -422,62 +438,7 @@ fn render_header_status(frame: &mut Frame, app: &App, area: Rect, palette: &Them
     frame.render_widget(Paragraph::new(Line::from(spans)), area);
 }
 
-pub(crate) fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
-    let palette = ThemePalette::for_app(app);
-    let mut spans = Vec::new();
-    for (index, item) in shortcuts.split(" | ").enumerate() {
-        if index > 0 {
-            spans.push(Span::styled(
-                "   ",
-                palette.role(palette.disabled, Modifier::DIM),
-            ));
-        }
-        let (key, action) = item.split_once(' ').unwrap_or((item, ""));
-        if key == "…" {
-            spans.push(Span::styled(
-                key,
-                palette.role(palette.muted, Modifier::DIM),
-            ));
-            continue;
-        }
-        spans.push(Span::styled(
-            key,
-            palette.role(palette.warning, Modifier::BOLD),
-        ));
-        if !action.is_empty() {
-            spans.push(Span::raw(format!(" {action}")));
-        }
-    }
-    Line::from(spans)
-}
-
-pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, _now: SystemTime) {
-    let palette = ThemePalette::for_app(app);
-    let block = Block::default()
-        .borders(if area.height >= 3 {
-            Borders::ALL
-        } else if area.width == LITERAL_REFERENCE_WIDTH && app.screen == Screen::Tasks {
-            Borders::LEFT | Borders::RIGHT | Borders::BOTTOM
-        } else {
-            Borders::BOTTOM
-        })
-        .style(palette.base())
-        .border_style(Style::default().fg(palette.inactive_border));
-    let inner = block.inner(area);
-    frame.render_widget(block, area);
-    if inner.is_empty() {
-        return;
-    }
-    let shortcuts = if app.preferences.footer_shortcuts {
-        footer_rail_shortcuts(app, inner.width)
-    } else {
-        "F1 Help | shortcuts hidden".into()
-    };
-    frame.render_widget(
-        Paragraph::new(shortcut_rail(app, &shortcuts)).style(palette.base()),
-        inner,
-    );
-}
+include!("header/footer.rs");
 
 pub(crate) fn transient_status_tone(kind: TransientStatusKind) -> StatusTone {
     match kind {

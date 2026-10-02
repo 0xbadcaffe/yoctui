@@ -83,7 +83,7 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3518
 required = true
 depends_on = ["DEMO-HEADER-FIT-001"]
@@ -138,12 +138,12 @@ notes = "DONE v275: existing document rail reserves two rows, save/build/navigat
 id = "DEMO-HEADER-FIT-001"
 milestone = "M114"
 title = "Fit optional header identity fields without clipping their labels into health status"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3522
 required = true
 depends_on = ["DEMO-EDITOR-HINTS-001"]
 verify = ["cargo test -p yoctui-ui demo_header_fit", "cargo test -p yoctui-ui header_status", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Confirmed actual160x50 first row clips Distro into adjacent separately measured health; concept geometry also incorrectly forces DISTRO into Narrow/Medium contrary documented width priority. Relevant header.rs typed identity/health renderer and external style-preserving TestBackend tests. Compact separators, omit whole low-priority optional metadata when budget exhausted, keep version/health and explicit ellipsis for residual long primary context. Five-row geometry/status/local clock unchanged; no new layout/actions. Reconcile historical header spec in governance before code. Full UI fixture/golden child then resumes."
+notes = "DONE v276: DISTRO remains Full-tier-only; separators compact before whole optional Distro/Machine fields are omitted when health budget leaves insufficient space. Residual primary context uses cell-safe styled ellipsis; full compiled version reserved. Header footer helpers mechanically extracted to keep source452lines. UI3 normal widths80..240/longUnicode/attribute-only/exact-boundary styles and existing header_status3 PASS; strictUIClippy/fmt/UI/version/roadmap PASS. Five-row/status/local clock unchanged, no new layout/action. Exact UI fixtures/goldens now resume; actual final optimized live rehearsal remains pending."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

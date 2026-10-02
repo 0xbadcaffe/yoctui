@@ -1185,6 +1185,8 @@ After compacting separator spacing, omit complete low-priority DISTRO/MACHINE
 fields that cannot fit the independent health budget. Never print a partial
 metadata label against health. Remaining oversized primary context uses an
 explicit cell-width-safe ellipsis while retaining its semantic span styles.
+The health allocation reserves the complete compiled version plus a clipping
+marker on the identity side; oversized Git/project text cannot cut the version.
 
 Project identity is the basename of the typed source directory, falling back
 to the typed build directory. It is never copied from the build target. When

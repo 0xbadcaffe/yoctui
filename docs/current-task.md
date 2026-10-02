@@ -1,27 +1,25 @@
 # Current Task
 
-**ID:** DEMO-HEADER-FIT-001
-**Title:** Fit optional header identity fields without clipping their labels into health status
+**ID:** DEMO-UI-FIXTURES-001
+**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
 **Status:** IN_PROGRESS
 
-Dependency DEMO-EDITOR-HINTS-001 DONE v275; fresh fullUI296PASS/62failures.
-Confirmed actual160x50 Distro text clipped adjacent to health; current concept
-geometry forces DISTRO into Narrow/Medium contrary responsive priority. Relevant
-typed header renderer and external normal/narrow/long/style regressions. Compact
-separators then omit whole optional metadata fields that cannot fit, explicitly
-ellipsis residual primary context while keeping independent health/version.
-Keep current five-row geometry/message/context/local clock and style roles.
-Historical header spec reconciled before code. No new workflow/shortcut; bump
-version. UI fixture corrections already present remain uncommitted/separate;
-no goldens accepted. UI fixture child resumes after this source fix commits.
+Dependency DEMO-HEADER-FIT-001 DONE v276: focused UI3/header-status3/strictUI
+Clippy/fmt/UI/version/roadmap PASS. Dashboard hint/dialog/editor source fixes
+independently verified. Relevant external UI fixtures/semantic/style assertions
+and exact styled cell goldens for confirmed contract drift only. Map current
+five-row Header/command-only Footer/LocalHH:MM, Hardware navigation indices,
+Alt modifiers and exact typed positive setup to current authoritative spec.
+Preserve negative/style/authority checks; no blanket snapshot acceptance or
+shared helper silently normalizing deliberate screen/selection mismatches.
+Some fixture-only changes already uncommitted; no goldens accepted. Split any
+further demonstrated product defect before implementation. UI parent remains
+incomplete until this child and its full UI verification pass.
 
 ```bash
-cargo test -p yoctui-ui demo_header_fit
-cargo test -p yoctui-ui header_status
+cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
-cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
-python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 # Manual: verified current narrow/medium/wide controls and truthful hints.
 ```
