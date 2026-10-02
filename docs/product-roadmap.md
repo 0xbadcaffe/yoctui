@@ -44,6 +44,13 @@ background copying, selected-source initialization, current-contract fixtures,
 verified UI clipping and isolated integration failures. None is silently DONE.
 DEMO-LAYOUT-HYGIENE-001 separately reconciles the existing source-size/external
 test-module violations before full release verification; no checker exemptions.
+Its atomic CLI/model/bridge/palette children preserve every behavior/assertion;
+the parent retains full-workspace verification. DEMO-DOC-FIXTURE-MAINTENANCE-001
+then repairs faithful DIM raster projection and current fixture/provenance facts
+needed by check-docs before full quality. Final README/live-gallery/operator/
+flamegraph refresh stays after full verification; historical live evidence is
+never relabeled as current. Polish planning parent DONE after committed288
+integration and all selected dependency evidence, not final demo acceptance.
 Selected-source init DONE v271 with real provider/firmware .config evidence;
 DEMO-PLATFORM-CONFIG-001 fixes separately observed kernel config starvation
 within existing bounded scans before contract fixtures; no quota increase.

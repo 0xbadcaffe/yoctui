@@ -1,4 +1,12 @@
-M114 current: DEMO-POLISH-001 IN_PROGRESS; integration DONE v288.
+M114 current: DEMO-CLI-HYGIENE-001 IN_PROGRESS; polish planning parent DONE.
+After committed integration926cbc0a/v288, all seven selected direct polish
+dependencies are DONE with source-bound measured and focused evidence reviewed.
+No final release/native/reboot/CI/publication claim. Split source hygiene before
+code into CLI, model, bridge and palette children; full-suite hygiene parent
+retains all gates. Baseline14 file findings/17 checker diagnostics, no exemptions.
+Also isolate existing DIM raster/provenance/performance-prose maintenance as a
+full-quality prerequisite, breaking the full-verify/final-doc dependency cycle
+without omitting check-docs. Historical live evidence remains historical.
 Full CLI381PASS/5existing ignored and every integration target6/1/7/2/1/6/7/1/1
 PASS; production two-attach timing1PASS2.82seconds, bridge61PASS2.70seconds,
 strict CLIClippy/fmt/UI/version/roadmap PASS. Correct positive target/recipe/

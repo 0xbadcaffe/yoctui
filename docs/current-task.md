@@ -1,23 +1,28 @@
 # Current Task
 
-**ID:** DEMO-POLISH-001
-**Title:** Resolve measured performance and existing demo correctness regressions
+**ID:** DEMO-CLI-HYGIENE-001
+**Title:** Externalize CLI regression modules and split oversized dialog startup routing
 **Status:** IN_PROGRESS
 
-Planning parent: selected atomic children now verified; integration completion
-is committed with this handoff. Review source-bound child commits and focused
-normal/failure/narrow evidence, retain measured same-workload270 CPU/flamegraph
-record separately from fixture stress. UI377/model586/app250, CLI381 and all
-integration targets/bridge61 pass at their recorded source versions; affected
-strict Clippy/fmt/UI/version/roadmap pass. Confirm every selected dependency DONE,
-then complete only polish parent and split broad source/library hygiene into
-coherent mechanical children before implementation. Do not certify full release,
-optimized native all-screen/reboot/CI/publication from these focused gates.
-External physical/current-Poky/instrumentation blockers remain separate.
+Dependency integration926cbc0a/v288 DONE. Polish planning parent selected
+dependencies/evidence all DONE; no full release/native/reboot/CI/pub claim.
+Mechanically externalize identical inline tests from image_artifact_view,
+source_git, workspace_editor and qemu_debug/runtime/staging into tests folders
+without altering literals/assertions/module test names. Split existing oversized
+BuildOptions/BuildTarget routing and daemon startup config resolution into
+cohesive private helpers; preserve priority, trapped input, exact config precedence
+and side effects. No behavior/key/layout change, exemption or raised500line limit.
+Bump product; maintain exact golden identity version-only and full UI checks.
+Then model/bridge/palette children, full hygiene parent, tested faithful DIM/
+fixture/provenance maintenance, full release quality and actual native reboot-
+ready optimized OpenBMC/QEMU/GDB/CI/publication. Preserve sources/images/symbols,
+user captures and unrelated clients; only two compile workers.
 
 ```bash
-# Manual: committed atomic children, source/binary/workload-bound profiling,
-# normal/failure/narrow contract and integration evidence reconciliation.
+cargo test -p yoctui --all-features --no-fail-fast
+cargo clippy -p yoctui --all-targets --all-features -- -D warnings
+# Manual: all six CLI source-layout findings removed; other children remain.
+cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```
 

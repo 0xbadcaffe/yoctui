@@ -17,12 +17,12 @@ notes = "DONE: fresh optimized source8761f308 fixture flamegraph2299samples/6000
 id = "DEMO-POLISH-001"
 milestone = "M114"
 title = "Resolve measured performance and existing demo correctness regressions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3501
 required = true
 depends_on = ["DEMO-PROFILE-001", "DEMO-BACKGROUND-COPY-001", "DEMO-PLATFORM-PROFILE-001", "DEMO-PLATFORM-CONFIG-001", "DEMO-CONTRACT-FIXTURES-001", "DEMO-UI-CLIPPING-001", "DEMO-INTEGRATION-001"]
 verify = ["Manual: split measured hotspots and baseline correctness failures into independently verified atomic child tasks before implementation", "Manual: focused normal/failure/narrow-terminal regressions and comparable before/after measured workload", "./scripts/verify-roadmap.sh"]
-notes = "Planning parent: no broad completion from one fix. Relevant measured model/app/UI/CLI hot paths and existing tests, not new features/layouts. Each implementation child needs coherent fix/tests, UI/architecture docs if changed, version bump and commit; preserve behavior and benchmark identity. Parent DONE only after all selected children are verified/committed."
+notes = "DONE after final selected integration commit926cbc0a/v288 and checked all seven direct dependencies DONE. Independently committed actual polling040a/v270 comparable real CPU client98.23% lower/combined91.67% lower with workload/build/RSS/target limitations preserved; selected-source and bounded .config fixes271/272; normal/failure/narrow contract/rendering atomic children273..286; startup navigation287 and integration288. Source-bound focused model586/UI377/app250/CLI381+all integrations/bridge61/affected strict gates pass at recorded sources. Every selected child committed/verified; no broad full-release/native/optimized/reboot/CI/pub or unrelated physical/current-Poky/instrumentation claim. Source layout and full release verification continue separately."
 
 [[task]]
 id = "DEMO-BACKGROUND-COPY-001"
@@ -256,13 +256,68 @@ verify = ["cargo test -p yoctui --all-features --no-fail-fast", "python3 -m pyte
 notes = "DONE v288: exact positive BuildOptions selected target, rootfs owning recipe and initialized failed-API fixture; separate uninitialized profile retains missing-authority failure. Current offered protocol plus graphics-none keep two production PTYs local and timed64seconds at unchanged8second/1.2second budgets. Existing custom-bridge recovery suppression now has honest waiting diagnostic; typed Unknown API disabled/no implementation remains separate from environment authority, guard/retry policy unchanged. Full CLI381PASS/5existingignored plus integration targets6/1/7/2/1/6/7/1/1 PASS, timed PTYs2.82s, bridge61PASS and strict CLIClippy/fmt/UI/version/roadmap PASS. Git watcher passes full run plus ten isolated unchanged-deadline repetitions; no adapter/timeout change. Full UI377PASS and all34 goldens changed only287->288 identity. Logs integration-final-v288, integration-ui-v288 and git-watch-v288. Only orphan owned original timing client2256024/private yoctui-timing-cnhqfwhj plus its waiting XTerm ended; original daemon/other clients untouched. Source/library hygiene next, no native optimized/reboot/CI/pub completion inferred."
 
 [[task]]
+id = "DEMO-CLI-HYGIENE-001"
+milestone = "M114"
+title = "Externalize CLI regression modules and split oversized dialog startup routing"
+status = "IN_PROGRESS"
+priority = 3534
+required = true
+depends_on = ["DEMO-INTEGRATION-001"]
+verify = ["cargo test -p yoctui --all-features --no-fail-fast","cargo clippy -p yoctui --all-targets --all-features -- -D warnings","Manual: all six CLI checker findings removed without altering tests or runtime behavior; other crate findings remain for their children","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
+notes = "Relevant image_artifact_view/source_git/workspace_editor/qemu_debug runtime staging inline tests; main startup daemon config delegation and oversized interactive runtime build_dialogs. Mechanically move identical test bodies into tests folders, preserve module identity/literal contents/assertions; extract existing BuildOptions/BuildTarget handler and daemon config resolution without changing routing order/input ownership/precedence/side effects. Bump, exact version-only golden identity maintenance, docs/status/registry and coherent commit."
+
+[[task]]
+id = "DEMO-MODEL-HYGIENE-001"
+milestone = "M114"
+title = "Split oversized model catalog reducers and external model regression modules"
+status = "NOT_STARTED"
+priority = 3535
+required = true
+depends_on = ["DEMO-CLI-HYGIENE-001"]
+verify = ["cargo test -p yoctui-model --all-features","cargo test -p yoctui-app --all-features","cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings","Manual: six model source-layout findings removed with exact behavior/assertion preservation","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
+notes = "Relevant compatibility_ui/workspace_action_catalog, open_selected_package_recipe/reset_pane_subfocus oversized reducer chunks, hardware/tests.rs outside tests folder and525line kernel_debug tests. Semantic mechanical helper/module boundaries only; exact branch order/effects/guards/assertions/private visibility retained. No size-limit exemptions or new behavior. Versioned coherent commit and docs."
+
+[[task]]
+id = "DEMO-BRIDGE-HYGIENE-001"
+milestone = "M114"
+title = "Externalize bridge adapter tests and split oversized Python metadata regression file"
+status = "NOT_STARTED"
+priority = 3536
+required = true
+depends_on = ["DEMO-MODEL-HYGIENE-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features","python3 -m pytest bridge/tests","cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings","Manual: inline bridge types/stderr tests and517line Python test_metadata_events findings removed with exact assertions","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
+notes = "Relevant bitbake bridge_backend/types_and_stderr external tests and bridge/tests/test_metadata_events.py semantic split into another test file. Preserve discovery/import fixtures, every test/normal and failure assertion, literal contents and integration limits. No runtime/protocol change or checker exemption. Versioned coherent commit."
+
+[[task]]
+id = "DEMO-UI-HYGIENE-001"
+milestone = "M114"
+title = "Split palette projection helpers under existing UI module size limit"
+status = "NOT_STARTED"
+priority = 3537
+required = true
+depends_on = ["DEMO-BRIDGE-HYGIENE-001"]
+verify = ["cargo test -p yoctui-ui --all-features","cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings","python3 scripts/check-library-layout.py","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
+notes = "Relevant511line palette_render.rs. Move a cohesive helper projection into a sibling private module, preserve rendering/focus/typed state/text/geometry and full UI snapshots byte-for-byte except product version. No layout, key or theme change. External tests remain intact; versioned coherent commit."
+
+[[task]]
+id = "DEMO-DOC-FIXTURE-MAINTENANCE-001"
+milestone = "M114"
+title = "Maintain faithful disabled screenshot styles and current fixture provenance before release quality"
+status = "NOT_STARTED"
+priority = 3538
+required = true
+depends_on = ["DEMO-LAYOUT-HYGIENE-001"]
+verify = ["python3 -m unittest scripts/test_raster_styles.py scripts/test_performance_documentation.py","./scripts/check-docs.sh","cargo test -p yoctui-ui --all-features","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
+notes = "Existing full-quality blockers: native raster generator rejects DIM used by current disabled controls; concept manifest still expects obsolete clock/menu/hint fixtures, performance prose misses true nonmutating build-parallelism statement. Add tested faithful DIM projection preserving unknown/SLOW_BLINK rejection; regenerate current pinned fixture images/hashes/anchors using maintained scripts, preserve historical live_evidence. No fake live claims, weakened golden identity or new UI behavior. Full final README/live-gallery/operator/report refresh remains separate after full verification. Resolve prerequisite-cycle before code."
+
+[[task]]
 id = "DEMO-LAYOUT-HYGIENE-001"
 milestone = "M114"
 title = "Restore existing source size and external test module hygiene"
 status = "NOT_STARTED"
 priority = 3515
 required = true
-depends_on = ["DEMO-INTEGRATION-001"]
+depends_on = ["DEMO-INTEGRATION-001", "DEMO-CLI-HYGIENE-001", "DEMO-MODEL-HYGIENE-001", "DEMO-BRIDGE-HYGIENE-001", "DEMO-UI-HYGIENE-001"]
 verify = ["python3 scripts/check-library-layout.py", "cargo fmt --all --check", "cargo test --workspace --all-features --no-fail-fast", "python3 -m pytest bridge/tests", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
 notes = "Baseline existing source-layout violations include inline tests outside test directories and files over500lines across bridge/CLI/bitbake/model/UI. Relevant checker findings; move tests and split oversized modules mechanically while preserving visibility and every assertion. No exemptions, raised limits or runtime behavior change. Verification against full suite after contract fixes required before release."
 
@@ -273,7 +328,7 @@ title = "Pass full Rust Python and release quality checks for demo code"
 status = "NOT_STARTED"
 priority = 3502
 required = true
-depends_on = ["DEMO-POLISH-001", "DEMO-LAYOUT-HYGIENE-001"]
+depends_on = ["DEMO-POLISH-001", "DEMO-LAYOUT-HYGIENE-001", "DEMO-DOC-FIXTURE-MAINTENANCE-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features --no-fail-fast", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-release-quality.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "New user instruction explicitly revokes full-suite deferral. Relevant full test graph/release scripts; record exact pass/failure and fix independently, never skip/weaken failures to claim PASS. Full product completion still includes unrelated external board/instrumentation/current-Poky blockers and must not be relabeled. Source/binary-bound quality evidence required."
 
