@@ -18,6 +18,12 @@ failed fetches at 09:13. These checkpoints do not certify a successful image.
 Do not submit a duplicate build or restart the active daemon. Read current
 aggregate authority with `python3 scripts/inspect-zcu102-build.py` (six focused
 framing/identity/read-only checks pass); preserve the existing build to completion.
+At 10:36 UTC it reached 1826/10994, still Running with zero fetch failures.
+User-approved GNOME index pause/reset reclaimed ~9.5 GiB (~18.84 GiB now free).
+All 216 tags/349 file associations are privately backed up; personal files are
+untouched. `artifacts/live-xilinx/zcu102/storage-cleanup.txt` records cleanup,
+private backup identity and REQUIRED runtime-mask removal/service restore after
+validation. Desktop indexing remains temporarily paused, not permanently disabled.
 Monitor real daemon tasks/outcome with `./scripts/live-zcu102.sh status` and
 `./scripts/live-zcu102.sh attach`; preserve stdout/error/task logs. Keep two
 task/make workers, four-GiB stop/one-GiB halt disk guards and rm_work exclusions

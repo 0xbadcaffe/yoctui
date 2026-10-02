@@ -1,0 +1,42 @@
+ZCU102 build storage checkpoint — 2026-10-02 10:36 UTC
+
+User explicitly approved: Pause indexer and clear its cache.
+Only desktop search index/cache was reset; source/document files untouched.
+GNOME localsearch-3.service had indexed old build trees; cache reached 9.5 GiB.
+Temporary pause: systemctl --user mask --runtime --now localsearch-3.service
+Graceful stop exceeded the unit's existing 90-second bound; systemd killed the
+unit. Before reset, a read-only SQLite snapshot preserved all 216 tag declarations
+and 349 tagged-file associations, including actual file URLs, in private JSON.
+CLI bulk exports timed out; they are not claimed as successful backups.
+Successful private backup (not committed; contains personal file metadata):
+/home/bspguy-dev/src/yoctui-zcu102-2026.1/logs/desktop-tags-20261002T1035.json
+Mode 0600, 133074 bytes.
+SHA256 ae89b79d2bddeb645875d3765e5caac4d554fbfbf5e1b90e9182a74f78965b82
+Backup helper outside repository: project/inspection/backup-desktop-tags.py.
+Verified exact tag/association counts and recovery URLs before deleting index.
+
+Official reset: localsearch reset --filesystem
+Reset removed /home/bspguy-dev/.cache/tracker3/files, recovering ~9.5 GiB.
+Unit failure state cleared; verified inactive, masked-runtime, no indexer PID.
+No persistent service disable or search-folder preference changes.
+After validation, restore previous desktop service state:
+  systemctl --user unmask --runtime localsearch-3.service
+  systemctl --user start localsearch-3.service
+The index is rebuildable. Retain private tag backup for metadata recovery;
+automatic tag restoration has not been executed or verified.
+
+Additional prior scoped cleanup while image remained active: official Poky
+sstate-cache-management.py removed remaining 7704 unused-by-new-validation
+old-cache files under /home/bspguy-dev/src/build/sstate-cache (~4.6 GiB), after
+interactive preview/cancel. Exact manager args: --cache-dir that old path,
+--stamps-dir new validation build/tmp/stamps -j2 --yes. Old outputs/stamps,
+kernel/debug/image evidence, native QEMU and source trees retained. Old cache
+objects are regenerable; future older builds may lose cache reuse. No broad
+old tmp, source, personal data, Docker image or volume deletion.
+
+Filesystem after reset: 20229345280 available bytes (~18.84 GiB).
+Actual image job 1 stayed Running, same daemon instance:
+d4a77149d273128063464c230720e618, 1826/10994 aggregate completions at 10:36.
+Observed fetch_failed=0; retained task failures empty. Not image success.
+Two task/make workers, 4-GiB stop/1-GiB halt guards remain unchanged.
+Release v0.1.267, sources, unrelated user captures and other containers intact.

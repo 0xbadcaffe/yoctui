@@ -16,6 +16,13 @@ emission. Keep the active daemon/build alive; image success is not yet proven.
 Active UI/source-bound identities are retained alongside resumed ENV evidence.
 Next prove
 deployed image/matching symbols/config and reviewed live QEMU/GDB separately.
+At 10:36 UTC build aggregate was 1826/10994, still Running/no failed fetches.
+User approved pausing/resetting the GNOME desktop search index; ~9.5 GiB freed,
+~18.84 GiB available. Private mode-0600 backup preserves 216 tags and 349 file
+associations; source/documents unchanged. Desktop service is runtime-masked only
+and must be restored after validation. Scoped older sstate cleanup preserved
+old outputs/debug/images/native QEMU. Exact cleanup/backup/restore evidence is
+in artifacts/live-xilinx/zcu102/storage-cleanup.txt, not a successful image claim.
 
 Historical pause/resume handoff (superseded by completed ENV above):
 M111 was resumed by the user after laptop shutdown (2026-10-02), with
