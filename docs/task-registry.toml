@@ -61,12 +61,34 @@ notes = "DONE product0e749f9e/v272: metadata STAGING_KERNEL_BUILDDIR plus regula
 id = "DEMO-CONTRACT-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile stale full-suite fixtures with authoritative current UI contracts"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 3512
 required = true
-depends_on = ["DEMO-PLATFORM-CONFIG-001"]
+depends_on = ["DEMO-MODEL-APP-FIXTURES-001", "DEMO-UI-FIXTURES-001"]
 verify = ["cargo test -p yoctui-model --all-features", "cargo test -p yoctui-app --all-features", "cargo test -p yoctui-ui --all-features", "Manual: document each changed expected shortcut/row/clock/action/catalog and supply current typed positive/negative authority fixtures without removing assertions", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
-notes = "Baseline88failures include confirmed stale UTC clock/capital-letter shortcuts/old navigator indices/header geometry and missing current typed authority in action fixtures. Relevant model/app/UI test helpers/cases/snapshots only for genuine drift. Retain exact behavior and negative paths; no blanket golden accept, broad assertion deletion or product contract reversion. Split any newly identified product defect separately. Coherent test-contract reconciliation and mapped evidence required."
+notes = "Planning parent split before further implementation: model/app fixture reconciliation is independently verifiable; UI fixtures follow separately verified rendering fixes so stale golden failures cannot block diagnosis or authorize golden acceptance. DONE only after both children and exact full model/app/UI verification. Preserve negative assertions and current product contract."
+
+[[task]]
+id = "DEMO-MODEL-APP-FIXTURES-001"
+milestone = "M114"
+title = "Reconcile model and input fixtures with current navigation and modifier contracts"
+status = "IN_PROGRESS"
+priority = 3517
+required = true
+depends_on = ["DEMO-PLATFORM-CONFIG-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
+notes = "Relevant external model/app tests only. Map Hardware-adjusted navigator positions, five-row header mouse geometry, current build-target picker precondition, exact209-action catalog, Alt shortcuts and terminal cell budget to existing authoritative contracts. Retain negative/focus/mouse/authority checks and compatibility aliases; no product code or snapshot changes. DONE requires exact changed-contract evidence and committed full suites."
+
+[[task]]
+id = "DEMO-UI-FIXTURES-001"
+milestone = "M114"
+title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
+status = "NOT_STARTED"
+priority = 3518
+required = true
+depends_on = ["DEMO-UI-CLIPPING-001"]
+verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
+notes = "Relevant external UI fixtures and exact styled cell goldens. Compare every expectation with authoritative current contract and correct positive typed fixture state; preserve negative/semantic/style assertions. Reconcile exact version/local clock/current navigator and modifiers only after genuine rendering defects have independent regression proof. Never blanket accept baseline failures or mask dynamic identity fields."
 
 [[task]]
 id = "DEMO-UI-CLIPPING-001"
@@ -75,7 +97,7 @@ title = "Resolve verified existing footer dialog and responsive demo clipping"
 status = "NOT_STARTED"
 priority = 3513
 required = true
-depends_on = ["DEMO-CONTRACT-FIXTURES-001"]
+depends_on = ["DEMO-MODEL-APP-FIXTURES-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "Manual: real demo and TestBackend narrow/medium/wide controls remain visible with no new layouts/shortcuts", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Real v272 Dashboard Quick Actions still hardcodes B/E while current catalog routes Alt+b/Alt+e: truthful existing hints need correction, not restoring capital routes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires selected narrow/failure paths verified, not merely expectation replacement. If no defect remains, record evidence rather than invent a feature."
 
@@ -86,7 +108,7 @@ title = "Resolve full-suite daemon watcher and production snapshot integration f
 status = "NOT_STARTED"
 priority = 3514
 required = true
-depends_on = ["DEMO-UI-CLIPPING-001"]
+depends_on = ["DEMO-UI-FIXTURES-001"]
 verify = ["cargo test -p yoctui --all-features --no-fail-fast", "python3 -m pytest bridge/tests", "Manual: reproduce isolated current contract for daemon failed capability log, production snapshot duration and Git watcher delivery; do not extend budgets or fabricate readiness", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "BaselineCLI3 + daemon1 + snapshot1 failures include obsolete or real asynchronous integration assumptions. Relevant failed cases/helpers and actual adapters only if demonstrated. Retain deadlines/normal/failure semantics and use hermetic exact initialized profile/typed authority. Split unrelated runtime fixes before code; version-bump product changes, never hide flakes or run external long builds to pass fixtures."
 

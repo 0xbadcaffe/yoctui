@@ -1,4 +1,7 @@
-M114 current: DEMO-CONTRACT-FIXTURES-001 IN_PROGRESS; bounded config discovery DONE.
+M114 current: DEMO-MODEL-APP-FIXTURES-001 IN_PROGRESS; bounded config discovery DONE.
+Contract reconciliation split into independently verified model/app fixtures,
+actual UI rendering polish and later UI fixture/golden reconciliation. No
+blanket snapshot acceptance; real defects remain separate from stale fixtures.
 v0.1.272 now queries authoritative shared kernel build root and prioritizes
 regular root-level .config files before bounded recursion; exact-path dedup
 counts unique files, symlink entry exclusion and quotas unchanged. New scan

@@ -1,25 +1,27 @@
 # Current Task
 
-**ID:** DEMO-CONTRACT-FIXTURES-001
-**Title:** Reconcile stale full-suite fixtures with authoritative current UI contracts
+**ID:** DEMO-MODEL-APP-FIXTURES-001
+**Title:** Reconcile model and input fixtures with current navigation and modifier contracts
 **Status:** IN_PROGRESS
 
 Dependency DEMO-PLATFORM-CONFIG-001 DONE product0e749f9e/v272: focused checks
 pass; actual kernel105069byte .config visible/opened, matching hash unchanged.
 Baseline full suite88failures include stale modifier shortcuts, LocalHH:MM,
 current navigator indices/header geometry and obsolete positive action setup.
-Relevant model/app/UI fixture helpers/cases/snapshots only for confirmed drift.
+Relevant external model/app fixture cases only for confirmed drift.
 Compare every expectation against current spec and exact typed route. Keep exact
 semantic/style/negative authority assertions; no blanket golden accept, dropped
 checks, old contract restoration or weakened deadlines. Separate actual product
 defects before code. Real Dashboard B/E labels are currently wrong versus Alt
 catalog and remain a UI polish task, not a fixture-only expected-value update.
-Document mappings, run model/app/UI full suites; use two compile workers.
+Document mappings, run model/app full suites; use two compile workers. Parent
+DEMO-CONTRACT-FIXTURES-001 is split: this independently verifiable child, then
+separate actual UI rendering polish, then UI fixtures/exact styled goldens.
+No UI assertion or golden acceptance is authorized by this fixture child.
 
 ```bash
 cargo test -p yoctui-model --all-features
 cargo test -p yoctui-app --all-features
-cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
 ./scripts/verify-ui-spec.sh
 ./scripts/verify-roadmap.sh
