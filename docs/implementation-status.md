@@ -1,4 +1,12 @@
-M114 current: DEMO-DASHBOARD-EXIT-001 IN_PROGRESS; Dashboard cache DONE v282.
+M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Dashboard exit DONE v283.
+Current status/exact code visible in existing compact overview; redundant label
+yields to complete outcome, fallback prioritizes outcome before long target.
+Missing code is none; offline current code unavailable, never derived from
+history. UI2 normal/failure/zero/cancel/max-code/missing/offline/resize, existing
+exit UI1/model Dashboard5 and strictUIClippy/fmt/UI/version/roadmap PASS.
+Narrow workspace52x16 plus unchanged Navigator-only80x24 shell checked, no new
+focus/layout/actions. Four real defects done; fixtures/six goldens resume.
+Dashboard cache DONE v282.
 Existing eight-row Dashboard shows three-row resource cards plus bounded typed
 sstate/download/network observations, explicit absent/invalid summaries and
 last-observed offline title; readiness stays unverified. Generic telemetry

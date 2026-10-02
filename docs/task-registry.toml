@@ -83,7 +83,7 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3518
 required = true
 depends_on = ["DEMO-DASHBOARD-EXIT-001"]
@@ -215,12 +215,12 @@ notes = "DONE v282: existing eight-row Dashboard uses three adjacent resource ca
 id = "DEMO-DASHBOARD-EXIT-001"
 milestone = "M114"
 title = "Keep observed current build exit code visible in compact Dashboard overview"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3531
 required = true
 depends_on = ["DEMO-TELEMETRY-CACHE-001"]
 verify = ["cargo test -p yoctui-ui demo_dashboard_exit", "cargo test -p yoctui-ui dashboard_renders_build_exit_code", "cargo test -p yoctui-model dashboard", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Actual baseline100x25 Build Overview selects current/history columns but omits observed build.exit_code, so existing failure diagnosis assertion fails even when field is supplied. Relevant dashboard_render current build facts; retain visible current typed exit code beside status at compact width, distinguish unavailable/offline/missing rather than infer from job history. External failed/succeeded/missing/offline/narrow states and existing test required. No new workflow/layout/native authority. Full UI fixtures/goldens follow all four independently verified defects."
+notes = "DONE v283: current status/exact observed exit code share existing compact row, redundant label omitted only to keep complete outcome; fallback rows prioritize same outcome before long identity. Missing code none, disconnected current code unavailable, no inference from history. External UI2 normal/failed/zero/cancel/max-code/missing/offline/resize100..200 and52x16 workspace, unchanged passive Navigator-only80x24 shell; existing exit UI1/model Dashboard5 and strictUIClippy/fmt/UI/version/roadmap PASS. Other fields/actions/panes retained. No accepted goldens or full-parent certification."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

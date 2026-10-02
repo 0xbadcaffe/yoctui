@@ -6161,6 +6161,13 @@ Actions with a persistent Project Inspector. This replaces the previous shared
 Tasks cockpit on Dashboard. Tasks retains the interactive task/log/history
 cockpit. Dashboard remains Navigator-only for focus; its action hints use the
 actual typed keymap and unavailable telemetry stays explicitly unavailable.
+Build Overview retains the current observed exit code beside current status in
+its compact current/history columns. At narrow widths, the redundant status
+label yields to the exact status and code; detailed fallback rows prioritize
+the same outcome before long target/backend text. A missing code says `none`,
+not success/zero. Disconnected current status says `Offline` and its exit code
+is unavailable, not a live claim based on retained job/build history. Current
+task, daemon status, warnings/errors and history remain separate existing facts.
 
 Layers places file information and the scrollable file preview beside the
 tree. Its tree column follows useful visible-label width within responsive

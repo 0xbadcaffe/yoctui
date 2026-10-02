@@ -1,31 +1,29 @@
 # Current Task
 
-**ID:** DEMO-DASHBOARD-EXIT-001
-**Title:** Keep observed current build exit code visible in compact Dashboard overview
+**ID:** DEMO-UI-FIXTURES-001
+**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
 **Status:** IN_PROGRESS
 
-Dependency DEMO-TELEMETRY-CACHE-001 DONE v282. External UI2 checks cache missing/
-valid/invalid/overflow/offline/policy/narrow observations and exact resources;
-existing telemetry1/Dashboard concept1/resource1/modelcache4, strictUIClippy/
-fmt/UI/version/roadmap PASS. Same eight-row Dashboard/three-row card contract;
-generic history/I/O unchanged, no accepted goldens.
-Current100x25 Build Overview columns omit observed build.exit_code. Retain this
-current typed code beside status, distinguish none/offline without history
-inference, preserve other facts/panes and keep code visible at narrow widths.
-External failed/succeeded/missing/offline/narrow regressions plus existing exit
-UI test and model Dashboard tests required; spec/version/coherent commit.
-Then resume separate UI fixtures and six exact golden comparisons.
-User requires plain native attach, durable reboot/login setup and exact-source
-green GitHub CI; no container launcher or fabricated post-reboot evidence.
+Dependency DEMO-DASHBOARD-EXIT-001 DONE v283. External outcome UI2, existing
+exit UI1/model Dashboard5, strictUIClippy/fmt/UI/version/roadmap PASS. Current
+status/code retained before long identity and beside status in existing compact
+columns; absent is none, offline is unavailable, never inferred from history.
+Narrow52x16 subtree checked without violating passive Dashboard focus;80x24
+full shell stays Navigator-only per current layout contract.
+All four real remaining defects are independently verified. Resume external
+UI fixture reconciliation: current typed navigator/positive selected targets,
+modifiers, five-row header, bounded visible panes and current authority facts.
+Preserve every negative/semantic/style assertion and exact identity. Review
+six golden mismatches against current spec before scoped regeneration, then
+full UI all-features/fmt/UI/roadmap gates. No blanket acceptance or identity masks.
+Parent UI/clipping remains incomplete until full required gates pass.
+User requires native attach and durable reboot/login setup, real OpenBMC QEMU/
+GDB final release rehearsal, full suite and then exact-source GitHub CI repair.
 
 ```bash
-cargo test -p yoctui-ui demo_dashboard_exit
-cargo test -p yoctui-ui dashboard_renders_build_exit_code
-cargo test -p yoctui-model dashboard
+cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
-cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
-python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 ```
 

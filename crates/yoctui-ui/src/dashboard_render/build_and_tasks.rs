@@ -1,3 +1,24 @@
+fn dashboard_current_build_outcome(app: &App) -> (String, String) {
+    if app.is_offline() {
+        return ("Offline".into(), "unavailable".into());
+    }
+    (
+        app.build.status.to_string(),
+        app.build.exit_code.map_or_else(|| "none".into(), |code| code.to_string()),
+    )
+}
+
+fn dashboard_build_status_line(app: &App, width: u16) -> String {
+    let (status, exit) = dashboard_current_build_outcome(app);
+    let outcome = format!("{status} · Exit code: {exit}");
+    let labeled = format!("Build Status  : {outcome}");
+    if Line::from(labeled.as_str()).width() <= usize::from(width) {
+        labeled
+    } else {
+        outcome
+    }
+}
+
 #[allow(dead_code)]
 pub(crate) fn dashboard_build_details(
     app: &App,
@@ -33,10 +54,7 @@ pub(crate) fn dashboard_build_details(
         .build
         .total
         .map_or_else(|| "—".into(), |total| total.to_string());
-    let exit = app
-        .build
-        .exit_code
-        .map_or_else(|| "none".into(), |code| code.to_string());
+    let (status, exit) = dashboard_current_build_outcome(app);
     let machine = app
         .workspace
         .variables
@@ -50,10 +68,9 @@ pub(crate) fn dashboard_build_details(
     let sstate = &projection.progress.sstate;
     if width >= 70 {
         format!(
-            "Target: {}  Backend: {}  Status: {}  Exit code: {exit}\nParse progress: {parse_progress}  Tasks: {}/{total} (active: {})  Warnings: {}  Errors: {}\nMachine: {machine}  Distro: {distro}  Release: {}\nHost CPU: {cpu}  Build disk free: {disk}  Environment: {}\nSstate reuse: {} — {}",
+            "Exit code: {exit}  Status: {status}  Target: {}  Backend: {}\nParse progress: {parse_progress}  Tasks: {}/{total} (active: {})  Warnings: {}  Errors: {}\nMachine: {machine}  Distro: {distro}  Release: {}\nHost CPU: {cpu}  Build disk free: {disk}  Environment: {}\nSstate reuse: {} — {}",
             app.build.target.as_deref().unwrap_or("none"),
             app.backend,
-            app.build.status,
             app.build.completed,
             projection.summary.active,
             app.build.warnings,
@@ -65,9 +82,8 @@ pub(crate) fn dashboard_build_details(
         )
     } else {
         format!(
-            "Target: {}  Status: {}  Exit code: {exit}\nBackend: {}  Parse progress: {parse_progress}\nTasks: {}/{total}  Active: {}  Warnings: {}  Errors: {}\nMachine: {machine}  Distro: {distro}  Release: {}\nCPU: {cpu}  Disk free: {disk}\nEnvironment: {}  Sstate reuse: {}",
+            "Exit code: {exit}  Status: {status}  Target: {}\nBackend: {}  Parse progress: {parse_progress}\nTasks: {}/{total}  Active: {}  Warnings: {}  Errors: {}\nMachine: {machine}  Distro: {distro}  Release: {}\nCPU: {cpu}  Disk free: {disk}\nEnvironment: {}  Sstate reuse: {}",
             app.build.target.as_deref().unwrap_or("none"),
-            app.build.status,
             app.backend,
             app.build.completed,
             projection.summary.active,
@@ -120,14 +136,7 @@ pub(crate) fn render_dashboard_build(
             app.build.target.as_deref().unwrap_or("none")
         )),
         Line::from(format!("Current Task  : {task}")),
-        Line::from(format!(
-            "Build Status  : {}",
-            if app.is_offline() {
-                "unavailable (offline)".to_owned()
-            } else {
-                app.build.status.to_string()
-            }
-        )),
+        Line::from(dashboard_build_status_line(app, columns[0].width.saturating_sub(1))),
         Line::from(format!(
             "Daemon Status : {}",
             header::daemon_status_label(app.daemon.status)
