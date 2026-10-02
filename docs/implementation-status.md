@@ -1,4 +1,8 @@
-M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; header fitting DONE v276.
+M114 current: DEMO-CONFIG-CONTROLS-001 IN_PROGRESS; header fitting DONE v276.
+UI fixture iteration leaves49 failures, many historical labels/geometry/goldens.
+Four Configuration narrow tests expose actual controls below visible detail;
+hardcoded C/U/E hints also disagree with existing Alt routes. Split before code,
+preserving exact availability/reasons and every negative assertion.
 Whole optional Distro/Machine fields omitted only after separator compaction
 and measured health budget; DISTRO Full-only, primary overflow styled/cell-safe
 ellipsis, complete version reserved. External UI3 plus header_status3 and

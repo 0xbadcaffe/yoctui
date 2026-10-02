@@ -83,10 +83,10 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 3518
 required = true
-depends_on = ["DEMO-HEADER-FIT-001"]
+depends_on = ["DEMO-CONFIG-CONTROLS-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
 notes = "Relevant external UI fixtures and exact styled cell goldens. Compare every expectation with authoritative current contract and correct positive typed fixture state; preserve negative/semantic/style assertions. Reconcile exact version/local clock/current navigator and modifiers only after genuine rendering defects have independent regression proof. Never blanket accept baseline failures or mask dynamic identity fields."
 
@@ -97,7 +97,7 @@ title = "Resolve verified existing footer dialog and responsive demo clipping"
 status = "NOT_STARTED"
 priority = 3513
 required = true
-depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-HEADER-FIT-001", "DEMO-UI-FIXTURES-001"]
+depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-HEADER-FIT-001", "DEMO-CONFIG-CONTROLS-001", "DEMO-UI-FIXTURES-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "Manual: real demo and TestBackend narrow/medium/wide controls remain visible with no new layouts/shortcuts", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Real v272 Dashboard Quick Actions still hardcodes B/E while current catalog routes Alt+b/Alt+e: truthful existing hints need correction, not restoring capital routes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires selected narrow/failure paths verified, not merely expectation replacement. If no defect remains, record evidence rather than invent a feature."
 
@@ -144,6 +144,17 @@ required = true
 depends_on = ["DEMO-EDITOR-HINTS-001"]
 verify = ["cargo test -p yoctui-ui demo_header_fit", "cargo test -p yoctui-ui header_status", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE v276: DISTRO remains Full-tier-only; separators compact before whole optional Distro/Machine fields are omitted when health budget leaves insufficient space. Residual primary context uses cell-safe styled ellipsis; full compiled version reserved. Header footer helpers mechanically extracted to keep source452lines. UI3 normal widths80..240/longUnicode/attribute-only/exact-boundary styles and existing header_status3 PASS; strictUIClippy/fmt/UI/version/roadmap PASS. Five-row/status/local clock unchanged, no new layout/action. Exact UI fixtures/goldens now resume; actual final optimized live rehearsal remains pending."
+
+[[task]]
+id = "DEMO-CONFIG-CONTROLS-001"
+milestone = "M114"
+title = "Keep typed Configuration action availability visible before long variable details"
+status = "IN_PROGRESS"
+priority = 3523
+required = true
+depends_on = ["DEMO-HEADER-FIT-001"]
+verify = ["cargo test -p yoctui-ui demo_config_controls", "cargo test -p yoctui-app config_workspace", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Four baseline narrow Configuration tests demonstrate copy/edit/compare/source controls clipped after long detail in current five-row shell. config_copy_status also hardcodes C/U/E while existing routes advertise Alt+c/u/e. Relevant typed config_render status/detail presentation and external missing/loaded/loading/error/long/narrow regressions. Prioritize compact exact availability before detail, keep full exact reasons and current fields in existing detailed inspection; no new keys/workflow/capability or backend state. Version/UI spec and coherent fix required. UI fixture child follows; preserve all negative/authority assertions."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

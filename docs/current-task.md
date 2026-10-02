@@ -1,25 +1,27 @@
 # Current Task
 
-**ID:** DEMO-UI-FIXTURES-001
-**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
+**ID:** DEMO-CONFIG-CONTROLS-001
+**Title:** Keep typed Configuration action availability visible before long variable details
 **Status:** IN_PROGRESS
 
-Dependency DEMO-HEADER-FIT-001 DONE v276: focused UI3/header-status3/strictUI
-Clippy/fmt/UI/version/roadmap PASS. Dashboard hint/dialog/editor source fixes
-independently verified. Relevant external UI fixtures/semantic/style assertions
-and exact styled cell goldens for confirmed contract drift only. Map current
-five-row Header/command-only Footer/LocalHH:MM, Hardware navigation indices,
-Alt modifiers and exact typed positive setup to current authoritative spec.
-Preserve negative/style/authority checks; no blanket snapshot acceptance or
-shared helper silently normalizing deliberate screen/selection mismatches.
-Some fixture-only changes already uncommitted; no goldens accepted. Split any
-further demonstrated product defect before implementation. UI parent remains
-incomplete until this child and its full UI verification pass.
+Dependency DEMO-HEADER-FIT-001 DONE v276. Four narrow Configuration tests
+demonstrate actual copy/edit/compare/source availability clipped after long
+variable detail; existing status also hardcodes C/U/E instead of Alt+c/u/e.
+Relevant config_render typed status/detail presentation and new external
+missing/loaded/loading/error/long/narrow regressions. Prioritize compact exact
+availability before details; retain full exact reasons and fields in detailed
+inspection, existing pane allocation and all negative/capability semantics.
+No new workflow/actions/backend mutations. Bump version/UI spec; fixture-only
+changes stay uncommitted/separate, no golden acceptance. Resume UI fixtures
+after this atomic product fix commits; parent still requires full UI PASS.
 
 ```bash
-cargo test -p yoctui-ui --all-features
+cargo test -p yoctui-ui demo_config_controls
+cargo test -p yoctui-app config_workspace
 cargo fmt --all --check
+cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 # Manual: verified current narrow/medium/wide controls and truthful hints.
 ```
