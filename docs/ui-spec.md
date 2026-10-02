@@ -22,6 +22,11 @@ Status: **Authoritative product and interaction contract**
 
 ### M114 OpenBMC demo release polish (no new features)
 
+Kernel/Firmware inspection uses the selected workspace source and build even
+when they are sibling directories. Missing selected initializer or an initializer
+that selects another build produces the existing inspection failure notice;
+it must not silently inspect a different environment. No layout/shortcut change.
+
 The user requests profiling, verified performance/correctness fixes, full tests,
 fresh README screenshots/report, operator guidance, versioned optimized install,
 crates.io publication and a real OpenBMC demo. Full-suite deferral is revoked.

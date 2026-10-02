@@ -1,4 +1,10 @@
 M114 current: DEMO-PLATFORM-PROFILE-001 IN_PROGRESS; background copying DONE.
+v0.1.271 platform worker now captures exact attached source alongside selected
+build, retains ancestor-only fallback for absent source and rejects redirected
+BUILDDIR. Focused fake initializer/daemon/saved-environment and real inspection
+verification pending; initial platform7/daemon7/saved7 and strictCLI Clippy
+pass. Profile helpers extracted to preserve source-size contract; rerun and
+real current-source inspection pending, no completion or full-suite claim.
 v0.1.270 local background setters now use pure reducer (no full-App rollback
 copies); new large-inventory equivalent-state test, existing activity1/authority11
 tests and strict affected all-target/all-feature Clippy pass. No external action

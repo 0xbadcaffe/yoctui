@@ -1,5 +1,17 @@
 # Yoctui Architecture
 
+## M114 selected platform inspection environment
+
+CLI platform workers capture the attached typed workspace's exact source and
+session build directory before spawning. Explicit source initialization supports
+sibling source/build layouts; ancestor discovery is only a legacy fallback when
+no source identity is supplied. Canonical selected build configuration and its
+initializer are validated through the existing environment adapter, and the
+returned BUILDDIR must canonicalize to the selected build. Missing explicit
+source/initializer or redirected builds fail closed; no another-source fallback,
+ambient inherited build authority, source mutation or image build is introduced.
+UI consumes existing typed inspection results/failures without parsing scripts.
+
 ## M114 measured local polling boundary
 
 The three runtime background activity flags are client-local reducer state;

@@ -1,7 +1,13 @@
 //! Daemon commands.
 use super::*;
 #[cfg(unix)]
+mod environment_profile;
+#[cfg(unix)]
 mod startup_process;
+#[cfg(unix)]
+pub(crate) use environment_profile::{
+    inferred_build_environment_profile, selected_build_environment_profile,
+};
 #[cfg(unix)]
 pub(crate) use startup_process::DaemonStartupChild;
 #[cfg(unix)]
@@ -190,28 +196,6 @@ async fn initialize_daemon_build_environment(
         .await
         .context("could not initialize the selected Yocto environment for the daemon")?;
     Ok(initialized.environment)
-}
-
-#[cfg(unix)]
-pub(crate) fn inferred_build_environment_profile(
-    working_directory: &Path,
-) -> Option<yoctui_model::BuildEnvironmentProfile> {
-    let build_dir = working_directory.canonicalize().ok()?;
-    if !build_dir.join("conf/local.conf").is_file()
-        || !build_dir.join("conf/bblayers.conf").is_file()
-    {
-        return None;
-    }
-    let source_dir = build_dir
-        .ancestors()
-        .find(|candidate| candidate.join("oe-init-build-env").is_file())?
-        .to_path_buf();
-    let init_script = source_dir.join("oe-init-build-env").canonicalize().ok()?;
-    Some(yoctui_model::BuildEnvironmentProfile {
-        source_dir,
-        build_dir,
-        init_script,
-    })
 }
 
 #[cfg(all(test, unix))]
