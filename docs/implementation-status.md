@@ -1,6 +1,7 @@
 M113 selected by user: set ZCU102 aside/preserve its work, finish the emulated
 OpenBMC/QEMU debug path and save real boot/debug screenshots for presentation.
-OPENBMC-QEMU-GDB-FLASH-001 remains IN_PROGRESS pending the source-bound release;
+OPENBMC-QEMU-GDB-FLASH-001 is DONE; OPENBMC-QEMU-GDB-LIVE-001 is IN_PROGRESS.
+Product 361ff4484104 pushed; exact source-bound optimized release built (9m04s).
 the closed mode, exact ARM/config/32-MiB preflight, private bounded copy, review
 and unchanged default route are implemented in v0.1.269. Focused checks pass:
 model debug3/kernel17, app7, UI7, CLI managed11/preparation7, normal-QEMU model22/

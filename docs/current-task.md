@@ -1,21 +1,23 @@
 # Current Task
 
-**ID:** OPENBMC-QEMU-GDB-FLASH-001
-**Title:** Support reviewed managed debugging of OpenBMC Romulus flash images
+**ID:** OPENBMC-QEMU-GDB-LIVE-001
+**Title:** Verify real OpenBMC boot and kernel debugging and save presentation screenshots
 **Status:** IN_PROGRESS
 
 User replaces ZCU102 validation with OpenBMC/QEMU and requests genuine QEMU
 boot/kernel debugging screenshots for the existing presentation. Preserve
 ZCU102 work without deletion/retry; its unfinished validation is deferred.
-Dependency QEMU-GDB-UI-001 is DONE. Implement only the closed explicit flash
-boot mode described in UI spec M113; reuse existing form/review/staging/runtime.
+Dependency OPENBMC-QEMU-GDB-FLASH-001 is DONE: product v0.1.269 committed/pushed
+as 361ff4484104; exact source-bound optimized release built with two workers.
+Use the closed explicit flash boot mode in UI spec M113, existing form/review/
+staging/runtime. Implementation and focused checks below are completed.
 Relevant files: model qemu_debug/kernel_debug, app kernel_debug, UI renderer,
 CLI qemu_debug validation/staging and focused tests. No image rebuild/mutation,
 physical target, global daemon replacement or arbitrary QEMU command field.
 Done requires pure planning/reducer/input/TestBackend/file/fake-process checks,
 unchanged direct-kernel route, mode-specific review, private flash copy/cleanup,
 strict affected Clippy/fmt/UI/version/roadmap checks and versioned commit/push/
-source-bound release. Then immediately continue OPENBMC-QEMU-GDB-LIVE-001.
+source-bound release. Live task remains IN_PROGRESS until real acceptance.
 
 Verification (CARGO_INCREMENTAL=0, debug info disabled for host test artifacts;
 use a separate temporary Cargo target directory to avoid full-disk rebuild):
