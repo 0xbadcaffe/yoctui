@@ -1,25 +1,27 @@
 # Current Task
 
-**ID:** DEMO-UI-FIXTURES-001
-**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
+**ID:** DEMO-HEADER-FIT-001
+**Title:** Fit optional header identity fields without clipping their labels into health status
 **Status:** IN_PROGRESS
 
-Dependency DEMO-EDITOR-HINTS-001 DONE v275: UI2/devtool-editor6/strictUIClippy/
-fmt/UI/version/roadmap PASS. Dashboard hint and bounded-dialog product children
-also DONE with independent regressions; no goldens accepted. Relevant external
-UI fixtures/semantic/style assertions and exact styled cell goldens only for
-confirmed current-contract drift. Map LocalHH:MM/five-row header, Hardware
-navigator positions, Alt modifiers and exact typed positive setup against
-current spec. Later concept-layout rules explicitly supersede historical
-two-row header/status Footer. Preserve exact negative/style/authority checks;
-no blanket snapshot acceptance or helper that silently normalizes intentional
-mismatches. Split any additional demonstrated product defect before code.
-UI parent remains incomplete until this child and its full UI suite pass.
+Dependency DEMO-EDITOR-HINTS-001 DONE v275; fresh fullUI296PASS/62failures.
+Confirmed actual160x50 Distro text clipped adjacent to health; current concept
+geometry forces DISTRO into Narrow/Medium contrary responsive priority. Relevant
+typed header renderer and external normal/narrow/long/style regressions. Compact
+separators then omit whole optional metadata fields that cannot fit, explicitly
+ellipsis residual primary context while keeping independent health/version.
+Keep current five-row geometry/message/context/local clock and style roles.
+Historical header spec reconciled before code. No new workflow/shortcut; bump
+version. UI fixture corrections already present remain uncommitted/separate;
+no goldens accepted. UI fixture child resumes after this source fix commits.
 
 ```bash
-cargo test -p yoctui-ui --all-features
+cargo test -p yoctui-ui demo_header_fit
+cargo test -p yoctui-ui header_status
 cargo fmt --all --check
+cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 # Manual: verified current narrow/medium/wide controls and truthful hints.
 ```

@@ -1,4 +1,8 @@
-M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; editor hints DONE v275.
+M114 current: DEMO-HEADER-FIT-001 IN_PROGRESS; editor hints DONE v275.
+Fresh full UI296PASS/62failures; fixture-only modifier/nav corrections started,
+no goldens accepted. Additional real header defect split before product code:
+low-priority Distro is forced into all width tiers and clipped into health.
+Header spec reconciles five-row current geometry and optional-field budget.
 Two-row editor action rail retains save/build/navigation and search/GitUI.
 External UI2 normal/narrow/focus/mode/menu cases and existing devtool_editor6,
 strictUIClippy/fmt/UI/version/roadmap PASS. Document/modes/focus unchanged.

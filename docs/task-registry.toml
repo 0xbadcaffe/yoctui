@@ -83,10 +83,10 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 3518
 required = true
-depends_on = ["DEMO-EDITOR-HINTS-001"]
+depends_on = ["DEMO-HEADER-FIT-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
 notes = "Relevant external UI fixtures and exact styled cell goldens. Compare every expectation with authoritative current contract and correct positive typed fixture state; preserve negative/semantic/style assertions. Reconcile exact version/local clock/current navigator and modifiers only after genuine rendering defects have independent regression proof. Never blanket accept baseline failures or mask dynamic identity fields."
 
@@ -97,7 +97,7 @@ title = "Resolve verified existing footer dialog and responsive demo clipping"
 status = "NOT_STARTED"
 priority = 3513
 required = true
-depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-UI-FIXTURES-001"]
+depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-HEADER-FIT-001", "DEMO-UI-FIXTURES-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "Manual: real demo and TestBackend narrow/medium/wide controls remain visible with no new layouts/shortcuts", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Real v272 Dashboard Quick Actions still hardcodes B/E while current catalog routes Alt+b/Alt+e: truthful existing hints need correction, not restoring capital routes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires selected narrow/failure paths verified, not merely expectation replacement. If no defect remains, record evidence rather than invent a feature."
 
@@ -133,6 +133,17 @@ required = true
 depends_on = ["DEMO-DIALOG-CONTROLS-001"]
 verify = ["cargo test -p yoctui-ui demo_editor_hints", "cargo test -p yoctui-ui devtool_editor", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE v275: existing document rail reserves two rows, save/build/navigation first, current file/workspace/global search and GitUI second. External UI2 covers80/100/160/200, file/document focus, Normal/Insert/Visual and anchored menu; exact document/focus/mode/clean-state unchanged. Existing devtool_editor6 search/Git/viewport tests and strictUIClippy/fmt/UI/version/roadmap PASS. No new keys/workflow or native build/save. Full exact UI fixtures/goldens and actual optimized live rehearsal remain separate."
+
+[[task]]
+id = "DEMO-HEADER-FIT-001"
+milestone = "M114"
+title = "Fit optional header identity fields without clipping their labels into health status"
+status = "IN_PROGRESS"
+priority = 3522
+required = true
+depends_on = ["DEMO-EDITOR-HINTS-001"]
+verify = ["cargo test -p yoctui-ui demo_header_fit", "cargo test -p yoctui-ui header_status", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Confirmed actual160x50 first row clips Distro into adjacent separately measured health; concept geometry also incorrectly forces DISTRO into Narrow/Medium contrary documented width priority. Relevant header.rs typed identity/health renderer and external style-preserving TestBackend tests. Compact separators, omit whole low-priority optional metadata when budget exhausted, keep version/health and explicit ellipsis for residual long primary context. Five-row geometry/status/local clock unchanged; no new layout/actions. Reconcile historical header spec in governance before code. Full UI fixture/golden child then resumes."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

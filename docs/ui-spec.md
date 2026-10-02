@@ -1165,8 +1165,9 @@ separator spacing before clipping identity values. Keep status labels and
 existing responsive tiers unchanged.
 
 The header is always visible unless the terminal is below the supported
-minimum. It occupies the shell's two-row bordered region and renders one
-content row. Identity/build context is left aligned; daemon/BitBake health is
+minimum. It occupies five rows including borders, with identity/clock,
+message/health and workspace/build context rows (the current concept layout).
+Identity context is left aligned; daemon/BitBake health is
 right aligned in a separately measured rectangle so health never overwrites
 the higher-priority build identity.
 
@@ -1174,10 +1175,16 @@ The left-to-right priority order is:
 
 1. `yoctui v<workspace-version>` identity, compiled from the package version
 2. project identity
-3. build state, including a non-color marker
+3. build state, including a non-color marker, in the message/context rows
 4. selected build target
 5. authoritative `MACHINE`
-6. authoritative `DISTRO` and Yocto release
+6. authoritative `DISTRO` when the Full width tier has space; release remains
+   available in the Project Inspector
+
+After compacting separator spacing, omit complete low-priority DISTRO/MACHINE
+fields that cannot fit the independent health budget. Never print a partial
+metadata label against health. Remaining oversized primary context uses an
+explicit cell-width-safe ellipsis while retaining its semantic span styles.
 
 Project identity is the basename of the typed source directory, falling back
 to the typed build directory. It is never copied from the build target. When
@@ -1196,15 +1203,15 @@ Header width tiers are deterministic:
 
 | Terminal width | Left context | Right health |
 | --- | --- | --- |
-| `180+` Full | Yoctui, project, build, target, MACHINE, DISTRO/release | verbose daemon and BitBake |
-| `150..179` Wide | Yoctui, project, build, target, MACHINE | verbose daemon and BitBake |
-| `130..149` Wide compact | Yoctui, project, build, target, MACHINE | compact `D:` and `BB:` labels |
-| `100..129` Medium | Yoctui, project, build, compact target | compact `D:` and `BB:` labels; MACHINE and DISTRO/release hidden |
-| `80..99` Narrow | Yoctui, build, compact target | compact daemon only; project, MACHINE, DISTRO/release, and BitBake hidden |
+| `180+` Full | Yoctui, project, target; optional MACHINE then DISTRO | verbose daemon and BitBake |
+| `130..179` Wide | Yoctui, project, compact target; optional MACHINE | compact `D:` and `BB:` labels |
+| `100..129` Medium | Yoctui, project, compact target | compact `D:` and `BB:` labels; MACHINE and DISTRO hidden |
+| `80..99` Narrow | Yoctui, compact target | compact daemon only; project, MACHINE, DISTRO, and BitBake hidden |
 
-Task counts, warnings/errors, progress, elapsed time, sstate reuse, and host
-telemetry belong to the Tasks summary, Inspector, System Status, or telemetry
-strip; the header does not duplicate them. Backend names, session numbers,
+The third Header row retains workspace/build target, task count, elapsed time
+and observed workers as bounded context. Warnings/errors, progress, sstate
+reuse and host telemetry belong to Tasks, Inspector, System Status or telemetry.
+Backend names, session numbers,
 daemon versions/PIDs, and other unavailable identities are likewise not
 fabricated merely to fill the visual target. Rendering an empty or undersized
 header rectangle is a no-op and no supported tier may panic or overlap.
