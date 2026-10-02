@@ -1,5 +1,15 @@
 # Yoctui Architecture
 
+## M114 measured local polling boundary
+
+The three runtime background activity flags are client-local reducer state;
+SetBackgroundActivity emits no effect. Polling applies these through pure
+update instead of cloning the entire App for environment-effect rollback on
+every cycle. External/user actions still use the existing guarded reducer;
+authority denial and rollback semantics are unchanged. Equivalent-state tests
+cover large inventories, repeated transitions, offline/current clients and
+reduced motion. No model/wire/UI layout or telemetry cadence change.
+
 ## M113 OpenBMC managed flash debug boundary
 
 Pure model owns the closed defaultable DirectKernel/OpenBmcRomulusFlash boot

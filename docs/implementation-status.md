@@ -1,4 +1,10 @@
 M114 current: DEMO-BACKGROUND-COPY-001 IN_PROGRESS; profiling baseline DONE.
+v0.1.270 local background setters now use pure reducer (no full-App rollback
+copies); new large-inventory equivalent-state test, existing activity1/authority11
+tests and strict affected all-target/all-feature Clippy pass. No external action
+authority change. Source-layout diagnostic also found pre-existing oversized/
+inline-test files; reconcile separately before final quality handoff, not hide.
+Committed-source optimized runtime measurement is pending; task not DONE yet.
 Fresh source8761f308 stress2299samples/6000frames/4580ms/checksum33c187ece68108dd,
 zero unresolved accepted/454ppm removed; actual idle1179samples/zero lost reveal
 App::clone37.32% inclusive from local flag polling. Exact idle Layers CPU record

@@ -1,5 +1,16 @@
 use super::*;
 
+fn set_local_background_activity(
+    app: &mut App,
+    activity: yoctui_model::BackgroundActivity,
+    active: bool,
+) {
+    // This reducer only updates client-local flags and cannot emit an effect.
+    // The guarded reducer takes a whole-App rollback copy for external work;
+    // doing that three times on every poll copied the entire recipe inventory.
+    let _ = update(app, Action::SetBackgroundActivity { activity, active });
+}
+
 impl InteractiveRuntime {
     pub(super) async fn poll_runtime(&mut self) -> Result<bool> {
         let runtime = self;
@@ -241,10 +252,7 @@ impl InteractiveRuntime {
                     && runtime.environment_operation.is_none(),
             ),
         ] {
-            compatibility_workspace_action(
-                &mut runtime.app,
-                Action::SetBackgroundActivity { activity, active },
-            );
+            set_local_background_activity(&mut runtime.app, activity, active);
         }
         clone_operation::poll(&mut runtime.app, &mut runtime.clone_operation).await;
         poll_signature_operation(&mut runtime.app, &mut runtime.signature_operation).await;
@@ -402,3 +410,7 @@ impl InteractiveRuntime {
         Ok(false)
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/runtime_background_activity.rs"]
+mod tests;
