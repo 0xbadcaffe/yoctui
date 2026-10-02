@@ -2682,6 +2682,15 @@ stateless renderer never owns selection, expansion, filtering, or offsets.
 
 ## 17. Configuration workspace
 
+The selected-variable panel prioritizes three compact typed action-availability
+rows before long details: `Alt+c` effective/`Alt+u` unexpanded copy, `Alt+e`
+edit/`c` compare, and `o` source/`s` scope. The scope summary is cell-bounded.
+A bounded loaded/loading/missing/error line follows immediately, so short
+terminals retain current readiness and state. Full variable values, provenance,
+operations and exact disabled reasons remain in the detailed inspection;
+the compact summary must use the same model availability checks. Pane geometry,
+capability gating and native operations remain unchanged.
+
 Read-only by default.
 
 Required:

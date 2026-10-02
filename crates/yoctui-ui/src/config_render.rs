@@ -96,8 +96,8 @@ pub(crate) fn config_inspector(app: &App) -> String {
 pub(crate) fn config_copy_status(app: &App) -> String {
     let mut copy_disabled_reasons = Vec::new();
     let copy = [
-        ("C effective", ConfigCopyValue::Effective),
-        ("U unexpanded", ConfigCopyValue::Unexpanded),
+        ("Alt+c effective", ConfigCopyValue::Effective),
+        ("Alt+u unexpanded", ConfigCopyValue::Unexpanded),
     ]
     .into_iter()
     .map(|(label, value)| {
@@ -129,9 +129,9 @@ pub(crate) fn config_copy_status(app: &App) -> String {
         |_| "c compare: enabled".into(),
     );
     let edit = if config_edit_disabled_reason(app).is_none() {
-        "E edit: enabled"
+        "Alt+e edit: enabled"
     } else {
-        "E edit: disabled"
+        "Alt+e edit: disabled"
     };
     let copy_disabled_reasons = if copy_disabled_reasons.is_empty() {
         String::new()
@@ -139,6 +139,43 @@ pub(crate) fn config_copy_status(app: &App) -> String {
         format!("\n{}", copy_disabled_reasons.join("\n"))
     };
     format!("{copy} | {edit}\n{scope}\n{compare}\n{source}{copy_disabled_reasons}")
+}
+
+fn config_action_summary(app: &App) -> String {
+    let enabled = |available| if available { "enabled" } else { "disabled" };
+    format!(
+        "Alt+c effective: {} | Alt+u unexpanded: {}\nAlt+e edit: {} | c compare: {}\no source: {} | s scope: {}",
+        enabled(selected_config_copy_value(app, ConfigCopyValue::Effective).is_ok()),
+        enabled(selected_config_copy_value(app, ConfigCopyValue::Unexpanded).is_ok()),
+        enabled(config_edit_disabled_reason(app).is_none()),
+        enabled(config_comparison(app).is_ok()),
+        enabled(config_source_disabled_reason(app).is_none()),
+        bounded_cell_text(app.config_scope.as_deref().unwrap_or("global"), 12),
+    )
+}
+
+fn config_detail_state_summary(
+    app: &App,
+    selected: Option<(&String, &String)>,
+    width: u16,
+) -> String {
+    let Some((name, _)) = selected else {
+        return "No selected configuration variable.".into();
+    };
+    let identity = VariableIdentity {
+        name: name.clone(),
+        recipe: app.config_scope.clone(),
+    };
+    let state = if app.variable_detail_loading.contains(&identity) {
+        "Loading authoritative detail…".into()
+    } else if let Some(error) = app.variable_detail_errors.get(&identity) {
+        format!("Detail unavailable: {error}; Enter retry")
+    } else if app.variable_details.contains_key(&identity) {
+        format!("Variable: {name} · authoritative detail loaded")
+    } else {
+        "Detail not loaded; Enter inspect".into()
+    };
+    bounded_cell_text(&state, width)
 }
 
 pub(crate) fn config(frame: &mut Frame, app: &App, area: Rect) {
@@ -193,9 +230,15 @@ pub(crate) fn config(frame: &mut Frame, app: &App, area: Rect) {
         list[1],
     );
     let detail = config_inspector(app);
+    let action_summary = config_action_summary(app);
+    let state_summary = config_detail_state_summary(
+        app,
+        variables.get(app.config_selection).copied(),
+        chunks[1].width.saturating_sub(2),
+    );
     frame.render_widget(
         Paragraph::new(format!(
-            "{detail}\n\nEnter refreshes detail; o opens provenance when available."
+            "{action_summary}\n{state_summary}\n\n{detail}\n\nEnter refreshes detail; o opens provenance when available."
         ))
         .block(
             Block::default()

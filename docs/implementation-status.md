@@ -1,4 +1,8 @@
-M114 current: DEMO-CONFIG-CONTROLS-001 IN_PROGRESS; header fitting DONE v276.
+M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Configuration controls DONE v277.
+Compact typed copy/edit/compare/source availability and loaded/loading/error
+state precede long details, with full fields/reasons retained. Existing hints
+use Alt+c/u/e. External UI2 across80..240 and app1, strictUIClippy/fmt/UI/version/
+roadmap PASS; no new workflow/authority or accepted goldens. Full UI pending.
 UI fixture iteration leaves49 failures, many historical labels/geometry/goldens.
 Four Configuration narrow tests expose actual controls below visible detail;
 hardcoded C/U/E hints also disagree with existing Alt routes. Split before code,

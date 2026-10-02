@@ -1,29 +1,24 @@
 # Current Task
 
-**ID:** DEMO-CONFIG-CONTROLS-001
-**Title:** Keep typed Configuration action availability visible before long variable details
+**ID:** DEMO-UI-FIXTURES-001
+**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
 **Status:** IN_PROGRESS
 
-Dependency DEMO-HEADER-FIT-001 DONE v276. Four narrow Configuration tests
-demonstrate actual copy/edit/compare/source availability clipped after long
-variable detail; existing status also hardcodes C/U/E instead of Alt+c/u/e.
-Relevant config_render typed status/detail presentation and new external
-missing/loaded/loading/error/long/narrow regressions. Prioritize compact exact
-availability before details; retain full exact reasons and fields in detailed
-inspection, existing pane allocation and all negative/capability semantics.
-No new workflow/actions/backend mutations. Bump version/UI spec; fixture-only
-changes stay uncommitted/separate, no golden acceptance. Resume UI fixtures
-after this atomic product fix commits; parent still requires full UI PASS.
+Dependency DEMO-CONFIG-CONTROLS-001 DONE v277. Focused UI2 missing/loading/error/
+loaded/long/narrow80..240 and app config_workspace1 plus strictUIClippy/fmt/UI/
+version/roadmap PASS; compact typed actions/state precede long details, exact
+fields/reasons preserved. No new workflow/backend authority or accepted goldens.
+Resume external UI fixtures/current typed positives and exact styled goldens.
+Every changed expectation must match current authoritative contract; retain
+negative/style/authority checks. Split further real defects before product code.
+Parent still requires full UI PASS, not just focused rendering regressions.
 
 ```bash
-cargo test -p yoctui-ui demo_config_controls
-cargo test -p yoctui-app config_workspace
+cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
-cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
-python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
-# Manual: verified current narrow/medium/wide controls and truthful hints.
+# Manual: exact current contract/typed fixture justification for every change.
 ```
 
 Completed local polling fix: source040a23d0/v270 exact optimized49f75463 release,

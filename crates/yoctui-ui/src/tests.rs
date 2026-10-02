@@ -12,6 +12,7 @@ mod compatibility_ui_inspector_renders_identity_all_states_and_exact_evidence;
 mod concept_screen_contracts_render_through_production_renderer;
 mod config_compare_renders_typed_outcomes_and_disabled_reason_responsively;
 mod dashboard_reuses_task_resource_meters;
+mod demo_config_controls;
 mod demo_dialog_controls;
 mod demo_editor_hints;
 mod demo_header_fit;
