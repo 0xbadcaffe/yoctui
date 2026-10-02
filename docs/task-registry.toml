@@ -80,13 +80,24 @@ verify = ["cargo test -p yoctui --all-features --no-fail-fast", "python3 -m pyte
 notes = "BaselineCLI3 + daemon1 + snapshot1 failures include obsolete or real asynchronous integration assumptions. Relevant failed cases/helpers and actual adapters only if demonstrated. Retain deadlines/normal/failure semantics and use hermetic exact initialized profile/typed authority. Split unrelated runtime fixes before code; version-bump product changes, never hide flakes or run external long builds to pass fixtures."
 
 [[task]]
+id = "DEMO-LAYOUT-HYGIENE-001"
+milestone = "M114"
+title = "Restore existing source size and external test module hygiene"
+status = "NOT_STARTED"
+priority = 3515
+required = true
+depends_on = ["DEMO-INTEGRATION-001"]
+verify = ["python3 scripts/check-library-layout.py", "cargo fmt --all --check", "cargo test --workspace --all-features --no-fail-fast", "python3 -m pytest bridge/tests", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Baseline existing source-layout violations include inline tests outside test directories and files over500lines across bridge/CLI/bitbake/model/UI. Relevant checker findings; move tests and split oversized modules mechanically while preserving visibility and every assertion. No exemptions, raised limits or runtime behavior change. Verification against full suite after contract fixes required before release."
+
+[[task]]
 id = "DEMO-FULL-VERIFY-001"
 milestone = "M114"
 title = "Pass full Rust Python and release quality checks for demo code"
 status = "NOT_STARTED"
 priority = 3502
 required = true
-depends_on = ["DEMO-POLISH-001"]
+depends_on = ["DEMO-POLISH-001", "DEMO-LAYOUT-HYGIENE-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features --no-fail-fast", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-release-quality.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "New user instruction explicitly revokes full-suite deferral. Relevant full test graph/release scripts; record exact pass/failure and fix independently, never skip/weaken failures to claim PASS. Full product completion still includes unrelated external board/instrumentation/current-Poky blockers and must not be relabeled. Source/binary-bound quality evidence required."
 

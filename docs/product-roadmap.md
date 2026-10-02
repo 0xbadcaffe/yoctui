@@ -16,6 +16,8 @@ copies (37.32% inclusive); full suite88failures and real sibling-source platform
 initialization error recorded. Atomic children now explicitly cover measured
 background copying, selected-source initialization, current-contract fixtures,
 verified UI clipping and isolated integration failures. None is silently DONE.
+DEMO-LAYOUT-HYGIENE-001 separately reconciles the existing source-size/external
+test-module violations before full release verification; no checker exemptions.
 Measured fixture stress is not real runtime/build-performance certification.
 Unrelated physical/instrumentation/M67 gates stay explicit; ZCU102 deferred.
 
