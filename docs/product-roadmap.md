@@ -2,6 +2,23 @@
 
 ## M111 — Current AMD PetaLinux ZCU102 live acceptance
 
+Resumed2026-10-02 by "finish kernel debugging"; pause revoked. Actual job3
+is Failed/exit1, not draining: IPCsequence32861 retains3524/10994 and native
+HALT909840384bytes. Daemon remains alive/idle. Only~5.6GiB currently available;
+more safe storage is needed before retry. No new deletion/restart/build occurred.
+Retained vmlinux.unstripped now has DWARF/symbols (hash/build ID in
+resumed-kernel-debugging.txt), but final boot Image/deployed rootfs/qemuboot
+are missing. Preserve partial kernel work; this is not image/debug acceptance.
+Old compiler cleanup choice awaits user input; corrected3.2GiB build-directory
+estimate includes binaries, while Rust4.1GiB is source and will be preserved.
+AMD's pinned firmware/multiprocess helper passes unknown arguments to APU;
+exact BOOT.bin/firmware/DTB, snapshot protection and owned cleanup still need
+actual reviewed validation. Do not claim a new adapter gap fixed or live
+compatibility from inspecting upstream code. Physical KGDB/instrumentation
+live gates remain independently BLOCKED. No eligible independent registry work
+or full-suite execution; current source-bound release remainsv0.1.268.
+
+Historical paused checkpoint (superseded by resumed terminal outcome above):
 Latest13:22UTC2026-10-02: user paused, resume hint ZCU102-RESUME. BUILD BLOCKED:
 real job3 STOPTASKS at3.999GiB stopped new work; kernelcompile still draining,
 jobRunning/exitnull, aggregate3524/10994 and~3.8GiB free. Actual terminal outcome

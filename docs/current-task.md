@@ -5,8 +5,39 @@
 **Status:** BLOCKED
 
 **Resume hint:** `ZCU102-RESUME`
-**User-requested pause:** 2026-10-02 13:22 UTC. Stop agent work after saving this
-checkpoint; do not continue the queue until the user resumes.
+**Resumed:** 2026-10-02 by the user's request to finish kernel debugging.
+The earlier pause is revoked. BUILD remains externally storage-blocked.
+
+Latest read-only authority (2026-10-02 16:27 UTC, IPC sequence32861):
+job3 Failed/exit1, aggregate3524/10994, completed success=false at
+1790948119425ms. Native HALT at909840384bytes stopped the remaining work;
+the private daemon0b20c2dd7719990023902d8d24d1ada8 is still alive and idle.
+No duplicate build or daemon restart was requested. Available disk is now
+6018834432bytes (~5.6GiB), too little headroom for a reliable image retry.
+
+New retained partial output: linux-xlnx's vmlinux.unstripped has .debug_info
+and .symtab, SHA256b696c59669a570410c97e7e9f5ff85326d017e9eb9972247eb864ea619df75c9,
+build ID5f76474462b0eb96d23bb62f5c78c1ab2c83060a. Config hash remains
+2fed27779d654cb5afde0893e218a7892baa541e49f77425815e760f46b38e9a.
+Final vmlinux/arch/arm64/boot/Image and deployed rootfs/qemuboot are missing;
+this linked ELF is not a completed image or matching boot/debug acceptance.
+Keep it and all current kernel work. Exact inspection is in
+artifacts/live-xilinx/zcu102/resumed-kernel-debugging.txt.
+
+Additional cleanup is awaiting the user's choice. Initial old native compiler
+work estimate9GiB was corrected: only3.2GiB of Clang/LLVM build directories
+was identified, including binaries that must be preserved; actual removable
+intermediates are less. Rust's4.1GiB is source, not disposable build output.
+No new cleanup is authorized/performed and prior approved cleanup is exhausted.
+No alternate storage mount exists. Obtain enough safe space before a fresh
+explicit daemon retry; preserve sources/Git/images/debug/installed tools and
+unchanged4GiB stop/1GiB halt/two-worker limits. GNOME remains inactive and
+runtime-masked, with private tag backup/restore instructions preserved.
+Physical KGDB and instrumented-kernel live tasks remain separately blocked;
+SysRq/kdump remains proposed, not silently completed by existing crash analysis.
+No eligible independent registry implementation task remains. Full suite deferred.
+
+Historical paused checkpoint (superseded by terminal outcome above):
 
 Latest authority: job3 hit the unchanged native4GiB STOPTASKS guard at
 1790947062183ms (13:17:42UTC), free3.999GiB. New tasks stopped; kernel
@@ -20,7 +51,7 @@ Current compile .config SHA2562fed27779d654cb5afde0893e218a7892baa541e49f7742581
 DWARF5/KALLSYMS enabled, randomization disabled, optional GDB scripts disabled.
 The earlier precompile config hash is historical, not final ELF matching proof.
 
-Resume by reading actual daemon/storage authority FIRST, not submitting a build.
+For any further retry, read actual daemon/storage authority FIRST, not submit a build.
 If job3 still runs, preserve/drain it. If laptop/container stopped, start only
 the retained validation container/private daemon and check recovered outcome;
 persisted Running is not proof of a live task. A fresh explicit image retry

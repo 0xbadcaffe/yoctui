@@ -1,0 +1,65 @@
+Kernel debugging resumed by user — 2026-10-02
+
+Read-only inspection; no build submission, daemon restart, package installation,
+target action, cleanup or product source change during this checkpoint.
+
+./scripts/live-zcu102.sh status:
+daemon running, PID1593489, instance0b20c2dd7719990023902d8d24d1ada8
+job1 Exited/0 is historical false success before guard correction, not acceptance.
+job2 Failed/1; job3 Failed/1; completed success=false/exit1.
+Native HALT reported remaining909840384bytes (0.847GiB).
+
+python3 scripts/inspect-zcu102-build.py:
+sequence32861, completed3524/total10994, fetch_completed32/fetch_failed0.
+job3 lifecyclefailed, exit_code1; completion finished_unix_ms1790948119425.
+No live BitBake/compiler process found by ps (one old defunct run.do_compile
+is not live build authority). Private daemon/container remain untouched.
+
+Kernel work root:
+/home/bspguy-dev/src/yoctui-zcu102-2026.1/build/tmp/work/zynqmp_zcu102_sdt_full-amd-linux/linux-xlnx/6.18.10+git+v2026.1/linux-zynqmp_zcu102_sdt_full-standard-build
+vmlinux.unstripped: approximately450MiB, ELF .debug_info/.symtab present.
+SHA256 b696c59669a570410c97e7e9f5ff85326d017e9eb9972247eb864ea619df75c9
+Build ID 5f76474462b0eb96d23bb62f5c78c1ab2c83060a
+.config SHA256 2fed27779d654cb5afde0893e218a7892baa541e49f77425815e760f46b38e9a
+do_compile log ends after OBJCOPY vmlinux/modules.builtin generation;
+final vmlinux and arch/arm64/boot/Image are absent. No completed kernel task,
+deployed image/qemuboot, matching boot artifact or live ZCU102 debug claimed.
+
+Storage: df -B1 / gives available6018834432bytes (~5.6GiB).
+No alternate mounted data disk; /tmp is10GiB tmpfs, not durable build storage.
+Current validation tmp21GiB; old Poky tmp71GiB; old Romulus tmp18GiB.
+Cargo target221MiB contains retained releases; no material dev cache to clear.
+GNOME localsearch-3 is inactive/masked-runtime, tag backup remains private.
+Restore obligation remains in storage-cleanup.txt when storage permits.
+
+Initial old native compiler work-directory estimate9GiB was too broad:
+rust-native/1.94.1 sources4.1GiB are source and must be preserved;
+clang-native/22.1.3/build and llvm-native/22.1.3/build each1.6GiB contain
+intermediates AND binaries. Cleanup has NOT happened; installed/build binaries,
+source, Git, images and kernel symbols must remain. Actual intermediate-only
+reclamation will be smaller. User choice/more space is needed before retry.
+
+Read-only pinned AMD launcher investigation:
+meta-xilinx recipe qemu-xilinx-multiarch-helper.inc uses
+https://github.com/Xilinx/qemu-bootbin-helper/tree/f984c6c5c888a5b83230970c651a0fcd8f802b4f
+qemuboot-xilinx defaults qb_system_name=qemu-system-amd-fpga-multiarch;
+machine-xilinx-qemu.inc uses BOOT-${MACHINE}.bin and kernel cmdline=none.
+Pinned helper interprets -kernel as BOOT.bin validation, passes unknown args
+to APU and separately orchestrates PMU. This is not direct Linux Image boot.
+Review/actual validation must check exact boot/firmware/DTB, correct APU GDB
+transport, effective fixed-address kernel and snapshot/owned process cleanup.
+No adapter fix or compatibility claim follows from source inspection alone.
+
+Unchanged release target/release/yoctui v0.1.268 SHA256
+480b8cafc4e12d28c7585d5fed0b26714ec24089eca03166c472c94fca81f0ba
+Physical KGDB and four instrumented-kernel live gates remain externally blocked.
+SysRq/kdump proposed step is not completed by the existing crash-analysis tool.
+Full test suite remains deferred at user's instruction.
+
+Focused checkpoint verification:
+python3 scripts/test-inspect-zcu102-build.py: six tests PASS.
+bash -n scripts/live-zcu102.sh: PASS.
+./scripts/verify-roadmap.sh: PASS,942tasks/current XILINX-ZCU102-BUILD-001.
+git diff --check: PASS.
+Registry audit: BUILD, instrumented-kernel live, physical KGDB and M67 are
+BLOCKED; ZCU102 QEMU-GDB depends on BUILD. No eligible independent task.

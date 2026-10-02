@@ -1,3 +1,18 @@
+Resumed2026-10-02 at user's "finish kernel debugging" request; pause revoked.
+Read-only daemon IPCsequence32861 proves job3 Failed/exit1 and3524/10994,
+completed1790948119425ms after nativeHALT909840384bytes. Daemon alive/idle;
+no restart, duplicate build or further deletion performed. Disk~5.6GiB remains
+storage-blocked. Partial450MiB vmlinux.unstripped has DWARF/symbols; its exact
+hash/build ID and unchanged config are saved in resumed-kernel-debugging.txt.
+Final vmlinux/boot Image/deployed rootfs/qemuboot are missing; no boot/debug
+success. Corrected old compiler cleanup estimate3.2GiB includes binaries;
+Rust4.1GiB is source, preserved. User choice/additional space is required.
+Existing desktop pause/tag backup and exact source-boundv0.1.268 release intact.
+All other incomplete registry tasks remain external/dependent; physical-board
+and instrumented-kernel gates are not satisfied by the existing x86 GDB smoke.
+No full suite, product change, version bump or new release is claimed.
+
+Historical paused checkpoint, superseded above:
 User paused work for later at13:22UTC2026-10-02. Resume hint ZCU102-RESUME.
 BUILD is BLOCKED by a second real storage stop: nativeSTOPTASKS at3.999GiB,
 13:17:42UTC/1790947062183ms. At13:22:24IPCsequence31591 job3 remains Running
