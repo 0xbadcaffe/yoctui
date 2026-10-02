@@ -13,6 +13,7 @@ mod concept_screen_contracts_render_through_production_renderer;
 mod config_compare_renders_typed_outcomes_and_disabled_reason_responsively;
 mod dashboard_reuses_task_resource_meters;
 mod demo_dialog_controls;
+mod demo_editor_hints;
 mod demo_shortcut_hints;
 mod dependency_graph_renders_typed_partial_paths_and_responsive_modes;
 mod devtool_editor_git;

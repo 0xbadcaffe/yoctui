@@ -5962,6 +5962,12 @@ search, `n/Alt+n` matches, `u` undo, `Ctrl+R` redo, `v` visual, `Alt+g` GitUI,
 `Ctrl+B` build recipe, and the Devtool update/finish routes. Responsive layouts
 may shorten labels but must preserve mode, dirty/save state, language, cursor
 line/column, and a reachable build/publish route.
+The document action rail reserves two bounded rows: first `Ctrl+S save`,
+`Ctrl+B build recipe` and `Tab files` (or `Enter edit`/`Esc close` when the
+file tree has focus); second `Ctrl+F file`, `Alt+f workspace`, `/ global` and
+`Alt+g GitUI`. Save/build/navigation must not disappear behind longer search
+hints. Mode, dirty state, language and cursor remain in the document identity;
+this corrects hint clipping without changing editor focus, modes or key routes.
 
 ### Portable application shortcuts (M107)
 

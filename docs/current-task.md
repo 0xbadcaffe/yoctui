@@ -1,26 +1,25 @@
 # Current Task
 
-**ID:** DEMO-EDITOR-HINTS-001
-**Title:** Prioritize existing save build and file-tree controls in editor action rail
+**ID:** DEMO-UI-FIXTURES-001
+**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
 **Status:** IN_PROGRESS
 
-Dependency DEMO-DIALOG-CONTROLS-001 DONE v274: UI3/app16/strictUIClippy/fmt/UI/
-version/roadmap PASS. Existing integrated editor one-row rail truncates Ctrl+S
-and omits build/file-tree hints. Current spec requires these reachable routes,
-plus existing Ctrl+F/Alt+f/Alt+g. Preserve editor modes/document/focus/typed
-actions; allocate bounded action hints below document and prioritize current
-save/build/navigation without capital-only shortcuts. Add external tests at
-80/100/160/200, file/document/Normal/Insert/Visual, existing search/Git/viewport
-regressions, bump version/UI spec. No new workflows or native build/save run.
-UI fixture/golden child follows; no blanket acceptance of remaining failures.
+Dependency DEMO-EDITOR-HINTS-001 DONE v275: UI2/devtool-editor6/strictUIClippy/
+fmt/UI/version/roadmap PASS. Dashboard hint and bounded-dialog product children
+also DONE with independent regressions; no goldens accepted. Relevant external
+UI fixtures/semantic/style assertions and exact styled cell goldens only for
+confirmed current-contract drift. Map LocalHH:MM/five-row header, Hardware
+navigator positions, Alt modifiers and exact typed positive setup against
+current spec. Later concept-layout rules explicitly supersede historical
+two-row header/status Footer. Preserve exact negative/style/authority checks;
+no blanket snapshot acceptance or helper that silently normalizes intentional
+mismatches. Split any additional demonstrated product defect before code.
+UI parent remains incomplete until this child and its full UI suite pass.
 
 ```bash
-cargo test -p yoctui-ui demo_editor_hints
-cargo test -p yoctui-ui devtool_editor
+cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
-cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
-python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 # Manual: verified current narrow/medium/wide controls and truthful hints.
 ```

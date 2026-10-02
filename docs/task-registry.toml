@@ -83,7 +83,7 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3518
 required = true
 depends_on = ["DEMO-EDITOR-HINTS-001"]
@@ -127,12 +127,12 @@ notes = "DONE v274: bounded BuildOptions12rows retains ten content rows includin
 id = "DEMO-EDITOR-HINTS-001"
 milestone = "M114"
 title = "Prioritize existing save build and file-tree controls in editor action rail"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3521
 required = true
 depends_on = ["DEMO-DIALOG-CONTROLS-001"]
 verify = ["cargo test -p yoctui-ui demo_editor_hints", "cargo test -p yoctui-ui devtool_editor", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Confirmed integrated editor has one-row rail with save last and no build/file-tree hints; existing concept contract requires those reachable routes. Relevant editor_render.rs and typed action footer. Correct bounded priority/labels without adding shortcuts or altering modes/document/editor focus. External integrated/narrow/file-focused regressions required; stale expectations not used as proof."
+notes = "DONE v275: existing document rail reserves two rows, save/build/navigation first, current file/workspace/global search and GitUI second. External UI2 covers80/100/160/200, file/document focus, Normal/Insert/Visual and anchored menu; exact document/focus/mode/clean-state unchanged. Existing devtool_editor6 search/Git/viewport tests and strictUIClippy/fmt/UI/version/roadmap PASS. No new keys/workflow or native build/save. Full exact UI fixtures/goldens and actual optimized live rehearsal remain separate."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

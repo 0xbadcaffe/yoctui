@@ -134,7 +134,7 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     let regions = Layout::vertical([
         Constraint::Min(4),
         Constraint::Length(7),
-        Constraint::Length(1),
+        Constraint::Length(2),
     ])
     .split(inner);
     let columns = if integrated {
@@ -151,7 +151,7 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     let editor_rows = Layout::vertical([
         Constraint::Min(4),
         Constraint::Length(7),
-        Constraint::Length(1),
+        Constraint::Length(2),
     ])
     .split(columns[1]);
     let document_area = if integrated {
@@ -407,13 +407,14 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
         validation_area,
     );
     frame.render_widget(
-        Paragraph::new(if file_focus {
-            "Ctrl+F file · Alt+f workspace · / global · Alt+g GitUI · Enter edit"
-        } else if integrated {
-            "i insert · Ctrl+F file · Alt+f workspace · / global · Alt+g GitUI · Ctrl+S save"
-        } else {
-            "EDITOR · i insert · v visual · Ctrl+F file · Alt+f workspace · / global · Alt+g GitUI · Ctrl+S save"
-        })
+        Paragraph::new(vec![
+            Line::from(if file_focus {
+                "Ctrl+S save · Ctrl+B build recipe · Enter edit · Esc close"
+            } else {
+                "Ctrl+S save · Ctrl+B build recipe · Tab files"
+            }),
+            Line::from("Ctrl+F file · Alt+f workspace · / global · Alt+g GitUI"),
+        ])
         .style(dialog_styles(app).hint),
         status_area,
     );

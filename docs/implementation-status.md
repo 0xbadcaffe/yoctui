@@ -1,4 +1,7 @@
-M114 current: DEMO-EDITOR-HINTS-001 IN_PROGRESS; dialog controls DONE v274.
+M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; editor hints DONE v275.
+Two-row editor action rail retains save/build/navigation and search/GitUI.
+External UI2 normal/narrow/focus/mode/menu cases and existing devtool_editor6,
+strictUIClippy/fmt/UI/version/roadmap PASS. Document/modes/focus unchanged.
 BuildOptions12rows and existing Devtool draft12/confirmation14 retain controls;
 wrapped deployment paths cannot displace reserved Enter/Escape hints. External
 UI3/app16/strictUIClippy/fmt/UI/version/roadmap PASS, no native action launched.
