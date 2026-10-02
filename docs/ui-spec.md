@@ -48,6 +48,13 @@ retain snapshot/nonetwork/paused/private-socket/log/owned-cleanup semantics.
 Quit removes only the owned staged copy; original flash remains unchanged.
 Real boot/breakpoint/backtrace/resume/reconnect/cleanup and exact input hashes
 are independent live acceptance, not certified by fixtures or screen rendering.
+This acceptance passed on 2026-10-02 with retained Romulus flash and matching
+ARM package symbols: start_kernel/source, OpenBMC login, fresh-client interrupt/
+backtrace/registers and owned cleanup. Evidence is recorded in
+artifacts/live-openbmc/romulus/managed-flash-debug-v269.txt. The presentation
+boot capture is actual serial output viewed in a build shell, not a guest
+login terminal; limited optimized ARM unwind and hardware-service warnings
+remain visible. Physical KGDB and instrumentation are separate live gates.
 
 ### M111 User-authorized ZCU102 live validation
 

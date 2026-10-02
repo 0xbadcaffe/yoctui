@@ -17,12 +17,12 @@ notes = "Explicit user-selected Romulus OpenBMC validation replaces deferred ZCU
 id = "OPENBMC-QEMU-GDB-LIVE-001"
 milestone = "M113"
 title = "Verify real OpenBMC boot and kernel debugging and save presentation screenshots"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3401
 required = true
 depends_on = ["OPENBMC-QEMU-GDB-FLASH-001"]
 verify = ["Manual: exact retained Romulus image/kernel/config/symbol identities and unchanged original hashes; real Yoctui reviewed managed flash launch in an independent daemon, U-Boot/Linux/OpenBMC boot, hbreak start_kernel/backtrace/resume, detach/reattach/interrupt and owned cleanup", "Manual: save actual boot/debug screenshots and provenance in the presentation folder above the repo; editable PPTX/ODP remain uncommitted/unpushed", "./scripts/verify-roadmap.sh"]
-notes = "User-selected OpenBMC/QEMU, not a silent ZCU102 substitution. Preserve AMD source/build work; no build/deploy/hardware action required for retained artifacts. Genuine screenshot/console/GDB evidence required; no fake fixture acceptance. Board/instrumented-kernel/M67 gates remain independent."
+notes = "DONE 2026-10-02: actual v0.1.269 reviewed managed Romulus flash launch through independent compatible daemon; exact flash/FIT/recovered package-kernel/build-ID/config identities, hbreak start_kernel/source, continue to Linux6.18.49/OpenBMC login, client detach/fresh reattach/native interrupt/live ARM backtrace/registers and owned process/socket/staged-copy cleanup PASS; originals unchanged. Evidence artifacts/live-openbmc/romulus/managed-flash-debug-v269.txt. Four actual PTY screenshots/raw cells/full serial log and updated editable PPTX/ODP outside Git; LibreOffice conversion, 24slides/25minutes, notes/editability/reference/layout checks PASS. Failed first launch/TUN prerequisite, stable matching symbol recovery and optimized ARM unwind limits recorded. No image build/deploy/full suite; ZCU102 preserved/deferred. Board/instrumented-kernel/M67 gates remain independent."
 
 [[task]]
 id = "XILINX-ZCU102-ENV-001"

@@ -4,13 +4,16 @@
 
 User explicitly replaces current ZCU102 validation with retained OpenBMC
 Romulus/QEMU. ZCU102 work is deferred/preserved, not deleted or marked DONE;
-its two unfinished tasks are no longer required for this acceptance. First
-OPENBMC-QEMU-GDB-FLASH-001 implements a reviewed closed flash boot mode using
+its two unfinished tasks are no longer required for this acceptance.
+OPENBMC-QEMU-GDB-FLASH-001 is DONE in v0.1.269: reviewed closed flash boot mode using
 existing managed session lifecycle, with private image staging and focused
-default-direct-boot regressions. Then OPENBMC-QEMU-GDB-LIVE-001 verifies actual
+default-direct-boot regressions. OPENBMC-QEMU-GDB-LIVE-001 is DONE after actual
 U-Boot/Linux/OpenBMC boot, matching-symbol kernel breakpoint/backtrace/resume,
-client reconnect and owned cleanup. Save genuine screenshots/transcripts and
-editable presentation updates above the repo; do not commit/push the deck/assets.
+fresh-client reconnect/interrupt and owned cleanup on 2026-10-02. Exact input/
+release identities, matching package-symbol recovery and retained native
+warnings are in artifacts/live-openbmc/romulus/managed-flash-debug-v269.txt.
+Four genuine screenshots/transcripts and editable presentation updates are
+above the repo, not committed/pushed; slides17-19 show review/debug/boot.
 No physical-board/sanitizer/destructive crash-test acceptance is inferred.
 Full suite remains deferred; product fixes retain version/commit/push/release.
 

@@ -1,45 +1,52 @@
 # Current Task
 
-**ID:** OPENBMC-QEMU-GDB-LIVE-001
-**Title:** Verify real OpenBMC boot and kernel debugging and save presentation screenshots
-**Status:** IN_PROGRESS
+**ID:** KERNEL-INSTRUMENTATION-LIVE-001
+**Title:** Verify preset retention and diagnostics on a matching instrumented kernel
+**Status:** BLOCKED
 
-User replaces ZCU102 validation with OpenBMC/QEMU and requests genuine QEMU
-boot/kernel debugging screenshots for the existing presentation. Preserve
-ZCU102 work without deletion/retry; its unfinished validation is deferred.
-Dependency OPENBMC-QEMU-GDB-FLASH-001 is DONE: product v0.1.269 committed/pushed
-as 361ff4484104; exact source-bound optimized release built with two workers.
-Use the closed explicit flash boot mode in UI spec M113, existing form/review/
-staging/runtime. Implementation and focused checks below are completed.
-Relevant files: model qemu_debug/kernel_debug, app kernel_debug, UI renderer,
-CLI qemu_debug validation/staging and focused tests. No image rebuild/mutation,
-physical target, global daemon replacement or arbitrary QEMU command field.
-Done requires pure planning/reducer/input/TestBackend/file/fake-process checks,
-unchanged direct-kernel route, mode-specific review, private flash copy/cleanup,
-strict affected Clippy/fmt/UI/version/roadmap checks and versioned commit/push/
-source-bound release. Live task remains IN_PROGRESS until real acceptance.
+Dependency KERNEL-INSTRUMENTATION-UI-001 is DONE. This is the highest-priority
+required incomplete task; no independent eligible implementation remains.
+External dependency: an approved separate instrumented build/boot/reproduction
+scope, provider/version/architecture/compiler and matching resolved .config/
+runtime diagnostic evidence. The retained OpenBMC kernel is not an approved
+instrumented runtime. Do not enable destructive tests, alter its config/layers,
+deploy/reset hardware or fabricate diagnostics to bypass this dependency.
+Relevant files: kernel instrumentation model/app/UI/CLI and retained live logs.
+Done requires each supported preset retained in matching resolved config and
+genuine controlled authorized runtime diagnostics; configuration export alone
+is not runtime compatibility. Record exact provenance, update registry/status/
+roadmap and commit only after verification. Full suite remains deferred.
 
-Verification (CARGO_INCREMENTAL=0, debug info disabled for host test artifacts;
-use a separate temporary Cargo target directory to avoid full-disk rebuild):
+Verification when external prerequisites are supplied:
 ```bash
-cargo test -p yoctui-model qemu_debug
-cargo test -p yoctui-model kernel_debug
-cargo test -p yoctui-app kernel_debug
-cargo test -p yoctui-ui kernel_debug
-cargo test -p yoctui --bin yoctui qemu_debug
-cargo test -p yoctui --bin yoctui kernel_debug
-cargo fmt --all --check
-cargo clippy -p yoctui --all-targets --all-features -- -D warnings
-./scripts/verify-ui-spec.sh
-python3 scripts/check-version-bump.py
+# Manual: approved separate build, provider/version/architecture/compiler,
+# reviewed fragment integration and resolved .config; deliberate build/boot,
+# controlled authorized reproduction and matching logs separately per preset.
 ./scripts/verify-roadmap.sh
-cargo build --release -p yoctui --bin yoctui
 ```
-No full suite. Live task requires exact original-image/symbol/config identities,
-real reviewed UI/daemon boot, hardware kernel breakpoint/backtrace, resume to
-OpenBMC, detach/reattach/interrupt and owned cleanup. Save screenshots/notes
-and optional deck updates under /home/bspguy-dev/projects/yoctui-ydd2026-presentation,
-outside Git. Existing presentation no-commit/no-push rule remains in force.
+KGDB-SERIAL-LIVE-001 also needs an approved already-configured board and exact
+matching running-kernel symbols/config with exclusive host serial transport.
+M67-LIVE-EVIDENCE-001 needs genuine current-source real-Poky performance evidence.
+Neither is certified by QEMU boot/debug. Deferred ZCU102 tasks are not retried.
+
+## Completed OpenBMC/QEMU handoff — M113
+
+OPENBMC-QEMU-GDB-FLASH-001 and OPENBMC-QEMU-GDB-LIVE-001 are DONE.
+Product v0.1.269 committed/pushed as361ff4484104; exact optimized two-worker
+source-bound release target/release/yoctui built and hash-verified:
+785779c2502b452897efd41c6aabbbc0ccd94946f1dcd0d133050d80a6e9081b.
+Real independent daemon-owned reviewed flash launch, U-Boot/Linux/OpenBMC login,
+matching ARM DWARF start_kernel breakpoint/source, resume, fresh-client reconnect/
+interrupt/backtrace/registers and owned QEMU/GDB/socket/staged-copy cleanup PASS.
+Original flash/config and selected matching package artifacts unchanged.
+Exact failures/prerequisites/recovery/limits and identities are recorded in
+artifacts/live-openbmc/romulus/managed-flash-debug-v269.txt. No image build/deploy.
+Four genuine screenshots/raw PTY cells and full serial log saved under
+/home/bspguy-dev/projects/yoctui-ydd2026-presentation/assets. Updated editable
+PPTX/ODP slides17-19; LibreOffice/24slides/25minutes/notes/editability/layout and
+reference checks PASS. Presentation remains outside Git, uncommitted/unpushed.
+Focused tests/strict workspace Clippy/fmt/UI/version/roadmap checks passed;
+no full suite. ZCU102 source/build/debug work preserved and deferred by user.
 
 ## Historical ZCU102 handoff — deferred by user, not current work
 

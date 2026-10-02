@@ -1,0 +1,154 @@
+M113 — real managed OpenBMC Romulus QEMU/kernel debugging acceptance
+Date: 2026-10-02 UTC. Result: PASS for the explicitly selected emulated path.
+ZCU102 is deferred by the user; its sources/build/debug work are preserved.
+
+SOURCE AND EXECUTION IDENTITY
+Product commit: 361ff448410463c606f9189e19f445110a7ce6be (v0.1.269).
+Optimized source-bound release: target/release/yoctui, two build workers.
+Release SHA256: 785779c2502b452897efd41c6aabbbc0ccd94946f1dcd0d133050d80a6e9081b.
+Build SHA embedded by build script: 361ff4484104; release build 9m04s.
+Independent container: yoctui-openbmc-qemu-validation, Ubuntu 24.04,
+UID 1000; no replacement/restart of the AMD or existing user daemon.
+Source: /home/bspguy-dev/src/openbmc, mounted read-only,
+HEAD 34f11d15c1b17df26a1063602918eead23253669; BitBake 2.19.1.
+Build: /home/bspguy-dev/src/build-openbmc-romulus.
+Private daemon PID3142, instance826d7bdaa62bb63b3f5cc470ddc3c42f;
+runtime /tmp/yoctui-openbmc-runtime, state /tmp/yoctui-openbmc-state.
+The daemon was started using v0.1.268 before the new release was installed;
+v0.1.269 client/helper use the unchanged compatible protocol 1.5. Do not
+misidentify this retained daemon as a freshly restarted v0.1.269 daemon.
+Read-only IPC sequence50: workspace b261670860dd0336, MACHINE=romulus,
+DISTRO=openbmc-openpower, nine layers, BB_NUMBER_THREADS=2, make -j2,
+empty jobs. No image build, deploy, flash, target reset or physical action.
+
+PREREQUISITES AND FAILURE RETENTION
+Installed gdb-multiarch 15.1 only inside the new validation container;
+host GDB lacks ARM support. PYTHONPATH points to the retained BitBake bb
+directory to satisfy its pysh import. Read-only --server-only warmed the
+metadata cache after cold inventory timeouts; no recipe task was requested.
+Native runqemu checks /dev/net/tun even with nonetwork: initial reviewed PTY1
+failed exit1, no QEMU spawned and its staged copy was cleaned. Created the
+standard char device 10,200 inside this container only and retried the real
+review. No host device modification. Actual QEMU uses -nic none; no network
+or TUN interface was created for the guest. The failed attempt remains history.
+
+MATCHING INPUTS (all SHA256)
+Deploy directory: BUILD/tmp/deploy/images/romulus.
+Original 32-MiB obmc-phosphor-image-romulus-20260908040925.static.mtd:
+00c37b3aed9961a37d50a70afc3c670c50a25282c93784f7022b8e67d1c4f7f0.
+Exact obmc-phosphor-image-romulus-20260908040925.qemuboot.conf:
+d98b4ed13f5b1b4b301fac04954489c615c0c52cde3202f026f1712a0e261f75.
+Config BUILD/tmp/work-shared/romulus/kernel-build-artifacts/.config:
+0f809ea0922169c20ad329e51f580a16ac8e5b9b1f1393847e2732d663f2fc5c.
+ARM32, debug/DWARF4 and ARM unwind enabled; no kernel randomization option.
+KGDB is off: QEMU's stub does not require in-kernel KGDB.
+Retained FIT is byte-identical to the flash range at offset524288,
+length4347532. FIT kernel hash /images/kernel-1/hash-1:
+96300044c06b1b1a1a5680d4a86b4de4f1a92a8bc62ecd793e742b9f1d776100.
+
+Before metadata preparation the original workdir vmlinux was verified:
+SHA 1f386f6b8353761edc17bad57c8a2ba587aaee155a67421ce4c1cbb6bc201971,
+GNU build ID dc29f9905762ceecedfaa132c77be0feab40a889.
+That purgeable kernel workdir later disappeared; the exact cause is not
+established. No build/clean command was issued during this acceptance.
+Recovered only three regular kernel-package files, without rebuild, from:
+BUILD/sstate-cache/02/70/sstate:linux-aspeed:romulus-openbmc-linux-gnueabi:6.18.49+git:r0:romulus:14:0270d6872ea82bb19823ec8094a6e8e5c0ad64fb9dcd599c4ecb74eb7747abf3_package.tar.zst.
+Stable selected directory: BUILD/yoctui-debug-artifacts-romulus/package/boot.
+Reference zImage-6.18.49-c060b55, 3080872 bytes:
+96300044c06b1b1a1a5680d4a86b4de4f1a92a8bc62ecd793e742b9f1d776100
+(matches FIT and original workdir zImage).
+Symbols .debug/vmlinux-6.18.49-c060b55, 44571228 bytes:
+68c5e164595aa24b4f6ed7f6936fab17b971ce2d39d69e3722c2a92c57b0cd50,
+ARM32 ELF .symtab/.debug_info and same GNU build ID dc29f990... above.
+Also retained stripped vmlinux-6.18.49-c060b55, 8932312 bytes.
+GDB --symbols accepts the separate debug ELF; it warns that no executable
+was specified, but the genuine breakpoint, source lines and live registers
+below work. Source mapping uses retained tmp/work-shared/romulus/kernel-source.
+
+REAL UI / DAEMON / GUEST ACCEPTANCE
+Using the actual release client: Kernel -> Debugging -> QEMU -> GDB,
+Boot mode OpenBMC Romulus flash, reviewed exact inputs/argv and Enter embedded.
+Daemon-owned Utility PTY2, not an unmanaged external QEMU/GDB session.
+Private /tmp/yoctui-qgdb-00558ce0d5f5a6f65cd62810be118668 directory mode700;
+staged flash mode600, same SHA as source at paused-breakpoint checkpoint.
+Native QEMU 11.0.2 argv includes -machine romulus-bmc, -nic none,
+-drive file=PRIVATE/obmc-phosphor-image-romulus-20260908040925.static.mtd,if=mtd,format=raw,
+-snapshot -S -m512, -nographic, serial mon:stdio and private Unix gdb.sock.
+No TCP stub, original writable image, arbitrary command, firmware kernel argv
+or injected nokaslr claim. Duplicate -m512 is native runqemu plus reviewed size.
+runqemu's filename parser warns unsupported FSTYPE mtd, but the exact selected
+qemuboot config boots the genuine flash guest; warning retained in raw log.
+
+Native GDB:
+  set pagination off
+  set substitute-path /usr/src/kernel tmp/work-shared/romulus/kernel-source
+  hbreak start_kernel
+  continue
+Actual U-Boot -> FIT hash verification -> Linux entry:
+Breakpoint1 start_kernel(), /usr/src/kernel/init/main.c:866, PC0x80a00ad4.
+Source/list and pc/sp/lr inspected. Early bt shows start_kernel then address0;
+stopped-frame warning retained, not claimed as a complete early-boot unwind.
+continue -> Linux6.18.49 -> systemd -> Phosphor OpenBMC -> romulus login:.
+Native service/hardware warnings are retained; login is not board readiness
+or certification that every hardware-dependent service succeeded.
+
+Detached capture client: same QEMU5059/GDB5062 survived; PTY2 Running,
+zero viewers in actual daemon state. Fresh client5723 reattached to PTY2,
+claimed native writer lease2ccd07db epoch5, Ctrl+C interrupted running kernel.
+Real SIGINT at copy_iovec_from_user, lib/iov_iter.c:1273.
+bt12 shows __import_iovec_ubuf/__import_iovec/import_iovec,
+copy_msghdr_from_user/recvmsg_copy_msghdr/___sys_recvmsg/__sys_recvmsg,
+then __idmap_text_end and stopped-frame warning. Optimized ARM unwind is
+limited; unavailable arguments and warning remain visible in the screenshot.
+Actual PC803bdf80, SP98b91e24, LR98b91edc inspected.
+PTY3 is the real Yoctui build shell used for tail -n12 PRIVATE/qemu.log,
+not an interactive guest console/login shell. It displays actual retained
+OpenBMC serial output and the login milestone; then shell exit0.
+
+CLEANUP PASS
+GDB quit, explicit y confirmation: native detach, managed helper cleanup.
+PTY2 Exited/exit0. ps finds none of helper5043/runqemu5057/guardian5058/
+QEMU5059/GDB5062; private socket and staged flash removed. Only bounded
+mode600 qemu.log remains (40895 bytes). Capture client5723 terminated after
+the session had exited; independent daemon3142 remains idle/available.
+Original flash/config and selected recovered reference/symbol hashes unchanged.
+Other user/AMD daemons and retained ZCU102 work were not changed.
+
+SCREENSHOTS AND PRESENTATION (outside Git, uncommitted/unpushed)
+/home/bspguy-dev/projects/yoctui-ydd2026-presentation/assets/
+openbmc-qemu-boot-live.png:
+ace4a8454a3d369903739135e88e432d582fea34f0de1a71cc1fe97eaa8668c0
+openbmc-kernel-debug-live.png:
+ea69d0b5b548bb3c6e7672d2ea34d566cfd3ce373d7fc691ba22d3c965474831
+openbmc-kernel-breakpoint-live.png:
+89397d91f996cc976e68a8b09c2c54388e0e1ad425241536503cff134b80a3bc
+openbmc-launch-review-live.png:
+119dc2adec703b7cce2d715d3dea2d50e594cbfde9eac70f8d568d6dce708f42
+Each PNG is rendered from real PTY cells; raw .cells/.ansi/.txt retained.
+Full actual serial log openbmc-qemu-serial-live.ansi:
+561f92cec4f8a774a9519fd158fe20a3f9db5c07e43794fc2d6af1bd5ccb7d4a.
+Editable Yoctui-Yocto-Developers-Day-2026-Roy-Cohen.pptx/.odp,
+PDF preview, slides17-19 updated with real review/debug/boot captures.
+24 slides, 22 main slides/25 minutes including3-minute Q&A; notes retained,
+308 native editable text-bearing shapes in both PPTX/ODP, 13 screenshots.
+LibreOffice conversion and presentation verifier pass; visually checked17-19.
+Existing fixtures and v0.1.268 read-only UI captures remain explicitly labeled.
+No agent-development Markdown references in notes/hyperlinks or slide text.
+
+VERIFICATION BOUNDARY
+Focused model/app/UI/CLI/debug/normal-QEMU/serial tests and strict workspace
+all-target/all-feature Clippy/fmt/UI/version/roadmap gates passed for the
+product change. Full test suite was NOT run, per user instruction.
+Physical KGDB, instrumented-kernel diagnostics and M67 current-source
+performance remain external blocked tasks; this acceptance does not satisfy
+those or certify other firmware launchers, ZCU102, all BSPs or full bring-up.
+
+REPRODUCE
+Use the isolated initialized build, ARM-capable GDB and selected exact stable
+artifacts above. Start/attach only that private daemon, open the managed form,
+select flash mode and review. Use hbreak start_kernel before firmware/MMU
+handoff; keep GDB source mapping. Continue, inspect real serial log, detach/
+reattach, native interrupt/backtrace, then explicit GDB quit and owned cleanup.
+Review before each new launch; do not restart another daemon or rebuild an
+image merely to replay these captures. Screenshots are retained evidence,
+not a substitute for a new session's own runtime/input verification.

@@ -1,14 +1,27 @@
 M113 selected by user: set ZCU102 aside/preserve its work, finish the emulated
 OpenBMC/QEMU debug path and save real boot/debug screenshots for presentation.
-OPENBMC-QEMU-GDB-FLASH-001 is DONE; OPENBMC-QEMU-GDB-LIVE-001 is IN_PROGRESS.
+OPENBMC-QEMU-GDB-FLASH-001 and OPENBMC-QEMU-GDB-LIVE-001 are DONE.
 Product 361ff4484104 pushed; exact source-bound optimized release built (9m04s).
-the closed mode, exact ARM/config/32-MiB preflight, private bounded copy, review
+The closed mode, exact ARM/config/32-MiB preflight, private bounded copy, review
 and unchanged default route are implemented in v0.1.269. Focused checks pass:
 model debug3/kernel17, app7, UI7, CLI managed11/preparation7, normal-QEMU model22/
 UI5, serial4 (private subprocess entrypoint ignored). Workspace all-target
 all-feature strict Clippy, fmt, UI/version/roadmap gates pass; no full suite.
-Real OpenBMC acceptance follows; no live success is claimed by these checks.
-Romulus deployed static.mtd/qemuboot and matching ARM DWARF vmlinux exist.
+Real OpenBMC acceptance PASS on2026-10-02: reviewed daemon-owned flash session,
+U-Boot/Linux6.18.49/OpenBMC login, hbreak start_kernel/source, continue, client
+detach/fresh reattach/interrupt/live ARM backtrace/registers and owned cleanup.
+Exact flash/FIT/config/recovered package-kernel/build-ID and unchanged hashes,
+failed first runqemu TUN prerequisite and limited ARM unwind are recorded in
+artifacts/live-openbmc/romulus/managed-flash-debug-v269.txt. Purgeable workdir
+disappearance cause is unknown; matching symbols recovered without rebuilding.
+Compatible retained independent daemon startedv0.1.268, client/helperv0.1.269;
+no existing user/AMD daemon replacement. Four actual screenshots/raw cells and
+serial log saved above repo. Editable PPTX/ODP slides17-19 updated; LibreOffice
+24slides/25minutes/notes/308 editable text shapes/layout/reference checks PASS.
+Presentation files/assets uncommitted/unpushed; no image build/deploy/full suite.
+Source-bound release SHA256785779c2502b452897efd41c6aabbbc0ccd94946f1dcd0d133050d80a6e9081b.
+No eligible independent implementation remains. KERNEL-INSTRUMENTATION-LIVE-001,
+KGDB-SERIAL-LIVE-001 and M67-LIVE-EVIDENCE-001 remain externally blocked.
 The retained flash qb_default_kernel=none now has an explicit supported mode
 with private staging; it is never silently routed through direct-kernel boot.
 Separate validation container/daemon; no AMD build retry or deletion. Screenshot
