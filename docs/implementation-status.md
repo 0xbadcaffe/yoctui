@@ -1,4 +1,9 @@
-M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; dependency verdict DONE v278.
+M114 current: DEMO-CONFIG-DETAILS-001 IN_PROGRESS; dependency verdict DONE v278.
+UI fixture iteration now344PASS/21fail. Before goldens, real v277 detail regression
+split: duplicate loaded identity/scope/state/blank lines displace operation
+provenance at100x25 and empty operations at110x26. Compact typed detail must
+retain these facts and existing controls, full Inspector and pane geometry.
+Fixture corrections remain separate/uncommitted; no accepted goldens yet.
 Why-built block now follows identity/position before long metadata. UI2 plus
 existing dependency UI3/model17, strictUIClippy/fmt/UI/version/roadmap PASS;
 every detailed field and64/4096 limits retained. No new actions/layout/scroll

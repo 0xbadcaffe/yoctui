@@ -1,7 +1,7 @@
 # Current Task
 
-**ID:** DEMO-UI-FIXTURES-001
-**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
+**ID:** DEMO-CONFIG-DETAILS-001
+**Title:** Retain Configuration provenance and operations beside compact action availability
 **Status:** IN_PROGRESS
 
 Dependency DEMO-CONFIG-CONTROLS-001 DONE v277. Focused UI2 missing/loading/error/
@@ -12,9 +12,13 @@ Dependency DEMO-DEPENDENCY-VERDICT-001 DONE v278: why-built block follows select
 identity/position before long metadata, existing Alt+l hint corrected. External
 UI2/root/reachable/unreachable/limit/longpath and existing UI3/model17, strictUI
 Clippy/fmt/UI/version/roadmap PASS;64/4096 limits/full fields preserved.
-Resume external UI fixtures/current typed positives and exact styled goldens.
-Every expectation must match current authoritative contract; retain negative/
-style/authority checks and split further real defects before product code.
+Full UI iteration344PASS/21fail reveals real v277 regression: redundant loaded
+identity/scope/state/blank rows displace operation provenance at100x25 and empty
+operation facts at110x26. Create typed compact detail projection avoiding identity
+already in summary and joining Operations label with first operation; keep all
+full Inspector fields and same pane allocation. Scope with absent recipes must
+say global only. Add external normal/provenance/empty/narrow regressions and
+retain v277 controls tests. Bump/spec/strict focused verify then resume fixtures.
 Parent still requires full UI PASS; no accepted goldens or removed assertions.
 Governance reconciliation: earlier canonical160x48 table incorrectly retained
 42body rows plus3row Footer at y47 after the five-row Header update. Current
@@ -25,9 +29,14 @@ queues DEMO-GITHUB-CI-001 before immutable publication, with exact pushed-source
 required job success and no weakened gates. Current task remains UI fixtures.
 
 ```bash
-cargo test -p yoctui-ui --all-features
+cargo test -p yoctui-ui demo_config
+cargo test -p yoctui-ui configuration_renders_bridge_provenance
+cargo test -p yoctui-ui config_workspace_renders_lazy_partial
+cargo test -p yoctui-ui config_scope_renders_picker
 cargo fmt --all --check
+cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 # Manual: exact current contract/typed fixture justification for every change.
 ```

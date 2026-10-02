@@ -83,10 +83,10 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 3518
 required = true
-depends_on = ["DEMO-DEPENDENCY-VERDICT-001"]
+depends_on = ["DEMO-CONFIG-DETAILS-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
 notes = "Relevant external UI fixtures and exact styled cell goldens. Compare every expectation with authoritative current contract and correct positive typed fixture state; preserve negative/semantic/style assertions. Reconcile exact version/local clock/current navigator and modifiers only after genuine rendering defects have independent regression proof. Never blanket accept baseline failures or mask dynamic identity fields."
 
@@ -97,7 +97,7 @@ title = "Resolve verified existing footer dialog and responsive demo clipping"
 status = "NOT_STARTED"
 priority = 3513
 required = true
-depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-HEADER-FIT-001", "DEMO-CONFIG-CONTROLS-001", "DEMO-DEPENDENCY-VERDICT-001", "DEMO-UI-FIXTURES-001"]
+depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-HEADER-FIT-001", "DEMO-CONFIG-CONTROLS-001", "DEMO-DEPENDENCY-VERDICT-001", "DEMO-CONFIG-DETAILS-001", "DEMO-UI-FIXTURES-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "Manual: real demo and TestBackend narrow/medium/wide controls remain visible with no new layouts/shortcuts", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Real v272 Dashboard Quick Actions still hardcodes B/E while current catalog routes Alt+b/Alt+e: truthful existing hints need correction, not restoring capital routes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires selected narrow/failure paths verified, not merely expectation replacement. If no defect remains, record evidence rather than invent a feature."
 
@@ -166,6 +166,17 @@ required = true
 depends_on = ["DEMO-CONFIG-CONTROLS-001"]
 verify = ["cargo test -p yoctui-ui demo_dependency_verdict", "cargo test -p yoctui-ui ux_dependency_graph", "cargo test -p yoctui-model dependency_graph", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE v278: existing why-built block follows identity/position before long metadata; every exact field/path/relationship/limitation retained, task-log hint Alt+l. New external UI2 root/reachable/unreachable/limit/long path and existing UI dependency3/model dependency17 PASS, strictUIClippy/fmt/UI/version/roadmap PASS. Limits64edges/4096nodes unchanged; unreachable fixture genuinely exhausts short graph instead of falsely claiming unreachable after bound. No new layout/action/scrolling/backend semantics. Full UI/current native optimized demo remain pending."
+
+[[task]]
+id = "DEMO-CONFIG-DETAILS-001"
+milestone = "M114"
+title = "Retain Configuration provenance and operations beside compact action availability"
+status = "IN_PROGRESS"
+priority = 3527
+required = true
+depends_on = ["DEMO-DEPENDENCY-VERDICT-001"]
+verify = ["cargo test -p yoctui-ui demo_config", "cargo test -p yoctui-ui configuration_renders_bridge_provenance", "cargo test -p yoctui-ui config_workspace_renders_lazy_partial", "cargo test -p yoctui-ui config_scope_renders_picker", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Full UI iteration344PASS/21fail reveals v277 presentation adds redundant Variable/Scope/loaded-state/blank lines above facts, clipping previously visible genuine operation provenance at100x25 and empty operations at110x26. Fix before accepting fixtures/goldens: typed compact loaded-detail projection avoids duplicate identity already in state/scope summary and joins Operations label with first operation; retain every field in full Inspector and same pane allocation. Compact scope honestly says global only for absent recipes. External normal/provenance/empty/narrow regressions plus existing v277 controls must pass unchanged; version/spec/coherent commit required. No parsing native text or new workflow/layout/authority."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"
