@@ -6,7 +6,7 @@ fn next_generation_navigator_mouse_and_keyboard_share_typed_routing() {
     let click_layers = MouseInput {
         kind: MouseKind::Down,
         column: 5,
-        row: 7,
+        row: 10,
     };
     let select = mouse_action_for_app(click_layers, &app, 180, 40);
     assert_eq!(select, Some(Action::SelectNavigatorAt { index: 2 }));
@@ -38,7 +38,7 @@ fn next_generation_navigator_mouse_and_keyboard_share_typed_routing() {
     let content_heading = MouseInput {
         kind: MouseKind::Down,
         column: 5,
-        row: 6,
+        row: 9,
     };
     assert_eq!(
         mouse_action_for_app(content_heading, &app, 180, 40),

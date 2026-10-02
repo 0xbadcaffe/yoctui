@@ -72,12 +72,12 @@ notes = "Planning parent split before further implementation: model/app fixture 
 id = "DEMO-MODEL-APP-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile model and input fixtures with current navigation and modifier contracts"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3517
 required = true
 depends_on = ["DEMO-PLATFORM-CONFIG-001"]
 verify = ["cargo test -p yoctui-model --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
-notes = "Relevant external model/app tests only. Map Hardware-adjusted navigator positions, five-row header mouse geometry, current build-target picker precondition, exact209-action catalog, Alt shortcuts and terminal cell budget to existing authoritative contracts. Retain negative/focus/mouse/authority checks and compatibility aliases; no product code or snapshot changes. DONE requires exact changed-contract evidence and committed full suites."
+notes = "DONE: only18 external fixture files, no product/snapshot changes. Model584 plus integrations1+5 and app250 PASS. Hardware adds navigator row: Devtool20/Raw18/BUILD root10; collapsed hidden-interior11 versus reselectable root10. Header2->5 means mouse y+3; menuconfig exact35rows. BuildOptions positive cases explicitly select core-image-minimal; Recipes selected-build fixture selects Recipes. Catalog209 includes five Hardware actions. Alt+b/e/m/a routes now exercised; capital-B compatibility alias and negative/focus/authority/mouse assertions retained. fmt/UI-spec/roadmap PASS. Full UI65 baseline failures are separate, not accepted by this fixture outcome."
 
 [[task]]
 id = "DEMO-UI-FIXTURES-001"
@@ -94,7 +94,7 @@ notes = "Relevant external UI fixtures and exact styled cell goldens. Compare ev
 id = "DEMO-UI-CLIPPING-001"
 milestone = "M114"
 title = "Resolve verified existing footer dialog and responsive demo clipping"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3513
 required = true
 depends_on = ["DEMO-MODEL-APP-FIXTURES-001"]

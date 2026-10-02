@@ -25,7 +25,7 @@ fn navigator_workbench_order_keeps_build_and_validation_groups_contiguous() {
             Screen::Qa,
             Screen::RawMode,
             Screen::TerminalSessions,
-            Screen::Recipes,
+            Screen::Devtool,
             Screen::Images,
             Screen::Maintenance,
             Screen::BuildEnvironment,

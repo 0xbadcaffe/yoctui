@@ -1,4 +1,9 @@
-M114 current: DEMO-MODEL-APP-FIXTURES-001 IN_PROGRESS; bounded config discovery DONE.
+M114 current: DEMO-UI-CLIPPING-001 IN_PROGRESS; model/app fixture child DONE.
+External fixture-only18files reconcile Hardware navigator indices, header y+3,
+35-row menuconfig PTY,209-action catalog, explicit selected build target and
+Alt+b/e/m/a routes. Model584/integrations1+5 and app250 PASS; negative authority,
+dialog/focus/mouse checks and legacy B alias retained. fmt/UI-spec/roadmap PASS.
+UI286PASS/65baseline failures remain separate; no goldens accepted yet.
 Contract reconciliation split into independently verified model/app fixtures,
 actual UI rendering polish and later UI fixture/golden reconciliation. No
 blanket snapshot acceptance; real defects remain separate from stale fixtures.

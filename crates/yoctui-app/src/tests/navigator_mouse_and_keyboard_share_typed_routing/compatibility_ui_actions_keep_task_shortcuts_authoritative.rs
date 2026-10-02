@@ -11,7 +11,8 @@ fn compatibility_ui_actions_keep_task_shortcuts_authoritative() {
             .find(|action| action.id == id)
             .map(|action| action.shortcut)
     };
-    assert_eq!(shortcut("tasks.build"), Some("B"));
+    assert_eq!(shortcut("tasks.build"), Some("Alt+b"));
+    assert_eq!(key_action(Input::Alt('b')), Some(Action::OpenBuildOptions));
     assert_eq!(key_action(Input::Char('B')), Some(Action::OpenBuildOptions));
     assert_eq!(shortcut("tasks.cancel"), Some("c"));
     assert_eq!(key_action(Input::Char('c')), Some(Action::Cancel));

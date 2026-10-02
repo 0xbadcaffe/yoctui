@@ -1,31 +1,29 @@
 # Current Task
 
-**ID:** DEMO-MODEL-APP-FIXTURES-001
-**Title:** Reconcile model and input fixtures with current navigation and modifier contracts
+**ID:** DEMO-UI-CLIPPING-001
+**Title:** Resolve verified existing footer dialog and responsive demo clipping
 **Status:** IN_PROGRESS
 
-Dependency DEMO-PLATFORM-CONFIG-001 DONE product0e749f9e/v272: focused checks
-pass; actual kernel105069byte .config visible/opened, matching hash unchanged.
-Baseline full suite88failures include stale modifier shortcuts, LocalHH:MM,
-current navigator indices/header geometry and obsolete positive action setup.
-Relevant external model/app fixture cases only for confirmed drift.
-Compare every expectation against current spec and exact typed route. Keep exact
-semantic/style/negative authority assertions; no blanket golden accept, dropped
-checks, old contract restoration or weakened deadlines. Separate actual product
-defects before code. Real Dashboard B/E labels are currently wrong versus Alt
-catalog and remain a UI polish task, not a fixture-only expected-value update.
-Document mappings, run model/app full suites; use two compile workers. Parent
-DEMO-CONTRACT-FIXTURES-001 is split: this independently verifiable child, then
-separate actual UI rendering polish, then UI fixtures/exact styled goldens.
-No UI assertion or golden acceptance is authorized by this fixture child.
+Dependency DEMO-MODEL-APP-FIXTURES-001 DONE: model584/integrations1+5 and app250
+PASS; exact current indices/modifier routing/mouse geometry/target preconditions
+reconciled without product code or negative assertion deletion. UI286PASS/65
+baseline failures remain. Diagnose current footer/editor/dialog/narrow rendering
+against authoritative later concept-layout contract, not historical layouts.
+Real Dashboard B/E labels are wrong versus Alt+b/Alt+e; confirmed product polish,
+not expected-value replacement. Split independently verified atomic rendering
+fixes before code, add normal/narrow/failure TestBackend regressions and bump
+version/UI spec in each product commit. No new feature or invented layout.
+UI fixture/golden child follows all selected fixes; no blanket acceptance.
 
 ```bash
-cargo test -p yoctui-model --all-features
+cargo test -p yoctui-ui --all-features
 cargo test -p yoctui-app --all-features
 cargo fmt --all --check
+cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
-# Manual: exact changed test-contract evidence; actual product defects separate.
+# Manual: verified current narrow/medium/wide controls and truthful hints.
 ```
 
 Completed local polling fix: source040a23d0/v270 exact optimized49f75463 release,

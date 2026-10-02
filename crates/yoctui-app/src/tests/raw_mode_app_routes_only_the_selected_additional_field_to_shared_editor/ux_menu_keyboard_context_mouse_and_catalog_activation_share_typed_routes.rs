@@ -39,7 +39,7 @@ fn ux_menu_keyboard_context_mouse_and_catalog_activation_share_typed_routes() {
     assert_eq!(key_action(Input::Char('a')), Some(Action::OpenContextMenu));
     assert_eq!(
         context_menu_activation_input("recipes.dependencies"),
-        Some(Input::Char('A'))
+        Some(Input::Alt('a'))
     );
     assert!(
         yoctui_model::operator_action_catalog()

@@ -16,7 +16,7 @@ fn next_generation_mouse_selects_exact_tasks_and_tabs() {
             MouseInput {
                 kind: MouseKind::Down,
                 column: 40,
-                row: 7,
+                row: 10,
             },
             &app,
             160,
@@ -30,7 +30,7 @@ fn next_generation_mouse_selects_exact_tasks_and_tabs() {
         MouseInput {
             kind: MouseKind::Down,
             column: 48,
-            row: 3,
+            row: 6,
         },
         &app,
         160,
@@ -49,7 +49,7 @@ fn next_generation_mouse_selects_exact_tasks_and_tabs() {
             MouseInput {
                 kind: MouseKind::Down,
                 column: 32,
-                row: 3,
+                row: 6,
             },
             &app,
             160,

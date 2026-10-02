@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn dialog_completion_queues_behind_active_dialog_and_restores_focus_after_both_close() {
     let mut app = App::new(10, 1_000);
+    app.build.target = Some("core-image-minimal".into());
     app.focus = FocusTarget::Navigator;
     let _ = update(&mut app, Action::OpenBuildOptions);
     let _ = update(

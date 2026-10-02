@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn compatibility_ui_nav_actions_load_unload_and_reject_before_activation() {
     let mut app = yoctui_model::App::new(16, 4096);
+    app.build.target = Some("core-image-minimal".into());
     app.workspace.build_dir = Some("/work/poky/build".into());
 
     let commands = app.command_palette_commands();

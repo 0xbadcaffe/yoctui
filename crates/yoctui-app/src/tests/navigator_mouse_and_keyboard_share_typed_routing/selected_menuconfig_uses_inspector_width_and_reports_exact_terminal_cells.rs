@@ -31,7 +31,7 @@ fn selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells() {
         terminal_workspace_dimensions(&app, 160, 50),
         Some(yoctui_model::PtyDimensions {
             columns: 131,
-            rows: 34,
+            rows: 35,
         })
     );
 
@@ -52,7 +52,7 @@ fn selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells() {
         terminal_workspace_dimensions(&app, 160, 50),
         Some(yoctui_model::PtyDimensions {
             columns: 136,
-            rows: 34,
+            rows: 35,
         })
     );
 }

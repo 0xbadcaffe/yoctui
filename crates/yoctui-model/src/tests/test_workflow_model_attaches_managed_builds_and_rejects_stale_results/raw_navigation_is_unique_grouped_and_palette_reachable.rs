@@ -7,13 +7,13 @@ fn raw_navigation_is_unique_grouped_and_palette_reachable() {
         .enumerate()
         .filter_map(|(index, screen)| (*screen == Screen::RawMode).then_some(index))
         .collect::<Vec<_>>();
-    assert_eq!(raw_destinations, [17]);
+    assert_eq!(raw_destinations, [18]);
     assert_eq!(
-        NAVIGATOR_COMPATIBILITY_DESTINATIONS[17],
+        NAVIGATOR_COMPATIBILITY_DESTINATIONS[18],
         WorkspaceDestination::RawMode
     );
     assert_eq!(NAVIGATOR_GROUPS[4].label, "TOOLS");
-    assert!((NAVIGATOR_GROUPS[4].start..NAVIGATOR_GROUPS[4].end).contains(&17));
+    assert!((NAVIGATOR_GROUPS[4].start..NAVIGATOR_GROUPS[4].end).contains(&18));
 
     let mut app = App::new(16, 4096);
     let raw_commands = app
@@ -29,7 +29,7 @@ fn raw_navigation_is_unique_grouped_and_palette_reachable() {
     );
 
     assert_eq!(update(&mut app, Action::Open(Screen::RawMode)), None);
-    assert_eq!(app.navigator_selection, 17);
+    assert_eq!(app.navigator_selection, 18);
     assert_eq!(app.focus, FocusTarget::Navigator);
     assert_eq!(app.inspector_mode(), InspectorMode::Navigator);
     assert_eq!(

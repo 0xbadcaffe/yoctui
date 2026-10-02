@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn selected_recipe_build_requires_confirmation() {
     let mut app = App::new(10, 1_000);
+    app.screen = Screen::Recipes;
     app.workspace.recipes = vec![Recipe {
         name: "busybox".into(),
         version: None,

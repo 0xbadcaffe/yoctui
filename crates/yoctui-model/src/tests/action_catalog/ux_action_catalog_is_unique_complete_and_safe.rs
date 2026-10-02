@@ -4,7 +4,11 @@ use super::*;
 fn ux_action_catalog_is_unique_complete_and_safe() {
     validate_operator_action_catalog().unwrap();
     let catalog = operator_action_catalog();
-    assert_eq!(catalog.len(), 204, "77 global plus 127 workspace actions");
+    assert_eq!(
+        catalog.len(),
+        209,
+        "current global and workspace actions, including hardware projects"
+    );
     assert!(
         catalog
             .iter()

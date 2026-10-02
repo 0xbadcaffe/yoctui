@@ -20,14 +20,14 @@ fn ux_dashboard_operational_shortcuts_match_the_typed_action_catalog() {
         ),
         (
             "dashboard.environment",
-            "E",
-            Input::Char('E'),
+            "Alt+e",
+            Input::Alt('e'),
             Action::Open(Screen::BuildEnvironment),
         ),
         (
             "dashboard.maintenance",
-            "M",
-            Input::Char('M'),
+            "Alt+m",
+            Input::Alt('m'),
             Action::Open(Screen::Maintenance),
         ),
     ] {

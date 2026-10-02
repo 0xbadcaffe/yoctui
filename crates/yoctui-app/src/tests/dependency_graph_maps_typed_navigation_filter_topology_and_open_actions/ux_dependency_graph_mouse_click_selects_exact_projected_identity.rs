@@ -23,7 +23,7 @@ fn ux_dependency_graph_mouse_click_selects_exact_projected_identity() {
         MouseInput {
             kind: MouseKind::Down,
             column: 24,
-            row: 5,
+            row: 8,
         },
         &app,
         160,

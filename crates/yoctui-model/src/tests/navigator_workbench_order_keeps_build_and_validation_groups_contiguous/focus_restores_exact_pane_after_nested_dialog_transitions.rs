@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn focus_restores_exact_pane_after_nested_dialog_transitions() {
     let mut app = App::new(10, 1_000);
+    app.build.target = Some("core-image-minimal".into());
     app.screen = Screen::Tasks;
     app.focus = FocusTarget::Workspace;
 

@@ -10,7 +10,7 @@ fn collapsed_navigator_root_can_be_reselected_and_reopened() {
     assert_eq!(app.navigator_group_index(), 3);
     let _ = update(&mut app, Action::SelectNavigator { delta: -1 });
     assert_eq!(app.navigator_selection, NAVIGATOR_GROUPS[2].start);
-    assert_eq!(app.navigator_visual_row(), 11);
+    assert_eq!(app.navigator_visual_row(), 12);
 
     let _ = update(&mut app, Action::ExpandNavigatorGroup);
     assert!(app.navigator_groups_expanded[2]);

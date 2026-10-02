@@ -36,7 +36,7 @@ fn ux_responsive_mouse_regions_keyboard_scroll_and_minimum_are_exact() {
             MouseInput {
                 kind: MouseKind::Down,
                 column: 8,
-                row: 2,
+                row: 5,
             },
             &app,
             90,
@@ -49,7 +49,7 @@ fn ux_responsive_mouse_regions_keyboard_scroll_and_minimum_are_exact() {
             MouseInput {
                 kind: MouseKind::Down,
                 column: 22,
-                row: 2,
+                row: 5,
             },
             &app,
             90,
@@ -62,7 +62,7 @@ fn ux_responsive_mouse_regions_keyboard_scroll_and_minimum_are_exact() {
             MouseInput {
                 kind: MouseKind::Down,
                 column: 32,
-                row: 2,
+                row: 5,
             },
             &app,
             90,
