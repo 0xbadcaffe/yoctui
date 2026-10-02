@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.267 • Git: rel-v2026.1 synced* • Project: poky • T:not selected • Machine: zynqmp-zcu102-sdt-D:✓ Connected/Local • BB:– Disconnected • Local 08:44│
+│Daemon health: ✓ Connected/Local · BitBake: – Disconnected                                                                                                    │
+│Workspace: /home/bspguy-dev/src/yoctui-zcu102-2026.1/sources/poky  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                        │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator────────────────┐┌Build Overview───────────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
+│▾ OVERVIEW               ││Overall  build not started · 0%                                                      ││Environment                                 │
+│  ▱ Dashboard            ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                                ││Project          : not selected             │
+│  ▱ Insights             ││Current Build : none                      │Last Build / Job                          ││Machine          : zynqmp-zcu102-sdt-full   │
+│▾ CONTENT                ││Current Task  : none                      │No retained build or job                  ││Distro           : petalinux                │
+│  ▱ Layers               ││Build Status  : Idle                      │History appears after a build or job      ││Yocto release    :                          │
+│  ▱ Recipes              ││Daemon Status : Connected                 │                                          ││2026.1+snapshot-3bcef3b6a9d01c0469c1acc26a7b│
+│  × Packages             ││Warnings: 0  Errors: 0                    │                                          ││2691e746765a                                │
+│  ▱ Images               │└─────────────────────────────────────────────────────────────────────────────────────┘│Layers enabled   : 38                       │
+│  ▱ Hardware             │┌Recent Builds · Job History──────────────────────────────────────────────────────────┐│                                            │
+│  ▱ Kernel               ││No completed builds or jobs retained. B opens build options.                         ││Workspace                                   │
+│  ▱ U-Boot / BIOS        ││                                                                                     ││Source           :                          │
+│  ▱ SDK                  ││                                                                                     ││/home/bspguy-dev/src/yoctui-zcu102-2026.1/so│
+│▾ BUILD                  ││                                                                                     ││urces/poky                                  │
+│  ▱ Tasks                ││                                                                                     ││Build directory  :                          │
+│  ▱ Logs             LIVE││                                                                                     ││/home/bspguy-dev/src/yoctui-zcu102-2026.1/bu│
+│  ▱ Errors               ││                                                                                     ││ild                                         │
+│  ▱ Configuration        ││                                                                                     ││Disk             : 21.1 GiB free            │
+│  ▱ Dependencies         ││                                                                                     ││                                            │
+│▾ VALIDATE               ││                                                                                     ││Enabled Actions                             │
+│  ▱ Testing              ││                                                                                     ││[B] Build image                             │
+│    Security             ││                                                                                     ││[F2] Monitor tasks                          │
+│  ▱ QA                   ││                                                                                     ││[l] View logs                               │
+│▾ TOOLS                  ││                                                                                     ││[e] View errors                             │
+│  ▱ Raw Mode             ││                                                                                     ││[E] Verify environment                      │
+│  ▱ Terminal Sessions    ││                                                                                     ││[t] Open terminal                           │
+│  ▱ Devtool              │└─────────────────────────────────────────────────────────────────────────────────────┘│[d] Open devtool                            │
+│  ▱ QEMU / Wic           │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│                                            │
+│  ▱ Maintenance          ││CPU ! unavailable          │RAM Usage                27%│Build FS Usage           95%││Active Tasks                                │
+│  ▱ Build environment    ││                           │                            │                          ▆ ││No active task events                       │
+│  ▱ Compatibility        ││                           │                            │                          █ ││Next Action                                 │
+│  ▱ Settings             ││                           │                          ▆ │                          █ ││Build image [Alt+b]                         │
+│                         ││                           │ ▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫ ││Attention                                   │
+│                         ││                           │        4.1/15.0 GiB        │        21.1 GiB free       ││No retained warnings or errors              │
+│                         │└─────────────────────────────────────────────────────────────────────────────────────┘│Workbench Center                            │
+│                         │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Context: none retained                      │
+│                         ││[B] Build image            │[t] Open terminal           │[E] Verify environment      ││Active: tasks 0 · jobs 0                    │
+│                         ││                           │                            │                            ││Favorite: none                              │
+│                         ││Start the selected BitBake │Use the initialized Yocto   │Check layers and            ││Terminal: none                              │
+│                         ││target                     │shell                       │configuration               ││[t] Terminal sessions                       │
+│                         ││                           │                            │                            ││Artifact: none retained                     │
+└─────────────────────────┘└─────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   h/l groups   Enter open   Ctrl+B prefix   F2 Tasks   F3 History   F5 Logs   F6 Layers   F7 Recipes   F8 Images   F1 Help   F12 Menu   q Quit     │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

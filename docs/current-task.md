@@ -1,8 +1,43 @@
 # Current Task
 
-**ID:** XILINX-ZCU102-ENV-001
-**Title:** Prepare an isolated current AMD PetaLinux ZCU102 validation environment
+**ID:** XILINX-ZCU102-BUILD-001
+**Title:** Build a real ZCU102 PetaLinux image through the Yoctui daemon
 **Status:** IN_PROGRESS
+
+Dependency XILINX-ZCU102-ENV-001 is DONE. The retained official rel-v2026.1
+environment is initialized in private Ubuntu 24.04 daemon instance
+`d4a77149d273128063464c230720e618` (container PID 5073). Real recipe inventory
+is ready; real release UI shows Connected/Local and zynqmp-zcu102-sdt-full.
+ENV evidence/config/layer backups are in artifacts/live-xilinx/zcu102.
+
+Immediately request the actual image with `./scripts/live-zcu102.sh build`.
+Monitor real daemon tasks/outcome with `./scripts/live-zcu102.sh status` and
+`./scripts/live-zcu102.sh attach`; preserve stdout/error/task logs. Keep two
+task/make workers, four-GiB stop/one-GiB halt disk guards and rm_work exclusions
+for linux-xlnx/petalinux-image-minimal. Kernel debug SCC and validation-only
+CONFIG_RANDOMIZE_BASE=n fragment are confirmed in recipe metadata, not yet
+in the resolved built .config. Done requires actual successful image tasks,
+deployed ZCU102 rootfs/qemuboot/firmware/kernel and exact matching ELF/DWARF
+vmlinux/config hashes. Record pinned source IDs, real failure paths, storage
+constraints and artifact identities. No mocked success, unmanaged QEMU, silent
+alternative machine or physical-board action. On successful BUILD commit,
+immediately continue XILINX-ZCU102-QEMU-GDB-001 through reviewed real UI flows.
+Product gaps require separate atomic versioned fixes/focused checks/push and
+source-bound release. Full suite remains deferred.
+
+ENV verification passed: five capture-health checks, helper shell syntax and
+failure guards, actual parse-only preflight (16539 files/0 errors), current
+daemon workspace publication, live PTY/machine assertion, resolved kernel SCC/
+fragment metadata, non-root user namespaces, reachable pinned hardware archive,
+formatting/diff/roadmap checks. The vendor's optional qt-gui dangling append
+warning is retained, not hidden. Two cold-inventory timeouts are retained too;
+native parse-only preflight with exact daemon custom terminal variables warmed
+the same cache without weakening startup bounds. Unused ROS layers are excluded
+only from this build's BBLAYERS; coherent cloned sources and required layers
+remain intact. Current release v0.1.267 checksum unchanged; no product code
+change or full suite. Roughly 22 GiB free before build; guards must not weaken.
+
+Historical ENV preparation/resume and earlier completed tasks follow:
 
 **Resumed by the user after laptop shutdown — 2026-10-02.** The retained
 container has restarted and isolated daemon instance

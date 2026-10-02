@@ -1,3 +1,17 @@
+M111 ENV is DONE; BUILD is current after resumed verification on 2026-10-02.
+Real private daemon d4a77149d273128063464c230720e618 publishes ready workspace/
+recipe inventory; genuine v0.1.267 PTY asserts Connected/Local and the exact
+zynqmp-zcu102-sdt-full machine. Coherent AMD clones/config limits/debug SCC/
+validation layer, namespaces, archive availability and hashes are recorded in
+artifacts/live-xilinx/zcu102. Cold scans timed out twice; evidence retained,
+optional ROS excluded only from BBLAYERS, matching-environment parse preflight
+passed 16539 files/0 errors and warmed the cache. Guards were not weakened;
+vendor dangling qt-gui append warning retained. Five helper checks, shell syntax/
+failure paths, fmt/diff/roadmap pass. No product code/full suite; unchanged
+source-bound release. Request actual image through daemon next, then prove
+deployed image/matching symbols/config and reviewed live QEMU/GDB separately.
+
+Historical pause/resume handoff (superseded by completed ENV above):
 M111 was resumed by the user after laptop shutdown (2026-10-02), with
 ENV still IN_PROGRESS, not DONE. Official AMD rel-v2026.1 sources and an exact
 zynqmp-zcu102-sdt-full/PetaLinux configuration are retained under

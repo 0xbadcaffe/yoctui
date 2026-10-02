@@ -2,6 +2,18 @@
 
 ## M111 — Current AMD PetaLinux ZCU102 live acceptance
 
+ENV is DONE after resumed real verification: ready isolated daemon workspace,
+exact ZCU102 machine displayed in real release PTY, coherent AMD source/config
+identities and bounded workers/storage, validation-only fixed-address debug
+fragment and vendor DWARF5 SCC in recipe metadata. Two cold inventory timeouts
+and vendor qt-gui dangling append warning are retained in evidence. Optional ROS
+is excluded only from this build's BBLAYERS; exact-daemon-environment parse-only
+preflight completed 16539 files with zero errors and warmed the shared cache;
+startup guards were unchanged. Helper/fmt/diff/roadmap checks pass, no full suite
+or product code change. BUILD is current; real image/deploy/matching symbols and
+reviewed QEMU/GDB validation remain required. Evidence: artifacts/live-xilinx/zcu102.
+
+Historical shutdown resume checkpoint, superseded by ENV completion above:
 User resumed execution after laptop shutdown on 2026-10-02. ENV remains
 IN_PROGRESS; BUILD/QEMU-GDB remain NOT_STARTED. Coherent rel-v2026.1 clones,
 bounded ZCU102 configuration and supported Ubuntu 24.04 validation container

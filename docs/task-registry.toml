@@ -6,18 +6,18 @@ status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 id = "XILINX-ZCU102-ENV-001"
 milestone = "M111"
 title = "Prepare an isolated current AMD PetaLinux ZCU102 validation environment"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3300
 required = true
 depends_on = ["QEMU-GDB-UI-001"]
 verify = ["Manual: preview and reclaim only identified regenerable build caches; retain release binary, user sources/evidence and existing daemon", "Manual: record current AMD manifest/layer commits, source the new build profile, verify exact ZCU102 machine and conservative BB_NUMBER_THREADS/PARALLEL_MAKE", "Manual: initialize independent Yoctui daemon with isolated runtime/state roots and verify matching workspace authority", "./scripts/verify-roadmap.sh"]
-notes = "User resumed after shutdown on 2026-10-02. Retained container restarted; new isolated daemon 130d73f2c2e8323f10bbfcbacc982af6 is loading metadata. Coherent official rel-v2026.1 clones, exact SDT ZCU102 configuration with two workers/disk guards/DWARF retention and Ubuntu 24.04 container persist. Previous real isolated daemon/UI connected but discovery remained pending; image build requests were rejected with Conflict, not executed. Existing user environments preserved. Resume commands and exact identities/evidence/config copies in current-task and artifacts/live-xilinx/zcu102. ENV remains IN_PROGRESS until matching daemon authority verified; BUILD/QEMU-GDB not started. Host/license/storage prerequisites must be reported, not bypassed."
+notes = "DONE after resumed real ENV verification on 2026-10-02. Official coherent rel-v2026.1 clones, SDT ZCU102/PetaLinux/linux-xlnx, two task/parse/make workers, disk guards, rm_work kernel/image exclusions and vendor DWARF5 feature. Scoped validation layer disables kernel randomization. Ubuntu 24.04 nonroot namespaces and pinned hardware archive HTTP 200 verified. Private daemon d4a77149d273128063464c230720e618 published real workspace/inventory; real release PTY asserts Connected/Local and exact machine. Two cold inventory timeouts preserved; unused ROS layers excluded only from BBLAYERS and exact daemon-environment parse preflight passed 16539 files/0 errors, warming the same cache without weakening guards. Upstream qt-gui dangling append warning retained. Cargo/duplicate/unreferenced sstate cleanup preserved source/images/kernel evidence; five helper health tests, shell/failure guards, fmt/diff/roadmap pass. Evidence/source/config/layer identities in artifacts/live-xilinx/zcu102. No full suite or product code change; unchanged source-bound v0.1.267 release. Actual BUILD/QEMU-GDB follow, not certified by preparation."
 
 [[task]]
 id = "XILINX-ZCU102-BUILD-001"
 milestone = "M111"
 title = "Build a real ZCU102 PetaLinux image through the Yoctui daemon"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3301
 required = true
 depends_on = ["XILINX-ZCU102-ENV-001"]
