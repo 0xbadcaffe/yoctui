@@ -1,4 +1,15 @@
-M111 ENV is DONE; BUILD is current after resumed verification on 2026-10-02.
+M112 NATIVE-DISK-GUARD-OUTCOME-001 is current after actual validation exposed
+false success: native STOPTASKS at 3.969 GiB ended an incomplete runqueue, but
+ignored DiskFull/zero-failure completion forced success/10994. No image/vmlinux
+exists; M111 BUILD is BLOCKED by storage (~3.1 GiB free). Fix native bridge
+authority with focused per-build/log/completion/progress/UI regressions and
+version/commit/push/release, then real guard reproduction. Actual image retry
+needs more space; old archive-cache cleanup awaits user approval. QEMU/GDB is
+NOT_STARTED. Full suite remains deferred; older files/captures preserved.
+Evidence/reproduction: artifacts/live-xilinx/zcu102/disk-guard-stop.txt.
+
+Historical running/preparation checkpoints, not final image success:
+M111 ENV is DONE; BUILD was current after resumed verification on 2026-10-02.
 Real private daemon d4a77149d273128063464c230720e618 publishes ready workspace/
 recipe inventory; genuine v0.1.267 PTY asserts Connected/Local and the exact
 zynqmp-zcu102-sdt-full machine. Coherent AMD clones/config limits/debug SCC/
@@ -28,6 +39,14 @@ Pinned kernel cache preparation now avoids the fetcher's initial full Git mirror
 under the real BitBake fetch lock into an absent cache. Five local Git guard
 tests pass; no recipe/config/stamp changes or older source-cache removal. Evidence
 is kernel-cache-preseed.txt. Real native kernel/image outcomes remain pending.
+Native kernel fetch/unpack subsequently passed: actual source HEAD/tree match
+the pin and backend-created completion stamps exist. Current resolved config
+has DEBUG_INFO/DWARF5 enabled and RANDOMIZE_BASE disabled; optional GDB_SCRIPTS
+is disabled. Exact config path/hash and actual 240-column UI recapture (2602
+tasks, Connected/Local/full ZCU102 machine/two workers/zero errors) are recorded
+in kernel-configuring.txt. Retained 160-column capture predicate rejected the
+abbreviated connection label; it is not reported as passed. Final compiled
+symbols/config, image/deploy and QEMU/GDB still pending; ~6.2 GiB free at 11:22.
 
 Historical pause/resume handoff (superseded by completed ENV above):
 M111 was resumed by the user after laptop shutdown (2026-10-02), with

@@ -22,6 +22,13 @@ Status: **Authoritative product and interaction contract**
 
 ### M111 User-authorized ZCU102 live validation
 
+Native disk-guard stops are incomplete/failed builds, even if BitBake's later
+completion reports zero failures or exit zero. Show the existing failed job/
+build state and retained disk/inode diagnostic; keep last observed progress,
+never synthesize successful 100%. No automatic retry, guard/config edits or new
+dialog/layout. A subsequent explicitly requested build starts with fresh guard
+state. This native bridge behavior does not certify process-mode outcomes.
+
 The explicit validation request authorizes preparing a new current coherent
 AMD PetaLinux/meta-xilinx environment, low-parallelism ZCU102 image build,
 QEMU boot and live kernel debugging through the existing reviewed Yoctui flows.

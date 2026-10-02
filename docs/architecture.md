@@ -2,6 +2,14 @@
 
 ## M111 Isolated ZCU102 live validation boundary
 
+M112 native disk outcome: bridge subscribes to the closed native DiskFull event
+and retains its stop condition per active build until final completion. It
+emits existing typed log/failure completion; model/job/UI consume those types
+without parsing disk-monitor log text. Native zero is not successful operation
+authority after this explicit guard stop; use existing managed failure semantics,
+preserve observed progress and reset state on a fresh explicit build. No wire,
+process-mode parser or widget/layout change is required for this atomic task.
+
 Use the current coherent AMD manifest and a separate source/build profile,
 private XDG runtime/state roots, and current release binary. Build requests
 belong to the new Yoctui daemon; QEMU/debug sessions use existing reviewed

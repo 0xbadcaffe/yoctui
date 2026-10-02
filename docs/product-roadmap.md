@@ -2,6 +2,23 @@
 
 ## M111 — Current AMD PetaLinux ZCU102 live acceptance
 
+Latest outcome: BUILD is BLOCKED by real storage guard, not DONE. At 11:29 UTC
+job 1 soft-stopped on native STOPTASKS (~3.969 GiB), no deployed image/vmlinux,
+~3.1 GiB free. Yoctui erroneously treated zero-failure completion as success and
+forced total progress; current M112 NATIVE-DISK-GUARD-OUTCOME-001 fixes native
+event authority independently. More storage/explicit retry is still required
+for the actual image, then QEMU/GDB. Old archive-cache cleanup awaits approval.
+Exact real failure/reproduction is in disk-guard-stop.txt. Earlier running
+checkpoints below are historical; do not use final false 100% as success proof.
+
+Native kernel fetch/unpack and current resolved config are now verified, not
+only recipe metadata. Exact source HEAD/tree matches the pin; backend-created
+fetch/unpack stamps and DEBUG_INFO/DWARF5 enabled / RANDOMIZE_BASE disabled are
+recorded in kernel-configuring.txt. Optional GDB scripts are disabled. Passed
+240-column actual UI recapture shows full ZCU102 identity/Connected/two workers/
+zero errors; retained 160-column predicate failure is not claimed as passed.
+Final compiled config/ELF, image/deploy and live QEMU/GDB remain pending.
+
 BUILD job 1 is actually RUNNING through the private daemon (requested 08:50 UTC,
 2026-10-02). Real release PTY recorded 286/10994 tasks, two workers and no errors;
 subsequent framed IPC recorded 461 aggregate completions and no fetch failures.

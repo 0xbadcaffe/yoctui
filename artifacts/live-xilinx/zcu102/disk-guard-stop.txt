@@ -1,0 +1,41 @@
+ZCU102 actual storage guard stop — 2026-10-02 11:29 UTC
+
+Image validation is BLOCKED by storage, not completed. Same private daemon
+d4a77149d273128063464c230720e618, image job 1. Last observed real aggregate
+before stop was 3092/10994. At 11:28:26 UTC the authoritative BitBake logs said:
+  free space of build/tmp (/dev/nvme0n1p2) running low (3.969GB left)
+  No new tasks can be executed since the disk space monitor action is "STOPTASKS"!
+The same warning/error appeared for downloads and sstate-cache on that device.
+Read-only IPC recent_logs retained source=bitbake, severity=warning/error,
+unix_ms=1790940506611, path=.../bitbake/lib/bb/monitordisk.py. No per-task failure
+was fabricated: active file configure/QEMU unpack drained successfully, then
+BitBake soft-stopped the remaining runqueue. Available space fell to ~3.1 GiB.
+
+Reporting bug discovered by this actual validation:
+daemon job 1 Exited exit_code=0; final Completed success=true at 1790940541863;
+aggregate forced to 10994/10994 despite an incomplete runqueue. No deploy/images
+directory or retained matching kernel vmlinux exists. This is NOT image success.
+Scarthgap monitordisk.py explicitly fires native bb.event.DiskFull after
+rq.finish_runqueue(False). Current Tinfoil event mask excludes DiskFull and
+normalization interprets final zero failures/interruption as success.
+
+Follow-up NATIVE-DISK-GUARD-OUTCOME-001: subscribe to native DiskFull, retain
+per-build interruption truth and report failed/incomplete completion through
+existing typed events; preserve observed progress and diagnostics. Normal
+success, ordinary errors, cancellation and the next build must not regress.
+No UI raw-log parsing, invented task failure, guard weakening or automatic retry.
+
+Manual reproduction after product fix: restart only this isolated idle daemon
+on the new source-bound release; request this exact image through Yoctui while
+actual free space is below the unchanged 4-GiB guard. Verify Failed, native
+disk diagnostic, no fabricated 100%, normal cleanup and actual absent artifacts.
+Then sufficient storage and a fresh explicit build request are needed to resume
+the real image. Successful fetch/unpack/config stamps/source/config are retained;
+do not clean the new build or fake success to bypass the gate. QEMU/GDB remains
+NOT_STARTED and depends on an actual successful image/matching ELF/config.
+
+Optional older download archive-cache cleanup (~4.4 GiB) was requested and is
+still pending user approval. Do not delete those archives before an answer.
+Older Git/work/image/debug artifacts and four unrelated user captures remain
+untouched. Desktop index is temporarily runtime-masked; private tag backup and
+service restore instructions are in storage-cleanup.txt. No full suite ran.

@@ -1,8 +1,58 @@
 # Current Task
 
-**ID:** XILINX-ZCU102-BUILD-001
-**Title:** Build a real ZCU102 PetaLinux image through the Yoctui daemon
+**ID:** NATIVE-DISK-GUARD-OUTCOME-001
+**Title:** Preserve native disk-guard failure in bridge build completion
 **Status:** IN_PROGRESS
+
+Dependency XILINX-ZCU102-ENV-001 is DONE. The actual ZCU102 image soft-stopped
+at the unchanged 4-GiB STOPTASKS threshold; ~3.1 GiB remains, no image/vmlinux.
+BUILD is BLOCKED by storage. Native DiskFull is missing from the Tinfoil mask,
+so zero-failure completion incorrectly became success and forced 10994/10994.
+Exact native diagnostic/final state is in disk-guard-stop.txt. This is a real
+product bug discovered during validation, not a successful image.
+
+Implement only this atomic bridge-native outcome fix: subscribe/normalize the
+closed native DiskFull event, latch its stop reason per active build and make
+later native zero/explicit-success completion a failed managed outcome. Keep
+existing typed log/completion/reducer/job/UI paths and observed progress. No
+raw-log parsing in widgets, synthetic task failures, protocol/layout changes,
+automatic retries or weakened guards. Reset the latch for a fresh build; stale
+events, normal success, ordinary failures and explicit cancellation must retain
+existing behavior. Relevant bridge tinfoil_workspace.py/events.py/adapter.py,
+focused bridge/protocol/model/UI tests and coherent workspace version manifests.
+Process-mode completion is outside this native-event task's certification.
+
+Verify focused bridge disk/event/cancellation checks, protocol/model partial
+failed progress and TestBackend failure rendering, affected strict Clippy/fmt,
+UI/version/roadmap gates and source-bound optimized release. Use two Cargo jobs,
+incremental=0 and debug=0 for dev/test under storage pressure; retain the previous
+release. Full suite remains explicitly deferred. Bump product version, coherent
+commit/push and committed-source release; then reproduce the real native guard
+through the isolated daemon/new UI, without starting an unmanaged build. Restart
+only the isolated now-idle daemon. Live image success still needs more storage;
+older archive-cache cleanup awaits user approval, so do not remove those files.
+
+Commands (with low-disk Cargo profile variables where appropriate):
+```bash
+python3 -m pytest bridge/tests/test_metadata_events.py -k 'disk_guard or native_event'
+python3 -m pytest bridge/tests/test_server_adapters.py -k 'build or cancellation or bounded'
+cargo test -p yoctui-protocol disk_guard
+cargo test -p yoctui-model disk_guard
+cargo test -p yoctui-ui disk_guard
+cargo test -p yoctui-bitbake bridge_backend
+cargo fmt --all --check
+cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings
+./scripts/verify-ui-spec.sh
+python3 scripts/check-version-bump.py
+./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
+```
+
+## Blocked image validation handoff
+
+XILINX-ZCU102-BUILD-001 is BLOCKED after the real disk guard stop. Historical
+running checkpoints below are retained, not the latest terminal outcome. Native
+source fetch/unpack and current debug config passed; no image/boot/GDB succeeded.
 
 Dependency XILINX-ZCU102-ENV-001 is DONE. The retained official rel-v2026.1
 environment is initialized in private Ubuntu 24.04 daemon instance
@@ -34,9 +84,13 @@ older archive-cache cleanup (~4.4 GiB) awaits user approval; do not remove it ye
 Monitor real daemon tasks/outcome with `./scripts/live-zcu102.sh status` and
 `./scripts/live-zcu102.sh attach`; preserve stdout/error/task logs. Keep two
 task/make workers, four-GiB stop/one-GiB halt disk guards and rm_work exclusions
-for linux-xlnx/petalinux-image-minimal. Kernel debug SCC and validation-only
-CONFIG_RANDOMIZE_BASE=n fragment are confirmed in recipe metadata, not yet
-in the resolved built .config. Done requires actual successful image tasks,
+for linux-xlnx/petalinux-image-minimal. Native kernel fetch/unpack completed;
+real source HEAD/tree exactly match the pin. Current resolved .config has
+DEBUG_INFO=y/DWARF5=y and RANDOMIZE_BASE disabled (optional GDB_SCRIPTS disabled).
+`kernel-configuring.txt` records exact config path/hash, real task stamps and a
+passed 240-column live UI recapture; the 160-column shorthand-label predicate
+failure is retained. Final config/ELF matching and image success remain pending.
+Done requires actual successful image tasks,
 deployed ZCU102 rootfs/qemuboot/firmware/kernel and exact matching ELF/DWARF
 vmlinux/config hashes. Record pinned source IDs, real failure paths, storage
 constraints and artifact identities. No mocked success, unmanaged QEMU, silent

@@ -14,15 +14,26 @@ verify = ["Manual: preview and reclaim only identified regenerable build caches;
 notes = "DONE after resumed real ENV verification on 2026-10-02. Official coherent rel-v2026.1 clones, SDT ZCU102/PetaLinux/linux-xlnx, two task/parse/make workers, disk guards, rm_work kernel/image exclusions and vendor DWARF5 feature. Scoped validation layer disables kernel randomization. Ubuntu 24.04 nonroot namespaces and pinned hardware archive HTTP 200 verified. Private daemon d4a77149d273128063464c230720e618 published real workspace/inventory; real release PTY asserts Connected/Local and exact machine. Two cold inventory timeouts preserved; unused ROS layers excluded only from BBLAYERS and exact daemon-environment parse preflight passed 16539 files/0 errors, warming the same cache without weakening guards. Upstream qt-gui dangling append warning retained. Cargo/duplicate/unreferenced sstate cleanup preserved source/images/kernel evidence; five helper health tests, shell/failure guards, fmt/diff/roadmap pass. Evidence/source/config/layer identities in artifacts/live-xilinx/zcu102. No full suite or product code change; unchanged source-bound v0.1.267 release. Actual BUILD/QEMU-GDB follow, not certified by preparation."
 
 [[task]]
+id = "NATIVE-DISK-GUARD-OUTCOME-001"
+milestone = "M112"
+title = "Preserve native disk-guard failure in bridge build completion"
+status = "IN_PROGRESS"
+priority = 3310
+required = true
+depends_on = ["XILINX-ZCU102-ENV-001"]
+verify = ["python3 -m pytest bridge/tests/test_metadata_events.py -k 'disk_guard or native_event'", "python3 -m pytest bridge/tests/test_server_adapters.py -k 'build or cancellation or bounded'", "cargo test -p yoctui-protocol disk_guard", "cargo test -p yoctui-model disk_guard", "cargo test -p yoctui-ui disk_guard", "cargo test -p yoctui-bitbake bridge_backend", "cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: real isolated Yoctui image request below unchanged disk guard reports Failed/partial progress and exact diagnostic, not image success"]
+notes = "Discovered in real ZCU102 job 1: native STOPTASKS/DiskFull soft-stop at 3.969 GiB, no deploy/vmlinux, but ignored event and zero-failure completion falsely forced 10994/10994 success. Subscribe/normalize typed native DiskFull and latch per active build, failed completion despite native zero, no fabricated task failure. Preserve normal success, cancellation, next-build reset, observed progress and typed existing failure UI. Current source-bound release/product fix workflow; full suite deferred. Image storage is separately BLOCKED. Process-mode completion is not certified by this native-event task."
+
+[[task]]
 id = "XILINX-ZCU102-BUILD-001"
 milestone = "M111"
 title = "Build a real ZCU102 PetaLinux image through the Yoctui daemon"
-status = "IN_PROGRESS"
+status = "BLOCKED"
 priority = 3301
 required = true
 depends_on = ["XILINX-ZCU102-ENV-001"]
 verify = ["Manual: request petalinux-image-minimal through the initialized Yoctui daemon; retain real task/failure/progress evidence and terminal outcome", "Manual: verify deployed ZCU102 image, qemuboot config, kernel and exact matching DWARF vmlinux/config hashes; retain kernel work despite rm_work", "./scripts/verify-roadmap.sh"]
-notes = "Actual job 1 accepted at 08:50 UTC 2026-10-02 and RUNNING after cold build-backend parse. Genuine PTY checkpoint 286/10994 tasks, two active/zero errors; later read-only IPC 461 aggregate completions/no retained failures/no failed fetches. Six framing/identity/read-only inspector checks pass; evidence retained. User-approved desktop index reset freed ~9.5 GiB with private tag backup and required temporary-service restore documented. Exact pinned 272-MiB shallow kernel cache installed under vendored BitBake fetch lock into absent cache; five local Git guard checks pass, no recipe/config/stamp changes. Native kernel/image outcomes still pending. Do not duplicate build/restart active daemon for startup/build terminal-cache mismatch. Done still requires actual successful tasks/deploy and matching debug kernel, not a request/dry run. Keep two task/make workers, rm_work exclusions and disk guards. Product fixes remain separately versioned/focused. No full suite."
+notes = "BLOCKED by actual storage: job 1 soft-stopped at unchanged 4-GiB STOPTASKS guard on 2026-10-02 11:29 UTC, ~3.1 GiB free. Native warning/error retained; no deploy/images or matching vmlinux. Ignored DiskFull plus zero-failure completion falsely showed success/10994 total: NATIVE-DISK-GUARD-OUTCOME-001 is independently eligible/current. Actual source fetch/unpack stamps and exact pin/tree match; current config DEBUG_INFO/DWARF5 enabled, RANDOMIZE_BASE disabled, optional GDB scripts disabled. Real wide UI/native/config evidence retained. User-approved desktop reset freed ~9.5 GiB with private tag backup/required temporary-service restore. Safe 272-MiB pinned cache installer passed five local Git guards and actual backend fetch/unpack; six inspector guards pass. More storage and explicit fresh image request required; older archive-cache cleanup (~4.4 GiB) awaits approval. Preserve new stamps/source/debug config and old artifacts. Keep two workers, rm_work exclusions and guards. Actual successful image/deploy/matching ELF remains required; no full suite."
 
 [[task]]
 id = "XILINX-ZCU102-QEMU-GDB-001"
