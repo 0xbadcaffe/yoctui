@@ -237,18 +237,18 @@ notes = "DONE v285: actual Alt+b advertised in Errors workspace/Inspector, same 
 id = "DEMO-STARTUP-NAVIGATION-001"
 milestone = "M114"
 title = "Align restored startup screen and typed Navigator without execution"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3533
 required = true
 depends_on = ["DEMO-UI-CLIPPING-001"]
 verify = ["cargo test -p yoctui-model startup_screen", "cargo test -p yoctui startup_screen", "cargo test -p yoctui restored_platform_workspace", "cargo test -p yoctui-ui startup_screen", "cargo clippy -p yoctui-model -p yoctui -p yoctui-ui --all-targets --all-features -- -D warnings", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Observed genuine v286 live inherited Kernel body with Dashboard Navigator. Relevant model startup presentation method, CLI initialization and external model/CLI/TestBackend tests. Preserve saved-screen continuity and unconfigured Build Environment, synchronize catalog destination/focus without losing Action::Open effects or making execution claims. Governance reconciles old unconditional Dashboard prose with established saved-session/unconfigured implementation before source. Update UI/architecture/status/registry and bump product version; no new workflow or automatic operation."
+notes = "DONE v287: pure model presentation restore aligns typed first catalog destination/Navigator focus with saved configured screen or unconfigured Build Environment before onboarding. No Action::Open effects discarded, no build/PTY/metadata launched. External model2/CLI2/UI1 and existing restored-platform1 PASS; full model586/integrations1+5/UI377 and affected strict all-target/all-feature Clippy/fmt/UI/version/roadmap PASS. All34 exact goldens byte-identical to previous contents except286->287 identity, no masking. Native optimized/reboot/all-screen acceptance remains pending."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"
 milestone = "M114"
 title = "Resolve full-suite daemon watcher and production snapshot integration failures"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3514
 required = true
 depends_on = ["DEMO-UI-CLIPPING-001", "DEMO-STARTUP-NAVIGATION-001"]

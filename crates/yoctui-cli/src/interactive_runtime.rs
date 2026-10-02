@@ -53,6 +53,14 @@ mod state;
 use key_input::KeyRouteOutcome;
 use state::InteractiveRuntime;
 
+pub(crate) fn restore_startup_screen(app: &mut App, configured: bool, saved: Option<Screen>) {
+    app.restore_startup_screen(if configured {
+        saved.unwrap_or(Screen::Dashboard)
+    } else {
+        Screen::BuildEnvironment
+    });
+}
+
 pub(crate) async fn tui(
     config: Config,
     targets: Vec<String>,
@@ -89,8 +97,8 @@ pub(crate) async fn tui(
     } else {
         App::new_unconfigured(log_entries, log_bytes)
     };
-    // The interactive application always opens on Overview / Dashboard in
-    // Navigator. Model fixtures retain their explicit focus semantics.
+    // Startup remains Navigator-focused; the saved destination is restored
+    // after the daemon snapshot determines whether an environment is configured.
     app.focus = yoctui_model::FocusTarget::Navigator;
     app.require_daemon = true;
     app.client_access_origin = client_access_origin();
@@ -158,12 +166,7 @@ pub(crate) async fn tui(
         };
         let _ = update(&mut app, action);
     }
-    if build_dir_configured {
-        app.screen = session.last_screen.unwrap_or(Screen::Dashboard);
-    } else {
-        app.screen = Screen::BuildEnvironment;
-        app.focus = yoctui_model::FocusTarget::Navigator;
-    }
+    restore_startup_screen(&mut app, build_dir_configured, session.last_screen);
     install_session_onboarding(&session, &mut app)?;
     app.logs.filter = session.log_filter;
     app.logs.recipe_filter = session.log_recipe_filter.clone();

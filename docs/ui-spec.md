@@ -6151,7 +6151,8 @@ every other terminal session. The dialog never claims that SSH boots an image.
 Configured first-run startup defaults to `Overview / Dashboard` with Navigator
 focus. A configured returning client preserves its existing saved last screen;
 the initial Workspace and Navigator selection must agree for destinations in
-the Navigator catalog, with Navigator focus. Non-catalog destinations retain the
+the Navigator catalog, selecting the first matching entry with Navigator focus.
+Non-catalog destinations retain the
 Dashboard navigation context. An unconfigured client starts on Build Environment
 with that destination selected, regardless of the saved screen. Restoration is
 presentation-only: it must not start a build, launch a PTY or consume/discard a

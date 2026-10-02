@@ -6,6 +6,9 @@ DEMO-STARTUP-NAVIGATION-001 is an atomic child before integration acceptance:
 restore saved-screen continuity with aligned typed Navigator/focus, or select
 Build Environment when unconfigured, without automatic operations or lost
 metadata effects. This corrects a genuinely observed first-frame discrepancy.
+DONE v287 with external model/CLI/TestBackend tests, full model586/UI377 and
+strict affected lint gates. Configured saved-screen continuity and unconfigured
+setup destination are preserved; native optimized rehearsal remains required.
 
 New user instruction selects profiling and measured hotspot fixes, correctness
 polish without new features, full suite, README screenshots/flamegraph report,

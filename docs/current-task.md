@@ -1,32 +1,35 @@
 # Current Task
 
-**ID:** DEMO-STARTUP-NAVIGATION-001
-**Title:** Align restored startup screen and typed Navigator without execution
+**ID:** DEMO-INTEGRATION-001
+**Title:** Resolve full-suite daemon watcher and production snapshot integration failures
 **Status:** IN_PROGRESS
 
-Dependencies UI clipping parent DONE v286. Source-bound live review confirms
-restored Kernel body with Dashboard Navigator. Preserve existing saved-screen
-continuity, select Build Environment when unconfigured, and synchronize typed
-catalog selection and Navigator focus before onboarding. Restoration is pure
-presentation: no automatic build/PTY or discarded Action::Open metadata effects.
-Governance clarifies first-run Dashboard versus returning/unconfigured startup
-in UI/architecture before source. Add external model/CLI/TestBackend coverage
-for all catalog destinations, non-catalog fallback, unconfigured override,
-modal onboarding and unchanged platform inventory/authority. Bump product,
-verify focused gates, then resume full integration fixture corrections and
-Git event diagnosis. Native optimized reboot-ready demo/CI/publication pending.
+Dependencies UI clipping parent and startup navigation child DONE v287. Full
+model586/integrations1+5/UI377, external startup model2/CLI2/UI1/existing platform1,
+strict affected Clippy/fmt/UI/version/roadmap PASS. Exact34 golden files changed
+only286->287 identity. Saved configured screens and unconfigured setup now align
+with the typed Navigator without starting operations; native live acceptance
+still pending. Current CLI376PASS/2fail/5ignored, daemon4PASS/1fail/snapshot fails.
+Repair exact positive fixtures: selected BuildOptions image, rootfs owning recipe,
+initialized failed-probe profile. Timing diagnosis proves two captures PASS with
+current offered protocol and graphics-none test override within unchanged8second
+deadline/1.2second stability. Preserve product handoff and authority failures.
+Git watcher passes current full run; reproduce the older flake before any adapter
+change. Re-run full CLI/bridge, strict CLI lint and timing; no timeout increase.
+Then source/library hygiene, full suite/docs/native reboot-ready OpenBMC/QEMU/GDB,
+exact-source GitHub CI, package/publication. No new features or long image build.
 
 ```bash
-cargo test -p yoctui-model startup_screen
-cargo test -p yoctui startup_screen
-cargo test -p yoctui restored_platform_workspace
-cargo test -p yoctui-ui startup_screen
-cargo clippy -p yoctui-model -p yoctui -p yoctui-ui --all-targets --all-features -- -D warnings
+cargo test -p yoctui --all-features --no-fail-fast
+python3 -m pytest bridge/tests
+cargo clippy -p yoctui --all-targets --all-features -- -D warnings
+# Manual: exact initialized daemon failed-probe log, two production timed PTYs,
+# repeated Git event delivery without extending deadlines or masking flakes.
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```
 
-Completed local polling fix:
+Completed local polling fix: source040a23d0/v270 exact optimized49f75463 release,
 same idle Layers/unchanged daemon10s warm60samples: client15.276970->0.270380%
 oneCPU (98.23% reduction); combined16.256828->1.354049%. Actual after188samples/
 zero lost/App::clone0.89% inclusive with legitimate guarded copies preserved.

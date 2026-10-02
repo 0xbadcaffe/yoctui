@@ -2,6 +2,7 @@
 
 use super::*;
 mod rootfs_browser;
+mod startup_screen;
 use proptest::prelude::*;
 
 pub(crate) fn log(message: &str) -> LogEntry {

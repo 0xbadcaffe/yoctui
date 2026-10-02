@@ -5,6 +5,7 @@ mod image_artifact_viewport;
 mod rootfs_browser;
 mod rootfs_systemd;
 mod saved_environment;
+mod startup_screen;
 use ratatui::{Terminal, backend::TestBackend};
 use std::{fs, path::PathBuf};
 use yoctui_model::{Action, BuildRequest, update};

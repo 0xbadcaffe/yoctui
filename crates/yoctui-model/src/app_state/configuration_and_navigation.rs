@@ -1,4 +1,14 @@
 impl App {
+    /// Restore client presentation without routing navigation's backend effects.
+    pub fn restore_startup_screen(&mut self, screen: Screen) {
+        self.screen = screen;
+        self.navigator_selection = NAVIGATOR_SCREENS
+            .iter()
+            .position(|candidate| *candidate == screen)
+            .unwrap_or(0);
+        self.focus = FocusTarget::Navigator;
+    }
+
     pub fn new_unconfigured(max_entries: usize, max_bytes: usize) -> Self {
         let mut app = Self::new(max_entries, max_bytes);
         app.build_environment = BuildEnvironmentState::Unconfigured;

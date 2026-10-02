@@ -1,4 +1,14 @@
-M114 current: DEMO-STARTUP-NAVIGATION-001 IN_PROGRESS, split before source.
+M114 current: DEMO-INTEGRATION-001 IN_PROGRESS; startup navigation DONE v287.
+Pure model restoration synchronizes saved screen, first catalog destination and
+Navigator focus; CLI selects configured saved/default Dashboard or unconfigured
+Build Environment before onboarding, without routing/discarding backend effects.
+External model2/CLI2/TestBackend1 plus existing restored-platform1 PASS; full
+model586/integrations1+5 and UI377 PASS. Strict affected all-target/all-feature
+Clippy/fmt/UI/version/roadmap PASS. Thirty-four exact regenerated golden files
+verified byte-for-byte against previous contents after only286->287 identity
+substitution. No operation launched or final native/reboot acceptance inferred.
+Evidence logs /tmp/yoctui-demo-startup-v287.log and startup-final-v287.log.
+Earlier governance:
 Governance reconciles established saved-screen continuity/unconfigured startup
 with stale unconditional Dashboard prose. Live v286 restored Kernel body with
 Dashboard Navigator is a real presentation defect; no startup execution should
