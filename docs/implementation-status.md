@@ -1,4 +1,12 @@
-M114 current: DEMO-PROFILE-001 IN_PROGRESS. User authorizes no-new-feature polish,
+M114 current: DEMO-BACKGROUND-COPY-001 IN_PROGRESS; profiling baseline DONE.
+Fresh source8761f308 stress2299samples/6000frames/4580ms/checksum33c187ece68108dd,
+zero unresolved accepted/454ppm removed; actual idle1179samples/zero lost reveal
+App::clone37.32% inclusive from local flag polling. Exact idle Layers CPU record
+16.256828% combined one logical CPU; not a current-Poky performance gate.
+Full suite88failing test cases/6targets; bridge61PASS. Baseline/failures and real
+sibling-source platform inspection defect recorded in artifacts/performance/demo-v269.
+Five atomic children selected before implementation; no new product feature.
+User authorizes no-new-feature polish,
 source-bound flamegraph/runtime profiling and measured fixes, full suite,
 README screenshots/report and operator guide, version bump/optimized install,
 real OpenBMC screen/session rehearsal and crates.io publication. Full-suite

@@ -10,6 +10,12 @@ Atomic order: DEMO-PROFILE-001 -> DEMO-POLISH-001 (split implementation children
 from actual findings) -> DEMO-FULL-VERIFY-001 -> DEMO-DOCS-001 ->
 DEMO-INSTALL-LIVE-001 -> DEMO-PUBLISH-001. Preserve prior evidence, existing
 workspaces and matching artifacts; no broad parent DONE from partial checks.
+Profiling baseline DONE: fresh2299sample/6000frame stress plus real1179sample
+idle OpenBMC profile. Local flag polling causes repeated full-App rollback
+copies (37.32% inclusive); full suite88failures and real sibling-source platform
+initialization error recorded. Atomic children now explicitly cover measured
+background copying, selected-source initialization, current-contract fixtures,
+verified UI clipping and isolated integration failures. None is silently DONE.
 Measured fixture stress is not real runtime/build-performance certification.
 Unrelated physical/instrumentation/M67 gates stay explicit; ZCU102 deferred.
 

@@ -1,8 +1,39 @@
 # Current Task
 
-**ID:** DEMO-PROFILE-001
-**Title:** Profile current workbench and real OpenBMC demo paths before polishing
+**ID:** DEMO-BACKGROUND-COPY-001
+**Title:** Remove full application rollback copies from local activity polling
 **Status:** IN_PROGRESS
+
+Dependency DEMO-PROFILE-001 is DONE. Real idle Layers1179samples show App::clone
+37.32% inclusive; current CLI poll_runtime sends three effect-free local
+SetBackgroundActivity actions through whole-App authority rollback snapshots.
+Route only those local setters through pure update, retaining guarded reducer
+for external actions. Relevant interactive_runtime/polling.rs and equivalent-
+state normal/offline/reduced-motion tests. Verify model activity/workspace
+authority failure paths, strict affected Clippy/fmt/version/roadmap. Bump product
+version and commit coherent fix; actual optimized source-bound OpenBMC
+before/after profile/CPU evidence must verify benefit, not infer from unit tests.
+Keep input/state/animation/daemon authority unchanged; no new UI or broad bypass.
+
+```bash
+cargo test -p yoctui --bin yoctui background_activity
+cargo test -p yoctui-model background_activity
+cargo test -p yoctui-model workspace_compatibility
+cargo fmt --all --check
+cargo clippy -p yoctui --all-targets --all-features -- -D warnings
+python3 scripts/check-version-bump.py
+./scripts/verify-roadmap.sh
+# Manual: real optimized before/after client CPU/profile, identical idle Layers.
+```
+
+## Completed profiling baseline / release polish scope
+
+DEMO-PROFILE-001 DONE: fresh valid source8761f308 fixture flamegraph2299samples/
+6000frames/4580ms and current workbench checksum; real idle/startup profiles and
+exact CPU record, full-suite baseline88failures/6targets and bridge61PASS.
+Evidence artifacts/performance/demo-v269. Atomic children: background copies,
+selected source initialization, contract fixtures, verified UI clipping and
+integration failures, then full verify/docs/install/rehearse/publish.
 
 New user instruction: no new features; polish measured hotspots and correctness,
 update README screenshots/latest measured report/operator guide, bump version,

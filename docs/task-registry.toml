@@ -6,12 +6,12 @@ status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 id = "DEMO-PROFILE-001"
 milestone = "M114"
 title = "Profile current workbench and real OpenBMC demo paths before polishing"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3500
 required = true
 depends_on = ["OPENBMC-QEMU-GDB-LIVE-001"]
 verify = ["Manual: source-bound optimized baseline flamegraph and actual OpenBMC client/daemon CPU capture with original artifact identities", "cargo test --workspace --all-features --no-fail-fast", "./scripts/test-flamegraph.sh", "./scripts/verify-roadmap.sh"]
-notes = "User authorizes polish/profiling/fixes, full suite, README screenshots/report, operator guide, version bump, optimized installation, real OpenBMC demo and crates.io publication. No new features; no ZCU102 retry or physical/instrumentation tests. Relevant scripts/flamegraph.sh, workbench_profile bench and live capture/evidence; measure genuine samples before selecting atomic hotspot fixes. Perf permissions/tool and storage limits must be explicit; preserve prior evidence. Record full-suite baseline failures without weakening assertions. Update current task/status/roadmap and commit baseline/findings before implementation."
+notes = "DONE: fresh optimized source8761f308 fixture flamegraph2299samples/6000frames/checksum33c187ece68108dd/4580ms, validator PASS454ppm dropped/zero unresolved accepted. Actual OpenBMC startup/navigation284samples and idle1179samples/zero lost show App::clone37.32% inclusive; exact idle Layers10s warmup/60sample combined16.256828% one CPU recorded. Full-suite baseline88failing cases across6targets documented, Python bridge61PASS. Actual sibling-source Kernel/Firmware init failure found; five atomic polish children created. Evidence artifacts/performance/demo-v269; prior canonical artifacts preserved. No image rebuild/new feature/publish, no external physical/M67 claim."
 
 [[task]]
 id = "DEMO-POLISH-001"
@@ -20,9 +20,64 @@ title = "Resolve measured performance and existing demo correctness regressions"
 status = "NOT_STARTED"
 priority = 3501
 required = true
-depends_on = ["DEMO-PROFILE-001"]
+depends_on = ["DEMO-PROFILE-001", "DEMO-BACKGROUND-COPY-001", "DEMO-PLATFORM-PROFILE-001", "DEMO-CONTRACT-FIXTURES-001", "DEMO-UI-CLIPPING-001", "DEMO-INTEGRATION-001"]
 verify = ["Manual: split measured hotspots and baseline correctness failures into independently verified atomic child tasks before implementation", "Manual: focused normal/failure/narrow-terminal regressions and comparable before/after measured workload", "./scripts/verify-roadmap.sh"]
 notes = "Planning parent: no broad completion from one fix. Relevant measured model/app/UI/CLI hot paths and existing tests, not new features/layouts. Each implementation child needs coherent fix/tests, UI/architecture docs if changed, version bump and commit; preserve behavior and benchmark identity. Parent DONE only after all selected children are verified/committed."
+
+[[task]]
+id = "DEMO-BACKGROUND-COPY-001"
+milestone = "M114"
+title = "Remove full application rollback copies from local activity polling"
+status = "NOT_STARTED"
+priority = 3510
+required = true
+depends_on = ["DEMO-PROFILE-001"]
+verify = ["cargo test -p yoctui --bin yoctui background_activity", "cargo test -p yoctui-model background_activity", "cargo test -p yoctui-model workspace_compatibility", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "Manual: exact real OpenBMC before/after CPU/flamegraph with local setter equivalent-state and unavailable-effect rollback unchanged", "./scripts/verify-roadmap.sh"]
+notes = "Measured real idle Layers1179samples: App::clone37.32% inclusive. CLI polling calls compatibility_workspace_action three times per cycle for effect-free local background flags, causing full rollback copies. Relevant interactive_runtime/polling.rs and pure background setter tests. Route only these setters through pure reducer; no general authority bypass. Add equivalent-state normal/offline/reduced-motion tests and retain actual environment denial tests; versioned coherent fix and measured follow-up required."
+
+[[task]]
+id = "DEMO-PLATFORM-PROFILE-001"
+milestone = "M114"
+title = "Initialize Kernel and Firmware inspection from exact selected sibling source"
+status = "NOT_STARTED"
+priority = 3511
+required = true
+depends_on = ["DEMO-BACKGROUND-COPY-001"]
+verify = ["cargo test -p yoctui --bin yoctui platform_inspection", "cargo test -p yoctui --bin yoctui daemon_commands", "cargo test -p yoctui --bin yoctui saved_environment", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "Manual: real retained OpenBMC Kernel/Firmware inspection reports exact providers/config without cannot-locate initializer", "./scripts/verify-roadmap.sh"]
+notes = "Actual daemon-attached OpenBMC sibling build fails platform ancestor-only initializer search despite canonical_source authority. Relevant platform_inspection_operation.rs/profile helpers and selected-source/build regression/failure tests. Use exact explicit workspace source/profile and current build, preserve ancestor fallback for legacy callers, reject mismatched/missing profiles; no source guessing/edit/build or changed screen layout. Update architecture/UI contract only if boundary/behavior changes; versioned fix."
+
+[[task]]
+id = "DEMO-CONTRACT-FIXTURES-001"
+milestone = "M114"
+title = "Reconcile stale full-suite fixtures with authoritative current UI contracts"
+status = "NOT_STARTED"
+priority = 3512
+required = true
+depends_on = ["DEMO-PLATFORM-PROFILE-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo test -p yoctui-app --all-features", "cargo test -p yoctui-ui --all-features", "Manual: document each changed expected shortcut/row/clock/action/catalog and supply current typed positive/negative authority fixtures without removing assertions", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
+notes = "Baseline88failures include confirmed stale UTC clock/capital-letter shortcuts/old navigator indices/header geometry and missing current typed authority in action fixtures. Relevant model/app/UI test helpers/cases/snapshots only for genuine drift. Retain exact behavior and negative paths; no blanket golden accept, broad assertion deletion or product contract reversion. Split any newly identified product defect separately. Coherent test-contract reconciliation and mapped evidence required."
+
+[[task]]
+id = "DEMO-UI-CLIPPING-001"
+milestone = "M114"
+title = "Resolve verified existing footer dialog and responsive demo clipping"
+status = "NOT_STARTED"
+priority = 3513
+required = true
+depends_on = ["DEMO-CONTRACT-FIXTURES-001"]
+verify = ["cargo test -p yoctui-ui --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "Manual: real demo and TestBackend narrow/medium/wide controls remain visible with no new layouts/shortcuts", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires all selected narrow/failure paths verified, not merely test expectation replacement. If no actual defect remains, record that evidence rather than inventing a feature."
+
+[[task]]
+id = "DEMO-INTEGRATION-001"
+milestone = "M114"
+title = "Resolve full-suite daemon watcher and production snapshot integration failures"
+status = "NOT_STARTED"
+priority = 3514
+required = true
+depends_on = ["DEMO-UI-CLIPPING-001"]
+verify = ["cargo test -p yoctui --all-features --no-fail-fast", "python3 -m pytest bridge/tests", "Manual: reproduce isolated current contract for daemon failed capability log, production snapshot duration and Git watcher delivery; do not extend budgets or fabricate readiness", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "BaselineCLI3 + daemon1 + snapshot1 failures include obsolete or real asynchronous integration assumptions. Relevant failed cases/helpers and actual adapters only if demonstrated. Retain deadlines/normal/failure semantics and use hermetic exact initialized profile/typed authority. Split unrelated runtime fixes before code; version-bump product changes, never hide flakes or run external long builds to pass fixtures."
 
 [[task]]
 id = "DEMO-FULL-VERIFY-001"

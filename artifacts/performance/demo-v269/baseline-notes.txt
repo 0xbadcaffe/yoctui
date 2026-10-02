@@ -1,0 +1,75 @@
+M114 demo polish baseline, 2026-10-02 UTC
+Source commit 8761f3088f956fceb8cfd44ace1ed5ac89c089bf.
+Unchanged product source base361ff448410463c606f9189e19f445110a7ce6be,
+v0.1.269. Governance-only commit before recording; no product mutation.
+
+FRESH REPEATABLE STRESS FLAMEGRAPH (not real BitBake/build evidence)
+File baseline.svg + baseline-summary.txt, 4096recipes/1024layers,
+160x48, 6000frames, scenarios alternating Recipes/Layers.
+Optimized thin-LTO, one codegen unit, frame pointers and debug1, two workers;
+compile9m33s. Linux perf cycles:u at499Hz, FP call chains.
+2299 recorded samples, zero unresolved accepted frames;
+454ppm unresolved event weight removed (within existing5000ppm limit).
+4580ms, 763456ns/frame, checksum33c187ece68108dd.
+Profile benchmark binary SHA256:
+80f5ec7ae5bf0cfe5af3b72df2c027f4cd64f305ae3bf07eebc7e30193b382ae.
+Built profiled CLI SHA256:
+cd9aa76ec80be689ca245f0e62b9b86ffd70d753dc39491fdb638bdbdd6836c4.
+Existing canonical flamegraph preserved, not relabeled as this capture.
+Validator workload/filter/failure tests pass using current bench cache.
+
+REAL OPENBMC DIAGNOSTICS (not the controlled M46/M67 release gate)
+Independent retained validation container, exact workspace/source/flash as
+artifacts/live-openbmc/romulus/managed-flash-debug-v269.txt; no image build.
+Actual client PID2184877, v0.1.269 original release SHA256
+785779c2502b452897efd41c6aabbbc0ccd94946f1dcd0d133050d80a6e9081b;
+compatible retained v0.1.268 daemon host PID2125313 (container3142).
+openbmc-diagnostic.svg: 30seconds of startup/navigation,99Hz/DWARF,
+284samples/zero lost. openbmc-idle-before.svg:30seconds of idle Layers,
+499Hz/DWARF,1179samples/zero lost. Concurrent stress-profile compilation
+and optimized/library symbolization limit absolute comparisons. Do not
+attribute host/container-library symbol names as proven application methods.
+The application App::clone symbol has37.32% inclusive/6.82% self event weight
+in the idle profile. Source inspection confirms three whole-App rollback
+clones per local background activity polling cycle; these setters emit no
+effect. Keep authority rollback for environment-changing actions; optimize
+only these explicitly local setters with equivalent-state tests.
+An initial60sample diagnostic observed client6.352%/daemon0.417% combined6.768%
+trimmed mean of one logical CPU, while compilation ran (not a release PASS).
+The repeatable existing measurement tool captures10s warmup/60samples with
+host/PID/binary identity in openbmc-layers-cpu-before.json after compilation.
+That completed idle Layers record reports daemon0.998734%/client15.276970%,
+combined16.256828% trimmed mean of one logical CPU. Host compilation is no
+longer concurrent; scenario still has retained exited PTY history and is not
+the exact Dashboard M46 normal-operation fixture. Keep both observations;
+the higher uncontended polling rate makes these windows noninterchangeable.
+Raw perf.data and original capture logs remain private under /tmp; genuine
+screen cells/transcripts remain outside Git in the presentation assets folder.
+
+FULL-SUITE BASELINE (no failures skipped)
+cargo test --workspace --all-features --no-fail-fast:
+6 failing targets,88 failing test cases:
+CLI units367pass/3fail/5ignored; daemon-startup4pass/1fail;
+snapshot-timing0pass/1fail; app240pass/10fail;
+model576pass/8fail; UI286pass/65fail.
+Other targets/doc-tests pass. Exact native log /tmp/yoctui-demo-full-baseline.log.
+python3 -m pytest bridge/tests:61passed in5.70s.
+Many legacy fixtures expect capital-letter shortcuts, earlier header/layout/
+navigator indices or UTC seconds; current spec is modifier shortcuts, local
+HH:MM clock and current authoritative layout. Reconcile exact semantic checks
+and fixture authority against spec, not weaken/drop tests or restore old UX.
+Separate actual clipping/dialog/inspection/integration defects from fixture drift.
+
+REAL DEMO DEFECT
+Kernel/Firmware platform inspection of /home/bspguy-dev/src/build-openbmc-romulus
+reports cannot locate oe-init-build-env. The selected source exists at sibling
+/home/bspguy-dev/src/openbmc and has the exact initializer; current platform
+helper searches only build ancestors. Use exact selected workspace source/
+build identity with no arbitrary script guessing, source editing or build retry.
+
+REGISTRY/PUBLISH PRECHECK
+Authenticated cargo owner --list yoctui returns0xbadcaffe(Roy Cohen).
+Current sparse registry version0.1.118; credential presence checked without
+printing values. Initial API request without User-Agent403; named User-Agent
+works. No new package published yet; versioned source/tests/docs/demo/package
+graph must pass first. No changes to physical KGDB/instrumentation/M67 gates.
