@@ -7,6 +7,8 @@ now use existing Alt+b/e/m routes, retaining t/F3. TestBackend2/app1/strictUI
 Clippy/fmt/UI/version/roadmap PASS. Current optimized live rehearsal still pending.
 UI polish split into independently verified truthful Dashboard hints, bounded
 dialog controls and editor action rail; exact UI fixtures/goldens follow them.
+The UI parent stays incomplete until the UI fixture child and full UI suite
+pass; no circular full-suite dependency or waived snapshot verification.
 External fixture-only18files reconcile Hardware navigator indices, header y+3,
 35-row menuconfig PTY,209-action catalog, explicit selected build target and
 Alt+b/e/m/a routes. Model584/integrations1+5 and app250 PASS; negative authority,

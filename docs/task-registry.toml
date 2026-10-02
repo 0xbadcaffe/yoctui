@@ -86,7 +86,7 @@ title = "Reconcile UI fixtures and exact goldens after independently verified re
 status = "NOT_STARTED"
 priority = 3518
 required = true
-depends_on = ["DEMO-UI-CLIPPING-001"]
+depends_on = ["DEMO-EDITOR-HINTS-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
 notes = "Relevant external UI fixtures and exact styled cell goldens. Compare every expectation with authoritative current contract and correct positive typed fixture state; preserve negative/semantic/style assertions. Reconcile exact version/local clock/current navigator and modifiers only after genuine rendering defects have independent regression proof. Never blanket accept baseline failures or mask dynamic identity fields."
 
@@ -97,7 +97,7 @@ title = "Resolve verified existing footer dialog and responsive demo clipping"
 status = "NOT_STARTED"
 priority = 3513
 required = true
-depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001"]
+depends_on = ["DEMO-DASHBOARD-HINTS-001", "DEMO-DIALOG-CONTROLS-001", "DEMO-EDITOR-HINTS-001", "DEMO-UI-FIXTURES-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "Manual: real demo and TestBackend narrow/medium/wide controls remain visible with no new layouts/shortcuts", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "Relevant verified current-contract rendering defects after fixture reconciliation; editor save footer/dialog controls are known candidates, not assumed root causes. Real v272 Dashboard Quick Actions still hardcodes B/E while current catalog routes Alt+b/Alt+e: truthful existing hints need correction, not restoring capital routes. Preserve layouts/typed state, fix priority/clipping within existing spec. Split unrelated product fixes as needed; DONE requires selected narrow/failure paths verified, not merely expectation replacement. If no defect remains, record evidence rather than invent a feature."
 
@@ -141,7 +141,7 @@ title = "Resolve full-suite daemon watcher and production snapshot integration f
 status = "NOT_STARTED"
 priority = 3514
 required = true
-depends_on = ["DEMO-UI-FIXTURES-001"]
+depends_on = ["DEMO-UI-CLIPPING-001"]
 verify = ["cargo test -p yoctui --all-features --no-fail-fast", "python3 -m pytest bridge/tests", "Manual: reproduce isolated current contract for daemon failed capability log, production snapshot duration and Git watcher delivery; do not extend budgets or fabricate readiness", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "BaselineCLI3 + daemon1 + snapshot1 failures include obsolete or real asynchronous integration assumptions. Relevant failed cases/helpers and actual adapters only if demonstrated. Retain deadlines/normal/failure semantics and use hermetic exact initialized profile/typed authority. Split unrelated runtime fixes before code; version-bump product changes, never hide flakes or run external long builds to pass fixtures."
 

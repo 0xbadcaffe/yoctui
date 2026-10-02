@@ -27,6 +27,9 @@ fixture drift while separating real Dashboard hint/footer/dialog defects.
 The fixture parent now has separate model/app and UI-fixture children. UI
 rendering polish follows model/app verification and precedes UI goldens; this
 avoids a full-UI-golden dependency cycle without accepting real defects.
+Focused rendering children precede the UI fixture child; the rendering parent
+then verifies the full reconciled UI suite before integration work. The parent
+retains its full-suite requirement rather than waiving stale golden failures.
 Measured fixture stress is not real runtime/build-performance certification.
 Unrelated physical/instrumentation/M67 gates stay explicit; ZCU102 deferred.
 
