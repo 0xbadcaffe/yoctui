@@ -1,4 +1,17 @@
-Latest 2026-10-02 12:27 UTC: M112 native guard correction DONE. v0.1.268 product
+User paused work for later at13:22UTC2026-10-02. Resume hint ZCU102-RESUME.
+BUILD is BLOCKED by a second real storage stop: nativeSTOPTASKS at3.999GiB,
+13:17:42UTC/1790947062183ms. At13:22:24IPCsequence31591 job3 remains Running
+while kerneldo_compilePID1781068 drains; aggregate3524/10994, job3513, exitnull,
+~3.8GiB free. Do not mislabel this as terminal failure/success, duplicate build,
+restart active daemon or remove debug work. No deployed regular image/matching
+vmlinux verified; QEMU/GDBNOT_STARTED. Current compiling config2fed2777... has
+DWARF5/KALLSYMS and no randomization; earlier config hash was preparatory.
+Next read actual daemon/storage first, preserve any live drain, reclaim more
+explicitly safe space, then retry only when idle. Approved archive/desktop/own
+Cargo cleanup already complete; GNOMEtemporarypause/private tags retained.
+All other incomplete tasks remain externally blocked/dependent. No full suite.
+
+Historical 2026-10-02 12:27 UTC: M112 native guard correction DONE. v0.1.268 product
 commit ba76ae7a pushed; exact committed-source optimized debug0 release built
 (7m47s) and hash-verified. Real isolated job2 below unchanged guard reports
 Failed/exit1 and completed0/unknown total; exact native typed disk diagnostics

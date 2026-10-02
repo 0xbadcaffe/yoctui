@@ -28,12 +28,12 @@ notes = "DONE v0.1.268 commit ba76ae7a pushed, exact source-bound optimized debu
 id = "XILINX-ZCU102-BUILD-001"
 milestone = "M111"
 title = "Build a real ZCU102 PetaLinux image through the Yoctui daemon"
-status = "IN_PROGRESS"
+status = "BLOCKED"
 priority = 3301
 required = true
 depends_on = ["XILINX-ZCU102-ENV-001", "NATIVE-DISK-GUARD-OUTCOME-001"]
 verify = ["Manual: request petalinux-image-minimal through the initialized Yoctui daemon; retain real task/failure/progress evidence and terminal outcome", "Manual: verify deployed ZCU102 image, qemuboot config, kernel and exact matching DWARF vmlinux/config hashes; retain kernel work despite rm_work", "./scripts/verify-roadmap.sh"]
-notes = "Resumed IN_PROGRESS after native outcome correction DONE/source-bound v0.1.268 real Failed guard regression and user-approved 1301 old archives/markers ~4.4GiB plus own generated Cargo cache cleanup. ~8.0GiB available; private daemon 0b20c2dd7719990023902d8d24d1ada8 ready for one fresh image request. Historical job1 low-disk false success retained, not proof; job2 Failed/exit1 is guard regression only. No deployed image/matching vmlinux yet. Actual kernel source fetch/unpack/config DEBUG_INFO/DWARF5/randomization-disabled preserved. Keep two workers, rm_work kernel/image exclusions and unchanged4GiB stop/1GiB halt; no duplicate active build. Approved desktop temporary pause/tag backup restoration still required when storage permits. Actual image/deploy/matching ELF must pass before QEMU/GDB. No full suite."
+notes = "User paused13:22UTC2026-10-02; hint ZCU102-RESUME. BLOCKED after real job3 nativeSTOPTASKS at3.999GiB/1790947062183ms. IPC13:22:24seq31591 still Running/exitnull while linux-xlnx:do_compilePID1781068 drains; aggregate3524/10994, jobcheckpoint3513, ~3.8GiB free. Not terminal failure or image success. Leave active daemon0b20c2dd7719990023902d8d24d1ada8/kernel/container; read actual authority before any resume/retry. More safe storage needed after approved old archive4.4GiB/desktop9.5GiB/own Cargo cleanup already completed; preserve sources/Git/images/debug and unchanged4GiB stop/1GiB halt/two workers. Current compiling config2fed2777... DWARF5/KALLSYMS/no randomization; no verified matching vmlinux/deployed image/QEMU/GDB. Source-boundv0.1.268 native guard fix DONE/job2 actual Failed regression retained, oldjob1 false success not proof. Desktop runtime-mask/tag-backup restoration remains required; reboot clears mask. No full suite."
 
 [[task]]
 id = "XILINX-ZCU102-QEMU-GDB-001"

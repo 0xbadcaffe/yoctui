@@ -2,7 +2,14 @@
 
 ## M111 — Current AMD PetaLinux ZCU102 live acceptance
 
-Latest: M112 native disk guard correction DONE in v0.1.268, pushed source-bound
+Latest13:22UTC2026-10-02: user paused, resume hint ZCU102-RESUME. BUILD BLOCKED:
+real job3 STOPTASKS at3.999GiB stopped new work; kernelcompile still draining,
+jobRunning/exitnull, aggregate3524/10994 and~3.8GiB free. Actual terminal outcome
+must be reread later. Approved cleanup exhausted; additional storage is required,
+not weaker guards. No deployed image/matching vmlinux/QEMU/GDB success. Preserve
+active private daemon/current kernel work; user pause overrides autonomous queue.
+
+Historical: M112 native disk guard correction DONE in v0.1.268, pushed source-bound
 release and real job2 Failed/exit1/unknown-progress regression verified with
 native diagnostics/actual UI. Approved older archives (~4.4GiB) and own generated
 Cargo cache cleanup leave ~8.0GiB; BUILD is IN_PROGRESS for a fresh isolated

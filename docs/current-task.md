@@ -2,7 +2,34 @@
 
 **ID:** XILINX-ZCU102-BUILD-001
 **Title:** Build a real ZCU102 PetaLinux image through the Yoctui daemon
-**Status:** IN_PROGRESS
+**Status:** BLOCKED
+
+**Resume hint:** `ZCU102-RESUME`
+**User-requested pause:** 2026-10-02 13:22 UTC. Stop agent work after saving this
+checkpoint; do not continue the queue until the user resumes.
+
+Latest authority: job3 hit the unchanged native4GiB STOPTASKS guard at
+1790947062183ms (13:17:42UTC), free3.999GiB. New tasks stopped; kernel
+linux-xlnx:do_compile PID1781068 is still draining. Read-only IPC13:22:24UTC,
+sequence31591: job3Running/exitnull, aggregate3524/10994 (job checkpoint3513).
+~3.8GiB free. This is incomplete/blocked, not a terminal failure yet and not
+image success. Leave the active daemon/kernel/container untouched. U-Boot fetch
+succeeded; compiled native QEMU/Vim and current kernel work are retained.
+No deployed regular image files or matching vmlinux verified; QEMU/GDB not begun.
+Current compile .config SHA2562fed27779d654cb5afde0893e218a7892baa541e49f77425815e760f46b38e9a;
+DWARF5/KALLSYMS enabled, randomization disabled, optional GDB scripts disabled.
+The earlier precompile config hash is historical, not final ELF matching proof.
+
+Resume by reading actual daemon/storage authority FIRST, not submitting a build.
+If job3 still runs, preserve/drain it. If laptop/container stopped, start only
+the retained validation container/private daemon and check recovered outcome;
+persisted Running is not proof of a live task. A fresh explicit image retry
+needs additional safe storage beyond already completed approved cleanup and an
+idle daemon; do not weaken guards or remove source/Git/images/debug files.
+All other incomplete registry tasks are externally blocked or depend on BUILD.
+Desktop index is still temporarily paused; private tag backup/restore details
+are in storage-cleanup.txt. A reboot clears the service's runtime mask: reassess
+indexer/storage before restarting a build. No full suite.
 
 Dependencies ENV and NATIVE-DISK-GUARD-OUTCOME-001 are DONE. Product v0.1.268
 committed/pushed as ba76ae7aed30309a61f3c714cc6bcc4909cc8e8a; source-bound
@@ -17,11 +44,11 @@ Old job1 false-success history is retained, not image evidence.
 User-approved removal of 1301 old top-level archive caches and matching markers
 freed 4770631680 archive bytes (~4.4GiB); Git/source/image/debug files preserved.
 This session's generated Cargo dev/release caches cleared with Cargo after all
-checks; both releases retained/hash-verified. ~8.0GiB now free. Exact cleanup/
+checks; both releases retained/hash-verified. ~8.0GiB was free before retry. Exact cleanup/
 restore evidence is storage-cleanup.txt. GNOME desktop index remains temporarily
 runtime-masked until storage permits restoration; private tag backup retained.
 
-Fresh petalinux-image-minimal job3 is now RUNNING (accepted12:29UTC, native
+Historical running checkpoint before latest disk guard above: job3 RUNNING (accepted12:29UTC, native
 start1790944300847ms). Actual UI checkpoint3005/10994 and two workers; IPC3008
 at12:33:50UTC, no fetch failure. ~7.4GiB free. image-retry-v268.txt records
 genuine UI/hashes; its6 displayed errors are retained guard diagnostics, not
@@ -38,11 +65,12 @@ separate atomic versioned/focused-verified/pushed/source-bound release fixes.
 
 Verification/monitoring:
 ```bash
-./scripts/live-zcu102.sh build  # once only while idle
 ./scripts/live-zcu102.sh status
 python3 scripts/inspect-zcu102-build.py | jq '{sequence,build_progress,jobs,last_build_events:[.last_build_events[]|del(.data)]}'
 ./scripts/live-zcu102.sh attach
 ./scripts/verify-roadmap.sh
+# Only AFTER additional storage and an idle/ready daemon:
+./scripts/live-zcu102.sh build
 ```
 
 ## Historical blocked image validation handoff (superseded above)
