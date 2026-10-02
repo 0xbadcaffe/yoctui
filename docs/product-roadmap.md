@@ -1,5 +1,18 @@
 # Yoctui Product Roadmap
 
+## M114 — OpenBMC presentation/demo release polish
+
+New user instruction selects profiling and measured hotspot fixes, correctness
+polish without new features, full suite, README screenshots/flamegraph report,
+operator guide, version bump, optimized installation, real OpenBMC screen/session
+rehearsal and authenticated crates.io publication. Full-suite deferral revoked.
+Atomic order: DEMO-PROFILE-001 -> DEMO-POLISH-001 (split implementation children
+from actual findings) -> DEMO-FULL-VERIFY-001 -> DEMO-DOCS-001 ->
+DEMO-INSTALL-LIVE-001 -> DEMO-PUBLISH-001. Preserve prior evidence, existing
+workspaces and matching artifacts; no broad parent DONE from partial checks.
+Measured fixture stress is not real runtime/build-performance certification.
+Unrelated physical/instrumentation/M67 gates stay explicit; ZCU102 deferred.
+
 ## M113 — OpenBMC/QEMU live kernel debugging and presentation evidence
 
 User explicitly replaces current ZCU102 validation with retained OpenBMC

@@ -1,4 +1,12 @@
-M113 selected by user: set ZCU102 aside/preserve its work, finish the emulated
+M114 current: DEMO-PROFILE-001 IN_PROGRESS. User authorizes no-new-feature polish,
+source-bound flamegraph/runtime profiling and measured fixes, full suite,
+README screenshots/report and operator guide, version bump/optimized install,
+real OpenBMC screen/session rehearsal and crates.io publication. Full-suite
+deferral revoked; existing environment/artifacts/user changes preserved.
+Six atomic stages in registry; split findings before implementing fixes.
+No new demo-release success claimed until exact verification and publication.
+
+Historical M113 selected by user: set ZCU102 aside/preserve its work, finish the emulated
 OpenBMC/QEMU debug path and save real boot/debug screenshots for presentation.
 OPENBMC-QEMU-GDB-FLASH-001 and OPENBMC-QEMU-GDB-LIVE-001 are DONE.
 Product 361ff4484104 pushed; exact source-bound optimized release built (9m04s).

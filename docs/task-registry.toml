@@ -3,6 +3,72 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "DEMO-PROFILE-001"
+milestone = "M114"
+title = "Profile current workbench and real OpenBMC demo paths before polishing"
+status = "IN_PROGRESS"
+priority = 3500
+required = true
+depends_on = ["OPENBMC-QEMU-GDB-LIVE-001"]
+verify = ["Manual: source-bound optimized baseline flamegraph and actual OpenBMC client/daemon CPU capture with original artifact identities", "cargo test --workspace --all-features --no-fail-fast", "./scripts/test-flamegraph.sh", "./scripts/verify-roadmap.sh"]
+notes = "User authorizes polish/profiling/fixes, full suite, README screenshots/report, operator guide, version bump, optimized installation, real OpenBMC demo and crates.io publication. No new features; no ZCU102 retry or physical/instrumentation tests. Relevant scripts/flamegraph.sh, workbench_profile bench and live capture/evidence; measure genuine samples before selecting atomic hotspot fixes. Perf permissions/tool and storage limits must be explicit; preserve prior evidence. Record full-suite baseline failures without weakening assertions. Update current task/status/roadmap and commit baseline/findings before implementation."
+
+[[task]]
+id = "DEMO-POLISH-001"
+milestone = "M114"
+title = "Resolve measured performance and existing demo correctness regressions"
+status = "NOT_STARTED"
+priority = 3501
+required = true
+depends_on = ["DEMO-PROFILE-001"]
+verify = ["Manual: split measured hotspots and baseline correctness failures into independently verified atomic child tasks before implementation", "Manual: focused normal/failure/narrow-terminal regressions and comparable before/after measured workload", "./scripts/verify-roadmap.sh"]
+notes = "Planning parent: no broad completion from one fix. Relevant measured model/app/UI/CLI hot paths and existing tests, not new features/layouts. Each implementation child needs coherent fix/tests, UI/architecture docs if changed, version bump and commit; preserve behavior and benchmark identity. Parent DONE only after all selected children are verified/committed."
+
+[[task]]
+id = "DEMO-FULL-VERIFY-001"
+milestone = "M114"
+title = "Pass full Rust Python and release quality checks for demo code"
+status = "NOT_STARTED"
+priority = 3502
+required = true
+depends_on = ["DEMO-POLISH-001"]
+verify = ["cargo fmt --all --check", "cargo test --workspace --all-features --no-fail-fast", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-release-quality.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "New user instruction explicitly revokes full-suite deferral. Relevant full test graph/release scripts; record exact pass/failure and fix independently, never skip/weaken failures to claim PASS. Full product completion still includes unrelated external board/instrumentation/current-Poky blockers and must not be relabeled. Source/binary-bound quality evidence required."
+
+[[task]]
+id = "DEMO-DOCS-001"
+milestone = "M114"
+title = "Refresh README real screenshots measured flamegraph report and operator runbook"
+status = "NOT_STARTED"
+priority = 3503
+required = true
+depends_on = ["DEMO-FULL-VERIFY-001"]
+verify = ["./scripts/test-flamegraph.sh", "python3 scripts/test_performance_documentation.py", "./scripts/check-docs.sh", "./scripts/test-readme-quickstart.sh", "Manual: current real OpenBMC screenshot provenance and explicit unavailable optional capabilities, projector walkthrough matching installed shortcuts", "./scripts/verify-roadmap.sh"]
+notes = "Relevant README.md, docs/operator-guide.md, docs/performance.md, production screenshot manifest/assets and measured report. Distinguish fixture workbench stress from real OpenBMC runtime and startup from steady state; quantify findings without old stale performance certification. Add actual demo route, exact paths/tool prerequisites/cleanup/recovery and optional missing-data boundaries. Presentation remains outside Git uncommitted/unpushed."
+
+[[task]]
+id = "DEMO-INSTALL-LIVE-001"
+milestone = "M114"
+title = "Install optimized release and rehearse all OpenBMC demo screens and sessions"
+status = "NOT_STARTED"
+priority = 3504
+required = true
+depends_on = ["DEMO-DOCS-001"]
+verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: installed optimized binary equals committed source-bound release hash/version; daemon workspace/endpoint available from documented normal desktop attach flow", "Manual: real OpenBMC screen-by-screen audit, supported recipe/devtool/devshell, rootfs/packages/services/artifacts and reviewed QEMU boot/kernel debugging/reconnect/cleanup; report unavailable optional screens honestly", "./scripts/verify-roadmap.sh"]
+notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed release, correct workstation/container endpoint and working artifacts, not only mocks. Prepare reproducible two-minute path and real screenshots; no physical-board actions or long clean image rebuild inferred."
+
+[[task]]
+id = "DEMO-PUBLISH-001"
+milestone = "M114"
+title = "Publish verified public crate graph to crates.io and verify registry availability"
+status = "NOT_STARTED"
+priority = 3505
+required = true
+depends_on = ["DEMO-INSTALL-LIVE-001"]
+verify = ["./scripts/verify-cratesio-package.sh", "Manual: authenticated cargo publish --dry-run public dependency graph and then authorized publish in dependency order; verify exact versions/checksums on registry", "Manual: installed latest optimized release remains ready and attached daemon health after publication", "./scripts/verify-roadmap.sh"]
+notes = "Explicit user authorization to publish (cargo.io interpreted as crates.io); seven public crates only, private e2e/shell remain publish=false. Relevant Cargo manifests/package verification/release evidence. Do not print registry credentials, assume authentication/ownership or overwrite an existing registry version; publication is immutable. Stop this task on missing credentials/external registry and record exact blocker, continue independent eligible work. Version/source/test/docs/demo/packaged bridge must be verified first."
+
+[[task]]
 id = "OPENBMC-QEMU-GDB-FLASH-001"
 milestone = "M113"
 title = "Support reviewed managed debugging of OpenBMC Romulus flash images"

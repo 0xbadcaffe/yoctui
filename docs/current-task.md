@@ -1,8 +1,41 @@
 # Current Task
 
-**ID:** KERNEL-INSTRUMENTATION-LIVE-001
-**Title:** Verify preset retention and diagnostics on a matching instrumented kernel
-**Status:** BLOCKED
+**ID:** DEMO-PROFILE-001
+**Title:** Profile current workbench and real OpenBMC demo paths before polishing
+**Status:** IN_PROGRESS
+
+New user instruction: no new features; polish measured hotspots and correctness,
+update README screenshots/latest measured report/operator guide, bump version,
+run full suite, install optimized release, verify real OpenBMC daemon/attach/
+every demo screen and publish the verified public crate graph to crates.io.
+Full-suite deferral is explicitly revoked. Dependency OPENBMC-QEMU-GDB-LIVE-001
+is DONE. Start with source-bound optimized fixture flamegraph and real retained
+OpenBMC client/daemon profiling; preserve prior evidence and record workload,
+sampling, source/binary identity, timing and permission/storage prerequisites.
+Relevant scripts/flamegraph.sh, CLI workbench_profile bench and real capture
+scripts/evidence. Run full-suite baseline to identify existing failures, then
+split actionable hotspot/correctness fixes into atomic children before code.
+No new layout/workflow, long clean image rebuild, physical action or ZCU102 retry.
+Use two compile workers/existing temporary target due limited storage; do not
+delete sources/images/debug symbols. Registry/publication credentials must not
+be printed. Presentation and its screenshots stay outside Git until explicitly
+selected copies/provenance for README; presentation itself uncommitted/unpushed.
+
+Verification:
+```bash
+# Manual: real source-bound perf samples before and after selected fixes;
+# distinguish fixture stress from actual OpenBMC client/daemon runtime.
+cargo test --workspace --all-features --no-fail-fast
+./scripts/test-flamegraph.sh
+./scripts/verify-roadmap.sh
+```
+Done requires committed baseline/findings with exact evidence and eligible
+child tasks; immediately continue polish/full verification/docs/install/demo/
+publish. Do not mark unavailable optional integrations or old external gates
+complete from mock/screenshots. M67 current-Poky/physical KGDB/instrumentation
+remain independent blocked prerequisites; new OpenBMC profile is not M67 proof.
+
+## Previous external instrumentation handoff (not active)
 
 Dependency KERNEL-INSTRUMENTATION-UI-001 is DONE. This is the highest-priority
 required incomplete task; no independent eligible implementation remains.

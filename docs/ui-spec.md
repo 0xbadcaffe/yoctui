@@ -20,6 +20,22 @@ invalid build path fails startup with the exact profile-initialization error.
 
 Status: **Authoritative product and interaction contract**
 
+### M114 OpenBMC demo release polish (no new features)
+
+The user requests profiling, verified performance/correctness fixes, full tests,
+fresh README screenshots/report, operator guidance, versioned optimized install,
+crates.io publication and a real OpenBMC demo. Full-suite deferral is revoked.
+Keep existing screens/dialogs/focus/shortcuts; do not add workflows or relabel
+optional unavailable data as working. Demonstrate real current-source daemon
+attachment and supported OpenBMC inspection/native sessions/QEMU/kernel debug.
+Document the exact workstation/container connection route so the desktop does
+not silently attach to another isolated workspace. Startup, measured fixture
+stress and real runtime evidence remain distinct. ZCU102 stays deferred;
+physical KGDB, instrumentation and M67 Poky evidence are separate gates.
+Presentation remains outside Git; version/commit/push/source-bound release and
+verified public package graph precede publishing. No unrelated active work,
+original deploy images, sources or exact matching debug artifacts are removed.
+
 ### M113 OpenBMC flash QEMU debugging and live presentation capture
 
 The user sets ZCU102 validation aside without deleting its retained work and
