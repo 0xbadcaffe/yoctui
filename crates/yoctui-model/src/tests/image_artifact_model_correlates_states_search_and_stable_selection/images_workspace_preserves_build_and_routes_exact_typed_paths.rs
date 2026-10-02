@@ -51,14 +51,20 @@ fn images_workspace_preserves_build_and_routes_exact_typed_paths() {
     );
     assert_eq!(
         update(&mut app, Action::OpenSelectedImageArtifact),
-        Some(Effect::OpenInEditor(artifact_path.clone()))
+        Some(Effect::ViewImageArtifact {
+            root: "/build/tmp/deploy/images/qemux86-64".into(),
+            path: artifact_path.clone()
+        })
     );
     assert_eq!(
         update(
             &mut app,
             Action::OpenSelectedImageArtifactAssociation(ImageArtifactAssociation::Manifest)
         ),
-        Some(Effect::OpenInEditor(manifest_path))
+        Some(Effect::ViewImageArtifact {
+            root: "/build/tmp/deploy/images/qemux86-64".into(),
+            path: manifest_path
+        })
     );
     let _ = update(&mut app, Action::BeginSelectedImageArtifactBuild);
     assert_eq!(app.build.target.as_deref(), Some("core-image-minimal"));

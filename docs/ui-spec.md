@@ -2744,6 +2744,10 @@ tabs, headings and partial-state notices. Long recipe/file names cannot hide
 the selection. Prefer filename, byte size and last-modified UTC timestamp in
 the responsive table; wider panes add kind and image target. Inspector retains
 exact paths, byte counts and readable UTC mtime. Unavailable metadata is explicit.
+Table columns show decimal bytes (`Size (B)`), add `Modified UTC` at 52 inner
+columns, kind at 78 and image target at 112. Narrower panes retain filename and
+size, with exact metadata in Inspector. Loading/empty/failure diagnostic text
+keeps its previous wrapping; only the available artifact table is single-line.
 o/e views the selected artifact in the existing integrated normal-mode text
 viewer (including DTS/DTSI); m/l/s/w views the authoritative associated text
 path internally. DTB/DTBO instead opens the existing trapped decompile form,

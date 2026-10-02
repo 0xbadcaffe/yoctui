@@ -1,6 +1,7 @@
 //! Regression tests grouped around image_artifact_model_correlates_states_search_and_stable_selection.
 use super::*;
 
+mod image_artifact_view;
 mod primary_contract;
 
 mod images_workspace_preserves_build_and_routes_exact_typed_paths;

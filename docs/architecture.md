@@ -8,6 +8,13 @@ reviewed decompile dialog. Widgets only render typed size/mtime and never read
 files or discover tools. Files-tab navigation reuses IMAGE_ROOTFS authority,
 not disk-image mounts or extraction. Existing terminal completion correlation
 and no-overwrite guards remain the only decompile execution path.
+On Unix descriptor-relative openat traversal rejects symlinks at every nested
+lookup (O_NOFOLLOW), anchors ancestors to owned directory descriptors and uses
+nonblocking leaf opens before regular-file validation. Text reads are bounded
+to TEXTAREA_MAX_BYTES plus one growth-detection byte and reject invalid UTF-8
+or control bytes. DTB/DTBO observations contain metadata and the canonical dtc
+executable found on local PATH, never binary text. Viewing is client-local and
+does not require a new daemon capability or change the bridge/wire protocol.
 
 M72 cache observations cross the adapter boundary as a validated typed
 `SstateSummary`: Wanted equals Local + Mirrors + Missed with checked arithmetic.

@@ -62,7 +62,7 @@ fn editor_gitui_uses_local_context_without_devtool_or_global_git_authority() {
         SourceGitStatus::Ready(SourceGitSummary::default()),
     );
     assert!(
-        matches!(app.active_dialog(), Some(Dialog::TerminalLaunch(dialog)) if dialog.request.cwd == PathBuf::from("/layers/meta-local"))
+        matches!(app.active_dialog(), Some(Dialog::TerminalLaunch(dialog)) if dialog.request.cwd == std::path::Path::new("/layers/meta-local"))
     );
     update(&mut app, Action::CancelTerminalLaunch);
     assert_eq!(app.active_dialog(), Some(&editor));

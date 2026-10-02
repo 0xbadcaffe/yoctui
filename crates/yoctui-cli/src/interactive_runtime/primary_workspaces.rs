@@ -112,6 +112,10 @@ impl InteractiveRuntime {
             )
             .expect("Images action was checked");
             match compatibility_workspace_action(&mut runtime.app, action) {
+                Some(Effect::ViewImageArtifact { root, path }) => {
+                    crate::image_artifact_view::open_image_artifact(&mut runtime.app, root, path)
+                        .await;
+                }
                 Some(effect @ Effect::GetImageArtifacts(_)) => begin_image_artifact_operation(
                     &mut runtime.app,
                     runtime.image_artifact_adapter.as_ref(),

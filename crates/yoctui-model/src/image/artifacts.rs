@@ -3,6 +3,17 @@ pub const MAX_IMAGE_ARTIFACT_ASSOCIATED_FILES: usize = 256;
 pub const MAX_IMAGE_ARTIFACT_CHECKSUMS: usize = 64;
 pub const MAX_IMAGE_ARTIFACT_LIMITATIONS: usize = 64;
 
+/// Local adapter observation; binary content never enters a text widget.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ImageArtifactView {
+    Text(String),
+    DeviceTree {
+        kind: crate::PlatformFileKind,
+        program: PathBuf,
+        size_bytes: u64,
+    },
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ImageArtifactIdentity {
     pub machine: String,
@@ -243,4 +254,3 @@ impl ImageArtifactRequest {
         Ok(())
     }
 }
-

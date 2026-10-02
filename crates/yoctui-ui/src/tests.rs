@@ -1,6 +1,7 @@
 // Shared fixtures and regression modules.
 
 use super::*;
+mod image_artifact_viewport;
 mod rootfs_browser;
 mod rootfs_systemd;
 mod saved_environment;

@@ -2,10 +2,20 @@
 
 ## M109 — Usable deployed-artifact browsing
 
-IMAGES-ARTIFACT-VIEW-001 is IN_PROGRESS: nonwrapping selected-row viewport,
-readable size/mtime, bounded internal text/DTS viewer, reviewed DTB decompile
-and existing authoritative RootFS Files navigation. No image mounts or daemon
-mutation; focused checks only. M108 live board and M67 evidence remain blocked.
+IMAGES-ARTIFACT-VIEW-001 is DONE in v0.1.265: selection-visible responsive
+single-line table, exact bytes/readable UTC mtime, bounded internal o/e text/DTS
+viewer, existing reviewed DTB/DTBO decompile form and v RootFS Files shortcut.
+Model/app/UI/CLI focused checks (17/1/2/6), 12 device-tree model, decompile
+UI/CLI, five artifact adapter, existing Images/preview, RootFS tree/systemd/
+chart and six GitUI checks pass. Real local dtc roundtrip preserves its DTB.
+Strict affected all-target/all-feature Clippy, fmt, UI spec, version policy,
+roadmap and optimized build pass; final commit/push/source-bound rebuild deliver.
+An inherited GitUI test allocation comparison was changed to a borrowed one,
+not weakened. Optional broader UI group is 11 pass / two fail identically on
+clean archived baseline f4960a14 (v0.1.264): editor Ctrl+S footer assertion and
+SDK legacy s/E shortcut assertion. Tests are unchanged and no full suite pass
+is claimed. Temporary baseline copy was removed; recoverable from Git. No
+image mounts/extraction or daemon/build mutation. M108/M67 remain blocked.
 
 ## M108 — Physical-board KGDB serial attachment
 

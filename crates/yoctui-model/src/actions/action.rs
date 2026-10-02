@@ -125,6 +125,7 @@ pub enum Action {
     BeginImageArtifactSearch, AppendImageArtifactQuery(char), BackspaceImageArtifactQuery,
     ClearImageArtifactQuery, FinishImageArtifactSearch, BeginSelectedImageArtifactBuild,
     OpenSelectedImageArtifact, OpenSelectedImageArtifactAssociation(ImageArtifactAssociation), BeginSelectedRootfsComposition,
+    ImageArtifactViewed { root: PathBuf, path: PathBuf, result: Result<ImageArtifactView, String> },
     ShiftImagesView { delta: isize, },
     RefreshRootfsComposition,
     RootfsCompositionLoaded { request: RootfsCompositionRequest, composition: RootfsComposition, },

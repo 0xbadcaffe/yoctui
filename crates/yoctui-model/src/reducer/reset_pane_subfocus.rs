@@ -36,6 +36,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BeginSelectedImageArtifactBuild
         | Action::OpenSelectedImageArtifact
         | Action::OpenSelectedImageArtifactAssociation(..)
+        | Action::ImageArtifactViewed { .. }
         | Action::BeginSelectedRootfsComposition
         | Action::ShiftImagesView { .. }
         | Action::RefreshRootfsComposition

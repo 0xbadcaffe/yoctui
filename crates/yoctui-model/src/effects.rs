@@ -45,6 +45,10 @@ pub enum Effect {
     Terminal(TerminalEffect),
     LaunchDetachedTerminal(TerminalLaunchRequest),
     OpenInEditor(PathBuf),
+    ViewImageArtifact {
+        root: PathBuf,
+        path: PathBuf,
+    },
     LoadErrorLog(PathBuf),
     RemoveSavedBuild(String),
     CopyToClipboard(String),

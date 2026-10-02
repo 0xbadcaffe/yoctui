@@ -8,6 +8,7 @@ pub enum PlatformComponent {
     BootFirmware,
     UBoot,
     BiosUefi,
+    Images,
 }
 
 impl PlatformComponent {
@@ -17,6 +18,7 @@ impl PlatformComponent {
             Self::BootFirmware => "U-Boot / BIOS",
             Self::UBoot => "U-Boot",
             Self::BiosUefi => "BIOS / UEFI",
+            Self::Images => "Images",
         }
     }
 }

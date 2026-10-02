@@ -1,6 +1,37 @@
 use super::*;
 use crate::image_updates::rootfs_image_identity;
 
+fn image_artifact_view_effect(app: &App, path: PathBuf) -> Option<Effect> {
+    let artifact = app.selected_image_artifact()?;
+    let known = artifact.identity.path == path
+        || [
+            ImageArtifactAssociation::Manifest,
+            ImageArtifactAssociation::License,
+            ImageArtifactAssociation::Spdx,
+            ImageArtifactAssociation::Wic,
+        ]
+        .into_iter()
+        .any(|association| {
+            artifact
+                .associated_paths(association)
+                .is_some_and(|paths| paths.contains(&path))
+        });
+    let root = app
+        .image_artifacts
+        .inventory()
+        .and_then(|inventory| inventory.deploy_directory.available())
+        .cloned();
+    if known
+        && let Some(root) = root
+        && yoctui_utils::is_absolute_normal_path(&path)
+        && path.starts_with(&root)
+        && path != root
+    {
+        return Some(Effect::ViewImageArtifact { root, path });
+    }
+    None
+}
+
 fn open_image_picker(app: &mut App, images: &mut Vec<String>) {
     images.sort();
     images.dedup();
@@ -360,7 +391,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 .selected_image_artifact()
                 .map(|artifact| artifact.identity.path.clone())
             {
-                return Some(Effect::OpenInEditor(path));
+                let effect = image_artifact_view_effect(app, path);
+                if effect.is_none() {
+                    app.notification =
+                        Some("The artifact has no authoritative contained deploy path.".into());
+                }
+                return effect;
             }
             app.notification = Some("No deployed image artifact is selected.".into());
         }
@@ -371,7 +407,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 .and_then(|paths| paths.first())
                 .cloned()
             {
-                return Some(Effect::OpenInEditor(path));
+                let effect = image_artifact_view_effect(app, path);
+                if effect.is_none() {
+                    app.notification =
+                        Some("The artifact has no authoritative contained deploy path.".into());
+                }
+                return effect;
             }
             let label = match association {
                 ImageArtifactAssociation::Manifest => "manifest",
@@ -382,6 +423,58 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!(
                 "The selected image artifact has no authoritative {label} path."
             ));
+        }
+        Action::ImageArtifactViewed { root, path, result } => {
+            if image_artifact_view_effect(app, path.clone())
+                != Some(Effect::ViewImageArtifact {
+                    root: root.clone(),
+                    path: path.clone(),
+                })
+                || app.screen != Screen::Images
+                || app.active_dialog().is_some()
+            {
+                return None;
+            }
+            match result {
+                Ok(ImageArtifactView::Text(content)) => {
+                    let relative = path.strip_prefix(&root).ok()?.to_path_buf();
+                    if matches!(
+                        crate::update(
+                            app,
+                            Action::OpenRecipeEditor {
+                                recipe: "Images".into(),
+                                root,
+                                files: vec![relative],
+                            }
+                        ),
+                        Some(Effect::LoadRecipeEditorFile(_))
+                    ) {
+                        crate::update(app, Action::LoadRecipeEditorContent(content));
+                        crate::update(app, Action::FocusRecipeEditor(RecipeEditorFocus::Document));
+                    }
+                }
+                Ok(ImageArtifactView::DeviceTree {
+                    kind,
+                    program,
+                    size_bytes,
+                }) if matches!(kind, PlatformFileKind::Dtb | PlatformFileKind::Dtbo) => {
+                    open_dialog(
+                        app,
+                        Dialog::DtcDecompile(DtcDecompileDialog::new(
+                            PlatformComponent::Images,
+                            &PlatformFile {
+                                path,
+                                root,
+                                kind,
+                                size_bytes,
+                            },
+                            program,
+                        )),
+                    );
+                }
+                Ok(_) => app.notification = Some("Unsupported artifact view observation.".into()),
+                Err(message) => app.notification = Some(message),
+            }
         }
         Action::BeginSelectedRootfsComposition => {
             let Some(image) = rootfs_image_identity(app) else {

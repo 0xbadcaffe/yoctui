@@ -3,6 +3,24 @@ use super::*;
 #[test]
 fn images_workspace_image_action_maps_search_refresh_build_cancel_and_open_actions() {
     assert_eq!(
+        images_workspace_action(false, Input::Char('e')),
+        Some(Action::OpenSelectedImageArtifact)
+    );
+    assert_eq!(
+        images_workspace_action(false, Input::Char('v')),
+        Some(Action::ShiftImagesView { delta: 2 })
+    );
+    assert_eq!(
+        images_workspace_action(false, Input::Enter),
+        Some(Action::BeginSelectedRootfsComposition)
+    );
+    for ch in ['e', 'v'] {
+        assert_eq!(
+            images_workspace_action(true, Input::Char(ch)),
+            Some(Action::AppendImageArtifactQuery(ch))
+        );
+    }
+    assert_eq!(
         images_workspace_action(false, Input::Up),
         Some(Action::SelectImageArtifact { delta: -1 })
     );

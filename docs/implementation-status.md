@@ -1,8 +1,17 @@
-IMAGES-ARTIFACT-VIEW-001 is IN_PROGRESS (M109). User request supersedes the
-blocked live-board queue: artifact viewport/metadata and bounded internal
-text/DTS viewing with reviewed DTB decompile and existing RootFS Files tab.
-No disk-image mounting/extraction or daemon/build mutation. Focused tests,
-version bump, commit/push and optimized binary are required; full suite deferred.
+IMAGES-ARTIFACT-VIEW-001 is DONE in v0.1.265 (M109). Every selected artifact
+stays visible with long names, navigation and resize; table shows exact bytes
+and readable last-modified UTC metadata. o/e opens bounded internal text/DTS
+or shared reviewed DTB/DTBO decompile; v opens existing IMAGE_ROOTFS Files.
+Focused model/app/UI/CLI 17/1/2/6, 12 device-tree model, decompile UI/CLI, five
+artifact adapter, Images/preview, RootFS tree/systemd/chart and six GitUI checks
+pass, as does a real local dtc roundtrip preserving its input. Strict affected
+all-target/all-feature Clippy, fmt, UI spec, version policy, roadmap and optimized
+build pass. Existing GitUI allocation-only test comparison became borrowed,
+not weakened. Optional broader UI group remains 11 pass / two fail identically
+on archived clean f4960a14 v0.1.264 baseline: editor footer and SDK legacy
+shortcut assertions. They remain unchanged. Final commit/push and commit-bound
+optimized binary deliver this change. Full suite remains deferred; no mounts,
+extraction or daemon/build mutation. M108 board/M67 evidence remain blocked.
 
 EDITOR-GITUI-CONTEXT-001 is DONE in v0.1.262. GitUI opens from the active
 source/layer editor without requiring unrelated Devtool/global source state.

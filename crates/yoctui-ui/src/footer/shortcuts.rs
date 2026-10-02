@@ -83,7 +83,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         }
         Screen::Images => match app.images_view {
             ImagesView::Artifacts => {
-                "↑/↓ select | Enter/p rootfs | Tab view | Alt+q QEMU | Alt+w create Wic | Alt+d write device | x cancel | [/] output | Alt+o open output | / search | Alt+r refresh | b build | o artifact | m manifest | l license | s SPDX | w Wic"
+                "↑/↓ select | o/e view/decompile | v rootfs files | Enter/p rootfs | Tab view | Alt+q QEMU | Alt+w create Wic | Alt+d write device | x cancel | [/] output | Alt+o open output | / search | Alt+r refresh | b build | m manifest | l license | s SPDX | w Wic"
             }
             ImagesView::RootfsPackages => {
                 "h/l group | j/k package | PgUp/PgDn page | r refresh | Tab filesystem | Shift+Tab artifacts"

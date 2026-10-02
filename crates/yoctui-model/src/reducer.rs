@@ -190,6 +190,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::SelectImageArtifact { .. } | Action::BeginImageArtifactSearch | Action::AppendImageArtifactQuery(..)
         | Action::BackspaceImageArtifactQuery | Action::ClearImageArtifactQuery | Action::FinishImageArtifactSearch
         | Action::BeginSelectedImageArtifactBuild | Action::OpenSelectedImageArtifact | Action::OpenSelectedImageArtifactAssociation(..)
+        | Action::ImageArtifactViewed { .. }
         | Action::BeginSelectedRootfsComposition | Action::ShiftImagesView { .. } | Action::RefreshRootfsComposition
         | Action::RootfsCompositionLoaded { .. } | Action::RootfsCompositionPartial { .. } | Action::RootfsCompositionUnavailable { .. }
         | Action::RootfsCompositionFailed { .. } | Action::SelectRootfsGroup { .. } | Action::SelectRootfsPackage { .. }

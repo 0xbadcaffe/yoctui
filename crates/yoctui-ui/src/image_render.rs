@@ -106,9 +106,6 @@ pub(crate) fn image_artifacts_workspace(frame: &mut Frame, app: &App, area: Rect
         SearchExit::Done,
         area.width.saturating_sub(2),
     ));
-    lines.push(Line::from(
-        "Image target                 Kind             Size       Timestamp    File",
-    ));
     match &app.image_artifacts {
         ImageArtifactInventoryState::NotLoaded => {
             lines.push(Line::from("Artifacts not loaded. Press Alt+r to scan."));
@@ -126,51 +123,84 @@ pub(crate) fn image_artifacts_workspace(frame: &mut Frame, app: &App, area: Rect
         }
         ImageArtifactInventoryState::Available { .. }
         | ImageArtifactInventoryState::Partial { .. } => {
-            if filtered.is_empty() {
-                lines.push(Line::from("No artifacts match the active search."));
+            let block = pane_block(app, "Images", app.focus == FocusTarget::Workspace);
+            let inner = block.inner(area);
+            frame.render_widget(block, area);
+            if let ImageArtifactInventoryState::Partial { limitations, .. } = &app.image_artifacts {
+                lines.push(Line::from(format!(
+                    "Partial inventory: {} limitation(s); inspect selected row.",
+                    limitations.len()
+                )));
             }
-            let limitation_rows = usize::from(matches!(
-                &app.image_artifacts,
-                ImageArtifactInventoryState::Partial { .. }
-            ));
-            let capacity = usize::from(area.height.saturating_sub(7))
-                .saturating_sub(limitation_rows)
-                .max(1);
+            let header_height = (lines.len() as u16).min(inner.height);
+            frame.render_widget(
+                Paragraph::new(lines),
+                Rect::new(inner.x, inner.y, inner.width, header_height),
+            );
+            let table_area = Rect::new(
+                inner.x,
+                inner.y.saturating_add(header_height),
+                inner.width,
+                inner.height.saturating_sub(header_height),
+            );
+            if filtered.is_empty() {
+                frame.render_widget(
+                    Paragraph::new("No artifacts match the active search."),
+                    table_area,
+                );
+                return;
+            }
+            let capacity = usize::from(table_area.height.saturating_sub(1));
             let viewport =
                 yoctui_model::centered_viewport_range(filtered_selection, filtered.len(), capacity);
-            for artifact in filtered[viewport].iter().copied() {
+            let show_time = table_area.width >= 52;
+            let show_kind = table_area.width >= 78;
+            let show_image = table_area.width >= 112;
+            let mut titles = vec!["File", "Size (B)"];
+            let mut widths = vec![Constraint::Min(12), Constraint::Length(11)];
+            if show_time {
+                titles.push("Modified UTC");
+                widths.push(Constraint::Length(20));
+            }
+            if show_kind {
+                titles.push("Kind");
+                widths.push(Constraint::Length(16));
+            }
+            if show_image {
+                titles.push("Image target");
+                widths.push(Constraint::Length(24));
+            }
+            let rows = filtered[viewport].iter().map(|artifact| {
                 let selected = app.image_artifact_selection.as_ref() == Some(&artifact.identity);
                 let size = artifact
                     .size_bytes
                     .available()
                     .map_or_else(|| "unavailable".into(), |size| size.to_string());
-                let timestamp = artifact
-                    .modified_unix_seconds
-                    .available()
-                    .map_or_else(|| "unavailable".into(), |value| value.to_string());
-                let file = artifact
-                    .identity
-                    .path
-                    .file_name()
-                    .map_or_else(|| "unavailable".into(), |name| name.to_string_lossy());
-                lines.push(
-                    Line::from(format!(
-                        "{:<28} {:<16} {:<10} {:<12} {}",
-                        artifact.identity.image,
-                        artifact.kind.label(),
-                        size,
-                        timestamp,
-                        file
-                    ))
-                    .style(selected_style(app, selected)),
+                let file = artifact.identity.path.file_name().map_or_else(
+                    || "unavailable".into(),
+                    |name| name.to_string_lossy().into_owned(),
                 );
-            }
-            if let ImageArtifactInventoryState::Partial { limitations, .. } = &app.image_artifacts {
-                lines.push(Line::from(format!(
-                    "Partial artifact inventory: {} limitation(s); inspect the selected row.",
-                    limitations.len()
-                )));
-            }
+                let mut cells = vec![file, size];
+                if show_time {
+                    cells.push(super::image_inspector::image_artifact_timestamp(
+                        artifact.modified_unix_seconds.available().copied(),
+                    ));
+                }
+                if show_kind {
+                    cells.push(artifact.kind.label().into());
+                }
+                if show_image {
+                    cells.push(artifact.identity.image.clone());
+                }
+                Row::new(cells)
+                    .height(1)
+                    .style(selected_style(app, selected))
+            });
+            frame.render_widget(
+                Table::new(rows, widths).header(Row::new(titles)),
+                table_area,
+            );
+            return;
         }
     };
     frame.render_widget(

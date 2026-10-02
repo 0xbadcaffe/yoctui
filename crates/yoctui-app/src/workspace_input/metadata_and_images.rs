@@ -252,7 +252,8 @@ pub fn images_workspace_action_for_view(
         Input::Char('[') => Some(Action::SelectWicOutput { delta: -1 }),
         Input::Char(']') => Some(Action::SelectWicOutput { delta: 1 }),
         Input::Alt('o') | Input::Char('O') => Some(Action::OpenSelectedWicOutput),
-        Input::Char('o') => Some(Action::OpenSelectedImageArtifact),
+        Input::Char('o') | Input::Char('e') => Some(Action::OpenSelectedImageArtifact),
+        Input::Char('v') => Some(Action::ShiftImagesView { delta: 2 }),
         Input::Char('m') => Some(Action::OpenSelectedImageArtifactAssociation(
             yoctui_model::ImageArtifactAssociation::Manifest,
         )),

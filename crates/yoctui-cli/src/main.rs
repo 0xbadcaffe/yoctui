@@ -452,6 +452,7 @@ mod signature_operations;
 use signature_operations::*;
 mod package_operations;
 use package_operations::*;
+mod image_artifact_view;
 mod image_operations;
 use image_operations::*;
 mod workspace_effects;

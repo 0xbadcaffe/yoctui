@@ -1,19 +1,31 @@
 # Current Task
 
-**ID:** IMAGES-ARTIFACT-VIEW-001
-**Title:** Keep deployed artifacts visible and safely view their files
-**Status:** IN_PROGRESS
+**ID:** KGDB-SERIAL-LIVE-001
+**Title:** Verify KGDB attach backtrace resume and re-entry on a real board
+**Status:** BLOCKED
 
-User request supersedes the blocked live-board queue. Dependencies: none.
-Relevant files: image renderer/inspector/footer, Images input/model reducers,
-local CLI artifact viewer and focused model/app/UI/CLI tests.
-Done: selection-visible single-line rows, byte size/readable UTC mtime,
-bounded internal text/DTS viewing, reviewed DTB/DTBO decompile and existing
-IMAGE_ROOTFS Files navigation. Unsafe/binary/oversized files and absent dtc
-fail explicitly. No mounts/extraction, daemon restart or automatic file writes.
-Update all authoritative docs; bump version, commit/push, build optimized binary.
+IMAGES-ARTIFACT-VIEW-001 is DONE in v0.1.265. Single-line responsive table
+keeps all 80 selected long-name artifacts visible; exact byte sizes/readable
+last-modified UTC metadata. o/e opens bounded internal text/DTS or the reviewed
+DTB/DTBO decompile form; v opens existing authoritative IMAGE_ROOTFS Files.
+Unsafe/binary/oversized files and missing dtc fail explicitly. Enter/p, build,
+QEMU, associated files, rootfs chart/tree/systemd and terminal workflows remain.
+Focused model/app/UI/CLI (17/1/2/6), 12 device-tree model, decompile UI/CLI,
+five artifact adapter, existing Images/preview, RootFS and six GitUI checks pass.
+Real local dtc roundtrip preserves its input and opens valid generated DTS.
+Strict affected all-target/all-feature Clippy, fmt, UI spec, version policy,
+roadmap and optimized build pass. A pre-existing allocation-only GitUI test
+comparison was made borrowed for Clippy without changing the assertion.
+Optional broader UI group remains 11 pass / two fail on both current source
+and clean archived baseline f4960a14 (v0.1.264): editor Ctrl+S footer and SDK
+legacy s/E shortcut assertions. They are unchanged, not weakened or hidden.
+Final commit/push and commit-bound release rebuild deliver this change. No
+full suite, disk-image mounts/extraction or daemon/build mutation occurred.
+No eligible implementation task remains; KGDB board and M67 evidence remain
+external blockers below. Installed PATH binary remains v0.1.250; launch the
+workspace target/release/yoctui explicitly.
 
-Verification (CARGO_INCREMENTAL=0; full suite explicitly deferred):
+Completed M109 verification (CARGO_INCREMENTAL=0; full suite deferred):
 ```bash
 cargo test -p yoctui-model image_artifact
 cargo test -p yoctui-app images_workspace
@@ -24,7 +36,7 @@ cargo test -p yoctui-ui dtc_decompile
 cargo test -p yoctui --bin yoctui dtc_decompile
 cargo fmt --all --check
 cargo clippy -p yoctui --all-targets --all-features -- -D warnings
-./scripts/verify-ui-contract.sh
+./scripts/verify-ui-spec.sh
 python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 cargo build --release -p yoctui --bin yoctui

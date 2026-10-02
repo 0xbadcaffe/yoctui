@@ -1,6 +1,31 @@
 //! Image inspector.
 use super::*;
 
+pub(super) fn image_artifact_timestamp(seconds: Option<u64>) -> String {
+    let Some(seconds) = seconds.and_then(|value| libc::time_t::try_from(value).ok()) else {
+        return "unavailable".into();
+    };
+    let mut value = std::mem::MaybeUninit::<libc::tm>::uninit();
+    // gmtime_r writes only this caller-owned tm and performs no locale/timezone mutation.
+    if unsafe { libc::gmtime_r(&seconds, value.as_mut_ptr()) }.is_null() {
+        return "unavailable".into();
+    }
+    // Successful gmtime_r initialized every field of tm.
+    let value = unsafe { value.assume_init() };
+    let year = i64::from(value.tm_year) + 1900;
+    if !(0..=9999).contains(&year) {
+        return "unavailable".into();
+    }
+    format!(
+        "{year:04}-{:02}-{:02} {:02}:{:02}:{:02}Z",
+        value.tm_mon + 1,
+        value.tm_mday,
+        value.tm_hour,
+        value.tm_min,
+        value.tm_sec
+    )
+}
+
 pub(crate) fn image_artifact_inspector_text(app: &App) -> String {
     if app.images_view != ImagesView::Artifacts {
         return rootfs_inspector_text(app);
@@ -64,7 +89,7 @@ pub(crate) fn image_artifact_inspector_text(app: &App) -> String {
                 yoctui_model::ImagePreviewTransport::DirectTerminal,
             );
             format!(
-                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\n\nTerminal image preview\nNative graphics: not offered\nprotocol probe skipped\nFallback: {}\nReason: {}\n\nDeploy directory: {}\nSize: {}\nTimestamp: {}\nLimitations:\n{}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}",
+                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\n\nTerminal image preview\nNative graphics: not offered\nprotocol probe skipped\nFallback: {}\nReason: {}\n\nDeploy directory: {}\nSize: {}\nLast modified (UTC): {}\nView: o/e text or DTB decompile; v RootFS files\nLimitations:\n{}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}",
                 artifact.identity.machine,
                 artifact.identity.image,
                 artifact.kind.label(),
@@ -76,10 +101,7 @@ pub(crate) fn image_artifact_inspector_text(app: &App) -> String {
                     .size_bytes
                     .available()
                     .map_or_else(|| "unavailable".into(), |value| format!("{value} bytes")),
-                artifact.modified_unix_seconds.available().map_or_else(
-                    || "unavailable".into(),
-                    |value| format!("{value}s since Unix epoch")
-                ),
+                image_artifact_timestamp(artifact.modified_unix_seconds.available().copied()),
                 limitations,
                 checksums,
                 paths(&artifact.manifests),
