@@ -170,6 +170,7 @@ pub(crate) fn footer_rail_shortcuts(app: &App, width: u16) -> String {
         )
         && app.active_dialog().is_none()
         && !app.command_palette_open
+        && (app.screen != Screen::Sdk || app.focus == FocusTarget::Workspace)
     {
         return responsive_footer_shortcuts(app, width);
     }

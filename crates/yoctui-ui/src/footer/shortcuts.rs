@@ -133,7 +133,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             }
         }
         Screen::Sdk => {
-            "↑/↓ select | i image | s standard | Alt+e extensible | t testsdk | Alt+t testsdkext | Alt+r refresh | Alt+p publish | n native | o open | c cancel"
+            "↑/↓ select | c cancel | i image | s standard | Alt+e extensible | t testsdk | Alt+t testsdkext | Alt+r refresh | Alt+p publish | n native | o open"
         }
         Screen::Testing => {
             "Tab view | ↑/↓ select | Enter open | r run | i image | / search | Alt+i import | Alt+r refresh | c compare | Alt+j JUnit | o result | l log | x cancel"
@@ -235,8 +235,8 @@ pub(crate) fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
                 "↑↓ rule | [/] preview | Enter explore | r refresh | Tab view".into()
             }
         }
-    } else if app.screen == Screen::Sdk && width <= 90 {
-        "↑↓ i:image s/Alt+e:SDK t/Alt+t:test Alt+r:scan Alt+p:publish n:native o:open c:cancel".into()
+    } else if app.screen == Screen::Sdk && width < 100 {
+        compact_sdk_shortcuts(width)
     } else if app.screen == Screen::Testing && width <= 90 {
         "Tab:view ↑↓ Enter r:run i:image /:find Alt+i/Alt+r:results c:compare Alt+j:JUnit o/l:open x:cancel"
             .into()
@@ -257,4 +257,24 @@ pub(crate) fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
             shortcuts
         }
     }
+}
+
+fn compact_sdk_shortcuts(width: u16) -> String {
+    let mut output = String::new();
+    for token in [
+        "↑↓", "i:img", "s/Alt+e:SDK", "t/Alt+t:tst", "c:cancel", "Alt+r:scan",
+        "Alt+p:pub", "n:native", "o:open",
+    ] {
+        let separator = usize::from(!output.is_empty());
+        if Line::from(output.as_str()).width() + separator + Line::from(token).width()
+            > usize::from(width)
+        {
+            break;
+        }
+        if !output.is_empty() {
+            output.push(' ');
+        }
+        output.push_str(token);
+    }
+    output
 }

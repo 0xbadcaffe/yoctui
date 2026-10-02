@@ -193,18 +193,18 @@ notes = "DONE v280: configure/browse/Alt+a/clone/Alt+v and n/Alt+n/p controls pr
 id = "DEMO-SDK-RAIL-001"
 milestone = "M114"
 title = "Fit complete existing SDK narrow shortcut tokens and retain cancellation hint"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3529
 required = true
 depends_on = ["DEMO-ENV-CONTROLS-001"]
 verify = ["cargo test -p yoctui-ui demo_sdk_rail", "cargo test -p yoctui-ui sdk_workflow", "cargo test -p yoctui-app sdk", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Actual SDK narrow shortcut string85cells exceeds78cell footer interior and clips c:cancel. Relevant footer compact SDK token projection and external80/90/100/full tests. Prioritize existing image/SDK/selftest/cancel routes and append optional scan/publish/native/open only as complete tokens that fit; preserve existing modifier aliases/actions and global menu availability. No new keys/layout/workflow. Exact cell-safe complete-token and cancellation regression required, no weaker assertion."
+notes = "DONE v281: compact SDK tokens fit78cell minimum interior, whole-cell-safe helper and priority cancellation in narrow/wide rails; typed Navigator/dialog focus preserves real controls. External UI2 across80..200 and helper0..99, existing SDK UI3/app2, strictUIClippy/fmt/UI/version/roadmap PASS. Existing actions/keys/aliases/layout retained. No accepted goldens or full-parent certification."
 
 [[task]]
 id = "DEMO-TELEMETRY-CACHE-001"
 milestone = "M114"
 title = "Restore typed cache download and network-policy facts in Dashboard telemetry"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3530
 required = true
 depends_on = ["DEMO-SDK-RAIL-001"]

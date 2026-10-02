@@ -1,28 +1,30 @@
 # Current Task
 
-**ID:** DEMO-SDK-RAIL-001
-**Title:** Fit complete existing SDK narrow shortcut tokens and retain cancellation hint
+**ID:** DEMO-TELEMETRY-CACHE-001
+**Title:** Restore typed cache download and network-policy facts in Dashboard telemetry
 **Status:** IN_PROGRESS
 
-Dependency DEMO-ENV-CONTROLS-001 DONE v280. UI2 all environment/profile states
-and long/narrow80..200, existing profile UI1/app1, strictUIClippy/fmt/UI/version/
-roadmap PASS; same panes/actions/backend and every detailed field retained.
-Current SDK compound rail85cells exceeds78cell minimum footer interior, clipping
-c:cancel. Narrow modifier compound hints also overflow at92..101 terminals.
-Prioritize existing image/SDK/selftest/cancel, fit optional scan/publish/native/
-open only as complete cell-safe tokens; wider rail also prioritizes cancel.
-Preserve aliases/authority/key routes and general telemetry/layout/other screens.
-Add external80..200/full/very-small-width regressions, spec/version/coherent
-focused commit, then typed Dashboard cache and observed exit children.
+Dependency DEMO-SDK-RAIL-001 DONE v281. UI2 verifies complete compact tokens,
+cancellation and typed focus at80..200; existing SDK UI3/app2 and strictUIClippy/
+fmt/UI/version/roadmap PASS. Same keys/actions/panes; no accepted goldens.
+Dashboard currently omits existing typed cache_status_lines required by M68/M72;
+its Sstate cell also hardcodes unavailable regardless of actual summary.
+Restore these bounded observations within the existing eight-row Dashboard pane,
+retaining numeric/capacity cards and generic full telemetry history behavior.
+Use typed existing model facts, keep offline readiness unverified, and test
+missing/valid/invalid/offline/policy/narrow cases. No fabricated utilization,
+new capability, layout or workflow; focused version/coherent commit required.
+Then finish observed current Dashboard exit code before UI fixture reconciliation.
 UI fixture changes remain separate; no six golden comparisons accepted.
 User additionally requires plain native laptop attach, reboot/login-ready
 durable setup and exact-source green GitHub CI after demo readiness. Real
 reboot requires coordination and cannot be certified by cold restart alone.
 
 ```bash
-cargo test -p yoctui-ui demo_sdk_rail
-cargo test -p yoctui-ui sdk_workflow
-cargo test -p yoctui-app sdk
+cargo test -p yoctui-ui demo_dashboard_cache
+cargo test -p yoctui-ui next_generation_telemetry_strip
+cargo test -p yoctui-ui dashboard_concept
+cargo test -p yoctui-model build_cache
 cargo fmt --all --check
 cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh

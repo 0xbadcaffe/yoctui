@@ -1,4 +1,10 @@
-M114 current: DEMO-SDK-RAIL-001 IN_PROGRESS; Environment controls DONE v280.
+M114 current: DEMO-TELEMETRY-CACHE-001 IN_PROGRESS; SDK rail DONE v281.
+SDK compact rail fits all nine complete tokens in78cells and prioritizes cancel
+in wider rails; Navigator/dialog focus no longer advertises inactive SDK keys.
+External UI2 across80..200/tiny helper widths/focus, existing SDK UI3/app2 and
+strictUIClippy/fmt/UI/version/roadmap PASS. Same actions/keys/layout; no goldens
+accepted. Typed Dashboard cache/policy facts and observed exit remain next.
+Environment controls DONE v280.
 Existing controls/modifier hints precede long status/images/profile facts,
 duplicate title/blanks removed. External UI2 across80..200/all environment and
 profile states, existing profile UI1/app1, strictUIClippy/fmt/UI/version/roadmap

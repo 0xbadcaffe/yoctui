@@ -3059,12 +3059,17 @@ never a focus stop. All lifecycle and selection meaning survives no-color
 mode, and long paths/arguments are bounded and wrapped. The SDK footer is:
 
 ```text
-↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel
+↑/↓ select | c cancel | i image | s standard | Alt+e extensible | t testsdk | Alt+t testsdkext | Alt+r refresh | Alt+p publish | n native | o open
 ```
 
-At 90 columns and below, the one-line footer compacts these labels to
-`↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel`.
-Every SDK shortcut remains visible; only its label is abbreviated.
+With Workspace focus and a footer interior below100cells, the one-line footer
+compacts these labels to
+`↑↓ i:img s/Alt+e:SDK t/Alt+t:tst c:cancel Alt+r:scan Alt+p:pub n:native o:open`.
+All tokens fit the78cell minimum interior; every SDK shortcut remains visible
+in supported compact rails and only labels are abbreviated. Cancellation is prioritized
+in wider rails too. Unsupported tiny helper rectangles append complete tokens
+only, never a clipped modifier alias. Navigator/dialog focus retains its own
+honest controls instead of advertising inactive SDK Workspace bindings.
 
 ### Testing
 
