@@ -1,10 +1,28 @@
+M112 implementation checkpoint: v0.1.268 subscribes/normalizes native DiskFull,
+latches it only during an active build and converts later native zero completion
+to existing failed managed outcome. Focused bridge/protocol/model/UI tests and
+four backend checks pass; strict backend Clippy, fmt/diff/UI/roadmap/version gates
+pass. Committed-source optimized release and real native guard regression still
+required; IN_PROGRESS, not DONE. User approved the ~4.4-GiB older download archive
+cleanup; preserve Git caches/source/images/debug symbols and perform after the
+real low-disk regression. Removed ~400 MiB of three obsolete partial validation
+parse caches only after confirming no live cooker; ready inventory/build cache
+families retained. No disk guard weakening or full suite.
+Additional regression sampling: 30 tests across metadata-events/server-adapters
+pass, two image-artifact viewport checks pass. The broad `rootfs` name filter
+ran 18 UI checks: 16 pass, two unchanged editor/SDK checks fail on shortcut text
+(`Ctrl+S save` clipped in editor/menu composition; obsolete `s/E:SDK` expected
+instead of displayed `s/Alt+e:SDK`). These are not claimed as passing or changed
+by the bridge-only correction; no production Rust UI source changed. RootFS
+ownership/chart/tree and systemd viewport checks passed. Full suite deferred.
+
 M112 NATIVE-DISK-GUARD-OUTCOME-001 is current after actual validation exposed
 false success: native STOPTASKS at 3.969 GiB ended an incomplete runqueue, but
 ignored DiskFull/zero-failure completion forced success/10994. No image/vmlinux
 exists; M111 BUILD is BLOCKED by storage (~3.1 GiB free). Fix native bridge
 authority with focused per-build/log/completion/progress/UI regressions and
 version/commit/push/release, then real guard reproduction. Actual image retry
-needs more space; old archive-cache cleanup awaits user approval. QEMU/GDB is
+needs more space; old archive-cache cleanup is now approved as scoped above. QEMU/GDB is
 NOT_STARTED. Full suite remains deferred; older files/captures preserved.
 Evidence/reproduction: artifacts/live-xilinx/zcu102/disk-guard-stop.txt.
 

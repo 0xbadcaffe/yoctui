@@ -4,6 +4,14 @@
 **Title:** Preserve native disk-guard failure in bridge build completion
 **Status:** IN_PROGRESS
 
+Product v0.1.268 implements the typed native-event correction. Focused bridge,
+protocol/model/UI partial-progress checks, four affected backend checks, strict
+backend Clippy and UI/roadmap/version gates pass. Source-bound release and real
+native guard reproduction remain required before DONE. User approved clearing
+the ~4.4-GiB older archive caches; exact top-level single-link archives only,
+not Git caches/source/images/debug symbols. Perform that cleanup after the
+real low-disk regression, then reassess image-build storage. Keep guards unchanged.
+
 Dependency XILINX-ZCU102-ENV-001 is DONE. The actual ZCU102 image soft-stopped
 at the unchanged 4-GiB STOPTASKS threshold; ~3.1 GiB remains, no image/vmlinux.
 BUILD is BLOCKED by storage. Native DiskFull is missing from the Tinfoil mask,
@@ -30,7 +38,7 @@ release. Full suite remains explicitly deferred. Bump product version, coherent
 commit/push and committed-source release; then reproduce the real native guard
 through the isolated daemon/new UI, without starting an unmanaged build. Restart
 only the isolated now-idle daemon. Live image success still needs more storage;
-older archive-cache cleanup awaits user approval, so do not remove those files.
+older archive-cache cleanup is now approved, within the exact scope above.
 
 Commands (with low-disk Cargo profile variables where appropriate):
 ```bash

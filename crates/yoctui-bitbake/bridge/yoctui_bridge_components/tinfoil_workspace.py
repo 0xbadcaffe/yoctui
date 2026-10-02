@@ -4,6 +4,7 @@ class TinfoilConnection:
     EVENT_MASK = [
         "bb.event.BuildStarted",
         "bb.event.BuildCompleted",
+        "bb.event.DiskFull",
         "bb.event.ParseStarted",
         "bb.event.ParseProgress",
         "bb.event.ParseCompleted",

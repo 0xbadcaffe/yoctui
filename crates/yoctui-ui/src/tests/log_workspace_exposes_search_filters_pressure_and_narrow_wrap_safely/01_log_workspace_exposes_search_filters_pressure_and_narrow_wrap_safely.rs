@@ -1,6 +1,47 @@
 use super::*;
 
 #[test]
+fn disk_guard_failed_build_renders_failure_without_successful_full_progress() {
+    let mut app = App::new(20, 4_000);
+    app.build.status = yoctui_model::BuildStatus::Running;
+    app.build.target = Some("petalinux-image-minimal".into());
+    app.build.completed = 3_092;
+    app.build.total = Some(10_994);
+    app.logs.insert(yoctui_model::LogEntry {
+        id: 0,
+        severity: Severity::Error,
+        message: "BitBake disk guard stopped this build; the runqueue is incomplete.".into(),
+        recipe: None,
+        task: None,
+        path: None,
+        timestamp: SystemTime::UNIX_EPOCH,
+        build: Some("petalinux-image-minimal".into()),
+        protected: true,
+        diagnostic: None,
+    });
+    let _ = update(
+        &mut app,
+        Action::BuildCompleted {
+            success: false,
+            exit_code: Some(1),
+        },
+    );
+    let completion = rendered_text(&app, 160, 50);
+    assert!(completion.contains("Build failed for petalinux-image-minimal"), "{completion}");
+    assert!(completion.contains("Tasks completed: 3092"), "{completion}");
+    assert!(!completion.contains("completed successfully"), "{completion}");
+    app.dialogs.clear();
+    app.screen = Screen::Errors;
+    let output = rendered_text(&app, 160, 50);
+    assert!(output.contains("Build Result · Failed"), "{output}");
+    assert!(output.contains("Result: Failed (exit 1)"), "{output}");
+    assert!(!output.contains("Build Result · Completed"), "{output}");
+    assert!(!output.contains("100%"), "{output}");
+    assert_eq!(app.build.completed, 3_092);
+    let _ = rendered_text(&app, 50, 16);
+}
+
+#[test]
 fn log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely() {
     let mut app = App::new(20, 4_000);
     app.screen = Screen::Logs;

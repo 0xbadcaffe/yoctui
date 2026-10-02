@@ -5,6 +5,7 @@ class BitBakeAdapter:
         self.connection = None
         self.build_correlation_id = None
         self.build_active = False
+        self.disk_guard_stopped = False
         self.task_identities_by_pid = {}
         self.native_event_iterator = None
         self.compatibility_generation = None
@@ -100,6 +101,7 @@ class BitBakeAdapter:
         except Exception as exc:
             raise ServerUnavailable(f"could not start the BitBake build: {exc}")
         self.build_active = True
+        self.disk_guard_stopped = False
         return bool(getattr(connection, "native_event_stream", False))
 
     def cancel_build(self):
@@ -384,6 +386,10 @@ class BitBakeAdapter:
             except StopIteration:
                 self.native_event_iterator = None
                 break
+            if native_event_kind(raw) in ("diskfull", "disk_full"):
+                if not self.build_active:
+                    continue
+                self.disk_guard_stopped = True
             event = normalize_event(raw, self.task_identities_by_pid)
             if not event:
                 continue
@@ -391,6 +397,11 @@ class BitBakeAdapter:
             if kind == "build_completed":
                 if not self.build_active:
                     continue
+                if self.disk_guard_stopped:
+                    # A soft STOPTASKS drain may report zero task failures.
+                    # The managed operation still failed; do not fabricate
+                    # task failures or a successful 100-percent completion.
+                    event = {"type": "build_completed", "success": False, "exit_code": 1}
                 self.build_active = False
                 self.task_identities_by_pid.clear()
                 self.native_event_iterator = None

@@ -1,6 +1,30 @@
 use super::*;
 
 #[test]
+fn disk_guard_failed_completion_preserves_observed_partial_snapshot_progress() {
+    let mut snapshot = daemon_snapshot_fixture();
+    snapshot.build_progress = Some(DaemonBuildProgress {
+        completed: 3_092,
+        total: Some(10_994),
+        ..Default::default()
+    });
+    apply_build_event(
+        &mut snapshot,
+        DaemonBuildEvent::Completed {
+            success: false,
+            exit_code: Some(1),
+            finished_unix_ms: None,
+        },
+    );
+    assert_eq!(snapshot.build_progress.unwrap().completed, 3_092);
+    let encoded = encode_frame(&ServerMessage::Snapshot(snapshot.clone())).unwrap();
+    assert_eq!(
+        decode_frame::<ServerMessage>(&encoded).unwrap(),
+        ServerMessage::Snapshot(snapshot)
+    );
+}
+
+#[test]
 fn snapshot_progress_preserves_unknown_totals_and_legacy_absence() {
     let mut snapshot = daemon_snapshot_fixture();
     let encoded = serde_json::to_value(&snapshot).unwrap();

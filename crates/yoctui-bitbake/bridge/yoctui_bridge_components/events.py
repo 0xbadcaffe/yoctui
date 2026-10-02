@@ -89,11 +89,36 @@ def correlated_task(task_identities_by_pid, pid):
     return recipe, task, log_path if isinstance(log_path, str) else None
 
 
-def normalize_event(event, task_identities_by_pid=None):
+def native_event_type(event):
     kind = event_value(event, "type", "event_type")
     if not isinstance(kind, str) and event is not None:
         kind = type(event).__name__
+    return kind
+
+
+def native_event_kind(event):
+    kind = native_event_type(event)
+    return kind.lower() if isinstance(kind, str) else None
+
+
+def normalize_event(event, task_identities_by_pid=None):
+    kind = native_event_type(event)
     normalized_kind = kind.lower() if isinstance(kind, str) else None
+    if normalized_kind in ("diskfull", "disk_full"):
+        resource = event_value(event, "_type", "resource", default="unknown")
+        resource = resource if resource in ("disk", "inode") else "disk/inode"
+        location = event_value(event, "_mountpoint", "mountpoint", default="unknown")
+        location = location[:4096] if isinstance(location, str) else "unknown"
+        free = normalized_nonnegative_integer(event_value(event, "_free", "free"))
+        unit = "inodes" if resource == "inode" else "bytes" if resource == "disk" else "units"
+        return {
+            "type": "log",
+            "level": "error",
+            "message": f"BitBake {resource} guard stopped this build at {location}; remaining={free if free is not None else 'unknown'} {unit}. The runqueue is incomplete.",
+            "recipe": None,
+            "task": None,
+            "path": None,
+        }
     recipe = task_recipe(event)
     task = event_value(event, "task", "taskname")
     if normalized_kind in ("buildstarted", "build_started"):
