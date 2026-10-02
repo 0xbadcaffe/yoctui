@@ -47,15 +47,33 @@ impl PlatformArtifactAdapter {
 
         let mut files = Vec::new();
         let mut limitations = Vec::new();
-        let mut directories = 0usize;
+        let mut seen = BTreeSet::new();
+        // The source tree can exhaust the global budget with device trees.
+        // Retain direct configurations from every authoritative root first.
+        // symlink_metadata deliberately does not follow a .config symlink.
         for root in &roots {
+            if files.len() >= MAX_FILES {
+                break;
+            }
+            let path = root.join(".config");
+            if let Ok(metadata) = fs::symlink_metadata(&path)
+                && metadata.is_file()
+            {
+                seen.insert(path.clone());
+                files.push(PlatformFile {
+                    path,
+                    root: root.clone(),
+                    kind: PlatformFileKind::DotConfig,
+                    size_bytes: metadata.len(),
+                });
+            }
+        }
+        let mut directories = 0usize;
+        'roots: for root in &roots {
             let mut pending = VecDeque::from([(root.clone(), 0usize)]);
             while let Some((directory, depth)) = pending.pop_front() {
                 if directories >= MAX_DIRECTORIES || files.len() >= MAX_FILES {
-                    limitations.push(format!(
-                        "Scan stopped at {MAX_FILES} files or {MAX_DIRECTORIES} directories."
-                    ));
-                    break;
+                    break 'roots;
                 }
                 directories += 1;
                 let entries = fs::read_dir(&directory).map_err(|source| {
@@ -84,6 +102,9 @@ impl PlatformArtifactAdapter {
                     let Some(kind) = classify(&path) else {
                         continue;
                     };
+                    if !seen.insert(path.clone()) {
+                        continue;
+                    }
                     let size_bytes = entry.metadata().map(|value| value.len()).unwrap_or(0);
                     files.push(PlatformFile {
                         path,
@@ -96,6 +117,11 @@ impl PlatformArtifactAdapter {
                     }
                 }
             }
+        }
+        if directories >= MAX_DIRECTORIES || files.len() >= MAX_FILES {
+            limitations.push(format!(
+                "Scan stopped at {MAX_FILES} files or {MAX_DIRECTORIES} directories."
+            ));
         }
         files.sort_by(|left, right| left.path.cmp(&right.path));
         files.dedup_by(|left, right| left.path == right.path);

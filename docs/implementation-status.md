@@ -1,4 +1,11 @@
 M114 current: DEMO-PLATFORM-CONFIG-001 IN_PROGRESS; selected-source init DONE.
+v0.1.272 now queries authoritative shared kernel build root and prioritizes
+regular root-level .config files before bounded recursion; exact-path dedup
+counts unique files, symlink entry exclusion and quotas unchanged. New scan
+starvation/overlap/symlink and fake bridge normal/missing/relative/metadata-failure
+tests added. Focused platform5/kernel-inspection3/firmware3/UI-kernel8 and strict
+affected Clippy/fmt/UI/version/roadmap PASS. Source-bound live config verification
+pending; final full suite, optimized install and publication not claimed.
 v0.1.271 platform worker now captures exact attached source alongside selected
 build, retains ancestor-only fallback for absent source and rejects redirected
 BUILDDIR. Focused fake initializer/daemon/saved-environment and real inspection

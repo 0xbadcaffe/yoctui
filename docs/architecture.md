@@ -1,5 +1,18 @@
 # Yoctui Architecture
 
+## M114 bounded kernel configuration discovery
+
+Kernel CLI inspection queries virtual/kernel's STAGING_KERNEL_BUILDDIR alongside
+FILE/S/B/WORKDIR; only absolute metadata-reported roots enter the artifact
+adapter. Missing/relative values remain typed inventory limitations, not guessed
+machine paths. The bounded shared platform scan retains regular root-level
+.config files across authoritative roots before recursive device-tree discovery.
+Entry symlinks remain excluded; exact paths are de-duplicated before counting
+the unchanged4096file/16384directory/32depth limits. Final path ordering and
+partial-result limitations remain intact. Global budget stops report a single
+limitation, including flat single roots. UI renders the existing inventory;
+no image build, config mutation or new workflow is introduced.
+
 ## M114 selected platform inspection environment
 
 CLI platform workers capture the attached typed workspace's exact source and

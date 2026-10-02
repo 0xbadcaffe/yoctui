@@ -15,7 +15,7 @@ pub(crate) async fn inspect_kernel_workbench(
     let mut roots = Vec::new();
     let mut limitations = Vec::new();
     let mut provider = None;
-    for variable in ["FILE", "S", "B", "WORKDIR"] {
+    for variable in ["FILE", "S", "B", "WORKDIR", "STAGING_KERNEL_BUILDDIR"] {
         match backend
             .get_variable(variable.into(), Some(target.clone()))
             .await
@@ -63,3 +63,7 @@ pub(crate) async fn inspect_kernel_workbench(
         Err(error) => Action::KernelFailed(format!("artifact scanner did not complete: {error}")),
     }
 }
+
+#[cfg(test)]
+#[path = "tests/kernel_inspection.rs"]
+mod tests;
