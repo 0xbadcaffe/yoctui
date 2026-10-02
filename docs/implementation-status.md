@@ -1,4 +1,12 @@
-M114 current: DEMO-CONFIG-DETAILS-001 IN_PROGRESS; dependency verdict DONE v278.
+M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Configuration detail DONE v279.
+Typed shared compact/full formatting removes duplicate identity/blank rows,
+joins Operations label with first operation and states global-only scope honestly.
+New UI2 plus unchanged v277 controls2/provenance/lazy/scope3, strictUIClippy/fmt/
+UI/version/roadmap PASS. Full fields/reasons/panes preserved. Only corresponding
+scope-label assertion changed in product commit; other fixtures/goldens separate.
+Removed259 obsolete generated Rust libraries before v278 commit (3478794843
+bytes) from this session's exact temporary debug cache; current v279/dependency
+cache, source, installed tools, images and debug symbols retained. Rebuildable.
 UI fixture iteration now344PASS/21fail. Before goldens, real v277 detail regression
 split: duplicate loaded identity/scope/state/blank lines displace operation
 provenance at100x25 and empty operations at110x26. Compact typed detail must

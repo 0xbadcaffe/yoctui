@@ -21,7 +21,7 @@ fn config_scope_renders_picker_active_identity_and_global_fallback() {
         let output = rendered_text(&app, width, height);
         if width >= 80 && height >= 24 {
             assert!(output.contains("scoped Tinfoil failure"), "{output}");
-            assert!(output.contains("active base-files"), "{output}");
+            assert!(output.contains("s scope: base-files"), "{output}");
         }
 
         app.dialogs

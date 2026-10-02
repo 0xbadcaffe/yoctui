@@ -83,7 +83,7 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3518
 required = true
 depends_on = ["DEMO-CONFIG-DETAILS-001"]
@@ -171,12 +171,12 @@ notes = "DONE v278: existing why-built block follows identity/position before lo
 id = "DEMO-CONFIG-DETAILS-001"
 milestone = "M114"
 title = "Retain Configuration provenance and operations beside compact action availability"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3527
 required = true
 depends_on = ["DEMO-DEPENDENCY-VERDICT-001"]
 verify = ["cargo test -p yoctui-ui demo_config", "cargo test -p yoctui-ui configuration_renders_bridge_provenance", "cargo test -p yoctui-ui config_workspace_renders_lazy_partial", "cargo test -p yoctui-ui config_scope_renders_picker", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Full UI iteration344PASS/21fail reveals v277 presentation adds redundant Variable/Scope/loaded-state/blank lines above facts, clipping previously visible genuine operation provenance at100x25 and empty operations at110x26. Fix before accepting fixtures/goldens: typed compact loaded-detail projection avoids duplicate identity already in state/scope summary and joins Operations label with first operation; retain every field in full Inspector and same pane allocation. Compact scope honestly says global only for absent recipes. External normal/provenance/empty/narrow regressions plus existing v277 controls must pass unchanged; version/spec/coherent commit required. No parsing native text or new workflow/layout/authority."
+notes = "DONE v279: shared typed full/compact detail formatter removes duplicate identity/blank rows from selected pane and joins Operations label with first operation; full Inspector fields/reasons retained. Scope says global only without recipes. New external details2 plus unchanged v277 controls2 and existing provenance/lazy/scope3 PASS; strictUIClippy/fmt/UI/version/roadmap PASS. One scope-label assertion reconciles existing compact s scope identity, no other fixture/golden accepted. Pane/action/backend semantics unchanged. Full UI/native optimized demo still pending."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

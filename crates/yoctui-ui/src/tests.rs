@@ -57,6 +57,7 @@ use super::task_render::{
     TaskTableColumn, task_state_style, task_table_columns, task_table_row_style,
 };
 use super::telemetry_gauges::{render_disk_io, render_network_io};
+mod demo_config_details;
 mod demo_dependency_verdict;
 mod golden_support;
 use golden_support::*;

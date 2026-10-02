@@ -43,6 +43,14 @@ pub(crate) fn config_inspector(app: &App) -> String {
             config_copy_status(app)
         );
     };
+    config_variable_details(app, detail, false)
+}
+
+fn config_variable_details(
+    app: &App,
+    detail: &yoctui_model::VariableDetail,
+    compact: bool,
+) -> String {
     let operations = if detail.operations.is_empty() {
         "none reported".into()
     } else {
@@ -72,14 +80,19 @@ pub(crate) fn config_inspector(app: &App) -> String {
             .collect::<Vec<_>>()
             .join("\n  ")
     };
+    let identity = if compact {
+        // The selected pane already shows exact variable and scope summaries.
+        String::new()
+    } else {
+        format!(
+            "Variable: {}\nScope: {}\n",
+            detail.identity.name,
+            detail.identity.recipe.as_deref().unwrap_or("global")
+        )
+    };
+    let operations_separator = if compact { " " } else { "\n  " };
     format!(
-        "Variable: {}\nScope: {}\nEffective value: {}\nUnexpanded value: {}\nProvenance: {}\nActive overrides: {}\nOperations:\n  {}\n{}",
-        detail.identity.name,
-        detail
-            .identity
-            .recipe
-            .as_deref()
-            .map_or("global", |recipe| recipe),
+        "{identity}Effective value: {}\nUnexpanded value: {}\nProvenance: {}\nActive overrides: {}\nOperations:{operations_separator}{}\n{}",
         detail.effective_value.as_deref().unwrap_or("unavailable"),
         detail.unexpanded_value.as_deref().unwrap_or("unavailable"),
         detail.provenance.as_deref().unwrap_or("unavailable"),
@@ -143,6 +156,11 @@ pub(crate) fn config_copy_status(app: &App) -> String {
 
 fn config_action_summary(app: &App) -> String {
     let enabled = |available| if available { "enabled" } else { "disabled" };
+    let scope = if app.workspace.recipes.is_empty() {
+        "global only".into()
+    } else {
+        bounded_cell_text(app.config_scope.as_deref().unwrap_or("global"), 12)
+    };
     format!(
         "Alt+c effective: {} | Alt+u unexpanded: {}\nAlt+e edit: {} | c compare: {}\no source: {} | s scope: {}",
         enabled(selected_config_copy_value(app, ConfigCopyValue::Effective).is_ok()),
@@ -150,7 +168,7 @@ fn config_action_summary(app: &App) -> String {
         enabled(config_edit_disabled_reason(app).is_none()),
         enabled(config_comparison(app).is_ok()),
         enabled(config_source_disabled_reason(app).is_none()),
-        bounded_cell_text(app.config_scope.as_deref().unwrap_or("global"), 12),
+        scope,
     )
 }
 
@@ -229,16 +247,27 @@ pub(crate) fn config(frame: &mut Frame, app: &App, area: Rect) {
         ),
         list[1],
     );
-    let detail = config_inspector(app);
+    let selected = variables.get(app.config_selection).copied();
+    let detail = selected
+        .map(|(name, _)| VariableIdentity {
+            name: name.clone(),
+            recipe: app.config_scope.clone(),
+        })
+        .filter(|identity| {
+            !app.variable_detail_loading.contains(identity)
+                && !app.variable_detail_errors.contains_key(identity)
+        })
+        .and_then(|identity| app.variable_details.get(&identity))
+        .map_or_else(
+            || config_inspector(app),
+            |detail| config_variable_details(app, detail, true),
+        );
     let action_summary = config_action_summary(app);
-    let state_summary = config_detail_state_summary(
-        app,
-        variables.get(app.config_selection).copied(),
-        chunks[1].width.saturating_sub(2),
-    );
+    let state_summary =
+        config_detail_state_summary(app, selected, chunks[1].width.saturating_sub(2));
     frame.render_widget(
         Paragraph::new(format!(
-            "{action_summary}\n{state_summary}\n\n{detail}\n\nEnter refreshes detail; o opens provenance when available."
+            "{action_summary}\n{state_summary}\n{detail}\n\nEnter refreshes detail; o opens provenance when available."
         ))
         .block(
             Block::default()

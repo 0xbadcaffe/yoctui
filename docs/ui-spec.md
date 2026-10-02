@@ -2696,6 +2696,15 @@ stateless renderer never owns selection, expansion, filtering, or offsets.
 
 ## 17. Configuration workspace
 
+The compact selected-variable projection shares typed detail formatting with
+the full Inspector. When detail is loaded, it does not repeat Variable/Scope
+already in the action/state summaries, and `Operations:` shares the first
+operation's row. Effective/unexpanded values, provenance, overrides, operations
+and exact disabled reasons remain available; the full Inspector retains exact
+identity/scope labels. No additional blank row displaces facts after the state
+summary. With no recipe inventory the scope summary says `global only`, not
+that recipe-scope selection is available. Existing panes/actions are unchanged.
+
 The selected-variable panel prioritizes three compact typed action-availability
 rows before long details: `Alt+c` effective/`Alt+u` unexpanded copy, `Alt+e`
 edit/`c` compare, and `o` source/`s` scope. The scope summary is cell-bounded.
