@@ -1,29 +1,27 @@
 # Current Task
 
-**ID:** DEMO-ERROR-RECOVERY-HINTS-001
-**Title:** Advertise the existing modifier rebuild route in Errors recovery panes
+**ID:** DEMO-UI-FIXTURES-001
+**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
 **Status:** IN_PROGRESS
 
-Dependency DEMO-DASHBOARD-EXIT-001 DONE v283. UI fixture iteration v284 passes
-full UI375/app250/model584 plus integrations1+5 before final acceptance; exact
-reviewed goldens generated separately, never identity-masked. Screenshot review
-reveals real remaining Errors workspace/Inspector hints hardcoding B instead
-of existing Alt+b. Pause fixture acceptance and fix this independently.
-Relevant error_render.rs and inspector_workspace/concept.rs existing recovery
-rails: modifier hint visible before long optional text, same log actions and
-review/confirmation protection. No new key/action/focus/layout/native effect.
-External UI narrow/wide/accessibility and existing failed recovery/app route
-checks required, spec/version/coherent focused commit, then resume UI fixtures.
-Full suite/native reboot-ready OpenBMC rehearsal/CI/publication remain pending.
+Dependency DEMO-ERROR-RECOVERY-HINTS-001 DONE v285. External UI1 exhaustively
+checks80..200 recovery panes/accessibility and modifier/log/confirmation hints;
+existing failed recovery UI1/app route1, strictUIClippy/fmt/UI/version/roadmap
+PASS. Same keys/actions/panes and rebuild protection; capital alias retained
+only for compatibility. No live rebuild launched.
+Resume separate external UI fixtures and six scoped exact golden families.
+Previous v284 full UI375/app250/model584/integrations1+5 PASS; goldens reviewed
+against five-row header/current navigator/modifiers/cell bounds and verified
+Dashboard/cache/exit/editor changes. Refresh exact current version and Errors
+hints only with explicit scoped update flags, never identity masks. Re-run
+full UI/app/model and strictUI/fmt/UI/version/roadmap plus current-source real
+OpenBMC renderer review before parent handoff. Final optimized native boot/GDB,
+reboot/login persistence, full suite, CI and publication remain pending.
 
 ```bash
-cargo test -p yoctui-ui demo_error_recovery_hints
-cargo test -p yoctui-ui concept_failed_build_composes
-cargo test -p yoctui-app compatibility_ui_actions_keep_task_shortcuts_authoritative
+cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
-cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
-python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 ```
 

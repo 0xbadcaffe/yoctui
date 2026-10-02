@@ -1,4 +1,10 @@
-M114 current: DEMO-ERROR-RECOVERY-HINTS-001 IN_PROGRESS; UI fixtures paused.
+M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Errors recovery hints DONE v285.
+Workspace/Inspector advertise actual Alt+b, with concise same-action controls
+below70cells instead of trailing clipping. Every key/log route and explicit
+review/confirmation warning retained. External UI1 exhaustively80..200 plus
+ASCII/colorless/reduced-motion/minimum cases, existing failed recovery UI1/app
+route1 and strictUIClippy/fmt/UI/version/roadmap PASS. No new layout/action or
+live rebuild. Exact version/Errors golden refresh and full parent gates resume.
 Full v284 UI375/app250/model584 plus integrations1+5 PASS; six scoped exact
 golden families regenerated and reviewed after independently verified defects.
 Review finds Errors workspace/Inspector still advertises B despite existing

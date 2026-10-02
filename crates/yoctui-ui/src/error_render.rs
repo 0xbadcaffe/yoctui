@@ -420,9 +420,11 @@ pub(crate) fn render_correlated_error_log(
     );
     frame.render_widget(
         Paragraph::new(vec![
-            Line::from(
-                "Enter view source log · l matching live log · o external · B rebuild options",
-            ),
+            Line::from(if panes[1].width.saturating_sub(2) >= 70 {
+                "Alt+b rebuild options · Enter source log · l matching log · o external"
+            } else {
+                "Alt+b rebuild · Enter source · l match · o external"
+            }),
             Line::from("Rebuild: review + confirmation required."),
         ])
         .block(

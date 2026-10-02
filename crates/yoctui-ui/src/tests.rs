@@ -62,6 +62,7 @@ mod demo_dashboard_cache;
 mod demo_dashboard_exit;
 mod demo_dependency_verdict;
 mod demo_environment_controls;
+mod demo_error_recovery_hints;
 mod demo_sdk_rail;
 mod golden_support;
 use golden_support::*;

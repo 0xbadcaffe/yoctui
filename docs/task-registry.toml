@@ -83,7 +83,7 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3518
 required = true
 depends_on = ["DEMO-ERROR-RECOVERY-HINTS-001"]
@@ -226,12 +226,12 @@ notes = "DONE v283: current status/exact observed exit code share existing compa
 id = "DEMO-ERROR-RECOVERY-HINTS-001"
 milestone = "M114"
 title = "Advertise the existing modifier rebuild route in Errors recovery panes"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3532
 required = true
 depends_on = ["DEMO-DASHBOARD-EXIT-001"]
 verify = ["cargo test -p yoctui-ui demo_error_recovery_hints", "cargo test -p yoctui-ui concept_failed_build_composes", "cargo test -p yoctui-app compatibility_ui_actions_keep_task_shortcuts_authoritative", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Full UI375/app250/model584 verification and scoped golden review reveal existing Errors recovery workspace/Inspector hardcodes B rather than actual Alt+b route. Relevant error_render.rs/inspector_workspace/concept.rs, external narrow/wide/accessibility hint regression, existing failed recovery and typed app modifier/legacy route tests. Prioritize modifier hint within existing pane and retain Enter/l/o actions and review/confirmation warning; no new binding/layout/effect. Version/coherent focused commit before fixture acceptance; no weaker assertions or identity masks."
+notes = "DONE v285: actual Alt+b advertised in Errors workspace/Inspector, same Enter/l/o controls compact below70cells to avoid clipping trailing actions. External UI1 exhaustively80..200 plus minimum/ASCII/colorless/reduced-motion, existing failed recovery UI1/app route1 and strictUIClippy/fmt/UI/version/roadmap PASS. Same layout/keys/aliases/native protection; review/confirmation warnings retained. No live rebuild launched. Full fixture/identity/golden acceptance resumes separately."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

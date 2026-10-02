@@ -6403,7 +6403,11 @@ strings. Its wide inspector prioritizes selected facts/message and recovery.
 Errors recovery rails advertise the existing `Alt+b` rebuild-options route,
 not the legacy capital-only alias. Workspace recovery places this hint before
 longer log controls and uses bounded concise labels for the same Enter/l/o
-actions. The Inspector uses `[Alt+b] Rebuild options`; both retain the explicit
+actions: `Alt+b rebuild options · Enter source log · l matching log · o external`.
+When the rail interior is below70cells, these same actions compact to
+`Alt+b rebuild · Enter source · l match · o external`, retaining every key in
+the minimum supported recovery pane instead of clipping its trailing control.
+The Inspector uses `[Alt+b] Rebuild options`; both retain the explicit
 review-and-confirmation warning. No rebuild runs merely by rendering a hint.
 Smaller inspectors preserve the complete diagnostic-document fallback.
 

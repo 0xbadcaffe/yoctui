@@ -75,7 +75,7 @@ fn concept_error_inspector(frame: &mut Frame, app: &App, area: Rect) {
             Line::from("[o] Open source log"),
             Line::from("[s] Cycle severity filter"),
             Line::from("[f] Pause / follow logs"),
-            Line::from("[B] Rebuild options"),
+            Line::from("[Alt+b] Rebuild options"),
             Line::default(),
             Line::styled(
                 "Rebuild requires review and confirmation.",
