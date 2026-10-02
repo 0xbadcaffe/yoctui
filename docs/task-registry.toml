@@ -83,7 +83,7 @@ notes = "DONE: only18 external fixture files, no product/snapshot changes. Model
 id = "DEMO-UI-FIXTURES-001"
 milestone = "M114"
 title = "Reconcile UI fixtures and exact goldens after independently verified rendering polish"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3518
 required = true
 depends_on = ["DEMO-DEPENDENCY-VERDICT-001"]
@@ -160,12 +160,12 @@ notes = "DONE v277: compact typed action availability and detail state precede l
 id = "DEMO-DEPENDENCY-VERDICT-001"
 milestone = "M114"
 title = "Keep typed why-built verdict visible before lengthy dependency metadata"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3526
 required = true
 depends_on = ["DEMO-CONFIG-CONTROLS-001"]
 verify = ["cargo test -p yoctui-ui demo_dependency_verdict", "cargo test -p yoctui-ui ux_dependency_graph", "cargo test -p yoctui-model dependency_graph", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Actual baseline path-bounds assertion fails at80x24 with Inspector focus: existing 64-edge/4096-node typed LimitReached is below long provider/relationship detail and clipped in current five-row shell. Relevant dependency_render Inspector ordering and external root/reachable/unreachable/bounded/long-path tests. Promote existing why-built block immediately after selected identity/position, retaining every exact field/path/limitation and current layout/bounds. Correct existing task-log hint to Alt+l, no new scrolling/action/workflow or backend change. UI spec/version/coherent commit required; fixture reconciliation follows independently verified fix, not weaker bound assertion."
+notes = "DONE v278: existing why-built block follows identity/position before long metadata; every exact field/path/relationship/limitation retained, task-log hint Alt+l. New external UI2 root/reachable/unreachable/limit/long path and existing UI dependency3/model dependency9 PASS, strictUIClippy/fmt/UI/version/roadmap PASS. Limits64edges/4096nodes unchanged; unreachable fixture genuinely exhausts short graph instead of falsely claiming unreachable after bound. No new layout/action/scrolling/backend semantics. Full UI/current native optimized demo remain pending."
 
 [[task]]
 id = "DEMO-INTEGRATION-001"

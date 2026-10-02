@@ -2635,6 +2635,11 @@ selection says `root selected`; a disconnected node says `unreachable from
 root`; exhausting either bound says `path limit reached`. Cycles never repeat
 nodes or hang. Long identities, paths, and limitation text wrap or truncate
 within the active responsive pane.
+The why-built block follows root/selected identity and source position before
+provider/log paths, filter state and relationship lists. This preserves the
+typed root/unreachable/bounded verdict in a narrow focused Inspector even when
+metadata paths and relationships are lengthy. All detailed fields and complete
+bounded path text remain in the same projection; panes and actions do not change.
 
 Workspace shortcuts:
 
@@ -2642,7 +2647,7 @@ Workspace shortcuts:
 - `Enter`: open the selected node's owning recipe in Recipes when that exact
   recipe exists in the authoritative inventory
 - `o`: open only the selected node's absolute typed provider path
-- `L`: open only the selected task's absolute typed log path
+- `Alt+l`: open only the selected task's absolute typed log path
 - `r`: refresh the same typed graph root; when none is loaded, choose a recipe
   in an in-place picker and start that root
 - `←`/`→` or `h`/`l`: collapse or expand the selected identity
@@ -2655,7 +2660,7 @@ Workspace shortcuts:
 
 Missing inventory entries, provider paths, or task logs leave the action inert
 and show an exact notification. `o` never guesses a recipe file from layer
-layout, and `L` never searches console text. Recipe nodes may expose a provider
+layout, and `Alt+l` never searches console text. Recipe nodes may expose a provider
 but never a task log unless the backend explicitly supplies one.
 
 State presentation is explicit:

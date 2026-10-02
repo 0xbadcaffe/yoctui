@@ -1,32 +1,29 @@
 # Current Task
 
-**ID:** DEMO-DEPENDENCY-VERDICT-001
-**Title:** Keep typed why-built verdict visible before lengthy dependency metadata
+**ID:** DEMO-UI-FIXTURES-001
+**Title:** Reconcile UI fixtures and exact goldens after independently verified rendering polish
 **Status:** IN_PROGRESS
 
 Dependency DEMO-CONFIG-CONTROLS-001 DONE v277. Focused UI2 missing/loading/error/
 loaded/long/narrow80..240 and app config_workspace1 plus strictUIClippy/fmt/UI/
 version/roadmap PASS; compact typed actions/state precede long details, exact
 fields/reasons preserved. No new workflow/backend authority or accepted goldens.
-Current80x24 Inspector fails real path limit visibility: existing typed verdict
-is after provider/log/relationship detail. Promote why-built block after selected
-identity/position, preserving exact full fields/limitations and64-edge/4096-node
-bounds, existing panes/actions. Correct existing Alt+l hint; no new scroll
-workflow. Add external root/reachable/unreachable/bounded/long-path regressions,
-bump version/spec and focused verify, then resume external UI fixture task.
+Dependency DEMO-DEPENDENCY-VERDICT-001 DONE v278: why-built block follows selected
+identity/position before long metadata, existing Alt+l hint corrected. External
+UI2/root/reachable/unreachable/limit/longpath and existing UI3/model9, strictUI
+Clippy/fmt/UI/version/roadmap PASS;64/4096 limits/full fields preserved.
+Resume external UI fixtures/current typed positives and exact styled goldens.
+Every expectation must match current authoritative contract; retain negative/
+style/authority checks and split further real defects before product code.
 Parent still requires full UI PASS; no accepted goldens or removed assertions.
 User additionally requests GitHub CI repair after demo readiness; registry
 queues DEMO-GITHUB-CI-001 before immutable publication, with exact pushed-source
 required job success and no weakened gates. Current task remains UI fixtures.
 
 ```bash
-cargo test -p yoctui-ui demo_dependency_verdict
-cargo test -p yoctui-ui ux_dependency_graph
-cargo test -p yoctui-model dependency_graph
+cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
-cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
-python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 # Manual: exact current contract/typed fixture justification for every change.
 ```

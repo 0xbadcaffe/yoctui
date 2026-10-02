@@ -176,11 +176,12 @@ pub(crate) fn dependency_inspector(app: &App) -> String {
                     |index| format!("{} of {}", index + 1, graph.nodes.len()),
                 );
             format!(
-                "Root: {}\nSelected: {} ({})\nPosition: {}\nView: {}\nFilter: {}{}\nProvider: {}\nTask log: {}\n\nReverse / incoming:\n{}\n\nDependencies / outgoing:\n{}\n\nWhy built:\n{}\n\nLimitations:\n{}\n\nControls: arrows/jk navigate; left/right collapse/expand; space toggles; / filters; v reverses; Enter opens recipe; o opens provider; L opens task log.",
+                "Root: {}\nSelected: {} ({})\nPosition: {}\nWhy built:\n{}\n\nView: {}\nFilter: {}{}\nProvider: {}\nTask log: {}\n\nReverse / incoming:\n{}\n\nDependencies / outgoing:\n{}\n\nLimitations:\n{}\n\nControls: arrows/jk navigate; left/right collapse/expand; space toggles; / filters; v reverses; Enter opens recipe; o opens provider; Alt+l opens task log.",
                 dependency_identity_text(&graph.root),
                 dependency_identity_text(&node.id),
                 dependency_kind_text(&node.id),
                 position,
+                dependency_why_built(graph, &node.id),
                 if app.dependency_graph_reverse {
                     "reverse dependencies"
                 } else {
@@ -204,7 +205,6 @@ pub(crate) fn dependency_inspector(app: &App) -> String {
                     .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
                 dependency_edge_context(graph, &node.id, true),
                 dependency_edge_context(graph, &node.id, false),
-                dependency_why_built(graph, &node.id),
                 limitations,
             )
         }
