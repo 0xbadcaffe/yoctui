@@ -8,6 +8,11 @@ removed (~4.4GiB); this session's generated Cargo caches cleared after checks,
 both releases preserved. ~8.0GiB available; BUILD is now IN_PROGRESS for one
 explicit fresh daemon retry. QEMU/GDB NOT_STARTED; no image/vmlinux exists.
 Desktop indexing remains temporarily paused/private tags retained. No full suite.
+12:33UTC BUILD job3 is actually Running, not only accepted. Native start
+1790944300847ms; live UI3005/10994/two workers and Connected/full ZCU102; IPC3008,
+fetch_failed0, ~7.4GiB free. UI's6 errors are retained disk-guard diagnostics,
+not proof of current task failure; current terminal authority remains Running.
+Evidence image-retry-v268.txt; no image/boot/GDB certification.
 
 Historical implementation checkpoint: v0.1.268 subscribes/normalizes native DiskFull,
 latches it only during an active build and converts later native zero completion

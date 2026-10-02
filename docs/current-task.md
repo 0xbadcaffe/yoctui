@@ -21,8 +21,12 @@ checks; both releases retained/hash-verified. ~8.0GiB now free. Exact cleanup/
 restore evidence is storage-cleanup.txt. GNOME desktop index remains temporarily
 runtime-masked until storage permits restoration; private tag backup retained.
 
-Immediately request one fresh petalinux-image-minimal build through the existing
-isolated daemon, then preserve/monitor actual terminal outcome. Keep two workers,
+Fresh petalinux-image-minimal job3 is now RUNNING (accepted12:29UTC, native
+start1790944300847ms). Actual UI checkpoint3005/10994 and two workers; IPC3008
+at12:33:50UTC, no fetch failure. ~7.4GiB free. image-retry-v268.txt records
+genuine UI/hashes; its6 displayed errors are retained guard diagnostics, not
+observed current task failures. Do not submit another build or restart daemon.
+Preserve/monitor the actual terminal outcome. Keep two workers,
 rm_work exclusions and unchanged4GiB stop/1GiB halt guards. Do not duplicate or
 restart an active build. Done requires actual successful task completion,
 deployed ZCU102 rootfs/qemuboot/firmware/kernel and exact matching DWARF vmlinux/

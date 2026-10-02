@@ -1,0 +1,24 @@
+Real ZCU102 image retry — 2026-10-02 12:33 UTC, RUNNING not successful
+
+Same isolated Ubuntu24.04 private daemon0b20c2dd7719990023902d8d24d1ada8.
+Actual Yoctui build request accepted12:29UTC as job3, petalinux-image-minimal.
+Native build start1790944300847ms, same canonical ZCU102 workspace.
+Source-bound release0.1.268 built from ba76ae7aed30309a61f3c714cc6bcc4909cc8e8a:
+SHA256480b8cafc4e12d28c7585d5fed0b26714ec24089eca03166c472c94fca81f0ba.
+Source/kernel/debug/stamps retained; two workers/unchanged disk guards.
+
+Actual240x50 UI capture health/machine assertions PASS, Connected/Local,
+zynqmp-zcu102-sdt-full, BitBakeRunning, 3005/10994, Workers2.
+Active qemu-xilinx-native:do_compile PID1602114 and libcheck:do_configure
+PID1603235. UIWarnings5/Errors6 are retained prior guard diagnostics; no claim
+of zero displayed errors, nor current task failure from that historical count.
+Private logs/image-retry-v268.ansi SHA256
+f30ecd7567b1c9c737188294152ff26786c33c4f93e8d0d74eacf28be2a9b364
+Private logs/image-retry-v268.txt SHA256
+5ebbc7c5bad12109b76e203eca090009d22608063bcb0bd3a8fe5836b4bd8df4
+
+Read-only framed IPC12:33:50UTC sequence22647: job3Running, progress3008/10994;
+fetch_completed2/fetch_failed0, setscene_completed24/failed0.
+Current libcheck configure/compile/install succeeded; do_package active.
+~7.4GiB available. No new image, matching vmlinux, QEMU boot or live GDB yet.
+Preserve active build and monitor native terminal authority; no duplicate request.
