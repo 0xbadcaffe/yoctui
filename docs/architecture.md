@@ -5008,6 +5008,8 @@ unchanged.
 The daemon owns a separate cancellable, bounded backend capability recovery
 worker. It reuses the validated current environment and probes the bundled
 bridge, not the full tool-help catalog. Exact build-directory and BitBake-version
+An explicit bridge override suppresses this bundled recovery worker; startup
+diagnostics must distinguish that limitation from a normally scheduled retry.
 checks apply to every report. Only backend capability records are resolved from
 that report; other records remain unchanged. A new generation invalidates stale
 client authority. Failed attempts leave capability authority unchanged and retry

@@ -1,4 +1,14 @@
 M114 current: DEMO-INTEGRATION-001 IN_PROGRESS; startup navigation DONE v287.
+Current integration candidate288: CLI380PASS/5ignored, timed reattachment1PASS
+2.83seconds and daemon5PASS/1stale failure. Failed API discovery now installs
+typed Unknown authority; invalid profile remains separate missing-authority
+failure. Existing explicit custom bridge guard suppresses recovery but startup
+log incorrectly promises retry: clarify diagnostic within this atomic daemon
+integration outcome before source; guard/policy stays unchanged, both branches
+and disabled Unknown/no implementation remain covered. No budget increases.
+Reclaimed108 obsolete own generated workspace libraries1600222317B before v286
+commit cutoff from exact temporary Cargo cache, no active compiler references;
+sources/images/symbols/installed tools untouched, Cargo can regenerate them.
 Pure model restoration synchronizes saved screen, first catalog destination and
 Navigator focus; CLI selects configured saved/default Dashboard or unconfigured
 Build Environment before onboarding, without routing/discarding backend effects.

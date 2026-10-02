@@ -14,6 +14,13 @@ Repair exact positive fixtures: selected BuildOptions image, rootfs owning recip
 initialized failed-probe profile. Timing diagnosis proves two captures PASS with
 current offered protocol and graphics-none test override within unchanged8second
 deadline/1.2second stability. Preserve product handoff and authority failures.
+Current v288 CLI380PASS/5ignored and timing1PASS2.83seconds; initialized failed
+API fixture now proves a typed Unknown compatibility snapshot, not missing
+authority. The existing BackendRecovery explicitly suppresses retries for custom
+bridge overrides, while its startup log falsely promises a retry. Correct that
+diagnostic in this same daemon integration outcome; retain the recovery guard,
+test both message branches, typed Unknown disabled/no implementation and separate
+invalid-profile missing-authority failure. No retry scheduling/policy change.
 Git watcher passes current full run; reproduce the older flake before any adapter
 change. Re-run full CLI/bridge, strict CLI lint and timing; no timeout increase.
 Then source/library hygiene, full suite/docs/native reboot-ready OpenBMC/QEMU/GDB,
