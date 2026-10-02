@@ -11,6 +11,8 @@ columns; absent is none, offline is unavailable, never inferred from history.
 Narrow52x16 subtree checked without violating passive Dashboard focus;80x24
 full shell stays Navigator-only per current layout contract.
 All four real remaining defects are independently verified. Resume external
+Menu group prose reconciled before fixtures: the authoritative existing typed
+catalog has eight groups, not the historical six-group concept reference.
 UI fixture reconciliation: current typed navigator/positive selected targets,
 modifiers, five-row header, bounded visible panes and current authority facts.
 Preserve every negative/semantic/style assertion and exact identity. Review

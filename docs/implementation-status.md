@@ -1,4 +1,6 @@
 M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Dashboard exit DONE v283.
+Governance reconciles stale six-group concept prose with existing eight typed
+menu groups before fixture/golden acceptance; no renderer/key/action changes.
 Current status/exact code visible in existing compact overview; redundant label
 yields to complete outcome, fallback prioritizes outcome before long target.
 Missing code is none; offline current code unavailable, never derived from

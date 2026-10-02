@@ -6577,7 +6577,10 @@ while Yoctui's Ctrl+B prefix retains session navigation. Missing GitUI has an
 explicit install-and-restart reason. Staging, commits and remote operations
 are initiated by the user in GitUI.
 
-M68 application menus use the anchored six-group concept layout from 80×24
+M68 application menus use the anchored concept layout from 80×24
+with the existing eight typed groups in order: Workspace, Build, Actions,
+Navigate, View, Devtool, Tools, Help. Earlier six-group reference captures are
+historical, not authority for removing existing menu destinations. The layout
 through wide terminals. The selected action's unavailable reason occupies the
 second menu row when no type-ahead query is active. Arrow keys select groups and
 items, Enter activates, and Esc/F12 closes. Mouse clicks select group tabs or
