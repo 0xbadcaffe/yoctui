@@ -182,18 +182,18 @@ notes = "DONE v279: shared typed full/compact detail formatter removes duplicate
 id = "DEMO-ENV-CONTROLS-001"
 milestone = "M114"
 title = "Keep existing Build Environment and project profile controls visible and truthful"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3528
 required = true
 depends_on = ["DEMO-CONFIG-DETAILS-001"]
 verify = ["cargo test -p yoctui-ui demo_environment_controls", "cargo test -p yoctui-ui project_profile_renders_team", "cargo test -p yoctui-app project_profile_input", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "UI iteration357PASS/10fail leaves four actual defects before six golden comparisons. Build Environment profile p preview/open is below80x24 viewport; existing hints still A/V/N instead of Alt+a/Alt+v/Alt+n. Relevant history_render Build Environment typed paragraph, external state/long/narrow and existing project profile tests. Promote existing controls before long status/images/profile detail and avoid duplicate title; preserve all fields/current pane, no new workflow/actions/backend mutation. Spec/version/coherent focused commit required."
+notes = "DONE v280: configure/browse/Alt+a/clone/Alt+v and n/Alt+n/p controls precede long typed detail; duplicate body title/excess blank rows removed, full facts retained. External UI2 covers all five environment phases/long paths/error and missing/absent/invalid/loaded project profiles at80..200; existing profile UI1/app input1 PASS. StrictUIClippy/fmt/UI/version/roadmap PASS. No pane/action/backend change or accepted goldens; remaining SDK/cache/exit children precede full fixture review."
 
 [[task]]
 id = "DEMO-SDK-RAIL-001"
 milestone = "M114"
 title = "Fit complete existing SDK narrow shortcut tokens and retain cancellation hint"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3529
 required = true
 depends_on = ["DEMO-ENV-CONTROLS-001"]

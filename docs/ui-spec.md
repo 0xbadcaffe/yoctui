@@ -4515,8 +4515,15 @@ or Up/Down selects a row; `e`/Enter edits its plain path (no TOML or vi mode
 required), `b` browses Source/Build, `s` saves the profile, and Esc cancels all
 draft changes. Manual entry accepts literal path characters and paste; Enter
 accepts the value, Esc discards it, and Ctrl-U clears it. The advanced TOML
-profile editor remains available with `A` from the workspace (`a` retains
+profile editor remains available with `Alt+a` from the workspace (`a` retains
 the global contextual-actions menu).
+The existing configure/browse, `Alt+a` advanced editor, `c` clone, `Alt+v`
+verification and `n`/`Alt+n` profile-selection / `p` preview controls precede
+long status, available-image and project-profile detail in the same pane.
+The body does not duplicate its border title or insert blank separators that
+hide those controls at80x24. All typed environment/profile facts remain in
+the projection; long facts may wrap within the existing viewport. Legacy
+capital aliases remain accepted but are not advertised as required keys.
 
 The local directory browser shows the current absolute directory and sorted
 child directories only, including hidden folders. Mouse wheel follows the same

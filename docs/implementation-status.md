@@ -1,4 +1,8 @@
-M114 current: DEMO-ENV-CONTROLS-001 IN_PROGRESS; Configuration detail DONE v279.
+M114 current: DEMO-SDK-RAIL-001 IN_PROGRESS; Environment controls DONE v280.
+Existing controls/modifier hints precede long status/images/profile facts,
+duplicate title/blanks removed. External UI2 across80..200/all environment and
+profile states, existing profile UI1/app1, strictUIClippy/fmt/UI/version/roadmap
+PASS. No layout/action/backend changes or accepted goldens; SDK rail next.
 Full UI357PASS/10fail: six still-unaccepted goldens and four true defects split
 before source: Build Environment controls/modifier hints, complete SDK narrow
 cancel rail, missing typed Dashboard cache/policy facts and current exit code.

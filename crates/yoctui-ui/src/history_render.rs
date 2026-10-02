@@ -27,9 +27,9 @@ pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Re
         draft.field, draft.source, draft.build, draft.script
     )).unwrap_or_default();
     let images = if app.build_environment.connected() && !app.available_images.is_empty() {
-        format!("\n\navailable images:\n{}", app.available_images.join("\n"))
+        format!("\navailable images:\n{}", app.available_images.join("\n"))
     } else {
-        "\n\navailable images: locked until BitBake verification succeeds.".into()
+        "\navailable images: locked until BitBake verification succeeds.".into()
     };
     let profile = match &app.project_profile {
         yoctui_model::ProjectProfileState::NotLoaded => "Project profile: not inspected".to_owned(),
@@ -72,7 +72,7 @@ pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Re
         }
     };
     let text = format!(
-        "Build environment\n\nEnter/e Configure paths  |  b Browse directories\nA Advanced TOML  |  c Clone Poky  |  V Initialize and verify\n\n{status}{draft}{images}\n\n{profile}\n\nN/n profile item | p preview/open."
+        "Enter/e Configure paths  |  b Browse directories\nAlt+a Advanced TOML  |  c Clone Poky  |  Alt+v Verify BitBake\nn/Alt+n profile item  |  p preview/open\n\n{status}{draft}{images}\n{profile}"
     );
     frame.render_widget(
         Paragraph::new(text)

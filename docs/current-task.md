@@ -1,49 +1,33 @@
 # Current Task
 
-**ID:** DEMO-ENV-CONTROLS-001
-**Title:** Keep existing Build Environment and project profile controls visible and truthful
+**ID:** DEMO-SDK-RAIL-001
+**Title:** Fit complete existing SDK narrow shortcut tokens and retain cancellation hint
 **Status:** IN_PROGRESS
 
-Dependency DEMO-CONFIG-CONTROLS-001 DONE v277. Focused UI2 missing/loading/error/
-loaded/long/narrow80..240 and app config_workspace1 plus strictUIClippy/fmt/UI/
-version/roadmap PASS; compact typed actions/state precede long details, exact
-fields/reasons preserved. No new workflow/backend authority or accepted goldens.
-Dependency DEMO-DEPENDENCY-VERDICT-001 DONE v278: why-built block follows selected
-identity/position before long metadata, existing Alt+l hint corrected. External
-UI2/root/reachable/unreachable/limit/longpath and existing UI3/model17, strictUI
-Clippy/fmt/UI/version/roadmap PASS;64/4096 limits/full fields preserved.
-Dependency DEMO-CONFIG-DETAILS-001 DONE v279: typed compact/full detail removes
-duplicate identity/blank rows and joins Operations label with first operation;
-global-only scope honest. New external UI2/unchanged controls2/existing provenance/
-lazy/scope3 plus strictUIClippy/fmt/UI/version/roadmap PASS. Full fields/reasons/
-panes unchanged. Full UI fixture iteration357PASS/10fail: six untouched golden
-comparisons and four real defects, split before source. Current Build Environment
-profile p preview/open clips below80x24 and A/V/N hints disagree with existing
-Alt+a/v/n routes. Promote controls before long status/images/profile detail,
-remove duplicate body title and preserve every field/pane/action/authority.
-External missing/loaded/invalid/verifying/error/long/narrow regressions plus
-existing project-profile proof, spec/version/coherent focused commit required.
-Then SDK complete narrow rail, typed cache facts and observed Dashboard exit;
-only after independent fixes resume fixture/golden review.
-Parent still requires full UI PASS; no accepted goldens or removed assertions.
-Governance reconciliation: earlier canonical160x48 table incorrectly retained
-42body rows plus3row Footer at y47 after the five-row Header update. Current
-contract is40body rows and Footer y45; existing allocations unchanged. Reviewed
-semantic/geometry fixtures must precede any corresponding exact golden refresh.
-User additionally requests GitHub CI repair after demo readiness; registry
-queues DEMO-GITHUB-CI-001 before immutable publication, with exact pushed-source
-required job success and no weakened gates. Current task remains UI fixtures.
+Dependency DEMO-ENV-CONTROLS-001 DONE v280. UI2 all environment/profile states
+and long/narrow80..200, existing profile UI1/app1, strictUIClippy/fmt/UI/version/
+roadmap PASS; same panes/actions/backend and every detailed field retained.
+Current SDK compound rail85cells exceeds78cell minimum footer interior, clipping
+c:cancel. Narrow modifier compound hints also overflow at92..101 terminals.
+Prioritize existing image/SDK/selftest/cancel, fit optional scan/publish/native/
+open only as complete cell-safe tokens; wider rail also prioritizes cancel.
+Preserve aliases/authority/key routes and general telemetry/layout/other screens.
+Add external80..200/full/very-small-width regressions, spec/version/coherent
+focused commit, then typed Dashboard cache and observed exit children.
+UI fixture changes remain separate; no six golden comparisons accepted.
+User additionally requires plain native laptop attach, reboot/login-ready
+durable setup and exact-source green GitHub CI after demo readiness. Real
+reboot requires coordination and cannot be certified by cold restart alone.
 
 ```bash
-cargo test -p yoctui-ui demo_environment_controls
-cargo test -p yoctui-ui project_profile_renders_team
-cargo test -p yoctui-app project_profile_input
+cargo test -p yoctui-ui demo_sdk_rail
+cargo test -p yoctui-ui sdk_workflow
+cargo test -p yoctui-app sdk
 cargo fmt --all --check
 cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
 python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
-# Manual: exact current contract/typed fixture justification for every change.
 ```
 
 Completed local polling fix: source040a23d0/v270 exact optimized49f75463 release,
