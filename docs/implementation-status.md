@@ -1,4 +1,9 @@
-M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Configuration detail DONE v279.
+M114 current: DEMO-ENV-CONTROLS-001 IN_PROGRESS; Configuration detail DONE v279.
+Full UI357PASS/10fail: six still-unaccepted goldens and four true defects split
+before source: Build Environment controls/modifier hints, complete SDK narrow
+cancel rail, missing typed Dashboard cache/policy facts and current exit code.
+Other semantic/negative/style assertions remain; scope/layout budget corrections
+and typed positive fixture states recorded separately, not blanket acceptance.
 Typed shared compact/full formatting removes duplicate identity/blank rows,
 joins Operations label with first operation and states global-only scope honestly.
 New UI2 plus unchanged v277 controls2/provenance/lazy/scope3, strictUIClippy/fmt/
