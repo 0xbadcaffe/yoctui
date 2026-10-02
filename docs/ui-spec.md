@@ -6335,6 +6335,13 @@ their title and separator; a prefix rail appears below PTYs when body height is
 at least 30 rows. Retained PTY replicas always say read-only, even if a cached
 lease still names this client.
 
+The existing Image build options popup reserves all ten content rows, including
+its Escape control, inside a bounded twelve-row border. Devtool SSH/SCP draft
+and confirmation popups use bounded twelve-/fourteen-row borders respectively,
+with their existing Enter/Escape hints in a reserved final interior row. Wrapped
+provider/target text must not displace those controls. Capability status and
+confirmation gating remain unchanged; rendering starts no deployment or build.
+
 ## 46. Device-tree source and compiler workflow
 
 DTS and DTSI files opened from either platform workbench use the shared in-app

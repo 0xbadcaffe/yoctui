@@ -21,12 +21,7 @@ fn render_setup_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
             .get("MACHINE")
             .map_or("unknown", String::as_str);
         let width = area.width.saturating_sub(12).clamp(38, 84);
-        let popup = Rect::new(
-            (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(11) / 2,
-            width,
-            11,
-        );
+        let popup = dialog_popup_rect(area, width, 12);
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(

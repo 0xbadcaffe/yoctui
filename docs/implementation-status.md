@@ -1,4 +1,7 @@
-M114 current: DEMO-DIALOG-CONTROLS-001 IN_PROGRESS; Dashboard hints DONE v273.
+M114 current: DEMO-EDITOR-HINTS-001 IN_PROGRESS; dialog controls DONE v274.
+BuildOptions12rows and existing Devtool draft12/confirmation14 retain controls;
+wrapped deployment paths cannot displace reserved Enter/Escape hints. External
+UI3/app16/strictUIClippy/fmt/UI/version/roadmap PASS, no native action launched.
 Connected/offline Quick Actions/Inspector, empty history and common actions
 now use existing Alt+b/e/m routes, retaining t/F3. TestBackend2/app1/strictUI
 Clippy/fmt/UI/version/roadmap PASS. Current optimized live rehearsal still pending.

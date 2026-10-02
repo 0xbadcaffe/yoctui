@@ -17,4 +17,6 @@ include!("render/dtc_decompile_dialog.rs");
 
 include!("render/development_dialogs.rs");
 
+include!("render/deployment_dialogs.rs");
+
 include!("render/setup_dialogs.rs");

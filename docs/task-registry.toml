@@ -116,18 +116,18 @@ notes = "DONE v273: Dashboard connected/offline Quick Actions, Inspector, empty 
 id = "DEMO-DIALOG-CONTROLS-001"
 milestone = "M114"
 title = "Retain complete existing build and Devtool dialog controls within bounded popup geometry"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3520
 required = true
 depends_on = ["DEMO-DASHBOARD-HINTS-001"]
 verify = ["cargo test -p yoctui-ui demo_dialog_controls", "cargo test -p yoctui-app mouse_runtime_routes_dialog", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Confirmed BuildOptions renders ten content lines into nine-row interior, hiding Escape hint. Investigate narrow Devtool deploy controls before changing that renderer. Existing bounded geometry/confirmation authority only; no new dialogs/layouts/actions. External normal/narrow/authority-failure regressions and mapped current contract required."
+notes = "DONE v274: bounded BuildOptions12rows retains ten content rows including Escape; existing SSH/SCP draft12/confirmation14 reserve final hint row independent of wrapped paths/targets. Typed rendering helper extracted, development_dialogs now below500lines. External UI3 normal/narrow/long-values/unknown-authority tests at80/100/160/200 and existing app dialog/mouse16 PASS; strictUIClippy/fmt/UI/version/roadmap PASS. No build/deployment or authority change. Historical Devtool-title assertions are stale fixtures, not product reversion."
 
 [[task]]
 id = "DEMO-EDITOR-HINTS-001"
 milestone = "M114"
 title = "Prioritize existing save build and file-tree controls in editor action rail"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3521
 required = true
 depends_on = ["DEMO-DIALOG-CONTROLS-001"]

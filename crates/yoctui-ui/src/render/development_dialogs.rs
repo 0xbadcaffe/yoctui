@@ -1,4 +1,7 @@
 fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
+    if render_deployment_dialogs(frame, app, area) {
+        return true;
+    }
     if render_yocto_utility_dialog(frame, app, area) {
         return true;
     }
@@ -319,57 +322,6 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
                 DialogTone::Destructive,
             ))
             .wrap(Wrap { trim: true }),
-            popup,
-        );
-        return true;
-    } else if let Some(Dialog::DevtoolDeployConfirmation(plan)) = app.active_dialog() {
-        let width = area.width.saturating_sub(8).clamp(44, 100);
-        let popup = Rect::new(
-            (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(8) / 2,
-            width,
-            8,
-        );
-        clear_popup(frame, app, popup);
-        frame.render_widget(
-            Paragraph::new(format!(
-                "Deploy the built install tree with Devtool's SSH/SCP transport?\n\nCommand: `devtool deploy-target {} {}`\nProvider: {}\nTarget: {}\n\nEnter continues; Esc cancels.",
-                plan.identity.name,
-                plan.target,
-                plan.identity.file.display(),
-                plan.target
-            ))
-            .block(dialog_block(
-                app,
-                "Confirm SSH/SCP deployment",
-                DialogTone::Confirmation,
-            ))
-            .wrap(Wrap { trim: true }),
-            popup,
-        );
-        return true;
-    } else if let Some(Dialog::DevtoolDeploy(draft)) = app.active_dialog() {
-        let width = area.width.saturating_sub(12).clamp(44, 100);
-        let popup = Rect::new(
-            (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(8) / 2,
-            width,
-            8,
-        );
-        clear_popup(frame, app, popup);
-        frame.render_widget(
-            Paragraph::new(format!(
-                "Recipe: {}\nProvider: {}\nSSH target: {}_\n\nDevtool deploys the built install tree with SSH/SCP.\nEnter previews the command; Esc cancels.",
-                draft.identity.name,
-                draft.identity.file.display(),
-                draft.target
-            ))
-            .block(dialog_block(
-                app,
-                "Deploy build with SSH/SCP",
-                DialogTone::Standard,
-            ))
-            .wrap(Wrap { trim: false }),
             popup,
         );
         return true;

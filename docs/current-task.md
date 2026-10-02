@@ -1,21 +1,22 @@
 # Current Task
 
-**ID:** DEMO-DIALOG-CONTROLS-001
-**Title:** Retain complete existing build and Devtool dialog controls within bounded popup geometry
+**ID:** DEMO-EDITOR-HINTS-001
+**Title:** Prioritize existing save build and file-tree controls in editor action rail
 **Status:** IN_PROGRESS
 
-Dependency DEMO-DASHBOARD-HINTS-001 DONE v273: UI2/app1/strictUIClippy/fmt/UI/
-version/roadmap PASS. BuildOptions renders ten content rows into nine interior
-rows; Escape is genuinely hidden at every supported size. Correct bounded
-popup height and add external normal/narrow/authority-failure regressions.
-Devtool deploy confirmation similarly uses eight content rows in six interior
-rows plus wrapping; inspect exact current title/control contract before code.
-No new dialogs/actions/layouts, no remote deployment performed. UI fixtures/
-goldens follow separately; next editor action-rail child is independent.
+Dependency DEMO-DIALOG-CONTROLS-001 DONE v274: UI3/app16/strictUIClippy/fmt/UI/
+version/roadmap PASS. Existing integrated editor one-row rail truncates Ctrl+S
+and omits build/file-tree hints. Current spec requires these reachable routes,
+plus existing Ctrl+F/Alt+f/Alt+g. Preserve editor modes/document/focus/typed
+actions; allocate bounded action hints below document and prioritize current
+save/build/navigation without capital-only shortcuts. Add external tests at
+80/100/160/200, file/document/Normal/Insert/Visual, existing search/Git/viewport
+regressions, bump version/UI spec. No new workflows or native build/save run.
+UI fixture/golden child follows; no blanket acceptance of remaining failures.
 
 ```bash
-cargo test -p yoctui-ui demo_dialog_controls
-cargo test -p yoctui-app mouse_runtime_routes_dialog
+cargo test -p yoctui-ui demo_editor_hints
+cargo test -p yoctui-ui devtool_editor
 cargo fmt --all --check
 cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
