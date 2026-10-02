@@ -73,6 +73,7 @@ fn action(app: &App, input: Input) -> Option<A> {
                         matches!(
                             field,
                             yoctui_model::KernelDebugField::Destination
+                                | yoctui_model::KernelDebugField::QemuBootMode
                                 | yoctui_model::KernelDebugField::InstrumentationPreset
                         )
                     }) =>

@@ -173,7 +173,7 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
                 rows[2],
             );
             frame.render_widget(Paragraph::new(status).wrap(Wrap { trim: false }), rows[3]);
-            frame.render_widget(Paragraph::new("Tab/↑/↓ field · ←/→/Space scope · type · Ctrl+U clear · PgUp/Dn guide\nEnter review exact launch · Esc cancel without spawning").wrap(Wrap { trim: false }), rows[4]);
+            frame.render_widget(Paragraph::new("Tab/↑/↓ field · ←/→/Space scope/boot mode · type · Ctrl+U clear · PgUp/Dn guide\nEnter review exact launch · Esc cancel without spawning").wrap(Wrap { trim: false }), rows[4]);
         }
         return true;
     }
@@ -204,6 +204,7 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
         dialog.request.program.display()
     ))];
     if let Some(spec) = &app.kernel_debug.qemu_preview {
+        lines.push(Line::from(format!("Boot mode: {}", spec.boot_mode.label())));
         lines.push(Line::from(format!(
             "Selected rootfs source: {}",
             spec.rootfs.display()
@@ -211,9 +212,21 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
         lines.push(Line::from(
             "Runtime socket/log path: PRIVATE_SESSION is a placeholder allocated ONLY on launch.",
         ));
-        lines.push(Line::from(
-            "QEMU: snapshot/nonetwork, paused CPUs (-S), nokaslr; quit stops owned guest.",
-        ));
+        if spec.boot_mode == yoctui_model::QemuDebugBootMode::OpenBmcRomulusFlash {
+            lines.push(Line::from(format!(
+                "Reference kernel (NOT a launch argument): {}",
+                spec.kernel.display()
+            )));
+            lines.push(Line::from(
+                "FLASH: private copy, snapshot/nonetwork, paused CPUs; no nokaslr injection.",
+            ));
+            lines.push(Line::from("Use hbreak start_kernel before firmware/MMU handoff; symbols must match flash kernel."));
+            lines.push(Line::from("Quit stops owned guest; original flash stays unchanged. Relocation handling is manual."));
+        } else {
+            lines.push(Line::from(
+                "QEMU: snapshot/nonetwork, paused CPUs (-S), nokaslr; quit stops owned guest.",
+            ));
+        }
         for (name, program, arguments) in [
             (
                 "QEMU child",

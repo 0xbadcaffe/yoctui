@@ -1,9 +1,15 @@
 M113 selected by user: set ZCU102 aside/preserve its work, finish the emulated
 OpenBMC/QEMU debug path and save real boot/debug screenshots for presentation.
-OPENBMC-QEMU-GDB-FLASH-001 is current IN_PROGRESS; live acceptance follows.
+OPENBMC-QEMU-GDB-FLASH-001 remains IN_PROGRESS pending the source-bound release;
+the closed mode, exact ARM/config/32-MiB preflight, private bounded copy, review
+and unchanged default route are implemented in v0.1.269. Focused checks pass:
+model debug3/kernel17, app7, UI7, CLI managed11/preparation7, normal-QEMU model22/
+UI5, serial4 (private subprocess entrypoint ignored). Workspace all-target
+all-feature strict Clippy, fmt, UI/version/roadmap gates pass; no full suite.
+Real OpenBMC acceptance follows; no live success is claimed by these checks.
 Romulus deployed static.mtd/qemuboot and matching ARM DWARF vmlinux exist.
-Current managed debug preflight rejects its qb_default_kernel=none, so a closed
-explicit flash mode with private staging is needed before genuine acceptance.
+The retained flash qb_default_kernel=none now has an explicit supported mode
+with private staging; it is never silently routed through direct-kernel boot.
 Separate validation container/daemon; no AMD build retry or deletion. Screenshot
 assets and presentation changes stay outside Git above project. Full suite deferred.
 

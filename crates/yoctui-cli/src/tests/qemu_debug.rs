@@ -27,6 +27,7 @@ fn fixture() -> (TestDir, QemuDebugSpec) {
     let root = TestDir::new();
     let path = root.path();
     let spec = QemuDebugSpec {
+        boot_mode: yoctui_model::QemuDebugBootMode::DirectKernel,
         runqemu: std::env::current_exe().unwrap(),
         gdb: std::env::current_exe().unwrap(),
         build_dir: path.into(),
@@ -62,6 +63,73 @@ fn elf() -> Vec<u8> {
     bytes[256..260].copy_from_slice(&19_u32.to_le_bytes());
     bytes.extend(strings);
     bytes
+}
+
+const FLASH_CONFIG: &str = "[config_bsp]\nqb_system_name=qemu-system-arm\nqb_default_kernel=none\nqb_machine=-machine romulus-bmc\nqb_default_fstype=static.mtd\nqb_rootfs_opt=-drive file=@ROOTFS@,if=mtd,format=raw\n";
+
+fn arm_elf() -> Vec<u8> {
+    let mut bytes = vec![0; 64 + 4 * 40];
+    bytes[..6].copy_from_slice(b"\x7fELF\x01\x01");
+    bytes[18..20].copy_from_slice(&40_u16.to_le_bytes());
+    bytes[32..36].copy_from_slice(&64_u32.to_le_bytes());
+    bytes[46..48].copy_from_slice(&40_u16.to_le_bytes());
+    bytes[48..50].copy_from_slice(&4_u16.to_le_bytes());
+    bytes[50..52].copy_from_slice(&1_u16.to_le_bytes());
+    let strings = b"\0.shstrtab\0.symtab\0.debug_info\0";
+    bytes[104..108].copy_from_slice(&1_u32.to_le_bytes());
+    bytes[120..124].copy_from_slice(&224_u32.to_le_bytes());
+    bytes[124..128].copy_from_slice(&(strings.len() as u32).to_le_bytes());
+    bytes[144..148].copy_from_slice(&11_u32.to_le_bytes());
+    bytes[184..188].copy_from_slice(&19_u32.to_le_bytes());
+    bytes.extend(strings);
+    bytes
+}
+
+#[test]
+fn qemu_debug_flash_preflight_requires_closed_romulus_config_arm_and_full_flash() {
+    let (_root, mut spec) = fixture();
+    spec.boot_mode = yoctui_model::QemuDebugBootMode::OpenBmcRomulusFlash;
+    fs::remove_file(&spec.rootfs).unwrap();
+    spec.rootfs = spec.build_dir.join("romulus.static.mtd");
+    fs::File::create(&spec.rootfs)
+        .unwrap()
+        .set_len(32 * 1024 * 1024)
+        .unwrap();
+    let symbols = arm_elf();
+    fs::write(&spec.symbols, &symbols).unwrap();
+    fs::write(&spec.qemuboot, FLASH_CONFIG).unwrap();
+    validate_files(&spec).unwrap();
+    for (from, to) in [
+        ("romulus-bmc", "ast2600-evb"),
+        ("qemu-system-arm", "qemu-system-amd-fpga-multiarch"),
+        ("static.mtd", "ext4"),
+        ("qb_default_kernel=none", "qb_default_kernel=zImage"),
+        ("if=mtd", "if=virtio"),
+        (
+            "qb_system_name=qemu-system-arm",
+            "qb_system_name=qemu-system-arm\nqb_system_name=qemu-system-arm",
+        ),
+        ("[config_bsp]", "[other]"),
+    ] {
+        fs::write(&spec.qemuboot, FLASH_CONFIG.replace(from, to)).unwrap();
+        assert!(validate_files(&spec).is_err(), "{from} -> {to}");
+    }
+    fs::write(&spec.qemuboot, FLASH_CONFIG).unwrap();
+    for index in [4, 5, 18] {
+        let mut bad = symbols.clone();
+        bad[index] = 2;
+        fs::write(&spec.symbols, bad).unwrap();
+        assert!(validate_files(&spec).is_err());
+    }
+    fs::write(&spec.symbols, symbols).unwrap();
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&spec.rootfs)
+        .unwrap()
+        .set_len(64)
+        .unwrap();
+    assert!(validate_files(&spec).is_err());
+    assert_eq!(fs::read_to_string(&spec.qemuboot).unwrap(), FLASH_CONFIG);
 }
 
 #[test]
@@ -179,6 +247,33 @@ async fn qemu_debug_fake_session_success_failure_cancel_cleanup_and_log_cap() {
         })
         .await
         .unwrap();
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[tokio::test]
+async fn qemu_debug_flash_fake_session_cleans_copy_and_owned_child_not_source() {
+    for body in ["sleep 0.2; exit 0", "exit 7"] {
+        let (_root, mut spec) = fixture();
+        spec.boot_mode = yoctui_model::QemuDebugBootMode::OpenBmcRomulusFlash;
+        spec.rootfs = spec.build_dir.join("romulus.static.mtd");
+        fs::File::create(&spec.rootfs)
+            .unwrap()
+            .set_len(32 * 1024 * 1024)
+            .unwrap();
+        fake_tools(&mut spec, body);
+        let result = runtime::run(&spec).await;
+        assert_eq!(result.is_ok(), body.ends_with("exit 0"));
+        let pid: i32 = fs::read_to_string(spec.build_dir.join("owned.pid"))
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert!(
+            unsafe { libc::kill(pid, 0) } != 0
+                || fs::read_to_string(format!("/proc/{pid}/stat"))
+                    .is_ok_and(|text| text.contains(") Z "))
+        );
+        assert_eq!(fs::metadata(&spec.rootfs).unwrap().len(), 32 * 1024 * 1024);
     }
 }
 

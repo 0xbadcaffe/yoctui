@@ -277,6 +277,13 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
                 dialog.draft.ssh = !dialog.draft.ssh;
                 dialog.selection = 0;
             }
+            A::ChangeScope if field == Some(KernelDebugField::QemuBootMode) => {
+                use crate::QemuDebugBootMode as Mode;
+                dialog.draft.qemu.boot_mode = match dialog.draft.qemu.boot_mode {
+                    Mode::DirectKernel => Mode::OpenBmcRomulusFlash,
+                    Mode::OpenBmcRomulusFlash => Mode::DirectKernel,
+                };
+            }
             A::Insert(text) => {
                 if let Some(value) = field.and_then(|field| dialog.draft.value_mut(field)) {
                     if text.chars().any(char::is_control)

@@ -28,11 +28,21 @@ pub(crate) fn validate_files(spec: &QemuDebugSpec) -> Result<()> {
             );
         }
     }
-    validate_qemuboot(&spec.qemuboot)?;
+    validate_qemuboot(&spec.qemuboot, spec.boot_mode)?;
+    if spec.boot_mode == yoctui_model::QemuDebugBootMode::OpenBmcRomulusFlash {
+        if fs::metadata(&spec.rootfs)?.len() != 32 * 1024 * 1024 {
+            bail!("Romulus flash must be the complete 32-MiB static.mtd image");
+        }
+        let mut header = [0_u8; 20];
+        File::open(&spec.symbols)?.read_exact(&mut header)?;
+        if header[4] != 1 || header[5] != 1 || header[18..20] != [40, 0] {
+            bail!("Romulus flash requires matching little-endian 32-bit ARM vmlinux");
+        }
+    }
     validate_symbols(&spec.symbols)
 }
 
-fn validate_qemuboot(path: &Path) -> Result<()> {
+fn validate_qemuboot(path: &Path, mode: yoctui_model::QemuDebugBootMode) -> Result<()> {
     let mut text = String::new();
     File::open(path)?
         .take(128 * 1024 + 1)
@@ -41,21 +51,27 @@ fn validate_qemuboot(path: &Path) -> Result<()> {
         bail!("qemuboot configuration exceeds 128 KiB");
     }
     let mut section = false;
-    let mut system = None;
-    let mut kernel = None;
+    let mut values = std::collections::BTreeMap::new();
     for line in text.lines().map(str::trim) {
         if line.starts_with('[') {
             section = line.eq_ignore_ascii_case("[config_bsp]");
         }
         if section && let Some((name, value)) = line.split_once('=') {
-            match name.trim() {
-                "qb_system_name" => system = Some(value.trim()),
-                "qb_default_kernel" => kernel = Some(value.trim()),
-                _ => {}
+            let name = name.trim();
+            if matches!(
+                name,
+                "qb_system_name"
+                    | "qb_default_kernel"
+                    | "qb_machine"
+                    | "qb_default_fstype"
+                    | "qb_rootfs_opt"
+            ) && values.insert(name, value.trim()).is_some()
+            {
+                bail!("Duplicate qemuboot prerequisite: {name}");
             }
         }
     }
-    if !system.is_some_and(|name| {
+    if !values.get("qb_system_name").is_some_and(|name| {
         name.starts_with("qemu-system-")
             && name
                 .bytes()
@@ -63,9 +79,26 @@ fn validate_qemuboot(path: &Path) -> Result<()> {
     }) {
         bail!("qemuboot config needs a valid config_bsp qb_system_name");
     }
-    if kernel.is_none_or(|value| value.is_empty() || value == "none") {
+    if mode == yoctui_model::QemuDebugBootMode::OpenBmcRomulusFlash {
+        for (name, expected) in [
+            ("qb_system_name", "qemu-system-arm"),
+            ("qb_default_kernel", "none"),
+            ("qb_machine", "-machine romulus-bmc"),
+            ("qb_default_fstype", "static.mtd"),
+            ("qb_rootfs_opt", "-drive file=@ROOTFS@,if=mtd,format=raw"),
+        ] {
+            if values.get(name).copied() != Some(expected) {
+                bail!("Romulus flash requires config_bsp {name}={expected}");
+            }
+        }
+        return Ok(());
+    }
+    if values
+        .get("qb_default_kernel")
+        .is_none_or(|value| value.is_empty() || *value == "none")
+    {
         bail!(
-            "This first QEMU/GDB workflow needs direct kernel boot; flash/firmware-only qemuboot configurations are unsupported"
+            "Direct kernel mode needs a boot kernel; select OpenBMC Romulus flash mode for its supported static.mtd configuration"
         );
     }
     Ok(())

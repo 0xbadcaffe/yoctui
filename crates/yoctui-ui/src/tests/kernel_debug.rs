@@ -22,6 +22,64 @@ fn app() -> App {
 }
 
 #[test]
+fn kernel_debug_flash_mode_and_review_show_private_boot_without_kernel_argument() {
+    let mut app = app();
+    let tools = app.kernel_debug.tools.as_mut().unwrap();
+    tools
+        .programs
+        .insert("runqemu".into(), "/tools/runqemu".into());
+    tools
+        .programs
+        .insert("yoctui".into(), "/tools/yoctui".into());
+    let mut draft = KernelDebugDraft::new(KernelDebugTool::QemuGdb);
+    draft.qemu.boot_mode = yoctui_model::QemuDebugBootMode::OpenBmcRomulusFlash;
+    draft.qemu.build_dir = "/work".into();
+    draft.qemu.qemuboot = "/work/romulus.qemuboot.conf".into();
+    draft.qemu.kernel = "/work/zImage".into();
+    draft.qemu.rootfs = "/work/romulus.static.mtd".into();
+    draft.symbols = "/work/vmlinux".into();
+    app.dialogs
+        .push_back(Dialog::KernelDebug(KernelDebugDialog {
+            draft: draft.clone(),
+            selection: 7,
+            guide_scroll: 0,
+            error: None,
+        }));
+    let form = rendered_text(&app, 160, 42);
+    assert!(
+        form.contains("Boot mode (Left/Right/Space): OpenBMC Romulus flash"),
+        "{form}"
+    );
+    let tools = app.kernel_debug.tools.as_ref().unwrap();
+    let request = draft.plan(tools).unwrap();
+    app.kernel_debug.qemu_preview = Some(draft.qemu_spec(tools).unwrap());
+    app.kernel_debug.prepared = Some(request.clone());
+    app.dialogs.clear();
+    app.dialogs
+        .push_back(Dialog::TerminalLaunch(TerminalLaunchDialog {
+            request,
+            destination: TerminalLaunchDestination::Embedded,
+            output_must_not_exist: None,
+        }));
+    let review = rendered_text(&app, 160, 42);
+    for text in [
+        "OpenBMC Romulus flash",
+        "NOT a launch argument",
+        "hbreak start_kernel",
+        "private copy",
+        "original flash",
+        "/PRIVATE_SESSION/romulus.static.mtd",
+    ] {
+        assert!(review.contains(text), "{text}: {review}");
+    }
+    assert!(!review.contains("bootparams=nokaslr"));
+    assert!(!review.contains("argv[0]: \"/work/zImage\""));
+    for (width, height) in [(100, 30), (80, 24), (60, 15), (20, 5), (1, 1)] {
+        let _ = rendered_text(&app, width, height);
+    }
+}
+
+#[test]
 fn kernel_debug_instrumentation_form_and_scrollable_exact_review_render_safely() {
     let mut app = app();
     app.kernel_debug.selection = 13;

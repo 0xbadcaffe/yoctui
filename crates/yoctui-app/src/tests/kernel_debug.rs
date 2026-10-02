@@ -2,6 +2,35 @@ use super::*;
 use yoctui_model::{KernelDebugDialog, KernelDebugDraft, KernelDebugTool};
 
 #[test]
+fn kernel_debug_flash_boot_mode_accepts_combinations_not_free_text() {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    app.dialogs
+        .push_front(Dialog::KernelDebug(KernelDebugDialog {
+            draft: KernelDebugDraft::new(KernelDebugTool::QemuGdb),
+            selection: 7,
+            guide_scroll: 0,
+            error: None,
+        }));
+    for input in [Input::Left, Input::Right, Input::Char(' ')] {
+        assert!(kernel_debug_owns_input(&app, input));
+        assert_eq!(
+            kernel_debug_action(&app, input),
+            Some(Action::KernelDebug(A::ChangeScope))
+        );
+    }
+    assert_eq!(
+        kernel_debug_action(&app, Input::Char('x')),
+        Some(Action::KernelDebug(A::Insert("x".into())))
+    );
+    assert_eq!(
+        kernel_debug_action(&app, Input::Esc),
+        Some(Action::KernelDebug(A::Cancel))
+    );
+}
+
+#[test]
 fn kernel_debug_instrumentation_form_review_and_confirmed_export_trap_input() {
     let mut app = App::new(32, 4096);
     app.onboarding.open = false;

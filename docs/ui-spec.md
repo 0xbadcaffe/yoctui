@@ -35,7 +35,8 @@ kernel file remains a matching-build reference, but is not passed to runqemu
 in flash mode; the guest boots the kernel embedded in its flash image. Require
 matching DWARF vmlinux and a real kernel reference, exact deployed qemuboot,
 static.mtd image and initialized build directory. Flash preparation accepts
-only the closed romulus-bmc/qemu-system-arm/static.mtd/if=mtd configuration;
+only the closed romulus-bmc/qemu-system-arm/static.mtd/if=mtd configuration,
+complete 32-MiB flash and little-endian 32-bit ARM symbols;
 other firmware launchers are not silently accepted. No image build or edit.
 
 Flash review identifies mode, reference kernel and private staged image; it
@@ -219,7 +220,8 @@ explicit deployed qemuboot configuration, boot kernel, root filesystem, matching
 uncompressed vmlinux symbols and build directory, with bounded memory (MiB).
 An editable absolute runqemu field is seeded from the initialized daemon tool
 identity when available, otherwise local PATH. GDB prefers detected gdb-multiarch
-over gdb. Seven fields use the existing centered six-row viewport; missing boot
+over gdb. The original seven fields plus the M113 boot-mode selector use the
+existing centered six-row viewport; missing boot
 inputs stay empty. Linux is required for managed forced-termination cleanup.
 Detected runqemu/GDB and the current build/artifact may seed fields; missing
 artifacts remain empty requirements, never guessed providers or paths.

@@ -2,6 +2,7 @@ use super::*;
 
 fn spec() -> QemuDebugSpec {
     QemuDebugSpec {
+        boot_mode: QemuDebugBootMode::DirectKernel,
         runqemu: "/tools/runqemu".into(),
         gdb: "/tools/gdb".into(),
         build_dir: "/build".into(),
@@ -11,6 +12,39 @@ fn spec() -> QemuDebugSpec {
         symbols: "/build/vmlinux".into(),
         memory_mib: 1024,
     }
+}
+
+#[test]
+fn qemu_debug_flash_plan_omits_kernel_and_bootparams_and_stages_image() {
+    let mut spec = spec();
+    let mut legacy = serde_json::to_value(&spec).unwrap();
+    legacy.as_object_mut().unwrap().remove("boot_mode");
+    assert_eq!(
+        serde_json::from_value::<QemuDebugSpec>(legacy)
+            .unwrap()
+            .boot_mode,
+        QemuDebugBootMode::DirectKernel
+    );
+    spec.boot_mode = QemuDebugBootMode::OpenBmcRomulusFlash;
+    assert!(spec.validate().is_err());
+    spec.rootfs = "/build/romulus.static.mtd".into();
+    spec.validate().unwrap();
+    let args = spec.qemu_arguments(Path::new(QEMU_DEBUG_SOCKET_TEMPLATE));
+    assert_eq!(args[0], "/PRIVATE_SESSION/romulus.static.mtd");
+    assert_eq!(args[1], "/build/image.qemuboot.conf");
+    assert!(
+        !args
+            .iter()
+            .any(|arg| arg == "/build/bzImage" || arg.starts_with("bootparams="))
+    );
+    for arg in ["nonetwork", "snapshot", "nographic", "serialstdio"] {
+        assert!(args.iter().any(|value| value == arg));
+    }
+    assert!(args.last().unwrap().contains("-S -m 1024"));
+    assert!(!args.join(" ").contains("tcp:"));
+    let mut encoded = serde_json::to_value(&spec).unwrap();
+    encoded["boot_mode"] = serde_json::json!("UnreviewedFirmware");
+    assert!(serde_json::from_value::<QemuDebugSpec>(encoded).is_err());
 }
 
 #[test]

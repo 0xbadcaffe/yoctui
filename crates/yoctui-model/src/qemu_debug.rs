@@ -2,9 +2,27 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum QemuDebugBootMode {
+    #[default]
+    DirectKernel,
+    OpenBmcRomulusFlash,
+}
+
+impl QemuDebugBootMode {
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::DirectKernel => "Direct kernel",
+            Self::OpenBmcRomulusFlash => "OpenBMC Romulus flash",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct QemuDebugSpec {
+    #[serde(default)]
+    pub boot_mode: QemuDebugBootMode,
     pub runqemu: PathBuf,
     pub gdb: PathBuf,
     pub build_dir: PathBuf,
@@ -19,6 +37,7 @@ pub const QEMU_DEBUG_SOCKET_TEMPLATE: &str = "/PRIVATE_SESSION/gdb.sock";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QemuDebugDraft {
+    pub boot_mode: QemuDebugBootMode,
     pub runqemu: String,
     pub build_dir: String,
     pub qemuboot: String,
@@ -29,6 +48,7 @@ pub struct QemuDebugDraft {
 impl Default for QemuDebugDraft {
     fn default() -> Self {
         Self {
+            boot_mode: QemuDebugBootMode::default(),
             runqemu: String::new(),
             build_dir: String::new(),
             qemuboot: String::new(),
@@ -71,6 +91,11 @@ impl QemuDebugSpec {
         if !self.qemuboot.to_string_lossy().ends_with(".qemuboot.conf") {
             return Err("Select the exact deployed .qemuboot.conf, not a guessed machine".into());
         }
+        if self.boot_mode == QemuDebugBootMode::OpenBmcRomulusFlash
+            && !self.rootfs.to_string_lossy().ends_with(".static.mtd")
+        {
+            return Err("Romulus flash mode requires the exact .static.mtd image".into());
+        }
         if !(crate::MIN_QEMU_MEMORY_MIB..=crate::MAX_QEMU_MEMORY_MIB).contains(&self.memory_mib) {
             return Err("QEMU memory must be 128..=262144 MiB".into());
         }
@@ -78,8 +103,7 @@ impl QemuDebugSpec {
     }
 
     pub fn qemu_arguments(&self, socket: &Path) -> Vec<String> {
-        vec![
-            self.kernel.display().to_string(),
+        let mut arguments = vec![
             self.session_rootfs(socket).display().to_string(),
             self.qemuboot.display().to_string(),
             "nonetwork".into(),
@@ -91,12 +115,18 @@ impl QemuDebugSpec {
                 self.memory_mib,
                 socket.display()
             ),
-            "bootparams=nokaslr".into(),
-        ]
+        ];
+        if self.boot_mode == QemuDebugBootMode::DirectKernel {
+            arguments.insert(0, self.kernel.display().to_string());
+            arguments.push("bootparams=nokaslr".into());
+        }
+        arguments
     }
 
     pub fn session_rootfs(&self, socket: &Path) -> PathBuf {
-        if self.rootfs.to_string_lossy().ends_with(".zst") {
+        if self.rootfs.to_string_lossy().ends_with(".zst")
+            || self.boot_mode == QemuDebugBootMode::OpenBmcRomulusFlash
+        {
             socket
                 .parent()
                 .unwrap_or(Path::new("/PRIVATE_SESSION"))

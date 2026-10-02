@@ -29,6 +29,7 @@ pub enum KernelDebugField {
     KernelImage,
     RootfsImage,
     Memory,
+    QemuBootMode,
     KernelConfig,
     SerialDevice,
     SerialBaud,
@@ -57,6 +58,7 @@ impl KernelDebugField {
             Self::KernelImage => "Matching boot kernel image",
             Self::RootfsImage => "Root filesystem image",
             Self::Memory => "Guest memory (MiB)",
+            Self::QemuBootMode => "Boot mode (Left/Right/Space)",
             Self::KernelConfig => "Exact target kernel .config",
             Self::SerialDevice => "Host serial character tty device",
             Self::SerialBaud => "Serial baud (matches target)",
@@ -167,6 +169,7 @@ impl KernelDebugDraft {
                 F::RootfsImage,
                 F::Symbols,
                 F::Memory,
+                F::QemuBootMode,
             ]),
             KernelDebugTool::GdbRemote => fields.extend([F::Symbols, F::Endpoint]),
             KernelDebugTool::GdbCore | KernelDebugTool::Crash => {
@@ -206,6 +209,7 @@ impl KernelDebugDraft {
             KernelDebugField::KernelImage => &self.qemu.kernel,
             KernelDebugField::RootfsImage => &self.qemu.rootfs,
             KernelDebugField::Memory => &self.qemu.memory,
+            KernelDebugField::QemuBootMode => self.qemu.boot_mode.label(),
             KernelDebugField::KernelConfig => &self.serial.config,
             KernelDebugField::SerialDevice => &self.serial.device,
             KernelDebugField::SerialBaud => &self.serial.baud,
@@ -219,7 +223,7 @@ impl KernelDebugDraft {
             KernelDebugField::InstrumentationPreset => None,
             KernelDebugField::InstrumentationConfig => Some(&mut self.instrumentation.config),
             KernelDebugField::InstrumentationOutput => Some(&mut self.instrumentation.output),
-            KernelDebugField::Destination => None,
+            KernelDebugField::Destination | KernelDebugField::QemuBootMode => None,
             KernelDebugField::Host => Some(&mut self.host),
             KernelDebugField::User => Some(&mut self.user),
             KernelDebugField::Port => Some(&mut self.port),
@@ -267,6 +271,7 @@ impl KernelDebugDraft {
 
     pub fn qemu_spec(&self, tools: &KernelDebugTools) -> Result<crate::QemuDebugSpec, String> {
         let spec = crate::QemuDebugSpec {
+            boot_mode: self.qemu.boot_mode,
             runqemu: if self.qemu.runqemu.is_empty() {
                 tools.program("runqemu")?
             } else {
