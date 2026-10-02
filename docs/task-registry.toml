@@ -17,23 +17,23 @@ notes = "DONE after resumed real ENV verification on 2026-10-02. Official cohere
 id = "NATIVE-DISK-GUARD-OUTCOME-001"
 milestone = "M112"
 title = "Preserve native disk-guard failure in bridge build completion"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3310
 required = true
 depends_on = ["XILINX-ZCU102-ENV-001"]
 verify = ["python3 -m pytest bridge/tests/test_metadata_events.py -k 'disk_guard or native_event'", "python3 -m pytest bridge/tests/test_server_adapters.py -k 'build or cancellation or bounded'", "cargo test -p yoctui-protocol disk_guard", "cargo test -p yoctui-model disk_guard", "cargo test -p yoctui-ui disk_guard", "cargo test -p yoctui-bitbake bridge_backend", "cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: real isolated Yoctui image request below unchanged disk guard reports Failed/partial progress and exact diagnostic, not image success"]
-notes = "v0.1.268 implementation: typed DiskFull subscription/log and per-active-build latch; zero/explicit-success completion becomes managed failure, no fabricated task failure. Focused bridge/protocol/model/UI progress checks and four backend tests pass; strict backend Clippy/fmt/UI/version/roadmap pass. Source-bound release and real isolated native guard reproduction pending before DONE. User approved ~4.4-GiB old archive cleanup; apply after low-disk regression, preserve Git/source/images/debug and guards. Original real job 1 soft-stop at 3.969 GiB falsely forced 10994/10994 success; no deploy/vmlinux. Image storage separately BLOCKED; full suite deferred. Process-mode outcomes not certified by native-event task."
+notes = "DONE v0.1.268 commit ba76ae7a pushed, exact source-bound optimized debug0 release built/hash-verified; focused bridge/protocol/model/UI partial progress and four backend tests/strict backend Clippy/fmt/UI/version/roadmap pass. Real isolated job2 below unchanged guard: native STOPTASKS/DiskFull diagnostics, Failed/exit1, completed0/unknown total, no fabricated failed task; actual wide PTY shows Failed/Connected/full ZCU102. Evidence native-disk-guard-fixed.txt and checks file. Approved old archive cleanup ~4.4GiB and own generated Cargo cache cleanup preserved Git/source/images/debug and both releases; ~8GiB available for image retry. Full suite deferred; two unchanged extra editor/SDK expectation failures recorded, not weakened. Process-mode outcomes not certified by this native-event task."
 
 [[task]]
 id = "XILINX-ZCU102-BUILD-001"
 milestone = "M111"
 title = "Build a real ZCU102 PetaLinux image through the Yoctui daemon"
-status = "BLOCKED"
+status = "IN_PROGRESS"
 priority = 3301
 required = true
-depends_on = ["XILINX-ZCU102-ENV-001"]
+depends_on = ["XILINX-ZCU102-ENV-001", "NATIVE-DISK-GUARD-OUTCOME-001"]
 verify = ["Manual: request petalinux-image-minimal through the initialized Yoctui daemon; retain real task/failure/progress evidence and terminal outcome", "Manual: verify deployed ZCU102 image, qemuboot config, kernel and exact matching DWARF vmlinux/config hashes; retain kernel work despite rm_work", "./scripts/verify-roadmap.sh"]
-notes = "BLOCKED by actual storage: job 1 soft-stopped at unchanged 4-GiB STOPTASKS guard on 2026-10-02 11:29 UTC, ~3.1 GiB free. Native warning/error retained; no deploy/images or matching vmlinux. Ignored DiskFull plus zero-failure completion falsely showed success/10994 total: NATIVE-DISK-GUARD-OUTCOME-001 is independently eligible/current. Actual source fetch/unpack stamps and exact pin/tree match; current config DEBUG_INFO/DWARF5 enabled, RANDOMIZE_BASE disabled, optional GDB scripts disabled. Real wide UI/native/config evidence retained. User-approved desktop reset freed ~9.5 GiB with private tag backup/required temporary-service restore. Safe 272-MiB pinned cache installer passed five local Git guards and actual backend fetch/unpack; six inspector guards pass. More storage and explicit fresh image request required; older archive-cache cleanup (~4.4 GiB) awaits approval. Preserve new stamps/source/debug config and old artifacts. Keep two workers, rm_work exclusions and guards. Actual successful image/deploy/matching ELF remains required; no full suite."
+notes = "Resumed IN_PROGRESS after native outcome correction DONE/source-bound v0.1.268 real Failed guard regression and user-approved 1301 old archives/markers ~4.4GiB plus own generated Cargo cache cleanup. ~8.0GiB available; private daemon 0b20c2dd7719990023902d8d24d1ada8 ready for one fresh image request. Historical job1 low-disk false success retained, not proof; job2 Failed/exit1 is guard regression only. No deployed image/matching vmlinux yet. Actual kernel source fetch/unpack/config DEBUG_INFO/DWARF5/randomization-disabled preserved. Keep two workers, rm_work kernel/image exclusions and unchanged4GiB stop/1GiB halt; no duplicate active build. Approved desktop temporary pause/tag backup restoration still required when storage permits. Actual image/deploy/matching ELF must pass before QEMU/GDB. No full suite."
 
 [[task]]
 id = "XILINX-ZCU102-QEMU-GDB-001"

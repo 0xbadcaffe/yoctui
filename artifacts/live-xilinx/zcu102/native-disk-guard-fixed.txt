@@ -1,0 +1,35 @@
+Real native disk-guard regression — 2026-10-02 12:24 UTC
+
+Product v0.1.268, pushed commit ba76ae7aed30309a61f3c714cc6bcc4909cc8e8a.
+Optimized release jobs2/incremental0/release-debug0 built from that commit.
+Embedded UI SHA ba76ae7aed30 verified; --version yoctui0.1.268.
+SHA256 480b8cafc4e12d28c7585d5fed0b26714ec24089eca03166c472c94fca81f0ba
+Both target/release/yoctui and retained-release/yoctui-v0.1.268 match.
+Old retained0.1.267 still 9f25e328ec8c906dce9cecc452522fbe39e27b264d73a1bc528958296888d77c.
+Release host debug0 does not modify target kernel DWARF configuration.
+
+Only idle private daemon restarted. Instance0b20c2dd7719990023902d8d24d1ada8,
+containerPID1593489, ready workspace/recipe inventory at1790943667363ms.
+Exact canonical workspace /home/bspguy-dev/src/yoctui-zcu102-2026.1/build.
+One real Yoctui daemon build petalinux-image-minimal accepted as job2.
+Native start1790943780998ms; terminal1790943855583ms.
+Read-only framed IPC peer UID/workspace/instance verified, sequence11119:
+job2 lifecycle failed, exit_code1; completed event successfalse/exit1;
+build_progress.completed0,totalnull; no retained task failure fabricated.
+Old job1 erroneous Exited0 history preserved as historical evidence.
+
+Actual native warning: free space .../build/tmp running low (1.935GB left).
+Native error: No new tasks can be executed since the disk space monitor action
+is "STOPTASKS"! Native path sources/poky/bitbake/lib/bb/monitordisk.py.
+New typed native event log, severityerror, recipe/task/pathnull:
+BitBake disk guard stopped this build at /home/bspguy-dev/src/yoctui-zcu102-2026.1/build/tmp; remaining=2077360128 bytes. The runqueue is incomplete.
+Same real guard diagnostics for downloads (2077360128) and sstate(2077356032).
+No widget text parsing, fake task failure, guard weakening or automatic retry.
+
+Actual v0.1.268 UI PTY capture240x50: helper health/identity assertions PASS,
+Connected/Local, full zynqmp-zcu102-sdt-full machine, job2 Failed, no100%.
+Original private logs/native-disk-guard-fixed.ansi SHA256
+ae6f2ad5bb0837f300e2a6bedb3b492a25494da372a5426755113cd767389332
+Original private logs/native-disk-guard-fixed.txt SHA256
+b5dde77ccad38f1c298a7b29b8de4cc3f8171e2a47782ce6ba0ab262b3f03192
+No image/vmlinux/QEMU boot/GDB success; this proves only the native guard fix.

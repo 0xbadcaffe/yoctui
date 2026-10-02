@@ -1,4 +1,15 @@
-M112 implementation checkpoint: v0.1.268 subscribes/normalizes native DiskFull,
+Latest 2026-10-02 12:27 UTC: M112 native guard correction DONE. v0.1.268 product
+commit ba76ae7a pushed; exact committed-source optimized debug0 release built
+(7m47s) and hash-verified. Real isolated job2 below unchanged guard reports
+Failed/exit1 and completed0/unknown total; exact native typed disk diagnostics
+and actual wide Failed/Connected/ZCU102 UI prove the correction, not image
+success. Evidence native-disk-guard-fixed.txt. Approved 1301 archives/markers
+removed (~4.4GiB); this session's generated Cargo caches cleared after checks,
+both releases preserved. ~8.0GiB available; BUILD is now IN_PROGRESS for one
+explicit fresh daemon retry. QEMU/GDB NOT_STARTED; no image/vmlinux exists.
+Desktop indexing remains temporarily paused/private tags retained. No full suite.
+
+Historical implementation checkpoint: v0.1.268 subscribes/normalizes native DiskFull,
 latches it only during an active build and converts later native zero completion
 to existing failed managed outcome. Focused bridge/protocol/model/UI tests and
 four backend checks pass; strict backend Clippy, fmt/diff/UI/roadmap/version gates

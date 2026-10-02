@@ -2,7 +2,14 @@
 
 ## M111 — Current AMD PetaLinux ZCU102 live acceptance
 
-Latest outcome: BUILD is BLOCKED by real storage guard, not DONE. At 11:29 UTC
+Latest: M112 native disk guard correction DONE in v0.1.268, pushed source-bound
+release and real job2 Failed/exit1/unknown-progress regression verified with
+native diagnostics/actual UI. Approved older archives (~4.4GiB) and own generated
+Cargo cache cleanup leave ~8.0GiB; BUILD is IN_PROGRESS for a fresh isolated
+daemon retry. No actual image, matching vmlinux, QEMU boot or GDB validation yet.
+Evidence native-disk-guard-fixed.txt/storage-cleanup.txt. Guards unchanged.
+
+Historical outcome before correction/approved cleanup: BUILD was BLOCKED by real storage guard, not DONE. At 11:29 UTC
 job 1 soft-stopped on native STOPTASKS (~3.969 GiB), no deployed image/vmlinux,
 ~3.1 GiB free. Yoctui erroneously treated zero-failure completion as success and
 forced total progress; current M112 NATIVE-DISK-GUARD-OUTCOME-001 fixes native

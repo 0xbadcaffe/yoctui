@@ -1,62 +1,47 @@
 # Current Task
 
-**ID:** NATIVE-DISK-GUARD-OUTCOME-001
-**Title:** Preserve native disk-guard failure in bridge build completion
+**ID:** XILINX-ZCU102-BUILD-001
+**Title:** Build a real ZCU102 PetaLinux image through the Yoctui daemon
 **Status:** IN_PROGRESS
 
-Product v0.1.268 implements the typed native-event correction. Focused bridge,
-protocol/model/UI partial-progress checks, four affected backend checks, strict
-backend Clippy and UI/roadmap/version gates pass. Source-bound release and real
-native guard reproduction remain required before DONE. User approved clearing
-the ~4.4-GiB older archive caches; exact top-level single-link archives only,
-not Git caches/source/images/debug symbols. Perform that cleanup after the
-real low-disk regression, then reassess image-build storage. Keep guards unchanged.
+Dependencies ENV and NATIVE-DISK-GUARD-OUTCOME-001 are DONE. Product v0.1.268
+committed/pushed as ba76ae7aed30309a61f3c714cc6bcc4909cc8e8a; source-bound
+optimized release SHA256 480b8cafc4e12d28c7585d5fed0b26714ec24089eca03166c472c94fca81f0ba.
+Release debug0 saves host binary space only; target kernel DWARF stays enabled.
+Isolated daemon 0b20c2dd7719990023902d8d24d1ada8 is ready. Real job2 guard
+regression PASSED: native STOPTASKS/DiskFull, Failed/exit1, completed0/unknown
+total, no manufactured failed task or successful100%. Genuine wide UI capture
+shows Failed/Connected/full ZCU102 machine. Evidence native-disk-guard-fixed.txt.
+Old job1 false-success history is retained, not image evidence.
 
-Dependency XILINX-ZCU102-ENV-001 is DONE. The actual ZCU102 image soft-stopped
-at the unchanged 4-GiB STOPTASKS threshold; ~3.1 GiB remains, no image/vmlinux.
-BUILD is BLOCKED by storage. Native DiskFull is missing from the Tinfoil mask,
-so zero-failure completion incorrectly became success and forced 10994/10994.
-Exact native diagnostic/final state is in disk-guard-stop.txt. This is a real
-product bug discovered during validation, not a successful image.
+User-approved removal of 1301 old top-level archive caches and matching markers
+freed 4770631680 archive bytes (~4.4GiB); Git/source/image/debug files preserved.
+This session's generated Cargo dev/release caches cleared with Cargo after all
+checks; both releases retained/hash-verified. ~8.0GiB now free. Exact cleanup/
+restore evidence is storage-cleanup.txt. GNOME desktop index remains temporarily
+runtime-masked until storage permits restoration; private tag backup retained.
 
-Implement only this atomic bridge-native outcome fix: subscribe/normalize the
-closed native DiskFull event, latch its stop reason per active build and make
-later native zero/explicit-success completion a failed managed outcome. Keep
-existing typed log/completion/reducer/job/UI paths and observed progress. No
-raw-log parsing in widgets, synthetic task failures, protocol/layout changes,
-automatic retries or weakened guards. Reset the latch for a fresh build; stale
-events, normal success, ordinary failures and explicit cancellation must retain
-existing behavior. Relevant bridge tinfoil_workspace.py/events.py/adapter.py,
-focused bridge/protocol/model/UI tests and coherent workspace version manifests.
-Process-mode completion is outside this native-event task's certification.
+Immediately request one fresh petalinux-image-minimal build through the existing
+isolated daemon, then preserve/monitor actual terminal outcome. Keep two workers,
+rm_work exclusions and unchanged4GiB stop/1GiB halt guards. Do not duplicate or
+restart an active build. Done requires actual successful task completion,
+deployed ZCU102 rootfs/qemuboot/firmware/kernel and exact matching DWARF vmlinux/
+config hashes. No image/vmlinux yet; QEMU/GDB remains NOT_STARTED and requires
+BUILD DONE. No substitute machine, unmanaged build/QEMU, fake success or full
+suite. If real storage/dependency blocks progress, record exact state and retain
+all work, then select only eligible independent tasks. Product gaps remain
+separate atomic versioned/focused-verified/pushed/source-bound release fixes.
 
-Verify focused bridge disk/event/cancellation checks, protocol/model partial
-failed progress and TestBackend failure rendering, affected strict Clippy/fmt,
-UI/version/roadmap gates and source-bound optimized release. Use two Cargo jobs,
-incremental=0 and debug=0 for dev/test under storage pressure; retain the previous
-release. Full suite remains explicitly deferred. Bump product version, coherent
-commit/push and committed-source release; then reproduce the real native guard
-through the isolated daemon/new UI, without starting an unmanaged build. Restart
-only the isolated now-idle daemon. Live image success still needs more storage;
-older archive-cache cleanup is now approved, within the exact scope above.
-
-Commands (with low-disk Cargo profile variables where appropriate):
+Verification/monitoring:
 ```bash
-python3 -m pytest bridge/tests/test_metadata_events.py -k 'disk_guard or native_event'
-python3 -m pytest bridge/tests/test_server_adapters.py -k 'build or cancellation or bounded'
-cargo test -p yoctui-protocol disk_guard
-cargo test -p yoctui-model disk_guard
-cargo test -p yoctui-ui disk_guard
-cargo test -p yoctui-bitbake bridge_backend
-cargo fmt --all --check
-cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings
-./scripts/verify-ui-spec.sh
-python3 scripts/check-version-bump.py
+./scripts/live-zcu102.sh build  # once only while idle
+./scripts/live-zcu102.sh status
+python3 scripts/inspect-zcu102-build.py | jq '{sequence,build_progress,jobs,last_build_events:[.last_build_events[]|del(.data)]}'
+./scripts/live-zcu102.sh attach
 ./scripts/verify-roadmap.sh
-cargo build --release -p yoctui --bin yoctui
 ```
 
-## Blocked image validation handoff
+## Historical blocked image validation handoff (superseded above)
 
 XILINX-ZCU102-BUILD-001 is BLOCKED after the real disk guard stop. Historical
 running checkpoints below are retained, not the latest terminal outcome. Native

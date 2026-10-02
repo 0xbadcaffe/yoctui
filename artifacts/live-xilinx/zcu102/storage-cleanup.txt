@@ -1,4 +1,28 @@
-ZCU102 build storage checkpoint — 2026-10-02 10:36 UTC
+Latest storage checkpoint — 2026-10-02 12:27 UTC
+
+User explicitly approved clearing ~4.4GiB older download archive caches.
+Validated exact canonical owned download directories, no older active build:
+/home/bspguy-dev/src/build/downloads: 628 top-level single-link regular archives
+allocated3001368576bytes; build-openbmc-romulus/downloads:673 allocated1769263104.
+Removed1301 archives plus1301 same-owner/single-link regular .done markers.
+Only suffixes tar.gz/tar.xz/tar.bz2/tar.zst/tgz/zip/crate, no subdirectories,
+Git/git2 caches, locks, uninative trees, source/images/debug files removed.
+Archives are regenerable by downloading again; future old clean builds may slow.
+Removal completed after real new-release disk-guard regression, not beforehand.
+
+After focused tests/Clippy and committed-source release completed, standard
+cargo clean --release removed1594 generated files635.5MiB; --profile dev removed
+1868 generated files1.0GiB. A clean with target/debug as independent target-dir
+refused because it lacks CACHEDIR.TAG; no override/deletion bypass was used.
+New0.1.268 copied to retained-release before clean and restored to target/release;
+both release hashes verified, old0.1.267 retained. No source artifacts affected.
+Three obsolete partial validation parse caches (~400MiB) removed earlier after
+all cookers were exited; startup e7aa/build623077 families retained.
+~8.0GiB now available; unchanged4GiB stop/1GiB halt/two-worker build limits.
+Desktop service remains inactive/masked-runtime under earlier approval; restore
+commands/private tag backup below remain REQUIRED when storage permits.
+
+Historical ZCU102 build storage checkpoint — 2026-10-02 10:36 UTC
 
 User explicitly approved: Pause indexer and clear its cache.
 Only desktop search index/cache was reset; source/document files untouched.
