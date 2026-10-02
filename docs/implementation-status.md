@@ -1,4 +1,6 @@
-M114 current: DEMO-UI-CLIPPING-001 IN_PROGRESS; model/app fixture child DONE.
+M114 current: DEMO-DASHBOARD-HINTS-001 IN_PROGRESS; model/app fixture child DONE.
+UI polish split into independently verified truthful Dashboard hints, bounded
+dialog controls and editor action rail; exact UI fixtures/goldens follow them.
 External fixture-only18files reconcile Hardware navigator indices, header y+3,
 35-row menuconfig PTY,209-action catalog, explicit selected build target and
 Alt+b/e/m/a routes. Model584/integrations1+5 and app250 PASS; negative authority,

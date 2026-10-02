@@ -1,7 +1,7 @@
 # Current Task
 
-**ID:** DEMO-UI-CLIPPING-001
-**Title:** Resolve verified existing footer dialog and responsive demo clipping
+**ID:** DEMO-DASHBOARD-HINTS-001
+**Title:** Advertise existing modifier shortcuts in Dashboard quick actions and empty history
 **Status:** IN_PROGRESS
 
 Dependency DEMO-MODEL-APP-FIXTURES-001 DONE: model584/integrations1+5 and app250
@@ -13,11 +13,14 @@ Real Dashboard B/E labels are wrong versus Alt+b/Alt+e; confirmed product polish
 not expected-value replacement. Split independently verified atomic rendering
 fixes before code, add normal/narrow/failure TestBackend regressions and bump
 version/UI spec in each product commit. No new feature or invented layout.
-UI fixture/golden child follows all selected fixes; no blanket acceptance.
+Split rendering fixes: this child corrects connected/offline Dashboard B/E and
+empty-history B hints to Alt+b/e only, retaining t/F3 and layout. Next child
+fixes confirmed too-short build dialog; then bounded editor hints. UI fixture/
+golden child follows all selected fixes; no blanket acceptance.
 
 ```bash
-cargo test -p yoctui-ui --all-features
-cargo test -p yoctui-app --all-features
+cargo test -p yoctui-ui demo_shortcut_hints
+cargo test -p yoctui-app ux_dashboard_operational_shortcuts
 cargo fmt --all --check
 cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-ui-spec.sh
