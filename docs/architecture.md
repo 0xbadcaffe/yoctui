@@ -1,5 +1,17 @@
 # Yoctui Architecture
 
+## M113 OpenBMC managed flash debug boundary
+
+Pure model owns the closed defaultable DirectKernel/OpenBmcRomulusFlash boot
+mode, selector and deterministic argv/review. CLI validates the exact flash
+qemuboot shape without launching and revalidates on helper entry; the existing
+private staging owner copies the selected flash and existing supervisor owns
+only its runqemu process group/GDB/log/socket. No wire/daemon supervisor change,
+new shell-command input, image mutation or change to normal QEMU. UI renders
+typed mode, reference-kernel and fixed argv, not config/process text. Capture
+and presentation work stays above/outside the repository; real evidence and
+governance can be recorded separately without committing presentation assets.
+
 ## M111 Isolated ZCU102 live validation boundary
 
 M112 native disk outcome: bridge subscribes to the closed native DiskFull event

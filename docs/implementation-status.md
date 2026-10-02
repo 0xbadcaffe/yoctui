@@ -1,3 +1,13 @@
+M113 selected by user: set ZCU102 aside/preserve its work, finish the emulated
+OpenBMC/QEMU debug path and save real boot/debug screenshots for presentation.
+OPENBMC-QEMU-GDB-FLASH-001 is current IN_PROGRESS; live acceptance follows.
+Romulus deployed static.mtd/qemuboot and matching ARM DWARF vmlinux exist.
+Current managed debug preflight rejects its qb_default_kernel=none, so a closed
+explicit flash mode with private staging is needed before genuine acceptance.
+Separate validation container/daemon; no AMD build retry or deletion. Screenshot
+assets and presentation changes stay outside Git above project. Full suite deferred.
+
+Historical ZCU102 checkpoint:
 Resumed2026-10-02 at user's "finish kernel debugging" request; pause revoked.
 Read-only daemon IPCsequence32861 proves job3 Failed/exit1 and3524/10994,
 completed1790948119425ms after nativeHALT909840384bytes. Daemon alive/idle;

@@ -20,6 +20,34 @@ invalid build path fails startup with the exact profile-initialization error.
 
 Status: **Authoritative product and interaction contract**
 
+### M113 OpenBMC flash QEMU debugging and live presentation capture
+
+The user sets ZCU102 validation aside without deleting its retained work and
+selects the existing OpenBMC Romulus image for real QEMU boot/debug validation.
+Keep presentation screenshots and deck changes outside the repository, in the
+existing presentation folder above the project; never commit/push those assets.
+Use an independent validation daemon, not the paused AMD workspace.
+
+Managed QEMU debugging appends a Boot mode selector after Memory, preserving
+existing field indices and six-row viewport. Left/Right/Space switches between
+Direct kernel (default, unchanged) and OpenBMC Romulus flash. The explicit
+kernel file remains a matching-build reference, but is not passed to runqemu
+in flash mode; the guest boots the kernel embedded in its flash image. Require
+matching DWARF vmlinux and a real kernel reference, exact deployed qemuboot,
+static.mtd image and initialized build directory. Flash preparation accepts
+only the closed romulus-bmc/qemu-system-arm/static.mtd/if=mtd configuration;
+other firmware launchers are not silently accepted. No image build or edit.
+
+Flash review identifies mode, reference kernel and private staged image; it
+does not promise nokaslr boot arguments (runqemu does not pass them to firmware).
+The caller must select a nonrelocating kernel or manually handle relocation.
+Use native `hbreak start_kernel` before MMU/firmware handoff, then continue/bt.
+Copy flash into the private mode-0600 session directory before QEMU starts,
+retain snapshot/nonetwork/paused/private-socket/log/owned-cleanup semantics.
+Quit removes only the owned staged copy; original flash remains unchanged.
+Real boot/breakpoint/backtrace/resume/reconnect/cleanup and exact input hashes
+are independent live acceptance, not certified by fixtures or screen rendering.
+
 ### M111 User-authorized ZCU102 live validation
 
 Native disk-guard stops are incomplete/failed builds, even if BitBake's later

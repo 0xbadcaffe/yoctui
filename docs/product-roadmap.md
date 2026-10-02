@@ -1,5 +1,19 @@
 # Yoctui Product Roadmap
 
+## M113 — OpenBMC/QEMU live kernel debugging and presentation evidence
+
+User explicitly replaces current ZCU102 validation with retained OpenBMC
+Romulus/QEMU. ZCU102 work is deferred/preserved, not deleted or marked DONE;
+its two unfinished tasks are no longer required for this acceptance. First
+OPENBMC-QEMU-GDB-FLASH-001 implements a reviewed closed flash boot mode using
+existing managed session lifecycle, with private image staging and focused
+default-direct-boot regressions. Then OPENBMC-QEMU-GDB-LIVE-001 verifies actual
+U-Boot/Linux/OpenBMC boot, matching-symbol kernel breakpoint/backtrace/resume,
+client reconnect and owned cleanup. Save genuine screenshots/transcripts and
+editable presentation updates above the repo; do not commit/push the deck/assets.
+No physical-board/sanitizer/destructive crash-test acceptance is inferred.
+Full suite remains deferred; product fixes retain version/commit/push/release.
+
 ## M111 — Current AMD PetaLinux ZCU102 live acceptance
 
 Resumed2026-10-02 by "finish kernel debugging"; pause revoked. Actual job3

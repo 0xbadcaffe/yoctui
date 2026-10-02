@@ -3,6 +3,28 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "OPENBMC-QEMU-GDB-FLASH-001"
+milestone = "M113"
+title = "Support reviewed managed debugging of OpenBMC Romulus flash images"
+status = "IN_PROGRESS"
+priority = 3400
+required = true
+depends_on = ["QEMU-GDB-UI-001"]
+verify = ["cargo test -p yoctui-model qemu_debug", "cargo test -p yoctui-model kernel_debug", "cargo test -p yoctui-app kernel_debug", "cargo test -p yoctui-ui kernel_debug", "cargo test -p yoctui --bin yoctui qemu_debug", "cargo test -p yoctui --bin yoctui kernel_debug", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Explicit user-selected Romulus OpenBMC validation replaces deferred ZCU102. Append closed DirectKernel/default versus OpenBmcRomulusFlash selector; exact flash qemuboot prerequisites, matching reference kernel/vmlinux, private image copy, fixed reviewed argv and existing lifecycle. No normal-QEMU or wire change. Focused verification/versioned product commit/push/release; no full suite. Live proof is separate."
+
+[[task]]
+id = "OPENBMC-QEMU-GDB-LIVE-001"
+milestone = "M113"
+title = "Verify real OpenBMC boot and kernel debugging and save presentation screenshots"
+status = "NOT_STARTED"
+priority = 3401
+required = true
+depends_on = ["OPENBMC-QEMU-GDB-FLASH-001"]
+verify = ["Manual: exact retained Romulus image/kernel/config/symbol identities and unchanged original hashes; real Yoctui reviewed managed flash launch in an independent daemon, U-Boot/Linux/OpenBMC boot, hbreak start_kernel/backtrace/resume, detach/reattach/interrupt and owned cleanup", "Manual: save actual boot/debug screenshots and provenance in the presentation folder above the repo; editable PPTX/ODP remain uncommitted/unpushed", "./scripts/verify-roadmap.sh"]
+notes = "User-selected OpenBMC/QEMU, not a silent ZCU102 substitution. Preserve AMD source/build work; no build/deploy/hardware action required for retained artifacts. Genuine screenshot/console/GDB evidence required; no fake fixture acceptance. Board/instrumented-kernel/M67 gates remain independent."
+
+[[task]]
 id = "XILINX-ZCU102-ENV-001"
 milestone = "M111"
 title = "Prepare an isolated current AMD PetaLinux ZCU102 validation environment"
@@ -30,7 +52,7 @@ milestone = "M111"
 title = "Build a real ZCU102 PetaLinux image through the Yoctui daemon"
 status = "BLOCKED"
 priority = 3301
-required = true
+required = false
 depends_on = ["XILINX-ZCU102-ENV-001", "NATIVE-DISK-GUARD-OUTCOME-001"]
 verify = ["Manual: request petalinux-image-minimal through the initialized Yoctui daemon; retain real task/failure/progress evidence and terminal outcome", "Manual: verify deployed ZCU102 image, qemuboot config, kernel and exact matching DWARF vmlinux/config hashes; retain kernel work despite rm_work", "./scripts/verify-roadmap.sh"]
 notes = "Resumed2026-10-02 by finish kernel debugging; pause revoked. Still storage BLOCKED: actual job3 Failed/exit1/completed1790948119425 after nativeHALT909840384bytes; IPCseq32861 aggregate3524/10994. Daemon0b20c2dd7719990023902d8d24d1ada8 alive/idle, no restart/build retry/deletion. Disk6018834432bytes free (~5.6GiB). Partial450MiB vmlinux.unstripped has DWARF/symbols/hashb696c596.../buildID5f764744... and unchanged config2fed2777...; final vmlinux/boot Image/deployed rootfs/qemuboot missing. Preserve all kernel work, not image or matching boot acceptance. Initial9GiB compiler cleanup estimate corrected: only3.2GiB build directories include binaries, actual intermediate-only removal less; Rust4.1GiB is source, preserved. User cleanup choice/more storage required; prior approved archive/desktop/own Cargo cleanup complete. No other data removal or guard weakening; two workers/4GiB stop/1GiB halt. Pinned AMD firmware/multiprocess launcher requires actual BOOT.bin/APU debug/snapshot/cleanup validation, no source-inspection compatibility claim. Evidence resumed-kernel-debugging.txt. Source-boundv0.1.268 intact, desktop mask/tag backup restoration required, no full suite; all other incomplete tasks external/dependent."
@@ -41,10 +63,10 @@ milestone = "M111"
 title = "Validate ZCU102 QEMU boot and live kernel debugging inside Yoctui"
 status = "NOT_STARTED"
 priority = 3302
-required = true
+required = false
 depends_on = ["XILINX-ZCU102-BUILD-001"]
 verify = ["Manual: navigate real Yoctui QEMU/Kernel forms and reviewed managed QEMU to GDB launch for exact new ZCU102 artifacts; verify boot, kernel breakpoint/backtrace, resume, detach/reattach and owned guest cleanup", "Manual: retain immutable binary/source/layer/artifact identities and genuine UI/daemon/GDB/console transcripts", "./scripts/verify-roadmap.sh"]
-notes = "User-selected live validation target is emulated ZCU102, not physical serial KGDB or blanket proof of all sanitizer presets. Relevant existing QEMU/GDB adapters and real capture harness/evidence. Product gaps require atomic spec/model/backend/UI/tests/version/commit/push/release changes before claiming success. Do not synthesize successful boot/backtraces, silently substitute qemuarm64 or bypass Yoctui by calling a separate unmanaged emulator."
+notes = "DEFERRED by explicit user instruction to set ZCU102 aside and validate retained OpenBMC/QEMU instead. Preserve AMD work; not DONE or required for M113. Original acceptance needs actual emulated ZCU102, exact artifacts/firmware and real reviewed Yoctui boot/debug/cleanup, not a silent substitute. Product gaps need separately verified fixes."
 
 [[task]]
 id = "KERNEL-INSTRUMENTATION-PLAN-001"

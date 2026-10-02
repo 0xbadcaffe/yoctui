@@ -1,8 +1,45 @@
 # Current Task
 
-**ID:** XILINX-ZCU102-BUILD-001
-**Title:** Build a real ZCU102 PetaLinux image through the Yoctui daemon
-**Status:** BLOCKED
+**ID:** OPENBMC-QEMU-GDB-FLASH-001
+**Title:** Support reviewed managed debugging of OpenBMC Romulus flash images
+**Status:** IN_PROGRESS
+
+User replaces ZCU102 validation with OpenBMC/QEMU and requests genuine QEMU
+boot/kernel debugging screenshots for the existing presentation. Preserve
+ZCU102 work without deletion/retry; its unfinished validation is deferred.
+Dependency QEMU-GDB-UI-001 is DONE. Implement only the closed explicit flash
+boot mode described in UI spec M113; reuse existing form/review/staging/runtime.
+Relevant files: model qemu_debug/kernel_debug, app kernel_debug, UI renderer,
+CLI qemu_debug validation/staging and focused tests. No image rebuild/mutation,
+physical target, global daemon replacement or arbitrary QEMU command field.
+Done requires pure planning/reducer/input/TestBackend/file/fake-process checks,
+unchanged direct-kernel route, mode-specific review, private flash copy/cleanup,
+strict affected Clippy/fmt/UI/version/roadmap checks and versioned commit/push/
+source-bound release. Then immediately continue OPENBMC-QEMU-GDB-LIVE-001.
+
+Verification (CARGO_INCREMENTAL=0, debug info disabled for host test artifacts;
+use a separate temporary Cargo target directory to avoid full-disk rebuild):
+```bash
+cargo test -p yoctui-model qemu_debug
+cargo test -p yoctui-model kernel_debug
+cargo test -p yoctui-app kernel_debug
+cargo test -p yoctui-ui kernel_debug
+cargo test -p yoctui --bin yoctui qemu_debug
+cargo test -p yoctui --bin yoctui kernel_debug
+cargo fmt --all --check
+cargo clippy -p yoctui --all-targets --all-features -- -D warnings
+./scripts/verify-ui-spec.sh
+python3 scripts/check-version-bump.py
+./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
+```
+No full suite. Live task requires exact original-image/symbol/config identities,
+real reviewed UI/daemon boot, hardware kernel breakpoint/backtrace, resume to
+OpenBMC, detach/reattach/interrupt and owned cleanup. Save screenshots/notes
+and optional deck updates under /home/bspguy-dev/projects/yoctui-ydd2026-presentation,
+outside Git. Existing presentation no-commit/no-push rule remains in force.
+
+## Historical ZCU102 handoff — deferred by user, not current work
 
 **Resume hint:** `ZCU102-RESUME`
 **Resumed:** 2026-10-02 by the user's request to finish kernel debugging.
