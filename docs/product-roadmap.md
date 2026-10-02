@@ -2,14 +2,15 @@
 
 ## M111 — Current AMD PetaLinux ZCU102 live acceptance
 
-User paused execution for laptop shutdown on 2026-10-02. ENV remains
+User resumed execution after laptop shutdown on 2026-10-02. ENV remains
 IN_PROGRESS; BUILD/QEMU-GDB remain NOT_STARTED. Coherent rel-v2026.1 clones,
 bounded ZCU102 configuration and supported Ubuntu 24.04 validation container
 are retained. Initial real daemon/UI connection exists, but discovery was
 pending and build requests were rejected, not executed. Only the isolated
 daemon/container were stopped. Resume commands and exact identities/evidence
 are saved in current-task and artifacts/live-xilinx/zcu102; no full suite or
-live image/boot/debug certification. Resume only when the user requests it.
+live image/boot/debug certification. The retained container/new isolated daemon
+are running again; finish real metadata authority before requesting the build.
 
 The user now explicitly authorizes a separate latest coherent meta-xilinx and
 meta-petalinux checkout, initialization in Yoctui, real ZCU102 image build,

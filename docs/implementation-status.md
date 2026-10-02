@@ -1,4 +1,4 @@
-M111 is PAUSED at the user's request for laptop shutdown (2026-10-02), with
+M111 was resumed by the user after laptop shutdown (2026-10-02), with
 ENV still IN_PROGRESS, not DONE. Official AMD rel-v2026.1 sources and an exact
 zynqmp-zcu102-sdt-full/PetaLinux configuration are retained under
 /home/bspguy-dev/src/yoctui-zcu102-2026.1. Two task/parse/make workers, disk
@@ -8,7 +8,8 @@ Cargo cache and duplicate sstate cleanup raised free space from about 6.8 to
 Real isolated Ubuntu 24.04 daemon/UI connected, but compatibility discovery
 was still pending and build requests were rejected with Conflict. No image
 build/boot/debug success claimed. Isolated daemon/container deliberately
-stopped, not removed; start/status/attach/build helper and resume commands are
+stopped, not removed, before shutdown; it has now restarted with isolated daemon
+instance 130d73f2c2e8323f10bbfcbacc982af6 loading metadata. Helper commands are
 saved in current-task. Evidence/config/UI/log copies and exact layer/binary
 hashes are in artifacts/live-xilinx/zcu102. Five focused capture-health checks,
 shell syntax, diff and roadmap checks pass; no full suite or product changes.

@@ -4,8 +4,10 @@
 **Title:** Prepare an isolated current AMD PetaLinux ZCU102 validation environment
 **Status:** IN_PROGRESS
 
-**User-requested pause for laptop shutdown — 2026-10-02. Do not continue until
-the user resumes.** Preparation is saved, not certified DONE: initial daemon
+**Resumed by the user after laptop shutdown — 2026-10-02.** The retained
+container has restarted and isolated daemon instance
+`130d73f2c2e8323f10bbfcbacc982af6` (container PID 41) is loading metadata.
+Preparation is saved, not certified DONE: before shutdown initial daemon
 compatibility/recipe discovery had not finished, and image build requests were
 rejected with Conflict while it was loading. No image build, QEMU boot or live
 GDB validation started. The isolated daemon was deliberately stopped and its
