@@ -201,15 +201,26 @@ verify = ["./scripts/test-flamegraph.sh", "python3 scripts/test_performance_docu
 notes = "Relevant README.md, docs/operator-guide.md, docs/performance.md, production screenshot manifest/assets and measured report. Distinguish fixture workbench stress from real OpenBMC runtime and startup from steady state; quantify findings without old stale performance certification. Add actual demo route, exact paths/tool prerequisites/cleanup/recovery and optional missing-data boundaries. Presentation remains outside Git uncommitted/unpushed."
 
 [[task]]
+id = "DEMO-NATIVE-PERSISTENCE-001"
+milestone = "M114"
+title = "Prepare durable native OpenBMC daemon startup after laptop login and reboot"
+status = "NOT_STARTED"
+priority = 3524
+required = true
+depends_on = ["DEMO-DOCS-001"]
+verify = ["Manual: durable native Python/ARM QEMU/GDB and exact saved OpenBMC source/build profile validation without root privilege bypass or authoritative upstream edits", "Manual: enabled unprivileged systemd user service uses final installed optimized binary and standard endpoint; cold restart and plain native yoctui attach succeed without temporary container launcher", "Manual: original boot/debug image hashes unchanged; no arbitrary command replay, restored former live sessions honestly Lost/Stopped", "Manual: coordinate actual laptop reboot with user, verify post-login service and plain native attach; do not claim actual reboot verified from cold restart alone", "./scripts/verify-roadmap.sh"]
+notes = "Latest user requires plain native laptop attach, rejects container-launcher workaround, and requires demo availability after system reboot. Relevant daemon service/profile/tool installation, native smoke, operator recovery checklist and source-bound evidence. Existing host Ubuntu26.04/Python3.14 lacks ARM QEMU/GDB-multiarch; validation container uses Ubuntu24.04 and isolated PID/runtime namespaces, so is not current native acceptance. Use durable user-scoped prerequisites or record genuine authority/dependency blocker, never forge daemon identity or bypass host permissions. Enable existing user service after validating exact selected environment; volatile sockets may recreate but tools/profile/image/debug evidence must not depend on /tmp. Do not reboot laptop without coordination or claim processes survive power loss. No new product feature inferred."
+
+[[task]]
 id = "DEMO-INSTALL-LIVE-001"
 milestone = "M114"
 title = "Install optimized release and rehearse all OpenBMC demo screens and sessions"
 status = "NOT_STARTED"
 priority = 3504
 required = true
-depends_on = ["DEMO-DOCS-001"]
-verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: installed optimized binary equals committed source-bound release hash/version; daemon workspace/endpoint available from documented normal desktop attach flow", "Manual: real OpenBMC screen-by-screen audit, supported recipe/devtool/devshell, rootfs/packages/services/artifacts and reviewed QEMU boot/kernel debugging/reconnect/cleanup; report unavailable optional screens honestly", "./scripts/verify-roadmap.sh"]
-notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed release, correct workstation/container endpoint and working artifacts, not only mocks. Prepare reproducible two-minute path and real screenshots; no physical-board actions or long clean image rebuild inferred."
+depends_on = ["DEMO-NATIVE-PERSISTENCE-001"]
+verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: installed optimized binary equals committed source-bound release hash/version; plain native yoctui attach discovers healthy exact OpenBMC daemon after login without container launcher", "Manual: real native OpenBMC screen-by-screen audit, supported recipe/devtool/devshell, rootfs/packages/services/artifacts and reviewed QEMU boot/kernel debugging/reconnect/cleanup; report unavailable optional screens honestly", "./scripts/verify-roadmap.sh"]
+notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed native release, normal workstation endpoint and durable working artifacts; container-only rehearsal and mocks do not meet acceptance. Prepare reproducible two-minute path and real screenshots/recovery checklist; no physical-board actions or long clean image rebuild inferred."
 
 [[task]]
 id = "DEMO-PUBLISH-001"

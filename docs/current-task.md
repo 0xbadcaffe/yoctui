@@ -42,6 +42,13 @@ update README screenshots/latest measured report/operator guide, bump version,
 run full suite, install optimized release, verify real OpenBMC daemon/attach/
 every demo screen and publish the verified public crate graph to crates.io.
 Full-suite deferral is explicitly revoked. Dependency OPENBMC-QEMU-GDB-LIVE-001
+is DONE. Additional workstation acceptance: plain native `yoctui attach` and
+reliable demo startup after laptop reboot/login, not a container launcher.
+Durable tools, exact saved OpenBMC profile and enabled user service must replace
+temporary setup; runtime endpoints recreate normally. Live processes do not
+survive reboot. Cold-restart checks and an actual coordinated post-reboot check
+are distinct; never reboot this working laptop without user coordination.
+Dependency OPENBMC-QEMU-GDB-LIVE-001
 is DONE. Start with source-bound optimized fixture flamegraph and real retained
 OpenBMC client/daemon profiling; preserve prior evidence and record workload,
 sampling, source/binary identity, timing and permission/storage prerequisites.

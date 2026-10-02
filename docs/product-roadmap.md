@@ -6,9 +6,18 @@ New user instruction selects profiling and measured hotspot fixes, correctness
 polish without new features, full suite, README screenshots/flamegraph report,
 operator guide, version bump, optimized installation, real OpenBMC screen/session
 rehearsal and authenticated crates.io publication. Full-suite deferral revoked.
+The user's workstation acceptance requires plain native `yoctui attach`, not
+a container-launcher substitute, and remains required after a laptop reboot.
+Use durable installed tools, saved exact OpenBMC environment, enabled unprivileged
+login service and standard discoverable runtime endpoint. Recreate runtime
+sockets after login; never pretend QEMU/GDB/PTY processes survive power loss.
+Verify a cold service restart and dependency checks before handing off. An
+actual laptop reboot requires user coordination; report that post-boot check
+as pending until genuinely observed, not as covered by a simulated restart.
 Atomic order: DEMO-PROFILE-001 -> DEMO-POLISH-001 (split implementation children
 from actual findings) -> DEMO-FULL-VERIFY-001 -> DEMO-DOCS-001 ->
-DEMO-INSTALL-LIVE-001 -> DEMO-PUBLISH-001. Preserve prior evidence, existing
+DEMO-NATIVE-PERSISTENCE-001 -> DEMO-INSTALL-LIVE-001 -> DEMO-PUBLISH-001.
+Preserve prior evidence, existing
 workspaces and matching artifacts; no broad parent DONE from partial checks.
 Profiling baseline DONE: fresh2299sample/6000frame stress plus real1179sample
 idle OpenBMC profile. Local flag polling causes repeated full-App rollback

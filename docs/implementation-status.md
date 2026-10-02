@@ -1,4 +1,12 @@
 M114 current: DEMO-UI-FIXTURES-001 IN_PROGRESS; Configuration controls DONE v277.
+User now requires plain native laptop attach and reboot/login-ready demo.
+DEMO-NATIVE-PERSISTENCE-001 split before installation: durable prerequisites,
+saved exact OpenBMC profile, enabled user service and normal endpoint; cold
+restart and genuine post-reboot check distinguished. No service installed yet;
+native host Ubuntu26.04/Python3.14 lacks ARM QEMU/GDB-multiarch, and current
+working container daemon has isolated PID/runtime namespaces. It does not
+satisfy native attach; no identity forging/container launcher accepted. Actual
+reboot will require coordination; no claim that live QEMU/PTY survives it.
 Compact typed copy/edit/compare/source availability and loaded/loading/error
 state precede long details, with full fields/reasons retained. Existing hints
 use Alt+c/u/e. External UI2 across80..240 and app1, strictUIClippy/fmt/UI/version/
