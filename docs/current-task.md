@@ -1,30 +1,36 @@
 # Current Task
 
-**ID:** DEMO-BACKGROUND-COPY-001
-**Title:** Remove full application rollback copies from local activity polling
+**ID:** DEMO-PLATFORM-PROFILE-001
+**Title:** Initialize Kernel and Firmware inspection from exact selected sibling source
 **Status:** IN_PROGRESS
 
-Dependency DEMO-PROFILE-001 is DONE. Real idle Layers1179samples show App::clone
-37.32% inclusive; current CLI poll_runtime sends three effect-free local
-SetBackgroundActivity actions through whole-App authority rollback snapshots.
-Route only those local setters through pure update, retaining guarded reducer
-for external actions. Relevant interactive_runtime/polling.rs and equivalent-
-state normal/offline/reduced-motion tests. Verify model activity/workspace
-authority failure paths, strict affected Clippy/fmt/version/roadmap. Bump product
-version and commit coherent fix; actual optimized source-bound OpenBMC
-before/after profile/CPU evidence must verify benefit, not infer from unit tests.
-Keep input/state/animation/daemon authority unchanged; no new UI or broad bypass.
+Dependency DEMO-BACKGROUND-COPY-001 is DONE with committed v270 fix and actual
+before/after evidence. Actual daemon-attached OpenBMC sibling build cannot find
+its initializer despite selected canonical source. Relevant platform inspection
+operation/profile helpers and exact selected-source/build tests. Initialize from
+explicit selected source/profile, preserve ancestor fallback only when no source
+is supplied, reject missing/mismatched source/build/initialized BUILDDIR rather
+than use another environment. No source guessing/edit/build or new screen layout.
+Verify fake initializer normal/failure paths and real retained Kernel/Firmware
+provider/config inspection; version bump, boundary docs and coherent commit.
 
 ```bash
-cargo test -p yoctui --bin yoctui background_activity
-cargo test -p yoctui-model background_activity
-cargo test -p yoctui-model workspace_compatibility
+cargo test -p yoctui --bin yoctui platform_inspection
+cargo test -p yoctui --bin yoctui daemon_commands
+cargo test -p yoctui --bin yoctui saved_environment
 cargo fmt --all --check
 cargo clippy -p yoctui --all-targets --all-features -- -D warnings
 python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
-# Manual: real optimized before/after client CPU/profile, identical idle Layers.
+# Manual: actual retained OpenBMC Kernel/Firmware exact provider/config views.
 ```
+
+Completed local polling fix: source040a23d0/v270 exact optimized49f75463 release,
+same idle Layers/unchanged daemon10s warm60samples: client15.276970->0.270380%
+oneCPU (98.23% reduction); combined16.256828->1.354049%. Actual after188samples/
+zero lost/App::clone0.89% inclusive with legitimate guarded copies preserved.
+Evidence artifacts/performance/demo-v270, flags/RSS/descendants documented.
+Not full-suite/M46/M67 certification or installed/published final release.
 
 ## Completed profiling baseline / release polish scope
 

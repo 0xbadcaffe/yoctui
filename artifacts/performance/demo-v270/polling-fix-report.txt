@@ -1,0 +1,61 @@
+M114 local-background polling performance fix, 2026-10-02 UTC
+
+Product source 040a23d01f4348572b742eef852579c40d0ba2fb, v0.1.270.
+Following governance-only source30b32b5d has identical product code.
+Exact optimized thin-LTO/one-codegen-unit build, two Cargo workers,
+release debug1/frame pointers, 6m26s, no image rebuild:
+CARGO_TARGET_DIR=/tmp/yoctui-openbmc-cargo.G9B7ac CARGO_BUILD_JOBS=2
+CARGO_INCREMENTAL=0 CARGO_PROFILE_RELEASE_DEBUG=1
+RUSTFLAGS='-C force-frame-pointers=yes'
+cargo build --release --locked -p yoctui --bin yoctui
+CLI SHA25649f754635fa02328cdc1fa5f2de4015211a830992b0cc2ec5634afd63394385c.
+The actual container client's /proc/2199213/exe has this exact hash.
+Old v269 release preserved as target/release/yoctui-v0.1.269.
+Not yet installed to workstation PATH; full release readiness remains pending.
+
+REAL COMPARISON
+Same retained OpenBMC source/build, daemon host2125313/container3142, nine
+layers/core756recipe view, 160x50, idle Layers with retained exited PTY history.
+No inputs/build/compilation during measured windows; daemon unchangedv268.
+Fresh client2199213/container8467 replaces only owned baseline client2184877;
+unrelated desktop/ZCU clients left intact. Baseline original optimizedv269
+has no profiling frame pointers; new optimizedv270 enables frame pointers and
+debug info. Do not imply identical binary/RSS or general benchmark certification.
+Both records use existing scripts/measure-process-overhead.py, 10s warmup,
+60one-second samples, /proc clock ticks, 10% trimmed mean of one logical CPU.
+
+Before client15.276969939%, daemon0.998734429%, combined16.256828083%.
+After client0.270379942%, daemon1.041978680%, combined1.354049047%.
+Client CPU reduction98.23%; combined reduction91.67% (combined statistic is
+trimmed independently, not exactly the sum of per-process trimmed statistics).
+JSON records contain original exact times/source/binary/PIDs/RSS/host data.
+Neither scenario is the exact M46 idle Dashboard fixture or M67 live-Poky
+performance acceptance; combined after value still exceeds1.00% target.
+No memory improvement is claimed: exact new client maxRSS72,065,024bytes
+versus old29,704,192bytes; different symbol/frame-pointer build and startup.
+
+DIAGNOSTIC PROFILE
+openbmc-idle-after.svg: actual client plus inherited descendants, cycles:u,
+499Hz/DWARF8192bytes/30s,188samples, zero lost. Original private raw perf/log
+/tmp/yoctui-demo-openbmc-idle-after-v270.perf.data/.perf.log and reports retained.
+The dominant original App::clone37.32% inclusive was attributable to repeated
+whole-App authority snapshots for three explicitly effect-free local setters.
+Only those setters now use the pure reducer; real environment actions retain
+guarded authority/rollback. New low-work profile includes periodic Git probes
+and sampled App::clone0.89% inclusive (not zero; legitimate guarded actions
+still copy). Baseline1179 versus after188 samples include descendants and
+different periodic probe timing; CPU comparison uses the separate60s records.
+Ordinary rendering/descendant addresses/container shared-library symbols
+are not confidently resolved application attribution. This sparse diagnostic
+is not the repeatable fixture stress flamegraph (baseline2299samples/6000frames).
+
+VERIFICATION
+Large4096recipe equivalent-state regression covers all three flags, repeated
+false/true transitions, disconnected/current clients and reduced-motion modes.
+CLI background1PASS; model background1PASS; model workspace_compatibility11PASS.
+Strict CLI all-target/all-feature Clippy, fmt, version269->270, roadmap PASS.
+Source boundary documented in architecture; no wire/UI layout/cadence change.
+Baseline full-suite88failures remain queued, not hidden/marked PASS.
+Additional documentation baseline: docs link check PASS47documents, existing
+M22 raster validator rejects DIM; performance-doc test misses explicit
+permission nonmutation wording. Reconcile honestly in planned docs/quality work.

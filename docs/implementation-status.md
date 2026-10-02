@@ -1,10 +1,17 @@
-M114 current: DEMO-BACKGROUND-COPY-001 IN_PROGRESS; profiling baseline DONE.
+M114 current: DEMO-PLATFORM-PROFILE-001 IN_PROGRESS; background copying DONE.
 v0.1.270 local background setters now use pure reducer (no full-App rollback
 copies); new large-inventory equivalent-state test, existing activity1/authority11
 tests and strict affected all-target/all-feature Clippy pass. No external action
 authority change. Source-layout diagnostic also found pre-existing oversized/
 inline-test files; reconcile separately before final quality handoff, not hide.
-Committed-source optimized runtime measurement is pending; task not DONE yet.
+Product040a23d0/v270 committed/pushed; exact optimized release49f75463 built.
+Actual unchanged-daemon idleLayers10s warm60samples: client15.276970->0.270380%
+oneCPU (98.23% reduction), combined16.256828->1.354049%. After188samples/zero lost
+and App::clone0.89% inclusive; legitimate guarded copies retained. Report/JSON/
+SVG in artifacts/performance/demo-v270; different symbols/frame-pointer flags,
+RSS and periodic descendant Git probes explicit. No full suite/M46/M67 claim.
+Next selected-source initialization fix; final optimized PATH install/publish
+and full demo rehearsal remain pending.
 DEMO-LAYOUT-HYGIENE-001 queued for mechanical baseline module/test placement
 repairs after integration fixes; full verification depends on it explicitly.
 Fresh source8761f308 stress2299samples/6000frames/4580ms/checksum33c187ece68108dd,
