@@ -274,7 +274,7 @@ status = "IN_PROGRESS"
 priority = 3535
 required = true
 depends_on = ["DEMO-CLI-HYGIENE-001"]
-verify = ["cargo test -p yoctui-model --all-features","cargo test -p yoctui-app --all-features","cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings","Manual: six model source-layout findings removed with exact behavior/assertion preservation","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
+verify = ["cargo test -p yoctui-model --all-features","cargo test -p yoctui-app --all-features","cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings","Manual: five model source-layout findings removed with exact behavior/assertion preservation","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
 notes = "Relevant compatibility_ui/workspace_action_catalog, open_selected_package_recipe/reset_pane_subfocus oversized reducer chunks, hardware/tests.rs outside tests folder and525line kernel_debug tests. Semantic mechanical helper/module boundaries only; exact branch order/effects/guards/assertions/private visibility retained. No size-limit exemptions or new behavior. Versioned coherent commit and docs."
 
 [[task]]

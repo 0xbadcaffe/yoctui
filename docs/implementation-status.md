@@ -13,7 +13,7 @@ After committed integration926cbc0a/v288, all seven selected direct polish
 dependencies are DONE with source-bound measured and focused evidence reviewed.
 No final release/native/reboot/CI/publication claim. Split source hygiene before
 code into CLI, model, bridge and palette children; full-suite hygiene parent
-retains all gates. Baseline14 file findings/17 checker diagnostics, no exemptions.
+retains all gates. Baseline14 file findings/18 checker diagnostics, no exemptions.
 Also isolate existing DIM raster/provenance/performance-prose maintenance as a
 full-quality prerequisite, breaking the full-verify/final-doc dependency cycle
 without omitting check-docs. Historical live evidence remains historical.

@@ -23,7 +23,7 @@ OpenBMC/QEMU/GDB/CI/publication. Preserve source/images/symbols/user captures.
 cargo test -p yoctui-model --all-features
 cargo test -p yoctui-app --all-features
 cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings
-# Manual: six model layout findings removed with exact behavior/assertions.
+# Manual: five model layout findings removed with exact behavior/assertions.
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```
