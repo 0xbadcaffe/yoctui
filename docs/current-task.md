@@ -1,8 +1,43 @@
 # Current Task
 
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Rehearse remaining native OpenBMC demo screens and sessions
+**Status:** IN_PROGRESS
+
+Native metadata/status prerequisites DONE. Current source87fd8a95/v302 installed
+optimized71ea03b6; both native daemon2440420 and plain client verified. Startup
+223s,4799recipes/nine layers/NRestarts0; real python3-crc/BusyBox metadata loaded,
+workspace absent/NotMember without creation, original six input hashes exact.
+Controller2440883/client2440884/bridge2442385 normal q clean0 and actors absent.
+18 jobs/29 historical rows retained; daemon restart cleared only obsolete lease/
+viewer fields on ended26–29, then history byte-exact. Evidence native-recipe-
+status-safety-v302.txt. Full2084Rust/67bridge/strictClippy/fmt/source/UI/version/
+29rasters PASS. All-screen/current QEMU/docs/CI/reboot/publication not certified.
+
+Resume actual screen-by-screen native rehearsal. Use normal image picker to
+select obmc-phosphor-image (current saved selection aspeed-image-initramfs is
+not the retained demo image). Verify layer/source/recipe tools, supported
+devshell/menuconfig without altering original kernel config, real image artifact/
+rootfs/files/systemd/D-Bus/udev screens and honest absent optional SDK/QA/security/
+testing. Preserve hardware documents/progress; no physical actions or clean image
+rebuild. Rehearse reviewed retained OpenBMC flash QEMU boot/matching6.18.49 GDB/
+breakpoint/source/reconnect/owned cleanup on current installed source. Record
+real frames/ownership and original hashes; do not accept filenames as evidence.
+Enabled service/tools/profile survive login; actual coordinated reboot is later
+separate acceptance. Finish independent demo/docs/CI before reboot coordination.
+
+```bash
+cargo build --release --locked -p yoctui --bin yoctui
+# Manual: plain installed native attach, real remaining screens and reviewed
+# matching QEMU/GDB/reconnect/owned cleanup, original hashes preserved.
+./scripts/verify-roadmap.sh
+```
+
+## Completed status safety child
+
 **ID:** DEMO-DEVTOOL-STATUS-SAFETY-001
 **Title:** Prevent status inspection from initializing or enabling a workspace
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 Native v301 recipe metadata works, but automatic upstream devtool status created
 workspace/conf/layer.conf and README and enabled that layer without confirmation.
@@ -44,11 +79,16 @@ python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```
 
-## Paused selected metadata environment child
+Native installed proof PASS; evidence native-recipe-status-safety-v302.txt.
+46 more old301 internal libraries607599604B cleared after live-use checks;
+total135files2025044188B compiler cache only. Source-bound install/native service
+upgrade/real recipes/normal quit/original hash preservation verified as above.
+
+## Completed selected metadata environment child
 
 **ID:** DEMO-NATIVE-METADATA-ENV-001
 **Title:** Initialize the selected native build environment for local metadata workers
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 Function-key dependency DONE code7bc634df/v300 optimized49d23642. Real plain
 client2412326 read-only history -> F4 Dashboard/F6 nine layers; ordinary q clean0,

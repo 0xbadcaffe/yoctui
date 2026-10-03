@@ -1,4 +1,18 @@
-M114 current: DEMO-DEVTOOL-STATUS-SAFETY-001 IN_PROGRESS. Native301 selected
+M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS. Metadata/status children DONE:
+source87fd8a95/v302 optimized installed71ea03b6, native daemon2440420 upgraded
+gracefully after owned work check; startup223s/4799recipes/nine layers/NRestarts0.
+Plain native python3-crc/BusyBox metadata loaded; no workspace created, original
+six input hashes exact. Normal q controller2440883/client2440884/bridge2442385
+clean0/actors absent.18 jobs/29 rows retained; restart resets stale lease/viewers
+on ended26–29, then history exact. Evidence native-recipe-status-safety-v302.txt.
+Full2084Rust/67bridge/strictClippy/fmt/source2904/UI/version/29rasters PASS. Final
+focused CLI13 PASS.135 obsolete compiler outputs2025044188B cleared after owner/
+link/live-use checks; original data/current outputs preserved and generated
+workspace recoverable above Git. Parent remaining screens/current QEMU/docs/
+profiles/hosted CI/reboot/publication remain pending. User service enabled for
+login, same bootID; no actual reboot acceptance inferred from daemon restart.
+
+Previous safety phase: DEMO-DEVTOOL-STATUS-SAFETY-001 IN_PROGRESS. Native301 selected
 BusyBox metadata/source view and warm refresh work; clean retry exits0. Upstream
 automatic devtool status also created an unconfirmed workspace and enabled it.
 Exact original bblayers f1dc6040 restored by verified one-line removal; generated

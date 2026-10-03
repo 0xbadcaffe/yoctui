@@ -2,6 +2,15 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Native metadata/status children DONE after source87fd8a95/v302 real installed
+client/daemon proof, not merely code presence: BusyBox/CRC metadata, no workspace
+initialization, original six hashes preserved, normal quit/owned actors absent.
+Optimized71ea03b6, daemon2440420/223s/4799/nine layers/NRestarts0; historical
+18jobs/29PTYs retained, stale leases reset on restart. Evidence native-recipe-
+status-safety-v302.txt. Parent remaining screens/current QEMU/docs/CI/reboot and
+publication resume; same boot, not reboot completion. Full2084Rust/67bridge/
+strictClippy and focused CLI13 pass; source-bound proof recorded honestly.
+
 Native301 metadata proof exposed automatic devtool workspace initialization.
 Split a backend status safety child before implementation; inspection must not
 create/enable a workspace. Original bblayers restored to verified checksum,
