@@ -366,7 +366,7 @@ impl InteractiveRuntime {
         }
         if (runtime.app.screen == Screen::TerminalSessions
             || runtime.app.platform_menuconfig_visible())
-            && runtime.app.selected_terminal_is_menuconfig()
+            && runtime.app.selected_terminal_is_writer()
             && runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
             && let Some(daemon_client) = runtime.daemon_runtime.as_mut()
         {

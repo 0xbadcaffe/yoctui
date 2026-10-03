@@ -91,8 +91,8 @@ fn terminal_resize_rejects_ended_writer_without_sending_a_request() {
         assert_eq!(
             resize.dimensions,
             TerminalDimensions {
-                columns: 90,
-                rows: 30
+                columns: 98,
+                rows: 32
             }
         );
         // Every rejected state must leave this as the next wire frame.
@@ -131,6 +131,7 @@ fn terminal_resize_rejects_ended_writer_without_sending_a_request() {
         terminal_completions: vec![],
     };
     let mut app = App::new(8, 1_000);
+    app.screen = yoctui_model::Screen::TerminalSessions;
     app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
     app.terminal.client_id = Some([7; 16]);
     app.daemon
@@ -154,28 +155,9 @@ fn terminal_resize_rejects_ended_writer_without_sending_a_request() {
             exit_code: None,
             restartable: true,
         });
-    assert!(
-        runtime
-            .resize_selected_terminal(
-                &app,
-                yoctui_model::PtyDimensions {
-                    columns: 90,
-                    rows: 30
-                }
-            )
-            .unwrap()
-    );
-    assert!(
-        !runtime
-            .resize_selected_terminal(
-                &app,
-                yoctui_model::PtyDimensions {
-                    columns: 90,
-                    rows: 30
-                }
-            )
-            .unwrap()
-    );
+    let visible = yoctui_app::terminal_workspace_dimensions(&app, 160, 50).unwrap();
+    assert!(runtime.resize_selected_terminal(&app, visible).unwrap());
+    assert!(!runtime.resize_selected_terminal(&app, visible).unwrap());
     for lifecycle in [
         ClientDaemonLifecycle::Disconnected,
         ClientDaemonLifecycle::Connecting,

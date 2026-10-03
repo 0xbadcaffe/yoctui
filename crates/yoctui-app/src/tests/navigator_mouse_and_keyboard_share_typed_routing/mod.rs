@@ -43,5 +43,6 @@ mod concept_chrome_and_pane_mouse_boundaries_agree_across_resize;
 
 mod selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells;
 mod terminal_mouse_uses_bound_later_history_session;
+mod terminal_visible_dimensions;
 
 mod terminal_pane_clicks_exclude_navigator_inspector_tabs_and_prefix_rail;

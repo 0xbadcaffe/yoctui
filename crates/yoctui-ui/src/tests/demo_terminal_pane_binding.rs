@@ -1,6 +1,6 @@
 use super::*;
 
-fn terminal_binding_fixture() -> App {
+pub(super) fn terminal_binding_fixture() -> App {
     let mut app = App::new(8, 1_000);
     app.screen = Screen::TerminalSessions;
     app.focus = FocusTarget::Workspace;

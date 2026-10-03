@@ -113,7 +113,7 @@ pub fn terminal_workspace_dimensions(
     height: u16,
 ) -> Option<yoctui_model::PtyDimensions> {
     if (app.screen != Screen::TerminalSessions && !app.platform_menuconfig_visible())
-        || !app.selected_terminal_is_menuconfig()
+        || app.selected_terminal_session().is_none()
         || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live
     {
         return None;
@@ -140,7 +140,11 @@ pub fn terminal_workspace_dimensions(
     } else {
         return None;
     };
-    let prefix_help = 0;
+    let prefix_help = if !app.selected_terminal_is_menuconfig() && workspace_height >= 30 {
+        3
+    } else {
+        0
+    };
     let terminal_area = MouseRect {
         x: 0,
         y: 0,
@@ -153,13 +157,18 @@ pub fn terminal_workspace_dimensions(
     } else {
         collect_terminal_mouse_panes(&app.pane_layout.root, terminal_area, &mut panes);
     }
-    let pane = if panes.len() == 1 {
-        panes.first()
-    } else {
-        panes.get(app.pty_selection)
-    }?;
-    let columns = pane.0.width.saturating_sub(2).clamp(2, 512);
-    let rows = pane.0.height.saturating_sub(2 + 1).clamp(1, 512);
+    let pane = panes.iter().find(|(_, id)| *id == app.pane_layout.focused)?;
+    let status_rows = 1 + app.selected_terminal_screen().map_or(0, |screen| {
+        u16::from(!app.terminal.query.is_empty())
+            + u16::from(screen.scrollback_lines > 0 || screen.dropped_line_feeds_lower_bound > 0)
+    });
+    let columns = pane.0.width.saturating_sub(2);
+    let rows = pane.0.height.saturating_sub(2 + status_rows);
+    if columns < 2 || rows == 0 {
+        return None;
+    }
+    let columns = columns.min(512);
+    let rows = rows.min(512);
     Some(yoctui_model::PtyDimensions { columns, rows })
 }
 

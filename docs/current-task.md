@@ -18,7 +18,20 @@ Preserve in-place menuconfig, zoom/narrow/split geometry and copy/search modes;
 current live-owned writer only, no remote/stale/exited/zero-sized hidden resize,
 unchanged coalesced transport/deadlines/budgets. Relevant app workbench_geometry,
 CLI polling, external geometry/TestBackend/fake socket/native shell/GDB tests.
-No autosize implementation yet; bump/commit/push/optimized source verification.
+Implementation v299 underway: ordinary current writer polling, focused PaneId
+geometry with prefix/search/history chrome and no invented empty cells. Four
+new pure geometry regressions and three TestBackend cell-count crosschecks,
+plus existing fake socket normal geometry/coalescing/remote/stale/ended guards.
+Focused app61/UI34/CLI36(1existing manual ignore) PASS before bump. All three
+new pre-fix geometry assertions failed as expected. Full299 baseline2073Rust/
+zero failures/nine unchanged ignores31targets/67bridge/strict workspaceClippy/
+fmt/source2902/UI/version/roadmap/29rasters PASS; all34 golden changes only
+encoded298->299 identity, remaining symbols/styles byte-exact. Optimized install
+and native ordinary shell/GDB acceptance pending, not DONE. Storage preflight
+cleared200 validated obsolete temporary compiler outputs2883105299B:23prior298
+test executables433286864B,21old release outputs476857616B,156pre299 dev
+libraries1972960819B; owner/link/live-use checks, current299/installed298 binary/
+original source/images/symbols/assets preserved. Rebuildable Cargo cache only.
 
 ## Completed terminal pane binding (v298)
 
@@ -62,7 +75,7 @@ Storage preflight cleared173 validated obsolete temporary compiler outputs:
 libraries963335943B; owner/link/live-use checks, original data/current outputs
 preserved. These caches are rebuildable, not deleted source/image/debug assets.
 
-Ordinary autosize is now current DEMO-TERMINAL-VIEWPORT-001, not implemented:
+Initial ordinary autosize reproduction for current DEMO-TERMINAL-VIEWPORT-001:
 actual native ordinary GDB/build shells retain120x40 while the visible pane is
 narrower/shorter. Current geometry and polling restrict resize to menuconfig.
 Correct existing visible-cell contract for ordinary live owned PTYs, selecting

@@ -47,6 +47,11 @@ active writer lease. Existing Quit/global routes regain normal application
 behavior when no live writer owns input. Ordinary live terminal panes, including
 build shells/GDB, must size the owned PTY to actual visible cells just like
 menuconfig; preserve remote viewer authority and existing split/narrow layouts.
+Resize dimensions exclude the existing tabs, access/status lines, borders,
+prefix help and optional search/history rows. Hidden/empty panes do not invent
+writable cells; non-live copy/search/help modes retain their viewport. Only
+the current Running writer can request resize, with existing lease/coalescing
+checks preserved. In-place menuconfig and inspector-free allocation stay intact.
 
 Plain native attachment must not require a caller-side Python path workaround
 for the selected BitBake package's own vendored parser. The backend initializes

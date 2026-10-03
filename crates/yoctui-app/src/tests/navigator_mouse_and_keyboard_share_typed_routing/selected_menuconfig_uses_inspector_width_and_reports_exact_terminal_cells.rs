@@ -37,7 +37,13 @@ fn selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells() {
 
     app.daemon.pty_details[0].kind = yoctui_model::ClientDaemonPtyKind::BuildShell;
     assert_eq!(workbench_pane_widths(&app, 160, 50), [27, 100, 33]);
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), None);
+    assert_eq!(
+        terminal_workspace_dimensions(&app, 160, 50),
+        Some(yoctui_model::PtyDimensions {
+            columns: 98,
+            rows: 32
+        })
+    );
 
     app.screen = Screen::Kernel;
     app.daemon.pty_details[0].kind = yoctui_model::ClientDaemonPtyKind::Menuconfig;

@@ -2200,6 +2200,13 @@ or replaced daemon identities. UI and mouse geometry consume the same typed
 projection; neither treats a pane ordinal as global terminal-history selection.
 This is client presentation only: no new wire/backend mutation or raw ANSI parsing.
 
+Ordinary shell/GDB visible-cell geometry uses the same focused PaneId and typed
+screen metadata as rendering, including existing prefix/search/history chrome.
+CLI polling requests resize only for a current Running writer; the existing
+transport independently revalidates lease and coalesces session/epoch/dimensions.
+Zero-sized/hidden panes and non-live presentation modes emit no resize. Existing
+menuconfig geometry, wire limits and process ownership remain unchanged.
+
 ### Attach, detach, and synchronization
 
 Attach authenticates the local peer, negotiates protocol/capabilities, then

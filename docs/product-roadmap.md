@@ -11,8 +11,10 @@ Binding implementation v298 passes full2066Rust/67bridge/strictClippy/fmt/source
 UI/version/roadmap/29rasters; actual optimized native two-shell split/mouse/input/
 close/normal exits/clean q proof PASS code44512807/rasterfc6cb51b/hashd538bd24.
 Evidence native-terminal-pane-binding-v298.txt;26 prior rows/input hashes intact.
-Viewport now current after this atomic correction and has no
-implementation yet. Initial synthetic CLI mouse fixture mismatch was corrected
+Viewport now current after this atomic correction; v299 focused geometry/UI/
+transport/full2073Rust/67bridge/strictClippy/fmt/source/UI/version/roadmap/
+29rasters pass, native optimized shell/GDB proof pending. Initial
+synthetic CLI mouse fixture mismatch was corrected
 without weaker assertions and the full suite rerun; original inputs preserved.
 
 Terminal lifecycle/writer child DONE source8a30ba9f/v297 installed optimized

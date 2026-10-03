@@ -1,4 +1,15 @@
-M114 current: DEMO-TERMINAL-VIEWPORT-001 IN_PROGRESS, no autosize code yet.
+M114 current: DEMO-TERMINAL-VIEWPORT-001 IN_PROGRESS, implementation v299.
+Ordinary owned-writer polling and focused PaneId geometry mirror visible prefix/
+search/history/status chrome and exclude empty/hidden/non-live content. Four
+new pure geometry regressions/three TestBackend rendered-cell crosschecks and
+existing fake socket geometry/coalescing/remote/stale/ended guards pass focused
+app61/UI34/CLI36(1existing manual ignore). Three pre-fix assertions fail as
+expected; full299 baseline2073Rust/zero failures/nine unchanged ignores31targets/
+67bridge/strictworkspaceClippy/fmt/source2902/UI/version/roadmap/29rasters PASS.
+All34 goldens only encoded298->299 identity; optimized native shell/GDB proof
+pending, not DONE. Cleared200 validated obsolete temporary compiler outputs
+2883105299B after owner/link/live-use checks, current299/installed298 and all
+original inputs/user assets preserved; rebuildable cache only.
 Pane binding DONE v298 code44512807/rasterfc6cb51b/installedd538bd24. Actual
 native shells27/28 distinct split output, mouse27 routes input only27, close27
 pane preserves both processes/selects28; normal exits both0 preserve26 prior
