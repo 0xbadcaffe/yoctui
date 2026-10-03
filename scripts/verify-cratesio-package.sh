@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
+source "$repo_root/scripts/cratesio-package-contract.sh"
 
 version="0.1.309"
 public_crates=(
@@ -89,7 +90,7 @@ help_output="$(
   XDG_CONFIG_HOME="$config_dir" CARGO_TARGET_DIR="$package_target_dir" cargo run \
     --manifest-path "$work_dir/Cargo.toml" -p yoctui --quiet -- --help
 )"
-if [[ "$help_output" != *"Ratatui frontend and control client for BitBake"* ]]; then
+if ! yoctui_verify_packaged_help "$help_output"; then
   printf '%s\n' 'packaged binary help output is incomplete' >&2
   exit 1
 fi

@@ -589,12 +589,12 @@ notes = "2026-10-03 explicit user override: from publication/README/CI, do only 
 id = "DEMO-PUBLISH-HELP-CONTRACT-001"
 milestone = "M114"
 title = "Correct the package verifier's obsolete CLI help banner contract"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3575
 required = true
 depends_on = ["DEMO-FULL-VERIFY-001", "DEMO-TERMINAL-KILL-SAFETY-001"]
 verify = ["./scripts/test-cratesio-package-contract.sh", "CARGO_BUILD_JOBS=2 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 ./scripts/verify-cratesio-package.sh", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh", "Manual: all seven public application source payloads match feed7995; no README/CI/product/version change"]
-notes = "Split before code after actual extracted public309 graph builds and original verifier fails obsolete help banner at line92. Relevant scripts/verify-cratesio-package.sh plus sourced scripts/cratesio-package-contract.sh and scripts/test-cratesio-package-contract.sh. Replace obsolete textual description with actual CLI workbench banner plus presence checks for Usage/options/doctor/attach/daemon; cover correct, old-only, truncated and missing-command negatives. Keep size/exclusion/bundled bridge/extracted build/version/private doctor assertions unchanged. No product/README/CI/version change; failed log retained in /tmp/yoctui-publish-package-v309.log. Definition of done: focused positive/failure tests and complete existing package verification pass, source payload identity checked, docs/current/status/registry updated and coherent helper correction committed."
+notes = "DONE 2026-10-03: split before code after original verifier rejects committed help banner. Sourced Bash contract accepts actual309 help and rejects 14 independent incomplete/obsolete/missing-command negatives; shell syntax/fmt/UI/roadmap and full existing package verification PASS. Seven archives size/exclusions/bundled bridge/extracted all-feature graph build/version/help/private doctor assertions retained. Successful log /tmp/yoctui-publish-package-verified-v309.log, failed original /tmp/yoctui-publish-package-v309.log retained. git diff feed7995 proves unchanged public crates/Cargo lock/README/operator guide/CI; no product/version change. Coherent helper/check/regression/governance commit; resume parent publication immediately."
 
 [[task]]
 id = "OPENBMC-QEMU-GDB-FLASH-001"

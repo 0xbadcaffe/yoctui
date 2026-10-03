@@ -1,21 +1,18 @@
 # Current Task
 
-**ID:** DEMO-PUBLISH-HELP-CONTRACT-001
-**Title:** Correct the package verifier's obsolete CLI help banner contract
+**ID:** DEMO-PUBLISH-001
+**Title:** Publish verified public crate graph to crates.io and verify registry availability
 **Status:** IN_PROGRESS
 
-Parent DEMO-PUBLISH-001 is IN_PROGRESS. All seven archives pass size/exclusion/
-bridge checks and the extracted all-feature graph builds. Verification then
-fails because the script expects an obsolete pre-workbench help description;
-actual committed cli_arguments.rs declares a different workbench banner.
-Failed log: /tmp/yoctui-publish-package-v309.log. Split this narrow verifier
-maintenance before code: check current banner plus Usage/options/doctor/attach/
-daemon sections with a sourced Bash helper; add independent positive/negative
-script tests, including incomplete/old-banner-only/missing-command failures.
-Do not change CLI/product source, version, README, CI or weaken packaged build,
-size/exclusion/bridge/version/doctor checks. Application crate source payloads
-must remain equivalent to feed7995. Commit this helper/check/test, then resume
-existing309 authenticated dry-run/publication only.
+DEMO-PUBLISH-HELP-CONTRACT-001 DONE: sourced Bash help contract accepts actual
+committed banner/Usage/options/doctor/attach/daemon and rejects 14 independent
+obsolete/incomplete negatives. Complete package verification now passes all
+seven archive size/exclusion/bridge checks, extracted all-feature graph build,
+packaged version/help/private doctor. Successful log:
+/tmp/yoctui-publish-package-verified-v309.log. Original failure retained:
+/tmp/yoctui-publish-package-v309.log. Bash syntax, fmt/UI/roadmap checks pass.
+Public source/Cargo lock/README/operator guide/CI remain identical to feed7995.
+Resume authenticated dry-run and authorized existing309 publication now.
 
 ```bash
 ./scripts/test-cratesio-package-contract.sh

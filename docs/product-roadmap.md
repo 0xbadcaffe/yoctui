@@ -3,10 +3,10 @@
 ## M114 — OpenBMC presentation/demo release polish
 
 2026-10-03 immediate user override: publish existing v0.1.309 only, then provide
-manual commands and explain existing automation. DEMO-PUBLISH-001 is the parent;
-DEMO-PUBLISH-HELP-CONTRACT-001 is current after package build passes but the
-old help-banner assertion rejects actual committed CLI output. Correct only
-that verifier with positive/negative contract tests before publication.
+manual commands and explain existing automation. DEMO-PUBLISH-001 is current;
+DEMO-PUBLISH-HELP-CONTRACT-001 DONE: actual help accepted, 14 independent
+incomplete/obsolete negatives rejected, full package/build/CLI/doctor checks
+pass. Public source remains feed7995; authenticated publication is next.
 README/operator-guide refresh, CI repair and coordinated reboot/full parent
 acceptance remain incomplete and deferred. Package/build verification and exact
 registry/checksum evidence remain required. No product source/version change,

@@ -1,9 +1,10 @@
-M114 current: DEMO-PUBLISH-HELP-CONTRACT-001 IN_PROGRESS; parent publication pending.
-All seven309 archives size/exclusions/bridge and extracted all-feature graph
-build pass; existing verifier then rejects actual help due to an obsolete banner.
-Failed log /tmp/yoctui-publish-package-v309.log retained. Split a narrow sourced
-Bash help contract plus positive/incomplete/obsolete/missing-command regression
-tests before implementation. No product source/version/README/CI change.
+M114 current: DEMO-PUBLISH-001 IN_PROGRESS; help-contract child DONE.
+Sourced Bash verifier accepts real309 help and rejects 14 independent obsolete/
+incomplete negatives. Full package size/exclusions/bundled bridge/extracted
+all-feature graph build/version/help/private doctor PASS in
+/tmp/yoctui-publish-package-verified-v309.log; original failed log retained.
+Bash syntax/fmt/UI/roadmap PASS. Public source/Cargo lock/README/operator guide/
+CI identical to feed7995. No product source/version change; publication next.
 
 M114 parent: DEMO-PUBLISH-001 IN_PROGRESS (2026-10-03 publish-only override).
 User requests existing v0.1.309 publication plus manual/automated instructions,
@@ -12,7 +13,7 @@ acceptance remain incomplete. Sourcefeed7995 has prior ordinary full2127Rust/
 67bridge/strictClippy evidence; no application/version change is planned.
 All seven registry crates currently latest0.1.118, no0.1.309 entry. Existing
 verify-cratesio-package.sh checks archives, size/exclusions, bundled bridge
-and extracted graph/build/CLI/doctor. Package verification is running;
+and extracted graph/build/CLI/doctor. Package verification passes;
 dry-run, authenticated uploads and registry checksums remain unverified.
 Native installed/daemon309 service is active; no environment change/restart.
 
