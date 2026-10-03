@@ -1,8 +1,35 @@
 # Current Task
 
-**ID:** DEMO-TERMINAL-VIEWPORT-001
-**Title:** Size ordinary owned terminal sessions to their actual visible pane
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
 **Status:** IN_PROGRESS
+
+Terminal children DONE. Latest code3d0d2940/v299 installed optimized3e03cc59;
+actual plain native shell29/native GDB17.1 read-only matching vmlinux load,
+resize/split/narrow/history/clean exit PASS. Native client2398207/shell2398264/
+GDB2398369 gone, original28 rows/input hashes intact, daemon2340904 healthy295/
+NRestarts0 unchanged protocol. Evidence native-terminal-viewport-v299.txt.
+This proves local managed GDB sizing, not a new live QEMU kernel stop.
+
+Resume actual native screen-by-screen rehearsal with final installed release:
+recipe/layer/source/devtool/devshell/menuconfig, artifacts/rootfs/files/systemd/
+D-Bus/udev and honest optional absent SDK/testing/security/QA. Preserve hardware
+documents/progress; no physical actions or clean image rebuild. Rehearse reviewed
+Yoctui OpenBMC flash QEMU boot/matching kernel GDB/breakpoint/source/reconnect/
+cleanup on current source, record actual ownership and original hashes. Final
+daemon upgrade requires checking no owned active jobs/PTYS before restart; allow
+real metadata warm-up. Durable service/tools/profile already prepared, actual
+coordinated laptop reboot is later separate acceptance, never infer it from restart.
+Finish independent native/docs/CI work before requesting reboot coordination.
+
+```bash
+cargo build --release --locked -p yoctui --bin yoctui
+# Manual: exact optimized installed source/hash and native all-screen/devtool/
+# devshell/artifact/rootfs audit; reviewed real QEMU/GDB/reconnect/owned cleanup.
+./scripts/verify-roadmap.sh
+```
+
+## Completed terminal viewport sizing (v299)
 
 Dependencies writer and pane binding DONE. Exact v298 code44512807/rasterfc6cb51b,
 optimized installedd538bd24; real shells27/28 separate split output, click27
@@ -27,7 +54,10 @@ new pre-fix geometry assertions failed as expected. Full299 baseline2073Rust/
 zero failures/nine unchanged ignores31targets/67bridge/strict workspaceClippy/
 fmt/source2902/UI/version/roadmap/29rasters PASS; all34 golden changes only
 encoded298->299 identity, remaining symbols/styles byte-exact. Optimized install
-and native ordinary shell/GDB acceptance pending, not DONE. Storage preflight
+and native ordinary shell/GDB acceptance PASS; viewport DONE. Exact code3d0d2940/
+installed3e03cc59, real native sizes98x32/96x15/48x32/62x42/126x42/78x7/98x31
+match shell/GDB/UI; normal GDB/shell exit then client q clean0,28 prior rows and
+original inputs preserved. Evidence native-terminal-viewport-v299.txt. Storage preflight
 cleared200 validated obsolete temporary compiler outputs2883105299B:23prior298
 test executables433286864B,21old release outputs476857616B,156pre299 dev
 libraries1972960819B; owner/link/live-use checks, current299/installed298 binary/

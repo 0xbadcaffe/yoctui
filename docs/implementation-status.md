@@ -1,4 +1,12 @@
-M114 current: DEMO-TERMINAL-VIEWPORT-001 IN_PROGRESS, implementation v299.
+M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; native all-screen parent resumes.
+Viewport DONE code3d0d2940/v299 optimized installed3e03cc59. Actual native
+shell29/GDB17.1 size reports match UI across98x32/96x15/split48x32/split62x42/
+full126x42/narrow78x7/restored98x31 with history. Normal GDB/shell exit, client
+2398207 ordinary q/confirmation clean0/terminal restored, owned actors gone;
+28 prior rows/workspace/daemon instance/input hashes intact. Daemon2340904 stays
+healthy295/NRestarts0 for unchanged client-only protocol. Evidence
+native-terminal-viewport-v299.txt; local GDB sizing, not fresh live kernel stop.
+Final daemon upgrade/all-screen/current QEMU rehearsal/docs/CI/reboot pending.
 Ordinary owned-writer polling and focused PaneId geometry mirror visible prefix/
 search/history/status chrome and exclude empty/hidden/non-live content. Four
 new pure geometry regressions/three TestBackend rendered-cell crosschecks and
@@ -7,7 +15,7 @@ app61/UI34/CLI36(1existing manual ignore). Three pre-fix assertions fail as
 expected; full299 baseline2073Rust/zero failures/nine unchanged ignores31targets/
 67bridge/strictworkspaceClippy/fmt/source2902/UI/version/roadmap/29rasters PASS.
 All34 goldens only encoded298->299 identity; optimized native shell/GDB proof
-pending, not DONE. Cleared200 validated obsolete temporary compiler outputs
+PASS as above. Cleared200 validated obsolete temporary compiler outputs
 2883105299B after owner/link/live-use checks, current299/installed298 and all
 original inputs/user assets preserved; rebuildable cache only.
 Pane binding DONE v298 code44512807/rasterfc6cb51b/installedd538bd24. Actual

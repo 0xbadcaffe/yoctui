@@ -11,9 +11,12 @@ Binding implementation v298 passes full2066Rust/67bridge/strictClippy/fmt/source
 UI/version/roadmap/29rasters; actual optimized native two-shell split/mouse/input/
 close/normal exits/clean q proof PASS code44512807/rasterfc6cb51b/hashd538bd24.
 Evidence native-terminal-pane-binding-v298.txt;26 prior rows/input hashes intact.
-Viewport now current after this atomic correction; v299 focused geometry/UI/
+Viewport DONE after this atomic correction; v299 focused geometry/UI/
 transport/full2073Rust/67bridge/strictClippy/fmt/source/UI/version/roadmap/
-29rasters pass, native optimized shell/GDB proof pending. Initial
+29rasters and actual optimized native shell/GDB size/resize/split/narrow/history/
+normal exits/clean client q PASS code3d0d2940/hash3e03cc59. Evidence
+native-terminal-viewport-v299.txt;28 prior rows/input hashes unchanged. Native
+all-screen parent now resumes; local GDB sizing is not fresh live QEMU proof. Initial
 synthetic CLI mouse fixture mismatch was corrected
 without weaker assertions and the full suite rerun; original inputs preserved.
 

@@ -435,12 +435,12 @@ notes = "DONE v298 code44512807/rasterfc6cb51b/optimized installedd538bd24. Actu
 id = "DEMO-TERMINAL-VIEWPORT-001"
 milestone = "M114"
 title = "Size ordinary owned terminal sessions to their actual visible pane"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3550
 required = true
 depends_on = ["DEMO-TERMINAL-EXIT-WRITER-001", "DEMO-TERMINAL-PANE-BINDING-001"]
 verify = ["cargo test -p yoctui-app terminal", "cargo test -p yoctui-ui terminal", "cargo test -p yoctui --bin yoctui terminal", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "Manual: real native shell/GDB ordinary terminal at160x50 follows visible pane dimensions, cursor/long-line output remains visible across resize/split and no remote/exited writer resize", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
-notes = "Actual native managed GDB/build shell retain120x40 while rendered pane is narrower/shorter; last command prompt/output is clipped. Current geometry/polling explicitly restrict autosize to menuconfig. Correct existing visible-cell/writer resize contract for ordinary terminals with exact focused pane identity, preserve menuconfig/zoom/narrow/split allocations, remote lease safety, coalesced bounded requests and copy/search semantics. No new layout/shortcut/wire or timeout/resource-budget relaxation. Split before implementation; external geometry/TestBackend/fake process/live coverage and normal versioned source-bound workflow required."
+notes = "DONE code3d0d2940/v299 installed optimized3e03cc59. Actual native shell29/helper2398264/GDB17.1child2398369/client2398207: stty and GDB width/height agree with UI at98x32,96x15,split48x32,split62x42,full126x42,narrow78x7,restored98x31/history4. Existing28 rows/workspace/daemon instance unchanged; normal GDB/shell exits/helper absent, q/confirmation client clean0/terminal restored, daemon2340904 remains295/healthy/NRestarts0 unchanged protocol. Original image/config/symbol hashes unchanged; actual reboot/full QEMU debug rehearsal/final daemon upgrade later, local GDB sizing not a live kernel stop claim. Evidence native-terminal-viewport-v299.txt. Four pure geometry/three TestBackend cell-count regressions and actual geometry/coalescing/remote/stale/ended fake socket guard, pre-fix3failures; full2073Rust/zero failures/nine unchanged ignores31targets/67bridge/strictClippy/fmt/source2902/UI/version/roadmap/29rasters PASS,34goldens only encoded298->299 identity.200 validated obsolete temporary outputs2883105299B cleared, rebuildable cache only/original data/current outputs preserved. No new layout/shortcut/wire or relaxed bounds."
 
 [[task]]
 id = "DEMO-DOCS-JSON-STREAM-001"

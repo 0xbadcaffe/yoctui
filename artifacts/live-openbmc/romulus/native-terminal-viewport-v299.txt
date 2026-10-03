@@ -1,0 +1,68 @@
+Native ordinary terminal visible-cell sizing acceptance: PASS
+2026-10-03 08:19 Asia/Jerusalem; same boot, not actual reboot.
+Code3d0d2940b11f4d442a8b939b20409fb3a15264de, v0.1.299.
+Installed /home/bspguy-dev/.cargo/bin/yoctui SHA256:
+3e03cc5974c47e955cec066dfb8f23fd2104f794afc1ef6207f1dbf013a586c1
+Byte-identical release artifact. Locked thinLTO/debug1/codegen1/frame pointers/
+two workers, build6m23s/cached install1.74s.
+
+Actual plain native client2398207/capture controller38637/Python2398206,
+default endpoint/exact OpenBMC source/sibling Romulus build. Native daemon
+2340904 stays healthy enabled295/source62716abc/hash917a9788/instance
+20921e3a1f994603dabf6b9043dda64f/NRestarts0. Client-only change/unchanged protocol;
+final daemon upgrade and post-reboot proof separate. Idle BitBake Disconnected
+does not mean the connected daemon crashed or a build was running.
+
+Actual Ctrl+B t/c creates managed shell29/helper2398264 after28 retained rows;
+navigate29, claim writer4feab21e/epoch1, Tab Workspace. Real stty size reports
+32 98 in160x50 window (UI98x32), real outer TIOCSWINSZ120x30 ->15 96 (UI96x15).
+Return160x50 -> native gdb-multiarch17.1child2398369 loads retained matching
+vmlinux read-only through ordinary managed shell. Not a new QEMU kernel stop.
+Actual GDB show width/show height report98x32. Ctrl+B % split ->48x32;
+outer200x60 ->split62x42; Ctrl+B x leaves one pane/same process ->126x42.
+Set pagination off affects only this transient -nx debugger session.
+Outer80x24 ->78x7 (one extra history row,4retained lines/drop lower bound16),
+return160x50 ->98x31 with retained history. GDB reports those exact widths/
+heights; prompt/cursor and ordinary input visible, not guessed PTY dimensions.
+GDB quit exits to same managed shell; stty size31 98 matches UI98x31/history4.
+Ordinary exit ->29Exited0, same writer epoch/history; actual GDB/shell PIDs gone.
+Typed pre/post snapshots prove all28 prior session summaries exactly equal,
+workspace/daemon identity intact. Ordinary q/confirmation client/controller
+exit0/alternate screen restored, no F4/manual detach/forced kill. Daemon healthy.
+
+Actual pre-q captures above Git (yoctui-ydd2026-presentation/assets):
+demo-native-v299-shell-160x50.txt SHA256
+06985746cfda922261eab954a2c82815f0c827feeb2ae1d821900e3e1f5c5e07
+demo-native-v299-shell-120x30.txt SHA256
+bd3166d15b56275b68d34c11037ec0d94dad146f8953be4666312df62aef2796
+demo-native-v299-gdb-split-200x60.txt SHA256
+414da2441a770ee3b0fb7d8882994ca0e5dd92ec47ddebc097b6dfe9b26e1009
+demo-native-v299-gdb-80x24.txt SHA256
+22ec230e36d4f4edf05454fbdb480094944cf812fc3fa6ff4d0c75ae7710382c
+demo-native-v299-shell-restored-160x50.txt SHA256
+fa92f54c3e28951889238dfc3162c7dee6a6b4b444cc083ddec3b69aac7faffd
+demo-native-v299-shell-exited.cells SHA256
+280bfbc34f3cd67275626a3fb141091c02ea6575e3a5ec3853c5f6ea71d4efc4
+Separate actual finish receipt, not saved pre-q ANSI, verifies clean terminal exit.
+
+Four new pure geometry/three TestBackend filled-cell crosschecks: chrome,
+focused PaneId beyond history index, empty/hidden/non-live panes, actual wide/
+medium/narrow/zoom/split/search/history/menuconfig/in-place rendered cells.
+Three pre-fix geometry assertions fail. Existing fake socket test now routes
+computed98x32 and verifies coalescing plus remote/stale/non-running rejection.
+Full2073Rust/zero failures/nine unchanged manual/live ignores31targets/67bridge/
+strictworkspaceClippy/fmt/source2902/UI/version/roadmap/29rasters PASS.
+All34 goldens only encoded298->299 header, other symbols/styles byte-exact.
+No source timeout/budget/layout/wire/shortcut changes or disabled warnings/tests.
+Storage200 validated unused temporary compiler outputs2883105299B cleared after
+owner/link/live-use checks:23prior298 test executables433286864B,21old release
+outputs476857616B,156pre299 dev libraries1972960819B. Rebuildable Cargo cache
+only; current299/installed binaries and original source/native tools/images/
+debug/user assets preserved. Temporary2.2GiB/root4.6GiB available after release.
+
+Original input hashes unchanged:
+static.mtd 00c37b3aed9961a37d50a70afc3c670c50a25282c93784f7022b8e67d1c4f7f0
+kernel.config 0f809ea0922169c20ad329e51f580a16ac8e5b9b1f1393847e2732d663f2fc5c
+debug.vmlinux 68c5e164595aa24b4f6ed7f6936fab17b971ce2d39d69e3722c2a92c57b0cd50
+Boot ID1e696f44-57bb-4193-af55-449269824bde unchanged.
+No final all-screen/current live QEMU debug/flamegraph/docs/CI/publication/reboot claim.
