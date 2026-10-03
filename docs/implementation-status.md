@@ -1,4 +1,10 @@
 M114 current: DEMO-TERMINAL-KILL-SAFETY-001 IN_PROGRESS.
+Before-code design records typed reviewed daemon/session/name/pane identity,
+atomic Terminal Sessions/Workspace focus, current/running same-identity confirm
+and snapshot/pane invalidation. Stable reorder retained, stale/replaced/removed/
+exited/changed selection cancels. Trap keys/mouse/paste before raw platform/prefix/
+global/PTY dispatch, existing inline preview names pinned target, ended Close
+unchanged. No layout/key/wire changes. Implementation/full/native proof pending.
 Relay and inspection lease DONE after actual source6c959ca5/v308 optimized
 installed c235657e/build6m29/install1.70s. Plain native2711903 inspection releases
 bridge, reviewed embedded37 uses owned relay2712414/recipe bash2713135, exact

@@ -14,6 +14,11 @@ originals unchanged. Kill preview safety is current. No new feature or authority
 history change; final daemon upgrade and real reboot not yet accepted.
 Parent all-screen/docs/CI/actual reboot/publication resume after the children.
 
+Current kill safety child design is recorded before code: pin typed daemon/
+session/name/pane identity, focus existing Workspace warning and trap input;
+confirm only current same running identity, invalidate changed/stale targets,
+preserve stable reorder and ended-history Close. No new feature or wire/layout/key.
+
 Native metadata/status children DONE after source87fd8a95/v302 real installed
 client/daemon proof, not merely code presence: BusyBox/CRC metadata, no workspace
 initialization, original six hashes preserved, normal quit/owned actors absent.

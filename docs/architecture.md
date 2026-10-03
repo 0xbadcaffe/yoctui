@@ -1,5 +1,18 @@
 # Yoctui Architecture
 
+## M114 terminal destructive review identity
+
+Pure client-local TerminalWorkbenchState holds a typed kill-review target:
+daemon instance, running session ID/name and focused PaneId. BeginKill owns the
+Terminal Sessions/Workspace focus transition and pins the existing binding;
+ConfirmKill revalidates current replica/instance/pane/selected running ID before
+emitting typed Terminate for the pinned ID. Pane reconciliation invalidates stale,
+removed/replaced/ended/changed-selection targets, preserving stable ID on reorder.
+App keyboard/mouse routes trap the review; CLI checks it before platform PTY,
+prefix/global keys and blocks raw paste/mouse forwarding. UI renders only typed
+review identity in the existing inline warning. No backend or wire change,
+automatic writer acquisition, process parsing or unrelated terminal-mode change.
+
 ## M114 embedded devshell handoff correction
 
 CLI maps typed Menuconfig and Devshell creation through the same existing

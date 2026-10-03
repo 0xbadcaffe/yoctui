@@ -1,5 +1,16 @@
 # Yoctui UI Specification
 
+Existing running-terminal kill review enters Terminal Sessions with Workspace
+focus and traps all keyboard/mouse input. Only Enter confirms and Esc cancels;
+ordinary text, paste, prefix, navigation and PTY mouse/input are not forwarded.
+The existing inline warning names the reviewed session and process-group effect.
+Confirmation is bound to that session ID, daemon instance and focused pane,
+never whichever row is selected later. Stale/disconnected/replaced daemon,
+removed/exited target, changed pane or changed selection cancels the review.
+Reordering rows while retaining the same pane/session identity is safe. Cancellation
+and invalidation clear the pinned target. Closing ended history retains existing
+behavior; no new layout, shortcut or daemon protocol is introduced.
+
 The existing Embedded devshell destination must render and control the actual
 recipe shell inside its daemon-owned PTY, not open BitBake's default desktop
 terminal. It retains the selected recipe environment, explicit writer lease,

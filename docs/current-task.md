@@ -6,9 +6,14 @@
 
 Dependencies focus, relay and native inspection lease are DONE. Current atomic
 task: correct the existing destructive inline kill preview's focus, input trap
-and stable reviewed target. Before implementation record exact typed identity,
-selection/daemon replacement/removal/exit/reorder semantics in authoritative
-spec/architecture. No new layout/key/wire. Relevant terminal model/reducer/panes,
+and stable reviewed target. Before-code design: typed target records daemon
+instance/session ID/name/focused pane; Begin focuses Terminal Sessions/Workspace
+and pins binding, Confirm checks current same identity and running lifecycle.
+Reconcile invalidates stale/replaced/removed/exited/changed pane or selection;
+reorder preserves stable ID. Trap keys/mouse/paste before platform/prefix/global
+and raw PTY dispatch, only Enter/Esc act. Existing inline warning renders typed
+review identity; ended-history Close unchanged. No new layout/key/wire.
+Relevant terminal model/reducer/panes,
 app keyboard/mouse routes, CLI early dispatch and UI existing inline status.
 Add pure/reducer/app/TestBackend/fake dispatch regressions, bump/full baseline/
 commit/push/install, actual native owned-only cancel/confirm/history proof.
