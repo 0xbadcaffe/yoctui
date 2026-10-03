@@ -4,12 +4,14 @@
 
 Native305 parent rehearsal split existing launch-focus, metadata-connection
 handoff and kill-preview safety defects into separate atomic children before
-code. Focus child DONE; lease307 code/full baseline/optimized install and native
-inspection/config/release proof pass, but real devshell exposes a separate
-embedded-relay gap. Split DEMO-EMBEDDED-DEVSHELL-RELAY-001 before code and require
-it before final lease/live completion. Approved older Poky generated host-tool
-work cleanup resolves15GiB disk guard, originals unchanged. Full baseline/source-bound optimized native proof
-required per child. No new feature, unchanged authority/history boundaries.
+code. Focus, inspection lease and embedded relay children DONE. Source6c959ca5/
+v308 installed optimized c235657e actual native2711903 inspection -> owned37
+recipe bash/pwd/environment/normal exit0/repeated inspection+Config/normal q0,
+original36PTY/19jobs/fullcompatibility/six hashes exact, actors+socket gone.
+Proof native-embedded-devshell-v308.txt, full2117Rust/67bridge/strict baseline PASS.
+Approved older Poky generated host-tool work cleanup resolves15GiB guard;
+originals unchanged. Kill preview safety is current. No new feature or authority/
+history change; final daemon upgrade and real reboot not yet accepted.
 Parent all-screen/docs/CI/actual reboot/publication resume after the children.
 
 Native metadata/status children DONE after source87fd8a95/v302 real installed

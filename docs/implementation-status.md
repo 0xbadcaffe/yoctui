@@ -1,4 +1,16 @@
-M114 current: DEMO-EMBEDDED-DEVSHELL-RELAY-001 IN_PROGRESS; lease paused.
+M114 current: DEMO-TERMINAL-KILL-SAFETY-001 IN_PROGRESS.
+Relay and inspection lease DONE after actual source6c959ca5/v308 optimized
+installed c235657e/build6m29/install1.70s. Plain native2711903 inspection releases
+bridge, reviewed embedded37 uses owned relay2712414/recipe bash2713135, exact
+recipe sources pwd/CC=gcc/CXX=g++/recipe sysroot PATH, normal exit0/actors+socket
+gone. Same client repeat recipe and authoritative BB_NUMBER_THREADS=2 pass,
+no idle child; normal q0/restored. Original36PTY/19jobs/fullcompatibility/six
+hashes exact/clients empty. Daemon2614647/v306 remains active/NRestarts0, not
+final daemon upgrade or actual reboot. Proof native-embedded-devshell-v308.txt.
+Current CI37143581659 test/performance-fast fail; release-quality/compatibility
+fast pass. Kill safety/full demo/docs/CI/reboot/publication remain incomplete.
+
+Historical relay implementation before live acceptance:
 Implementation v308 uses existing validated relay for typed Devshell/Menuconfig;
 other kinds and exact argv retained. Two unit/wire and two owned fake-process
 handoff success/failure regressions plus seven existing relay tests pass.

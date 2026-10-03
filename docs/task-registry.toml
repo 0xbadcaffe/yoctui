@@ -413,29 +413,29 @@ notes = "DONE source151cca55/v306, optimized installed SHA24cab7a4; actual plain
 id = "DEMO-NATIVE-INSPECTION-LEASE-001"
 milestone = "M114"
 title = "Release the native metadata connection before reviewed interactive BitBake execution"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3575
 required = true
 depends_on = ["DEMO-INTERACTIVE-LAUNCH-FOCUS-001", "DEMO-EMBEDDED-DEVSHELL-RELAY-001"]
 verify = ["cargo test -p yoctui --bin yoctui --all-features inspection_lease", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-ui-spec.sh", "Manual: plain native actual recipe inspection then reviewed cached qemu-helper-native devshell succeeds, metadata can be inspected again, normal session cleanup and original configuration/history preserved", "./scripts/verify-roadmap.sh"]
-notes = "v307 implementation IN_PROGRESS: native worker closes private bridge with bounded cleanup before returning, lazy per-read selected-environment/current-authorized adapter preserves Config/layer/recipe detail without idle lease; daemon builds/events and legacy unchanged. Pending native inspection preserves reviewed BitBake chooser with explicit retry/cancel. Eight fake lifecycle/process/chooser/responsive UI tests pass; ordinary full2113Rust/0/9unchanged ignores31targets, strictClippy55.42s/67bridge/fmt/source2914/UI/version/roadmap and34version-only goldens/29verified rasters PASS. Existing watcher failed twice; successful inotify trace/five unchanged uninstrumented rechecks/full ordinary rerun pass, logs retained/no assertion weakened. Optimized installation and actual native inspection -> cached supported devshell/repeat queries/normal cleanup/original history checks remain required; dry-run is not live acceptance. Native305 bridge2564957 previously retained exclusive connection, blocking owned33 setFeatures; normal quit released it. No shared server kill, capability synthesis, clean build or unrelated terminal retirement."
+notes = "DONE code2c253e38/v307 and relay6c959ca5/v308, optimized installed c235657e. Actual plain native2711903 recipe inspection releases bridge, reviewed embedded37 -> recipe bash2713135/pwd/environment/normal exit0, repeat recipe+BB_NUMBER_THREADS2 detail succeeds/no idle child, normal q0/restored. Original36PTY/19jobs/fullcompatibility/six hashes exact/clients empty/owned actors gone; daemon2614647/v306 healthy unchanged protocol (not final upgrade). Proof native-embedded-devshell-v308.txt. Eight lease fake lifecycle/process/chooser/responsive tests and ordinary2113Rust/strictClippy/67bridge full307 PASS; current308 full2117/strict/67bridge PASS. Earlier watcher failures traced/rechecked unchanged, retained/no weakened assertion. Scope per-read exact selected environment/current authority, daemon builds/events and legacy unchanged; pending chooser retry/cancel retained. No shared-server kill/config edit or dry-run acceptance."
 
 [[task]]
 id = "DEMO-EMBEDDED-DEVSHELL-RELAY-001"
 milestone = "M114"
 title = "Keep the existing embedded devshell handoff in its daemon-owned PTY"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3577
 required = true
 depends_on = ["DEMO-INTERACTIVE-LAUNCH-FOCUS-001"]
 verify = ["cargo test --workspace --all-features embedded_devshell", "cargo test --workspace --all-features menuconfig_relay", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-ui-spec.sh", "Manual: native exact reviewed cached devshell uses owned embedded PTY, pwd/recipe environment/normal exit0/repeat inspection/original history unchanged", "./scripts/verify-roadmap.sh"]
-notes = "v308 implementation IN_PROGRESS: typed Devshell/Menuconfig share existing validated relay, exact argv/other kinds retained. Two unit/wire and two owned fake-process regressions plus seven existing relay tests pass. Updating and ordinary full rerun2117Rust/0/9unchanged ignores32targets; strictClippy3m17 including lock wait/67bridge/fmt/source2916/UI/roadmap/version PASS;34identity-only goldens/29verified rasters. Existing rootfs fixture Text file busy failure retained, unchanged full rerun passes/no weakened assertion. Source-bound optimized native embedded normal exit/repeat inspection remains required before DONE. Split before code after307 devshell36 defaults to desktop GNOME; owned bash2682995 scoped HUP-cleaned/rejected as normal acceptance. No new UI/key/source config changes; detached/authority/socket/wrapper bounds retained. Approved older Poky host-tool work cleanup resolves disk guard, originals intact."
+notes = "DONE source6c959ca5/v308 optimized installed c235657e/build6m29/install1.70s. Actual native2711903 inspection -> reviewed embedded37, owned relay2712414/recipe bash2713135/pwd exact sources/CC=gcc/CXX=g++/recipe sysroot PATH, normal exit0/socket+actors gone. Repeat recipe and authoritative Config detail succeeds/no idle child, native q0/restored. Original36PTY/19jobs/fullcompatibility/six hashes exact/clients empty; daemon2614647/v306 healthy unchanged protocol, not final upgrade/reboot. Proof native-embedded-devshell-v308.txt. Two unit/wire+two fake handoff+seven relay regressions, update/ordinary full rerun2117Rust/0/9unchanged ignores32targets/strictClippy3m17 including lock wait/67bridge/fmt/source2916/UI/roadmap/version PASS;34identity-only goldens/29rasters. Earlier existing rootfs fixture Text file busy failure retained, unchanged full rerun passes/no weakened assertion. No new UI/key/source config, detached/other kinds/authority/socket bounds retained. Approved older Poky work cleanup resolves guard, originals intact."
 
 [[task]]
 id = "DEMO-TERMINAL-KILL-SAFETY-001"
 milestone = "M114"
 title = "Trap terminal kill confirmation and prevent selection changes from retargeting termination"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3574
 required = true
 depends_on = ["DEMO-NATIVE-INSPECTION-LEASE-001"]

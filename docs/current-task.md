@@ -1,8 +1,41 @@
 # Current Task
 
-**ID:** DEMO-EMBEDDED-DEVSHELL-RELAY-001
-**Title:** Keep the existing embedded devshell handoff in its daemon-owned PTY
+**ID:** DEMO-TERMINAL-KILL-SAFETY-001
+**Title:** Trap terminal kill confirmation and prevent retargeted termination
 **Status:** IN_PROGRESS
+
+Dependencies focus, relay and native inspection lease are DONE. Current atomic
+task: correct the existing destructive inline kill preview's focus, input trap
+and stable reviewed target. Before implementation record exact typed identity,
+selection/daemon replacement/removal/exit/reorder semantics in authoritative
+spec/architecture. No new layout/key/wire. Relevant terminal model/reducer/panes,
+app keyboard/mouse routes, CLI early dispatch and UI existing inline status.
+Add pure/reducer/app/TestBackend/fake dispatch regressions, bump/full baseline/
+commit/push/install, actual native owned-only cancel/confirm/history proof.
+
+```bash
+cargo test --workspace --all-features terminal_kill_safety
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+```
+
+## Completed embedded relay and inspection lease
+
+Both DONE: source6c959ca5/v308 optimized installed SHA c235657e, build6m29/
+install1.70s. Actual native2711903 inspection releases bridge, reviewed embedded
+devshell37 -> owned relay2712414/recipe bash2713135, pwd exact recipe sources,
+CC=gcc/CXX=g++/recipe sysroot PATH, normal exit0/socket+actors gone. Same client
+repeat recipe and BB_NUMBER_THREADS=2 authoritative Config detail pass, no idle
+child; normal native q0/restored. Original36PTY/19jobs/fullcompatibility/six hashes
+exact, clients empty; daemon2614647/v306 active/NRestarts0 (not final upgrade).
+Proof artifacts/live-openbmc/romulus/native-embedded-devshell-v308.txt. Current
+CI37143581659 test/performance-fast fail; final demo/docs/reboot/publication pending.
+
+### Historical implementation before live acceptance
 
 Implementation v0.1.308 routes typed Devshell and Menuconfig through the same
 existing validated relay, retaining exact arguments and every other terminal
@@ -14,7 +47,7 @@ retained in /tmp/yoctui-embedded-devshell-full-final-v308.log; no assertion weak
 Strict all-target/all-feature Clippy passes (3m17 including build-lock wait),
 67bridge/fmt/source2916/UI/roadmap/version pass.34 goldens differ only307->308;
 6concept/23README rasters regenerated and checked. Optimized install and actual
-native embedded pwd/environment/normal exit/repeated inspection remain required.
+native embedded acceptance subsequently pass as recorded above.
 
 Split before code after actual307 native validation: completed recipe/config
 inspection releases its private bridge; reviewed qemu-helper-native devshell
