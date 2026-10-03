@@ -1,31 +1,34 @@
 # Current Task
 
-**ID:** DEMO-DOC-FIXTURE-MAINTENANCE-001
-**Title:** Maintain faithful disabled screenshot styles and current fixture provenance before release quality
+**ID:** DEMO-FULL-VERIFY-001
+**Title:** Pass full Rust Python and release quality checks for demo code
 **Status:** IN_PROGRESS
 
-Dependency full hygiene parent DONE on product05fd97cf/v292:2048Rust/61bridge/
-strict workspace/source/fmt/roadmap PASS,9existing live/manual ignores unchanged.
-Existing full-quality documentation failures: native raster rejects DIM used
-by disabled controls, concept/README manifest anchors and hashes still describe
-obsolete menu/header/hint fixtures, performance prose lacks required truthful
-nonmutating parallelism statement. Add tested faithful DIM projection preserving
-unknown/SLOW_BLINK rejection; inspect other actual styles before assumptions.
-Refresh current pinned renderer fixture images/hashes/anchors using maintained
-scripts, preserve historical live_evidence/original captures and honest fixture
-versus live provenance. Do not mask identity, ignore style errors or relabel
-historical live evidence as current. Final README/live screenshots/operator/
-source-bound flamegraph refresh remains separate after full quality.
-Bump if maintained script behavior changes, retain source-size boundary/external
-tests, run full relevant raster/doc/UI gates. Then final full release quality,
-docs and actual native reboot-ready optimized OpenBMC/QEMU/GDB/CI/publication.
+Prerequisites committed: product polish, full source hygiene and current pinned
+documentation fixtures. v293 screenshot maintenance: faithful DIM projection
+with explicit v4 provenance, five raster-style/four performance tests, ten
+concept verifier negative/positive tests, all29 deterministic fixture PNGs,
+full377 UI/README/CLI docs/source/fmt/UI/version/roadmap PASS. Historical six
+live-evidence entries and original concept identities unchanged; all34 golden
+changes only exact292->293 version. No current native/live certification inferred.
+
+Run the entire baseline and deterministic release-quality graph on exact
+current source/binary. Check scripts use the actual build target, not an older
+repo binary; headless/PTY flows must remain isolated from desktop/session/Yocto
+environment. Diagnose actual failures, split atomic fixes in governance before
+implementation, preserve all deadlines, negative checks and live requirements.
+No ignored tests newly introduced and no gate weakening. Native cold restart,
+actual post-reboot coordination, optimized all-screen/boot/GDB rehearsal, exact
+GitHub CI and ordered publication remain after full quality and final docs.
 Do not delete sources/images/symbols/user captures; two compile workers.
 
 ```bash
-python3 -m unittest scripts/test_raster_styles.py scripts/test_performance_documentation.py
-./scripts/check-docs.sh
-cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
+cargo test --workspace --all-features --no-fail-fast
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-release-quality.sh
+./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
 ```
 

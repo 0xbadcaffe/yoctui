@@ -28,6 +28,8 @@ HEIGHT = 50
 CELL_WIDTH = 10
 CELL_HEIGHT = 20
 FONT_SIZE = 15.0
+RENDERER = "yoctui-cairo-cell-raster-v4"
+DIM_PROJECTION = "half-intensity foreground blended with effective background, floor RGB"
 PYCAIRO_VERSION = "1.27.0"
 CAIRO_VERSION = "1.18.4"
 FONT_FAMILY = "DejaVu Sans Mono"
@@ -198,12 +200,15 @@ def parse_cell_golden(path: Path) -> tuple[list[str], list[CellStyle]]:
             fail(f"malformed style run {line!r}")
         count, foreground, background, underline, modifiers = match.groups()
         flags = set(modifiers.split(" | ")) - {"NONE"}
-        if underline != "Reset" or flags - {"BOLD", "UNDERLINED", "REVERSED"}:
+        if underline != "Reset" or flags - {"BOLD", "DIM", "UNDERLINED", "REVERSED"}:
             fail(f"unsupported style projection {line!r}")
         fg = parse_color(foreground, DEFAULT_FOREGROUND)
         bg = parse_color(background, DEFAULT_BACKGROUND)
         if "REVERSED" in flags:
             fg, bg = bg, fg
+        if "DIM" in flags:
+            # Faint terminal colors vary; record this deterministic review projection.
+            fg = tuple((front + back) // 2 for front, back in zip(fg, bg, strict=True))
         style = CellStyle(
             foreground=fg,
             background=bg,
@@ -373,7 +378,8 @@ def scenarios() -> list[tuple[str, Path]]:
 def provenance_text(rendered: list[tuple[str, Path, Path]], output_root: Path) -> str:
     lines = [
         "schema_version = 1",
-        'renderer = "yoctui-cairo-cell-raster-v3"',
+        f'renderer = "{RENDERER}"',
+        f'dim_projection = "{DIM_PROJECTION}"',
         f'pycairo_version = "{PYCAIRO_VERSION}"',
         f'cairo_version = "{CAIRO_VERSION}"',
         f'font_family = "{FONT_FAMILY}"',
@@ -443,7 +449,7 @@ def update() -> None:
                 entry,
             )
             return re.sub(
-                r'renderer = "[^"]+"', 'renderer = "yoctui-cairo-cell-raster-v3"', entry
+                r'renderer = "[^"]+"', f'renderer = "{RENDERER}"', entry
             )
 
         manifest, count = re.subn(pattern, refresh, manifest)

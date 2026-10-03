@@ -10,6 +10,13 @@ The renderer pins PyCairo/Cairo, DejaVu Sans Mono regular and bold font hashes,
 cell geometry, antialiasing, hinting, every source-cell SHA-256, and every PNG
 SHA-256 in [`manifest.toml`](manifest.toml).
 
+Renderer v4 projects `DIM` as half-intensity foreground blended with the
+effective background (integer RGB floor, after reverse-video). It retains bold
+and underline, never dims the background, and records this choice in provenance.
+Actual terminal faint-color rendering may differ. Unsupported modifiers still
+fail explicitly instead of being discarded. These are current fixture rasters;
+historical live evidence and original concept images are not regenerated.
+
 Reproduce and verify them with:
 
 ```bash

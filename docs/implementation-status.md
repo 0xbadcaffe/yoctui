@@ -1,4 +1,17 @@
-M114 current: DEMO-DOC-FIXTURE-MAINTENANCE-001 IN_PROGRESS; hygiene parent DONE.
+M114 current: DEMO-FULL-VERIFY-001 IN_PROGRESS; fixture maintenance DONE v293.
+Explicit v4 DIM projection retains bold/underline/effective background after
+reverse; unsupported/unknown/DIM+SLOW_BLINK still rejected. Raster5/performance4/
+verifier10, all29 pinned PNGs, fullUI377/README/docs with exact293 CLI binary/
+source2890/fmt/UI/version/roadmap PASS. All six historical live-evidence entries
+and original concept image identities unchanged; all34 goldens only version.
+Reviewed six regenerated concept rasters; current menu/hints/header anchors
+retain typed authority and negatives. Profiling diagnostic nonmutation boundary
+explicit, user-requested configuration editing remains separate. Exact logs
+/tmp/yoctui-demo-doc-maintenance-exact-v293.log and doc-maintenance-ui-v293.log.
+Reclaimed46 obsolete own compiler libraries633572170B and73 obsolete generated
+executables3961801312B from exact temporary cache after active-process checks;
+no sources/images/symbols/installed binaries/user captures changed. Full final
+quality/native/optimized/reboot/CI/publication remain pending, not certification.
 Exact product05fd97cf/v292 full workspace all features/no-fail-fast PASS2048Rust
 tests/0failures/9existing live/manual ignores across31targets; bridge61PASS,
 strict workspace all-target/all-feature Clippy/fmt/roadmap/source gate PASS.

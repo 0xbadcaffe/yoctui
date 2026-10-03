@@ -303,12 +303,12 @@ notes = "DONE v292: palette typed command/content-search detail projections move
 id = "DEMO-DOC-FIXTURE-MAINTENANCE-001"
 milestone = "M114"
 title = "Maintain faithful disabled screenshot styles and current fixture provenance before release quality"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3538
 required = true
 depends_on = ["DEMO-LAYOUT-HYGIENE-001"]
 verify = ["python3 -m unittest scripts/test_raster_styles.py scripts/test_performance_documentation.py","./scripts/check-docs.sh","cargo test -p yoctui-ui --all-features","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
-notes = "Existing full-quality blockers: native raster generator rejects DIM used by current disabled controls; concept manifest still expects obsolete clock/menu/hint fixtures, performance prose misses true nonmutating build-parallelism statement. Add tested faithful DIM projection preserving unknown/SLOW_BLINK rejection; regenerate current pinned fixture images/hashes/anchors using maintained scripts, preserve historical live_evidence. No fake live claims, weakened golden identity or new UI behavior. Full final README/live-gallery/operator/report refresh remains separate after full verification. Resolve prerequisite-cycle before code."
+notes = "DONE v293: explicit v4 half-intensity foreground projection after reverse, effective-background preservation/bold/underline/reset/unknown/DIM+SLOW_BLINK regressions. Raster5/performance4/verifier10 PASS,29 pinned deterministic PNGs/current anchors/hashes refreshed; six historical live entries and original concept image identities unchanged. Exact34 golden differences only292->293 identity. Full UI377/README/docs with exact293 binary/CLI help+doctor+headless/source2890/fmt/UI/version/roadmap PASS. Logs /tmp/yoctui-demo-doc-maintenance-exact-v293.log and doc-maintenance-ui-v293.log. Final native live/report/operator scope remains separate; no fake current live or new UI behavior. Reclaimed46 old own library files633572170B and73 old own executable files3961801312B from exact cache after process checks, sources/images/symbols/installed binaries unchanged."
 
 [[task]]
 id = "DEMO-LAYOUT-HYGIENE-001"
@@ -325,7 +325,7 @@ notes = "DONE final product05fd97cf/v292 with four committed verified mechanical
 id = "DEMO-FULL-VERIFY-001"
 milestone = "M114"
 title = "Pass full Rust Python and release quality checks for demo code"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3502
 required = true
 depends_on = ["DEMO-POLISH-001", "DEMO-LAYOUT-HYGIENE-001", "DEMO-DOC-FIXTURE-MAINTENANCE-001"]

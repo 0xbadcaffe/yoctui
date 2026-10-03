@@ -2,6 +2,13 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Screenshot maintenance DONE v293 before full release quality: explicit tested
+DIM projection, pinned current fixture images/hashes and current modifier/menu/
+header anchors, all377 UI tests and docs/README gates PASS. Historical live
+captures and original concept images remain unchanged; no current native proof
+inferred. Full release-quality graph is current, then final docs/native durable
+service/cold and coordinated post-reboot checks/optimized live rehearsal/CI/pub.
+
 DEMO-STARTUP-NAVIGATION-001 is an atomic child before integration acceptance:
 restore saved-screen continuity with aligned typed Navigator/focus, or select
 Build Environment when unconfigured, without automatic operations or lost

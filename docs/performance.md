@@ -433,8 +433,10 @@ path.
 If a real build is oversubscribed and interaction is poor, the diagnostic may
 show `available logical CPUs - 1` as a review-only example for both
 `BB_NUMBER_THREADS` and the `PARALLEL_MAKE` job count. This is not an automatic
-default and may reduce build throughput. Yoctui never edits `local.conf`,
-environment variables, or BitBake policy. It remains correct without root,
+default and may reduce build throughput. This read-only diagnostic reports
+the parallelism values and never changes them: it does not edit `local.conf`,
+environment variables, or BitBake policy. Explicit user-requested configuration
+editing is a separate workflow. The diagnostic remains correct without root,
 cgroup changes, CPU isolation, or a deliberately free CPU. Administrators may
 still tune BitBake or cgroups after reviewing workload-specific evidence.
 
