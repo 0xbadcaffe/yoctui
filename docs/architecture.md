@@ -3,7 +3,9 @@
 ## M114 native navigation/probe boundary
 
 The pure navigation reducers must not automatically emit daemon-owned capability
-probes in an installed native daemon context. Read-only screen/focus/menu/palette
+probes in an installed native daemon context, including attached/retained instance
+identity before capabilities arrive. SDK, Testing, Security, QA and Maintenance
+navigation retain honest NotInspected state. Read-only screen/focus/menu/palette
 transitions remain independent of those probes so the existing effect-authority
 rollback cannot undo navigation. Not-inspected state remains unchanged; no
 operation is authorized or capability synthesized. Explicit probes retain the

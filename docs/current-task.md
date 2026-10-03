@@ -6,8 +6,10 @@
 
 Native302 reproduction: Navigator or palette Open Testing advertises Ready,
 but automatic InspectTestCapability is correctly denied as daemon-owned and
-the authority rollback restores the old screen/palette. Security, QA and
-Maintenance have the same automatic probe pattern. Preserve daemon probe
+the authority rollback restores the old screen/palette. SDK, Security, QA and
+Maintenance have the same automatic probe pattern. Native context includes
+an attached/retained daemon identity even before capability discovery finishes.
+Preserve daemon probe
 authority and explicit probe denials; do not fabricate tool presence or enable
 operations. In the two pure model navigation branches, avoid automatic owned
 capability probing for the native daemon context while retaining navigation,
