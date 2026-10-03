@@ -311,6 +311,17 @@ verify = ["python3 -m unittest scripts/test_raster_styles.py scripts/test_perfor
 notes = "DONE v293: explicit v4 half-intensity foreground projection after reverse, effective-background preservation/bold/underline/reset/unknown/DIM+SLOW_BLINK regressions. Raster5/performance4/verifier10 PASS,29 pinned deterministic PNGs/current anchors/hashes refreshed; six historical live entries and original concept image identities unchanged. Exact34 golden differences only292->293 identity. Full UI377/README/docs with exact293 binary/CLI help+doctor+headless/source2890/fmt/UI/version/roadmap PASS. Logs /tmp/yoctui-demo-doc-maintenance-exact-v293.log and doc-maintenance-ui-v293.log. Final native live/report/operator scope remains separate; no fake current live or new UI behavior. Reclaimed46 old own library files633572170B and73 old own executable files3961801312B from exact cache after process checks, sources/images/symbols/installed binaries unchanged."
 
 [[task]]
+id = "DEMO-RELEASE-PTY-HARNESS-001"
+milestone = "M114"
+title = "Restore hermetic current-contract real PTY release acceptance"
+status = "IN_PROGRESS"
+priority = 3539
+required = true
+depends_on = ["DEMO-DOC-FIXTURE-MAINTENANCE-001"]
+verify = ["python3 -m unittest scripts/test_pty_acceptance.py", "./scripts/verify-release-quality.sh", "./scripts/check-docs.sh", "cargo fmt --all --check", "python3 scripts/check-library-layout.py", "./scripts/verify-roadmap.sh"]
+notes = "Split actual full-quality failures from parent before implementation: committed597dfe9e/v293 full2048Rust/61bridge/strictClippy/fmt PASS9existing ignores. Desktop PTY inherits DISPLAY -> outside XTerm/no observed frame; headless startup/keymap pass then flow obsolete capitalized title false failure exit0; hosted05fd97cf snapshot explicit uninitialized build lacks initializer. Make private environment/no-graphics test PTY/current built Cargo target/rendered readiness/current anchors and honest initialized daemon fixture, preserve8s/3s/per-stage bounds/negative/terminal restoration/resize checks, require clean exit rather than accepting forced kill. Add external helper tests, stop only owned fixture processes. Testing docs/version and full release gate; no new UI/product behavior or fake live claims. Source size<=500. Separate hosted atomic API deprecation stays later CI scope."
+
+[[task]]
 id = "DEMO-LAYOUT-HYGIENE-001"
 milestone = "M114"
 title = "Restore existing source size and external test module hygiene"
@@ -328,7 +339,7 @@ title = "Pass full Rust Python and release quality checks for demo code"
 status = "IN_PROGRESS"
 priority = 3502
 required = true
-depends_on = ["DEMO-POLISH-001", "DEMO-LAYOUT-HYGIENE-001", "DEMO-DOC-FIXTURE-MAINTENANCE-001"]
+depends_on = ["DEMO-POLISH-001", "DEMO-LAYOUT-HYGIENE-001", "DEMO-DOC-FIXTURE-MAINTENANCE-001", "DEMO-RELEASE-PTY-HARNESS-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features --no-fail-fast", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-release-quality.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "New user instruction explicitly revokes full-suite deferral. Relevant full test graph/release scripts; record exact pass/failure and fix independently, never skip/weaken failures to claim PASS. Full product completion still includes unrelated external board/instrumentation/current-Poky blockers and must not be relabeled. Source/binary-bound quality evidence required."
 

@@ -1,4 +1,14 @@
-M114 current: DEMO-FULL-VERIFY-001 IN_PROGRESS; fixture maintenance DONE v293.
+M114 current: DEMO-RELEASE-PTY-HARNESS-001 IN_PROGRESS; full parent remains pending.
+Committed597dfe9e/v293 full2048Rust/61bridge/strictworkspaceClippy/fmt PASS;
+9existing ignores unchanged. Original desktop release probe escaped its observed
+PTY into XTerm due DISPLAY; owned private client2297854 stopped, unrelated
+daemons/clients untouched. Headless startup/keymap pass, then flow false failure
+obsolete capitalized title despite exit0. Hosted05fd97cf snapshot fails missing
+initializer/uninitialized build fixture. Atomic child restores hermetic private
+real PTY/current built target/rendered readiness/profile fixtures with unchanged
+8s/3s/per-stage bounds, preserves/tightens negative/exit/restoration/resize checks.
+Separate new-stable atomic API deprecation is recorded for later hosted CI,
+not current source change. Full release quality/native/reboot/pub not passed.
 Explicit v4 DIM projection retains bold/underline/effective background after
 reverse; unsupported/unknown/DIM+SLOW_BLINK still rejected. Raster5/performance4/
 verifier10, all29 pinned PNGs, fullUI377/README/docs with exact293 CLI binary/

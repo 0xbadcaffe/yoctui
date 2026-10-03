@@ -1,34 +1,39 @@
 # Current Task
 
-**ID:** DEMO-FULL-VERIFY-001
-**Title:** Pass full Rust Python and release quality checks for demo code
+**ID:** DEMO-RELEASE-PTY-HARNESS-001
+**Title:** Restore hermetic current-contract real PTY release acceptance
 **Status:** IN_PROGRESS
 
-Prerequisites committed: product polish, full source hygiene and current pinned
-documentation fixtures. v293 screenshot maintenance: faithful DIM projection
-with explicit v4 provenance, five raster-style/four performance tests, ten
-concept verifier negative/positive tests, all29 deterministic fixture PNGs,
-full377 UI/README/CLI docs/source/fmt/UI/version/roadmap PASS. Historical six
-live-evidence entries and original concept identities unchanged; all34 golden
-changes only exact292->293 version. No current native/live certification inferred.
+Parent DEMO-FULL-VERIFY-001 remains IN_PROGRESS. Committed597dfe9e/v293 full
+workspace2048Rust/61bridge/strictClippy/fmt PASS;9 existing ignores unchanged.
+Original desktop run fails Esc-dismiss readiness because inherited DISPLAY
+launches XTerm outside the observed PTY. Headless rerun passes startup/keymap
+then flow fails only obsolete capitalized title check despite exit0. Hosted
+05fd97cf snapshot gate fails explicit uninitialized build lacking initializer.
+Owned stray test client2297854/private yoctui-pty-nnqocgz0 and its XTerm stopped;
+unrelated daemons/clients preserved. Evidence final-*-v293/headless-release
+logs under /tmp. Hosted new-stable atomic API deprecation is a separate later
+CI task, not mixed into this harness correction.
 
-Run the entire baseline and deterministic release-quality graph on exact
-current source/binary. Check scripts use the actual build target, not an older
-repo binary; headless/PTY flows must remain isolated from desktop/session/Yocto
-environment. Diagnose actual failures, split atomic fixes in governance before
-implementation, preserve all deadlines, negative checks and live requirements.
-No ignored tests newly introduced and no gate weakening. Native cold restart,
-actual post-reboot coordination, optimized all-screen/boot/GDB rehearsal, exact
-GitHub CI and ordered publication remain after full quality and final docs.
-Do not delete sources/images/symbols/user captures; two compile workers.
+Small coherent child outcome: all real PTY release probes use private XDG/
+Yocto environment and explicit no-graphics test terminal, actual configured
+Cargo build target, rendered screen synchronization/current case and honest
+daemon profile fixture. Reuse existing deterministic bridge if needed; never
+claim fixture is real Yocto. Preserve startup8s/quit3s/current per-stage bounds,
+all negative/terminal restoration/geometry checks; require clean exit rather
+than legacy forced-kill acceptance. Capture workbench before quit overlay,
+resize through unsupported dimensions and back, stop only owned fixture daemon.
+Add pure helper/protocol/environment/binary-selection positive/negative tests.
+No product behavior/UI change inferred. Update testing provenance/runbook,
+bump maintained script change; keep sources<=500. Verify full release gate,
+then resume parent full verification, final docs/native/reboot/optimized/CI/pub.
 
 ```bash
-cargo fmt --all --check
-cargo test --workspace --all-features --no-fail-fast
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
+python3 -m unittest scripts/test_pty_acceptance.py
 ./scripts/verify-release-quality.sh
 ./scripts/check-docs.sh
+cargo fmt --all --check
+python3 scripts/check-library-layout.py
 ./scripts/verify-roadmap.sh
 ```
 

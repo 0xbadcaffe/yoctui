@@ -2,6 +2,13 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Full parent v293 baseline passes2048Rust/61bridge/strictClippy/fmt, but real PTY
+release gate exposed desktop-handoff and obsolete readiness/profile fixtures.
+DEMO-RELEASE-PTY-HARNESS-001 is the atomic current child: hermetic observed PTY,
+actual built target/current rendered anchors/daemon fixture, unchanged bounds
+and strengthened clean-exit/resize/restoration checks. No product feature or
+fake live acceptance. New-stable API deprecation remains later hosted CI scope.
+
 Screenshot maintenance DONE v293 before full release quality: explicit tested
 DIM projection, pinned current fixture images/hashes and current modifier/menu/
 header anchors, all377 UI tests and docs/README gates PASS. Historical live
