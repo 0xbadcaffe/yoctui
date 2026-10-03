@@ -402,18 +402,18 @@ notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. 
 id = "DEMO-INTERACTIVE-LAUNCH-FOCUS-001"
 milestone = "M114"
 title = "Focus the new ordinary embedded interactive terminal after confirmation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3576
 required = true
 depends_on = ["DEMO-DAEMON-CATALOG-HOTSPOT-001"]
 verify = ["cargo test -p yoctui-model --all-features interactive_launch_focus", "cargo test -p yoctui-ui --all-features interactive_launch_focus", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-ui-spec.sh", "Manual: exact optimized native new shell chooser confirmation selects the new session, writer and normal exit; originals and prior history unchanged", "./scripts/verify-roadmap.sh"]
-notes = "v306 implementation restores ordinary BuildShell/Devshell/recipe Menuconfig/DevtoolShell/exact devtool edit-recipe Utility screen/focus/pending-slot transition. Before-code two regressions fail and two negative controls pass; final five reducer/one responsive TestBackend pass. Updating+ordinary full2105Rust/zero failures/nine unchanged ignores31targets,67bridge/strictalltargetsallfeaturesClippy54.42s/fmt/source2911/UI/version/roadmap PASS;34goldens only305->306 bytes and29rasters verified. No automatic writer; cancelled/detached/platform/GitUI/debug/completion/unrelated Utility routes unchanged. Optimized source-bound install/native proof pending, not DONE. Scoped293stale compiler outputs668435739B plus3unused compiled probes105053936B removed after UID/link/live-use checks; installed/top optimized305 preserved. Native305 shell32 created but retained old history selection; split before code, no new layout/key/workflow."
+notes = "DONE source151cca55/v306, optimized installed SHA24cab7a4; actual plain native2591056 chooser -> shell34 automatic selection/Workspace focus, explicit writer/pwd/exact BUILD/exit0/normal q0/terminal restored; owned actors gone. Original33PTY/19jobs/fullcompatibility/six originals exact, daemon2553232/v305 active/NRestarts0 (client-only no wire change, not final daemon upgrade). Proof native-interactive-focus-v306.txt; unintended detached shell from rapid invalid palette sequence scoped HUP-cleaned/rejected as embedded acceptance. Five reducer/one responsive TestBackend/full2105Rust/zero failures/nine unchanged ignores31targets/67bridge/strictClippy/fmt/source2911/UI/roadmap PASS;34version-only goldens/29rasters verified. No automatic writer; cancellation/detached/platform/GitUI/debug/completion/unrelated Utility unchanged. Scoped stale compiler/test/old release outputs cleared after UID/link/live-use checks; originals/cached profileELF/presentation intact. No new layout/key/workflow; lease child next."
 
 [[task]]
 id = "DEMO-NATIVE-INSPECTION-LEASE-001"
 milestone = "M114"
 title = "Release the native metadata connection before reviewed interactive BitBake execution"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3575
 required = true
 depends_on = ["DEMO-INTERACTIVE-LAUNCH-FOCUS-001"]

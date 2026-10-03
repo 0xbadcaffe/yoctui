@@ -1,8 +1,44 @@
 # Current Task
 
-**ID:** DEMO-INTERACTIVE-LAUNCH-FOCUS-001
-**Title:** Focus the new ordinary embedded interactive terminal after confirmation
+**ID:** DEMO-NATIVE-INSPECTION-LEASE-001
+**Title:** Release the native metadata connection before reviewed interactive BitBake execution
 **Status:** IN_PROGRESS
+
+Focus child DONE: source151cca55/v306 optimized installed SHA24cab7a4, actual
+native2591056 chooser -> shell34 automatic selection/Workspace focus, explicit
+writer/pwd/exact BUILD/exit0/normal q0/restored. Controller/client/owned actors
+gone, original33PTY summaries/19jobs/full compatibility/six input hashes exact;
+daemon2553232/v305 active/NRestarts0. Evidence native-interactive-focus-v306.txt.
+An unintended detached shell from a rapid invalid palette sequence was scoped
+HUP-cleaned and excluded from embedded acceptance. Full2105Rust/67bridge/strict
+Clippy/fmt/source2911/UI/roadmap,34version-only goldens/29verified rasters PASS.
+This child now addresses only the retained native recipe metadata connection:
+successful inspection leaves a bridge owning BitBake's exclusive connection,
+so the next real devshell repeatedly cannot setFeatures. Normal client quit
+releases it, then initialized bitbake -n qemu-helper-native -c devshell succeeds0
+with cached prerequisites. Preserve exact environment and current authority;
+do not kill daemon/shared server or unrelated builds. Determine narrow reviewed
+embedded/detached handoff, in-flight/cancellation/failure/late-result semantics
+and repeat-inspection behavior before code. Other non-BitBake terminals and
+legacy backends must not be retired incidentally. Required fake-process lifecycle
+regressions, full baseline, bump/commit/push/optimized install and real cached
+supported native interactive launch; do not claim dry-run is a live devshell.
+Relevant interactive_runtime recipe worker/editor dialog/metadata helpers,
+external CLI tests and authoritative spec/architecture/status/registry.
+
+```bash
+cargo test -p yoctui --bin yoctui --all-features inspection_lease
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+# Manual: plain native recipe inspection -> reviewed real cached devshell,
+# repeated metadata inspection, normal cleanup, unchanged original/history.
+```
+
+## Completed focus child implementation
 
 Implementation v0.1.306: ordinary embedded BuildShell/Devshell/Menuconfig/
 DevtoolShell and exact devtool edit-recipe Utility requests enter Terminal

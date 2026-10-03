@@ -1,4 +1,15 @@
-M114 current: DEMO-INTERACTIVE-LAUNCH-FOCUS-001 IN_PROGRESS; parent audit paused.
+M114 current: DEMO-NATIVE-INSPECTION-LEASE-001 IN_PROGRESS; focus child DONE.
+Source151cca55/v306 optimized installed24cab7a4, actual native2591056 chooser
+selects new shell34/Workspace automatically; explicit writer/pwd/BUILD/exit0,
+normal q0/restored, owned actors absent. Original33PTY summaries/19jobs/full
+compatibility/six originals exact; daemon2553232/v305 remains active/NRestarts0.
+Proof native-interactive-focus-v306.txt, full2105Rust/67bridge/strict baseline/
+34version-only goldens/29rasters PASS. Unintended detached shell from rapid
+invalid palette sequence scoped HUP-cleaned, excluded from embedded acceptance.
+Next narrow metadata connection handoff still needs design/tests/live proof;
+kill safety then parent audit/docs/CI/actual reboot/publication remain pending.
+
+Previous M114 current: DEMO-INTERACTIVE-LAUNCH-FOCUS-001 IN_PROGRESS; parent audit paused.
 v306 implementation passes five reducer/one responsive TestBackend regressions,
 ordinary full2105Rust/0failures/nine unchanged ignores31targets,67bridge/fmt/
 source2911/UI/version/roadmap;34exact version-only goldens and29verified rasters.
