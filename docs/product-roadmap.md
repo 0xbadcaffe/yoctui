@@ -8,6 +8,10 @@ must retain global F4/Dashboard as already specified; embedded menuconfig and
 modal traps stay intact. Plain attach recipe metadata must initialize the exact
 selected native source/build for the daemon-authorized bridge, not depend on a
 caller Python path. Separate atomic children precede parent acceptance/docs/CI.
+Function-key v300 implementation covers all ten global catalog keys across
+viewer/history/stale/local/remote/empty states without changing embedded
+menuconfig, modal/editor F12 access or other workspace text handling. Full
+2075Rust/67bridge PASS, native installed proof still pending before DONE.
 
 Split terminal binding child DONE before ordinary autosize: source/live
 native26-session history exposes UI/mouse ordinal mapping that can hide the

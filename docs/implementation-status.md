@@ -4,6 +4,12 @@ read-only F4 is swallowed instead of Dashboard; correct existing direct dispatch
 without changing embedded menuconfig/dialog behavior. Separate queued native
 recipe metadata child: plain attach bridge negotiation lacks selected bb module.
 No new features or image/config writes; source-bound verification required.
+Function-key implementation v300 passes full2075Rust/zero failures/nine unchanged
+ignores31targets/67bridge/strict workspace Clippy; optimized installed native
+proof pending. Existing editor F12 menu access deliberately preserved, not broadened
+dialog suppression.34goldens only299->300 identity/29rasters checked. Cleared23
+validated unused prior299 test executables433647264B, rebuildable temporary
+cache only; originals/current outputs/user captures retained.
 Viewport DONE code3d0d2940/v299 optimized installed3e03cc59. Actual native
 shell29/GDB17.1 size reports match UI across98x32/96x15/split48x32/split62x42/
 full126x42/narrow78x7/restored98x31 with history. Normal GDB/shell exit, client

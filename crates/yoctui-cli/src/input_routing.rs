@@ -16,7 +16,9 @@ pub(crate) fn direct_menu_shortcut_action(
     if app.platform_menuconfig_visible() {
         return None;
     }
-    if yoctui_app::terminal_owns_input(app) {
+    if yoctui_app::terminal_owns_input(app)
+        || (app.screen == Screen::TerminalSessions && app.active_dialog().is_none())
+    {
         if matches!(
             input,
             Input::F1

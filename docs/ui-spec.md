@@ -44,7 +44,13 @@ identities cannot silently rebind a pane to another process with a reused ID.
 Exited/lost session history remains viewable without
 forwarding ordinary keys, paste or resize to a dead process, or advertising an
 active writer lease. Existing Quit/global routes regain normal application
-behavior when no live writer owns input. Ordinary live terminal panes, including
+behavior when no live writer owns input. Ordinary terminal panes, including
+build shells/GDB, retain the existing global function-key catalog even when
+their selected session is empty, read-only, ended or stale. Embedded menuconfig
+keeps forwarding function keys through its dedicated terminal route; active
+dialogs and palette/context replay retain their existing routing, including
+the existing F12 menu access over editors. Ordinary
+live terminal panes, including
 build shells/GDB, must size the owned PTY to actual visible cells just like
 menuconfig; preserve remote viewer authority and existing split/narrow layouts.
 Resize dimensions exclude the existing tabs, access/status lines, borders,

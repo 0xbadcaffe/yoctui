@@ -14,6 +14,19 @@ installed-source F4 proof, bump/commit/push, full baseline and optimized install
 Parent native audit paused; recipe inspection also exposes a separate selected
 build bridge environment failure. That atomic child follows this correction.
 
+Implementation v300 restores the existing direct function-key catalog only for
+ordinary Terminal Sessions, including empty/read-only/history/stale replicas.
+Embedded menuconfig, replayed context, palette, other workspace text handling
+and F12 menu access over existing editor dialogs remain unchanged. Two external
+dispatch/reducer tests cover all ten function keys across three replica states,
+seven lifecycles and local/remote/absent writer authority plus empty history,
+palette/replay/dialog routing. Initial viewer regression fails before correction.
+Full Rust2075/zero failures/nine unchanged ignores31targets and67bridge PASS;
+strict workspace Clippy PASS; optimized installed native proof pending. All34 golden files
+change only299->300 identity;29 deterministic raster checks PASS.23 validated
+obsolete completed299 test executables433647264B cleared from explicit temporary
+cache paths after owner/link/live-use checks; original data/current outputs intact.
+
 ```bash
 cargo test -p yoctui --bin yoctui function_keys
 cargo fmt --all --check
