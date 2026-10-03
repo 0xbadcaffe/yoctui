@@ -2,6 +2,16 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+2026-10-03 immediate user override: publish existing v0.1.309 only, then provide
+manual commands and explain existing automation. DEMO-PUBLISH-001 is the parent;
+DEMO-PUBLISH-HELP-CONTRACT-001 is current after package build passes but the
+old help-banner assertion rejects actual committed CLI output. Correct only
+that verifier with positive/negative contract tests before publication.
+README/operator-guide refresh, CI repair and coordinated reboot/full parent
+acceptance remain incomplete and deferred. Package/build verification and exact
+registry/checksum evidence remain required. No product source/version change,
+presentation commit, daemon restart or weakening of existing CI/tests.
+
 Native305 parent rehearsal split existing launch-focus, metadata-connection
 handoff and kill-preview safety defects into separate atomic children before
 code. Focus, inspection lease and embedded relay children DONE. Source6c959ca5/
@@ -14,7 +24,7 @@ originals unchanged. Kill safety subsequently DONE sourcefeed7995/v309 optimized
 0cefb0ca actual native2730256 owned39 Navigator review/focus/pinned input trap/
 cancel survives/fresh confirmation only39/normal q0, originals/history exact.
 Proof native-terminal-kill-safety-v309.txt; full2127Rust/67bridge/strict baseline.
-Parent remaining current native all-screen/QEMU-GDB work is current. No new feature or authority/
+Before the publish-only override, parent native all-screen/QEMU-GDB work was current. No new feature or authority/
 history change; final daemon upgrade and real reboot not yet accepted.
 Parent all-screen/docs/CI/actual reboot/publication resume after the children.
 

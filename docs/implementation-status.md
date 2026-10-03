@@ -1,4 +1,22 @@
-M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; native children DONE.
+M114 current: DEMO-PUBLISH-HELP-CONTRACT-001 IN_PROGRESS; parent publication pending.
+All seven309 archives size/exclusions/bridge and extracted all-feature graph
+build pass; existing verifier then rejects actual help due to an obsolete banner.
+Failed log /tmp/yoctui-publish-package-v309.log retained. Split a narrow sourced
+Bash help contract plus positive/incomplete/obsolete/missing-command regression
+tests before implementation. No product source/version/README/CI change.
+
+M114 parent: DEMO-PUBLISH-001 IN_PROGRESS (2026-10-03 publish-only override).
+User requests existing v0.1.309 publication plus manual/automated instructions,
+not README refresh or CI repair. Those tasks and coordinated reboot/full parent
+acceptance remain incomplete. Sourcefeed7995 has prior ordinary full2127Rust/
+67bridge/strictClippy evidence; no application/version change is planned.
+All seven registry crates currently latest0.1.118, no0.1.309 entry. Existing
+verify-cratesio-package.sh checks archives, size/exclusions, bundled bridge
+and extracted graph/build/CLI/doctor. Package verification is running;
+dry-run, authenticated uploads and registry checksums remain unverified.
+Native installed/daemon309 service is active; no environment change/restart.
+
+Historical M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; native children DONE.
 Kill DONE sourcefeed7995/v309 optimized0cefb0ca/build6m30/install1.53s. Actual
 plain native2730256 owned39/2731328 exactBUILD, Navigator review focuses Workspace,
 pins39/traps F4/Tab/prefix/text/paste/mouse; Esc preserves shell/real SURVIVES_CANCEL;

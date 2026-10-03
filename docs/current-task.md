@@ -1,29 +1,68 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Install optimized release and rehearse all native OpenBMC demo screens
+**ID:** DEMO-PUBLISH-HELP-CONTRACT-001
+**Title:** Correct the package verifier's obsolete CLI help banner contract
 **Status:** IN_PROGRESS
 
-All registered native bootstrap/bridge/terminal/navigation/metadata/launch-focus/
-catalog/lease/relay/kill children are DONE. Continue parent remaining supported
-Devtool/workbench/screens and current managed QEMU/GDB/boot/reconnect/cleanup.
-Upgrade only exact enabled native yoctui.service to installed309 after read-only
-proof of no active clients/jobs/PTYs; preserve37prior historical rows+new39,
-original19jobs/config/images/symbols and unrelated daemons/containers. Record
-expected restart lease resets, actual new instance/ready inventory and startup
-timing. Plain native attach must work, not container launcher/caller BB/Python env.
-Capture actual screens above Git for presentation; optional unsupported states
-stay honest. No new features/long clean image rebuild/physical-board/ZCU work.
-Then docs JSON harness, README/screenshots/latest honest performance/runbook,
-separate CI repair tasks, durable final install/coordinated actual reboot and
-immutable crates.io publication. Do not reboot or publish prematurely.
+Parent DEMO-PUBLISH-001 is IN_PROGRESS. All seven archives pass size/exclusion/
+bridge checks and the extracted all-feature graph builds. Verification then
+fails because the script expects an obsolete pre-workbench help description;
+actual committed cli_arguments.rs declares a different workbench banner.
+Failed log: /tmp/yoctui-publish-package-v309.log. Split this narrow verifier
+maintenance before code: check current banner plus Usage/options/doctor/attach/
+daemon sections with a sourced Bash helper; add independent positive/negative
+script tests, including incomplete/old-banner-only/missing-command failures.
+Do not change CLI/product source, version, README, CI or weaken packaged build,
+size/exclusion/bridge/version/doctor checks. Application crate source payloads
+must remain equivalent to feed7995. Commit this helper/check/test, then resume
+existing309 authenticated dry-run/publication only.
 
 ```bash
-cargo build --release --locked -p yoctui --bin yoctui
-# Manual: exact current installed native service/attach, supported screens/
-# devshell/devtool, matching retained Romulus QEMU-GDB/boot/reconnect/cleanup.
+./scripts/test-cratesio-package-contract.sh
+CARGO_BUILD_JOBS=2 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 \
+  CARGO_INCREMENTAL=0 ./scripts/verify-cratesio-package.sh
+cargo fmt --all --check
+./scripts/verify-ui-spec.sh
 ./scripts/verify-roadmap.sh
 ```
+
+Parent scope retained below:
+2026-10-03 user override: from publication/README/CI, do only publication now,
+then explain manual commands and automation. Publish existing 0.1.309 public
+source without a version bump/product change. Dependencies DEMO-FULL-VERIFY-001
+and DEMO-TERMINAL-KILL-SAFETY-001 are DONE. Sourcefeed7995 has ordinary full
+2127Rust/zero failures/nine unchanged ignores,67bridge/strictClippy evidence.
+Native installed client/daemon309 remains running; do not restart it.
+
+No README/operator-guide refresh, CI repair, coordinated reboot, new image/kernel
+build, presentation commit/push or unrelated cleanup this turn. Previous parent
+DEMO-INSTALL-LIVE-001, docs/CI/reboot tasks remain incomplete. Known hosted
+test/performance-fast failures must not be represented as green.
+
+Run existing package verification unchanged: seven public archives under10MiB,
+no target/artifacts/Git contents, bundled bridge, extracted public graph build
+and packaged version/help/doctor. Check current registry absence and authenticated
+Cargo dry-run before uploading only yoctui-utils/model/protocol/bitbake/app/ui
+and yoctui in dependency order. Private e2e/shell remain unpublished. Tokens stay
+secret; no --no-verify to hide build failures or overwritten registry versions.
+Verify each exact index entry/checksum and report partial uploads/auth errors.
+Existing script verifies packages; Cargo explicit multi-package selection can
+automate publication, with per-crate dependency-order commands as a fallback.
+
+```bash
+CARGO_BUILD_JOBS=2 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 \
+  CARGO_INCREMENTAL=0 ./scripts/verify-cratesio-package.sh
+cargo publish --dry-run --locked -j 2 --registry crates-io \
+  -p yoctui-utils -p yoctui-model -p yoctui-protocol -p yoctui-bitbake \
+  -p yoctui-app -p yoctui-ui -p yoctui
+# Only after checks pass: same selection without --dry-run; verify checksums.
+./scripts/verify-roadmap.sh
+```
+
+Update registry/status/current task and commit evidence after a verified outcome.
+Do not mark deferred docs/CI/reboot/parent work DONE or resume it this turn.
+The retained sections below describe the historical parent/child work, not an
+additional active task or authorization to repair CI/change the product now.
 
 ## Completed terminal kill safety
 

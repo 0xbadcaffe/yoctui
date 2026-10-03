@@ -131,6 +131,16 @@ Presentation remains outside Git; version/commit/push/source-bound release and
 verified public package graph precede publishing. No unrelated active work,
 original deploy images, sources or exact matching debug artifacts are removed.
 
+The 2026-10-03 user instruction narrows immediate work to publication of the
+existing v0.1.309 release plus manual/automated publication instructions.
+README/operator-guide refresh, hosted CI repair and coordinated reboot/full
+demo acceptance are deferred, not completed or certified. Publication no longer
+depends on those deferred tasks for this explicitly authorized release.
+Preserve v0.1.309 public source, prior source-bound full-test evidence and all
+package/build verification. Verify all seven public archives, authentication,
+dependency order and registry checksums; private crates remain unpublished.
+Partial uploads or authentication failures must not be represented as success.
+
 ### M113 OpenBMC flash QEMU debugging and live presentation capture
 
 The user sets ZCU102 validation aside without deleting its retained work and

@@ -572,18 +572,29 @@ priority = 3525
 required = true
 depends_on = ["DEMO-INSTALL-LIVE-001", "DEMO-DOCS-001"]
 verify = ["./scripts/check-ci.sh", "Manual: inspect failed GitHub Actions jobs/logs for exact pushed source; reproduce affected gates locally and split unrelated fixes before implementation", "Manual: push coherent corrections and verify required GitHub CI jobs green for exact source, not cancelled/older successful runs", "./scripts/verify-roadmap.sh"]
-notes = "User explicitly adds GitHub CI repair when demo polish is done. Relevant .github/workflows/ci.yml, script contracts and failing gates; read-only current logs may guide local diagnosis meanwhile. Keep all existing assertion/coverage/resource budgets and distinction between deterministic hosted gates and genuinely available live/self-hosted prerequisites. Do not disable tests/jobs, delete evidence requirements or mask failures to achieve green. Publication waits for source-bound required CI success; actual external live prerequisite blockers stay explicit."
+notes = "User explicitly adds GitHub CI repair when demo polish is done. Relevant .github/workflows/ci.yml, script contracts and failing gates; read-only current logs may guide local diagnosis meanwhile. Keep all existing assertion/coverage/resource budgets and distinction between deterministic hosted gates and genuinely available live/self-hosted prerequisites. Do not disable tests/jobs, delete evidence requirements or mask failures to achieve green. Historical release scope required CI before publication; 2026-10-03 explicit publish-only user override reprioritizes existing309 publication without completing this CI task. Hosted test/performance-fast failures and external live prerequisites remain explicit."
 
 [[task]]
 id = "DEMO-PUBLISH-001"
 milestone = "M114"
 title = "Publish verified public crate graph to crates.io and verify registry availability"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3505
 required = true
-depends_on = ["DEMO-GITHUB-CI-001", "DEMO-NATIVE-PERSISTENCE-001"]
+depends_on = ["DEMO-FULL-VERIFY-001", "DEMO-TERMINAL-KILL-SAFETY-001", "DEMO-PUBLISH-HELP-CONTRACT-001"]
 verify = ["./scripts/verify-cratesio-package.sh", "Manual: authenticated cargo publish --dry-run public dependency graph and then authorized publish in dependency order; verify exact versions/checksums on registry", "Manual: installed latest optimized release remains ready and attached daemon health after publication", "./scripts/verify-roadmap.sh"]
-notes = "Explicit user authorization to publish (cargo.io interpreted as crates.io); seven public crates only, private e2e/shell remain publish=false. Relevant Cargo manifests/package verification/release evidence. Do not print registry credentials, assume authentication/ownership or overwrite an existing registry version; publication is immutable. Stop this task on missing credentials/external registry and record exact blocker, continue independent eligible work. Version/source/test/docs/demo/packaged bridge must be verified first."
+notes = "2026-10-03 explicit user override: from publication/README/CI, do only publication now and provide manual commands/automation explanation. Existing0.1.309 public sourcefeed7995 and prior full2127Rust/67bridge/strictClippy evidence remain unchanged; no artificial bump or README/CI repair. Deferred demo/docs/CI/reboot tasks remain incomplete, not silently DONE. Seven public crates only, private e2e/shell remain publish=false. Complete unchanged package graph/size/exclusions/bundled bridge/build/CLI/doctor checks and authenticated dry-run before uploads; verify all seven registry versions/checksums. Credentials stay secret and immutable versions cannot be overwritten. Missing credentials/external registry is an explicit blocker; do not resume unrelated deferred work this turn. Existing script verifies packaging; Cargo explicit seven-package selection automates dependency ordering, assess current supported command before publication."
+
+[[task]]
+id = "DEMO-PUBLISH-HELP-CONTRACT-001"
+milestone = "M114"
+title = "Correct the package verifier's obsolete CLI help banner contract"
+status = "IN_PROGRESS"
+priority = 3575
+required = true
+depends_on = ["DEMO-FULL-VERIFY-001", "DEMO-TERMINAL-KILL-SAFETY-001"]
+verify = ["./scripts/test-cratesio-package-contract.sh", "CARGO_BUILD_JOBS=2 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 ./scripts/verify-cratesio-package.sh", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh", "Manual: all seven public application source payloads match feed7995; no README/CI/product/version change"]
+notes = "Split before code after actual extracted public309 graph builds and original verifier fails obsolete help banner at line92. Relevant scripts/verify-cratesio-package.sh plus sourced scripts/cratesio-package-contract.sh and scripts/test-cratesio-package-contract.sh. Replace obsolete textual description with actual CLI workbench banner plus presence checks for Usage/options/doctor/attach/daemon; cover correct, old-only, truncated and missing-command negatives. Keep size/exclusion/bundled bridge/extracted build/version/private doctor assertions unchanged. No product/README/CI/version change; failed log retained in /tmp/yoctui-publish-package-v309.log. Definition of done: focused positive/failure tests and complete existing package verification pass, source payload identity checked, docs/current/status/registry updated and coherent helper correction committed."
 
 [[task]]
 id = "OPENBMC-QEMU-GDB-FLASH-001"
