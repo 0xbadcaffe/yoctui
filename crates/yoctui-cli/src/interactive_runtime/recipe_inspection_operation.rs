@@ -67,6 +67,7 @@ impl InteractiveRuntime {
         let source_dir = self.app.workspace.source_dir.clone();
         let cancellation_timeout = self.cancellation_timeout;
         let authoritative = self.metadata_backend_authoritative;
+        let native = self.daemon_attached;
         let placeholder: Box<dyn BitBakeBackend> = Box::new(ProcessBackend::new(build_dir.clone()));
         let mut backend = std::mem::replace(&mut self.backend, placeholder);
         let worker_request = request.clone();
@@ -110,6 +111,7 @@ impl InteractiveRuntime {
                     }
                 }
             }
+            let cleanup_request = worker_request.clone();
             let (result, connection_lost) = match worker_request {
                 RecipeInspectionRequest::Metadata { recipe, followup } => {
                     let result = backend.get_recipe_metadata(recipe.clone()).await;
@@ -139,6 +141,27 @@ impl InteractiveRuntime {
                     )
                 }
             };
+            if native {
+                let result = match native_metadata_scope::finish_query(
+                    backend,
+                    Ok(result),
+                    native_metadata_scope::SHUTDOWN_TIMEOUT,
+                )
+                .await
+                {
+                    Ok(result) => result,
+                    Err(error) => failed_result(cleanup_request, error.to_string()),
+                };
+                return (
+                    Box::new(native_metadata_scope::NativeMetadataScope::new(
+                        build_dir,
+                        source_dir,
+                        cancellation_timeout,
+                    )) as Box<dyn BitBakeBackend>,
+                    false,
+                    result,
+                );
+            }
             if connection_lost {
                 let _ = backend.shutdown().await;
                 backend = Box::new(ProcessBackend::new(build_dir));

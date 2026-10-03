@@ -78,65 +78,7 @@ impl InteractiveRuntime {
             let _ = yocto_utility_dialog_action(&dialog, input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
         } else if matches!(runtime.app.active_dialog(), Some(Dialog::TerminalLaunch(_))) {
-            let effect = terminal_launch_dialog_action(input)
-                .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
-            match effect {
-                Some(effect @ Effect::Terminal(_)) => {
-                    let routed = submit_daemon_effect(
-                        &mut runtime.daemon_runtime,
-                        &mut runtime.app,
-                        &effect,
-                    );
-                    if routed == Some(false) {
-                        runtime.app.cancel_pending_platform_menuconfig();
-                    } else if routed.is_none() {
-                        if let Effect::Terminal(yoctui_model::TerminalEffect::Create {
-                            kind: yoctui_model::TerminalCreationKind::GitUi,
-                            program,
-                            cwd,
-                            arguments,
-                            ..
-                        }) = effect
-                        {
-                            if let Err(error) = runtime.guard.suspend() {
-                                runtime.app.notification =
-                                    Some(format!("Cannot open GitUI: {error}"));
-                            } else {
-                                let result = tokio::task::spawn_blocking(move || {
-                                    std::process::Command::new(program)
-                                        .args(arguments)
-                                        .current_dir(cwd)
-                                        .status()
-                                })
-                                .await;
-                                let restored = runtime.guard.resume();
-                                runtime.app.notification = Some(match (result, restored) {
-                                    (_, Err(error)) => {
-                                        format!("Cannot restore terminal: {error}")
-                                    }
-                                    (Ok(Ok(status)), Ok(())) if status.success() => {
-                                        "GitUI closed; source status will refresh.".into()
-                                    }
-                                    (result, _) => {
-                                        format!("GitUI finished: {result:?}")
-                                    }
-                                });
-                            }
-                        } else {
-                            runtime.app.cancel_pending_platform_menuconfig();
-                            runtime.app.notification = Some("Embedded terminal unavailable: connect to the daemon or choose a detached terminal.".into());
-                        }
-                    }
-                }
-                Some(Effect::LaunchDetachedTerminal(request)) => {
-                    begin_detached_terminal_launch(
-                        &mut runtime.app,
-                        &mut runtime.detached_terminal_operation,
-                        request,
-                    );
-                }
-                _ => {}
-            }
+            return Ok(Some(runtime.route_terminal_launch_dialog(input).await?));
         } else if matches!(runtime.app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
             let editor = runtime.app.active_dialog().and_then(|dialog| match dialog {
                 Dialog::RecipeEditor(editor) => Some(editor.clone()),

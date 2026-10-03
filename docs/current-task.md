@@ -4,6 +4,23 @@
 **Title:** Release the native metadata connection before reviewed interactive BitBake execution
 **Status:** IN_PROGRESS
 
+Implementation v0.1.307 closes the native worker's private bridge before
+publishing its result and returns a lazy per-read metadata adapter. Config,
+layer and recipe queries retain initialized selected-environment authority;
+builds/events remain daemon-owned. Pending native inspection holds only reviewed
+BitBake/workspace launches, preserving the chooser and explicit cancellation.
+Eight new fake-backend/process and responsive TestBackend regressions pass.
+Ordinary full suite: 2113 Rust passed, zero failures, nine unchanged ignores
+across31 targets; strict all-target/all-feature Clippy55.42s, bridge67, fmt,
+source2914/UI/roadmap/version PASS.34 goldens differ only306->307 identity;
+6concept/23README rasters checked. Two preceding existing Git-watcher failures
+are retained in /tmp/yoctui-lease-{full-final,source-git-workspace-recheck}-v307.log;
+inotify initialization/watch calls succeeded, five uninstrumented reruns and
+the complete ordinary rerun pass unchanged. No watcher assertion weakened.
+Optimized installation and actual native devshell/repeat-inspection proof remain
+required before DONE. Completed test binaries temporarily moved to bounded
+/tmp storage with original cache symlinks; release/tools/images remain on disk.
+
 Focus child DONE: source151cca55/v306 optimized installed SHA24cab7a4, actual
 native2591056 chooser -> shell34 automatic selection/Workspace focus, explicit
 writer/pwd/exact BUILD/exit0/normal q0/restored. Controller/client/owned actors

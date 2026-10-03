@@ -13,7 +13,9 @@ mod input;
 mod jobs;
 mod key_input;
 mod metadata_backend;
+mod native_metadata_scope;
 mod notification_input;
+mod terminal_launch_dialog;
 mod terminal_workspace;
 #[cfg(test)]
 pub(crate) use metadata_backend::metadata_backend_start_required;

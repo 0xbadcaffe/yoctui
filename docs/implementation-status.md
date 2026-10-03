@@ -1,4 +1,13 @@
 M114 current: DEMO-NATIVE-INSPECTION-LEASE-001 IN_PROGRESS; focus child DONE.
+v307 implementation and eight lease lifecycle/pending chooser regressions pass.
+Native worker releases its private bridge before publishing; lazy scoped adapter
+preserves initialized/current-authorized detail reads without an idle connection.
+Legacy behavior and daemon build ownership unchanged. Full ordinary2113Rust/0/
+9unchanged ignores31targets, strict Clippy55.42s/67bridge/fmt/source2914/UI/
+roadmap/version and34version-only goldens/29verified rasters PASS. Existing Git
+watcher failed twice; trace proves successful inotify calls, five unchanged
+uninstrumented rechecks and full rerun pass; failed logs retained, no weakened
+assertion or watcher change. Optimized307/native real devshell proof pending.
 Source151cca55/v306 optimized installed24cab7a4, actual native2591056 chooser
 selects new shell34/Workspace automatically; explicit writer/pwd/BUILD/exit0,
 normal q0/restored, owned actors absent. Original33PTY summaries/19jobs/full
@@ -6,7 +15,7 @@ compatibility/six originals exact; daemon2553232/v305 remains active/NRestarts0.
 Proof native-interactive-focus-v306.txt, full2105Rust/67bridge/strict baseline/
 34version-only goldens/29rasters PASS. Unintended detached shell from rapid
 invalid palette sequence scoped HUP-cleaned, excluded from embedded acceptance.
-Next narrow metadata connection handoff still needs design/tests/live proof;
+Next narrow metadata connection handoff still needs installed native live proof;
 Before-code lease design: scope native worker bridge through inspection and
 bounded cleanup, return a lazy per-read selected-environment/daemon-authorized
 adapter preserving Config/layer detail queries; no idle client connection or
