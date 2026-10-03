@@ -1,10 +1,22 @@
-M114 current: DEMO-TASKS-NAVIGATOR-MOUSE-001 IN_PROGRESS; parent audit paused.
+M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; Tasks Navigator child DONE.
+Source d5612973/optimized304 SHA10935028 installed, native daemon2529907 healthy
+and ready4799recipes/nine layers after223s. Plain2529940 actual160x50 Tasks ->
+Devtool/shared Images-QEMU-Wic;160x48 literal -> Layers/Devtool/Wic, including
+post-inventory real nine layers/core756. Old303 Layers->Insights repro saved.
+Normal q/confirmation0/terminal restored; owned capture actors absent,19jobs/
+31PTY byte-exact, original configuration unchanged. Native-tasks-navigator-
+v304.txt records proof. Generated M21 raster hash links refreshed to304 assets.
+Full parent/current boot-debug/report/docs/CI/actual reboot/publication pending;
+startup artifact failure requires explicit refresh after inventory, not content
+certification. Native303 flamegraph reveals immutable catalog construction in
+idle recovery; separate measured optimization to be split next, no hotspot code
+changed yet. No new feature/layout/shortcut. Available RAM12GiB/root~536MiB.
 Implementation304 actual-area hit map plus model typed destination lookup;
 two app/one model/one TestBackend regressions pass. Before-code two app and
 actual rendered Devtool-click regressions fail. Full2097Rust/zero failures/nine
 unchanged ignores31targets/67bridge/strict workspace Clippy/fmt/source2909/UI/
 version/roadmap PASS;34goldens only303->304 identity/all other cells/styles exact,
-29rasters rebuilt/verified. Optimized install/native proof pending, not DONE.
+29rasters rebuilt/verified. Optimized install/native proof PASS as above.
 61 obsolete compiled outputs1138487853B removed after owner/link/live-use checks;
 installed/native303/top-level release and originals preserved, caches rebuildable.
 Native303 Tasks160x50 two-click Devtool/QEMU remains Tasks; Dashboard->Devtool

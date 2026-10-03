@@ -1,0 +1,87 @@
+Native Tasks Navigator geometry acceptance, 2026-10-03
+
+Code d561297396ecd9c3ee89a090158cf7d905786da2 / Yoctui0.1.304.
+Locked optimized thinLTO/debug1/codegen1/frame-pointers build/two workers6m26s;
+source-bound cargo install --locked --force --bin yoctui reused exact build1.43s.
+Installed ~/.cargo/bin/yoctui equals retained release SHA256:
+109350286d2aafc902e57d7e464a43b84e1521903fec07e118fdcf59d0b49bc8.
+Actual-area mouse condition matches renderer; legacy rows use pure typed model
+destination lookup, no duplicate stale numeric map. Distinct Images/QEMU-Wic
+contexts retained. No new layout, destination, key or protocol/backend change.
+
+Before-code two app mapping/reducer regressions and one rendered-row TestBackend
+fail (group toggle misroutes; literal Layers opens Insights;160x50 Devtool stays
+Tasks). Four final regressions pass: two app, one model typed roundtrip/missing
+destinations, one rendered-row responsive TestBackend160x50/160x48/compact/
+120x40/80x24. Full ordinary (NO update-mode) workspace/allfeature2097Rust PASS,
+zero failures/nine existing ignores31targets;67bridge/strictworkspacealltarget
+allfeatureClippy/fmt/source2909/UI/version/roadmap PASS. Clippy53.45s.
+Initial full run found three README version-only golden mismatches; proper
+reviewed updates followed and the full ordinary suite passed. All34goldens
+change only303->304 identity; other symbols/styles byte-exact.29 deterministic
+rasters rebuilt/verified. M21 concept-manifest generated source/PNG hash links
+are included with this proof handoff to match the304 assets; no new live claim.
+
+Before-replacement actual installed native303160x48 Tasks literal Layers clicks
+open Insights, reproducing stale numeric map (original screenshots untouched).
+Native304 service upgrade checked no active owned work, gracefully stopped
+2509796 and started enabled yoctui.service2529907 at13:24:29 UTC, instance
+53f871173c2a4533dceb917e531fd279. Compatibility ready13:28:03, inventory
+ready13:28:12 (223s),4799recipes/nine layers/NRestarts0. Exact source/build/
+workspace unchanged: openbmc/build-openbmc-romulus/b261670860dd0336.
+Normal /run/user/1000/yoctui/daemon.sock. Same kernel boot
+1e696f44-57bb-4193-af55-449269824bde, NOT a coordinated actual reboot proof.
+
+Plain installed native304client2529940/controller2529917, no container launcher
+or caller BUILDDIR/BBPATH/BBSERVER/PYTHONPATH/PYTHONHOME/YOCTUI bypass.
+Tasks160x50 two real clicks open Devtool and the shared Images/QEMU-Wic workspace,
+instead of remaining on Tasks. Actual160x48 literal tree two clicks open Layers,
+Devtool and Wic's shared Images workspace; restore160x50 and repeat after real
+inventory arrives. Final literal Layers shows nine layers/core756, not Insights.
+Devtool shows4799 real recipes (no selected recipe operation run).
+Startup inventory was honestly empty/Unknown until metadata arrived; navigation
+stayed available. Early Images scan reported missing DEPLOY_DIR_IMAGE and retains
+that failure until explicit refresh. This is not successful artifact-scan proof,
+new runqemu/optional tool execution, or full parent/demo readiness certification.
+
+Ordinary q/confirmation exits0/restores alternate screen with no F4/detach
+workaround/forced kill. Both owned capture actors absent afterwards. Pre-upgrade,
+running/ready/post-quit read-only protocol snapshots: all19 jobs and31 PTY records
+byte-exact. No new job/session, QEMU, GDB, recipe build or optional process.
+Original local.conf e14135366b356ceea7ebc99083661456ae3d8986f3d80c933633cbb005bf433d
+and bblayers.conf f1dc6040f1884e5598ac7dd879dd83679c7229723f9c6483a43a1507b16688d3
+unchanged. Build-only approved .trackerignore and temporary index pause remain;
+actual user files and above-Git presentation untouched.61 obsolete generated
+compiler outputs1138487853B cleared after UID/link/live-use checks before build,
+current installed/native/top-level binaries and original artifacts preserved;
+deleted compiler caches recoverable by rebuild. Root~536MiB/RAM12GiB available.
+
+Accepted original above-Git presentation/assets text hashes:
+demo-native-v303-tasks-literal-before.txt
+f3a00524711257285813945865717a615822bec28ebb00f36d6ead8ede9301d5
+demo-native-v303-tasks-literal-wrong-destination.txt
+51cf1bcab7f93ec5053bacf1ec6c1c717b592034e90676c7c99aa494a2ed28a2
+demo-native-v304-tasks-to-devtool.txt
+0eaf54d334366ab3ef703671c3f9f789f35254620e2da8f049b61b607da21449
+demo-native-v304-tasks-to-qemu-wic.txt
+26f1556e0966030045f82d573b5ecf72509929b85e1d4575d586f3133b24cc77
+demo-native-v304-tasks-literal-to-layers.txt
+6efcd3a2e0ca86c68f1e3fa54586ccc4ed708774f681b7525b54109daebebc56
+demo-native-v304-tasks-literal-to-devtool.txt
+fc00098d6fc2ed1cd205409a5417303792231a666246e1d73ff52d5917653a4b
+demo-native-v304-tasks-literal-to-wic.txt
+d63ecf18976b0590b5f448f4e7e915afef70e9b6fb4b6db16464dfc572aa3300
+demo-native-v304-tasks-final-devtool.txt
+f5325fce20c06ccc7a50ebf52f84abb9fe791ec2da5f7aa8489c59b0881725c1
+demo-native-v304-tasks-final-qemu-wic.txt
+f259eb96244353ef2bc16ff40c56996ebb47f745b0f498ff4de2bd8c5e2201e6
+demo-native-v304-tasks-final-literal-layers.txt
+de941c8e5fc8e8f2158b6fc38eddbebe59eb9c872cd15e8f287d2de6fae1cca6
+
+Exact source hosted CI37125600118 release-quality/compatibility-fast success,
+test/performance-fast known strict newer-Rust lint/relocated IPC contract checks
+still fail. CI repairs stay queued after demo/docs per user. Native303 baseline
+profile619samples reveals repeated immutable catalog creation in idle recovery;
+separate measured optimization next, not bundled into this mouse correction.
+Full parent recipe tools/current boot-debug/final report/docs/CI/post-reboot/
+immutable publication remain pending. Do not infer those from navigation/tests.

@@ -1,8 +1,27 @@
 # Current Task
 
-**ID:** DEMO-TASKS-NAVIGATOR-MOUSE-001
-**Title:** Match Tasks Navigator mouse routing to its rendered geometry
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Rehearse remaining native OpenBMC demo screens and sessions
 **Status:** IN_PROGRESS
+
+Tasks Navigator child DEMO-TASKS-NAVIGATOR-MOUSE-001 DONE: source d5612973,
+optimized installed304 SHA10935028, daemon2529907 ready4799/nine layers after
+223s. Actual plain2529940 clicks Tasks160x50 -> Devtool/shared Images-QEMU/Wic;
+160x48 literal -> Layers/Devtool/Wic, again after inventory arrival. Old303
+actual literal Layers->Insights failure captured; new304 Layers shows real nine
+layers/core756. Normal q/confirmation0/terminal restored; owned actors absent,
+19jobs/31PTY histories byte-exact, original conf hashes unchanged. Evidence
+artifacts/live-openbmc/romulus/native-tasks-navigator-v304.txt. Generated M21
+raster provenance links refreshed alongside already verified304 PNGs/hashes.
+Parent still needs recipe workbench, current QEMU/GDB, other screens and final
+report/docs/CI/reboot/publication. Early Images scan retained a startup missing
+DEPLOY_DIR_IMAGE failure; explicitly refresh after metadata before artifact
+content acceptance. Navigation proof is not an optional-operation claim.
+Native303619-sample profile shows repeated immutable capability-catalog creation
+in daemon idle recovery; split its measured optimization next before continuing
+the parent audit. No code for that hotspot has been changed yet.
+
+## Completed Tasks Navigator child
 
 Implementation304: actual-area routing condition and pure model typed destination
 lookup replace legacy numeric positions. Before-code two app mapping/reducer
@@ -11,7 +30,7 @@ four new regressions pass, including typed lookup and distinct Images/QEMU-Wic.
 Full2097Rust/zero failures/nine unchanged ignores31targets/67bridge/strict full
 workspace Clippy/fmt/source2909/UI/version/roadmap PASS. All34goldens only303->304
 version; other cells/styles exact;29 deterministic rasters rebuilt/verified.
-Optimized build/install/native Tasks click proof pending; task remains IN_PROGRESS.
+Optimized build/install/native Tasks click proof PASS as above; parent incomplete.
 61 obsolete unused compiled outputs1138487853B safely cleared after owner/link/
 live-use checks, installed/native303 and retained top-level release preserved.
 Build with two jobs in disk AAiva6, monitor root~1.1GiB free; no RAM cache rebuild.
