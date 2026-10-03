@@ -1,4 +1,13 @@
-M114 current: DEMO-DOCS-001 IN_PROGRESS; full verification parent DONE v294.
+M114 current: DEMO-NATIVE-BOOTSTRAP-001 IN_PROGRESS; full quality DONE v294.
+Governance reconciles proof order before implementation: native cold tools/
+profile/optimized installation/enabled service -> actual all-screen/QEMU/GDB
+rehearsal -> final native screenshots/flamegraph/runbook -> hosted CI/final
+source installation -> distinct coordinated actual reboot/login proof. Native
+parent split into cold bootstrap and post-reboot children; no circular install
+proof and no interim container evidence described as accepted native. Parent
+and immutable publication require actual post-reboot child; coordination does
+not prematurely block independent rehearsal/docs/CI. Cold service restart is
+not an actual reboot. No uncoordinated reboot/privilege bypass/upstream edits.
 Exact committed399ce139 full Rust2048/0failures/9existing ignores31targets,
 bridge61, strictworkspace alltargets/allfeaturesClippy/fmt/full desktop release
 quality13 helper+all realPTY/keymap/resize/daemon snapshots/perf clean0 exits/

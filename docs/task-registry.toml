@@ -347,10 +347,10 @@ notes = "DONE exact committed399ce139/v294: full workspace all-features/no-fail-
 id = "DEMO-DOCS-001"
 milestone = "M114"
 title = "Refresh README real screenshots measured flamegraph report and operator runbook"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 3503
 required = true
-depends_on = ["DEMO-FULL-VERIFY-001"]
+depends_on = ["DEMO-FULL-VERIFY-001", "DEMO-INSTALL-LIVE-001"]
 verify = ["./scripts/test-flamegraph.sh", "python3 scripts/test_performance_documentation.py", "./scripts/check-docs.sh", "./scripts/test-readme-quickstart.sh", "Manual: current real OpenBMC screenshot provenance and explicit unavailable optional capabilities, projector walkthrough matching installed shortcuts", "./scripts/verify-roadmap.sh"]
 notes = "Relevant README.md, docs/operator-guide.md, docs/performance.md, production screenshot manifest/assets and measured report. Distinguish fixture workbench stress from real OpenBMC runtime and startup from steady state; quantify findings without old stale performance certification. Add actual demo route, exact paths/tool prerequisites/cleanup/recovery and optional missing-data boundaries. Presentation remains outside Git uncommitted/unpushed."
 
@@ -358,12 +358,34 @@ notes = "Relevant README.md, docs/operator-guide.md, docs/performance.md, produc
 id = "DEMO-NATIVE-PERSISTENCE-001"
 milestone = "M114"
 title = "Prepare durable native OpenBMC daemon startup after laptop login and reboot"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3524
 required = true
-depends_on = ["DEMO-DOCS-001"]
+depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-POSTREBOOT-001"]
 verify = ["Manual: durable native Python/ARM QEMU/GDB and exact saved OpenBMC source/build profile validation without root privilege bypass or authoritative upstream edits", "Manual: enabled unprivileged systemd user service uses final installed optimized binary and standard endpoint; cold restart and plain native yoctui attach succeed without temporary container launcher", "Manual: original boot/debug image hashes unchanged; no arbitrary command replay, restored former live sessions honestly Lost/Stopped", "Manual: coordinate actual laptop reboot with user, verify post-login service and plain native attach; do not claim actual reboot verified from cold restart alone", "./scripts/verify-roadmap.sh"]
 notes = "Latest user requires plain native laptop attach, rejects container-launcher workaround, and requires demo availability after system reboot. Relevant daemon service/profile/tool installation, native smoke, operator recovery checklist and source-bound evidence. Existing host Ubuntu26.04/Python3.14 lacks ARM QEMU/GDB-multiarch; validation container uses Ubuntu24.04 and isolated PID/runtime namespaces, so is not current native acceptance. Use durable user-scoped prerequisites or record genuine authority/dependency blocker, never forge daemon identity or bypass host permissions. Enable existing user service after validating exact selected environment; volatile sockets may recreate but tools/profile/image/debug evidence must not depend on /tmp. Do not reboot laptop without coordination or claim processes survive power loss. No new product feature inferred."
+
+[[task]]
+id = "DEMO-NATIVE-BOOTSTRAP-001"
+milestone = "M114"
+title = "Prepare durable native OpenBMC tools profile optimized binary and enabled user service"
+status = "IN_PROGRESS"
+priority = 3540
+required = true
+depends_on = ["DEMO-FULL-VERIFY-001"]
+verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: exact native source/build/API initialization and durable user-scoped Python/ARM QEMU/GDB prerequisites, no privilege bypass or upstream source edits", "Manual: installed exact optimized release hash and enabled supported user service with durable profile/wrapper/normal runtime endpoint; cold restart plus plain native yoctui attach succeeds", "Manual: check active jobs/PTYS/client ownership before stopping only owned idle container validation daemon/BitBake; no concurrent use of same build", "Manual: original boot/debug hashes unchanged, two workers and no /tmp-dependent tools, container launcher, forged records or full image rebuild", "./scripts/verify-roadmap.sh"]
+notes = "Atomic cold-setup child split before implementation from native persistence parent. Reconcile final native proof ordering: bootstrap after full verification, actual all-screen/boot/GDB rehearsal then final screenshots/report/runbook, hosted CI then distinct coordinated post-reboot child. Build/install current optimized binary is an ordinary service prerequisite, reused for live acceptance, not a circular dependency. Native QEMU already proven from retained durable native sysroot; verify host Python rather than assuming incompatibility. Required user tools/profile/service, build config path authority/backups and native readiness evidence only, no new feature. Do not terminate unrelated daemons or active jobs, edit upstream or bypass privileges. Actual reboot remains separate and blocks publication, not independent rehearsal/CI work."
+
+[[task]]
+id = "DEMO-NATIVE-POSTREBOOT-001"
+milestone = "M114"
+title = "Verify accepted native demo after coordinated laptop reboot and login"
+status = "NOT_STARTED"
+priority = 3541
+required = true
+depends_on = ["DEMO-GITHUB-CI-001"]
+verify = ["Manual: final CI-accepted source/binary installed and enabled user service/profile/tools all durable, coordinate actual reboot with user; never reboot uncoordinated", "Manual: after actual login healthy daemon at normal endpoint, plain native yoctui attach and retained Romulus image/debug discovery; start fresh reviewed QEMU/GDB session, do not claim live processes survived", "Manual: final operator checklist and genuine post-boot source/binary/boot-id/service proof, cold restart alone cannot pass", "./scripts/verify-roadmap.sh"]
+notes = "Distinct actual post-reboot evidence after source-bound CI and final installation; native parent and immutable publication require this child DONE. If user reboot coordination is external blocker, record exact status/proof still missing and handoff, never infer real reboot from service restart or boot-ID manipulation. Independent cold setup/live rehearsal/docs/CI finish beforehand. No new product feature or arbitrary command/session replay; preserve original images/symbols and unrelated work."
 
 [[task]]
 id = "DEMO-INSTALL-LIVE-001"
@@ -372,7 +394,7 @@ title = "Install optimized release and rehearse all OpenBMC demo screens and ses
 status = "NOT_STARTED"
 priority = 3504
 required = true
-depends_on = ["DEMO-NATIVE-PERSISTENCE-001"]
+depends_on = ["DEMO-NATIVE-BOOTSTRAP-001"]
 verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: installed optimized binary equals committed source-bound release hash/version; plain native yoctui attach discovers healthy exact OpenBMC daemon after login without container launcher", "Manual: real native OpenBMC screen-by-screen audit, supported recipe/devtool/devshell, rootfs/packages/services/artifacts and reviewed QEMU boot/kernel debugging/reconnect/cleanup; report unavailable optional screens honestly", "./scripts/verify-roadmap.sh"]
 notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed native release, normal workstation endpoint and durable working artifacts; container-only rehearsal and mocks do not meet acceptance. Prepare reproducible two-minute path and real screenshots/recovery checklist; no physical-board actions or long clean image rebuild inferred."
 
@@ -383,7 +405,7 @@ title = "Fix remaining GitHub CI failures after local demo release verification"
 status = "NOT_STARTED"
 priority = 3525
 required = true
-depends_on = ["DEMO-INSTALL-LIVE-001"]
+depends_on = ["DEMO-INSTALL-LIVE-001", "DEMO-DOCS-001"]
 verify = ["./scripts/check-ci.sh", "Manual: inspect failed GitHub Actions jobs/logs for exact pushed source; reproduce affected gates locally and split unrelated fixes before implementation", "Manual: push coherent corrections and verify required GitHub CI jobs green for exact source, not cancelled/older successful runs", "./scripts/verify-roadmap.sh"]
 notes = "User explicitly adds GitHub CI repair when demo polish is done. Relevant .github/workflows/ci.yml, script contracts and failing gates; read-only current logs may guide local diagnosis meanwhile. Keep all existing assertion/coverage/resource budgets and distinction between deterministic hosted gates and genuinely available live/self-hosted prerequisites. Do not disable tests/jobs, delete evidence requirements or mask failures to achieve green. Publication waits for source-bound required CI success; actual external live prerequisite blockers stay explicit."
 
@@ -394,7 +416,7 @@ title = "Publish verified public crate graph to crates.io and verify registry av
 status = "NOT_STARTED"
 priority = 3505
 required = true
-depends_on = ["DEMO-GITHUB-CI-001"]
+depends_on = ["DEMO-GITHUB-CI-001", "DEMO-NATIVE-PERSISTENCE-001"]
 verify = ["./scripts/verify-cratesio-package.sh", "Manual: authenticated cargo publish --dry-run public dependency graph and then authorized publish in dependency order; verify exact versions/checksums on registry", "Manual: installed latest optimized release remains ready and attached daemon health after publication", "./scripts/verify-roadmap.sh"]
 notes = "Explicit user authorization to publish (cargo.io interpreted as crates.io); seven public crates only, private e2e/shell remain publish=false. Relevant Cargo manifests/package verification/release evidence. Do not print registry credentials, assume authentication/ownership or overwrite an existing registry version; publication is immutable. Stop this task on missing credentials/external registry and record exact blocker, continue independent eligible work. Version/source/test/docs/demo/packaged bridge must be verified first."
 

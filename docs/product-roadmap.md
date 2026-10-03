@@ -2,6 +2,14 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Proof dependency reconciliation: after full quality, atomic native cold bootstrap
+installs the optimized service prerequisite and validates tools/profile/normal
+endpoint; independent real all-screen/boot/GDB rehearsal follows, then final
+native screenshot/report/operator docs and hosted CI. Distinct coordinated
+actual post-reboot proof follows final source install/CI and gates native parent
+and immutable publication. No circular install proof, container-only final docs,
+uncoordinated reboot or claim that cold service restart is actual reboot.
+
 Full verification DONE exact399ce139/v294:2048Rust/61bridge/strictworkspace
 Clippy/fmt/full desktop release-quality/all docs/current Cargo binary/source/
 roadmap PASS;9existing ignores unchanged. Final docs/native reboot readiness/

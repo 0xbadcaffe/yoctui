@@ -1,35 +1,48 @@
 # Current Task
 
-**ID:** DEMO-DOCS-001
-**Title:** Refresh README real screenshots measured flamegraph report and operator runbook
+**ID:** DEMO-NATIVE-BOOTSTRAP-001
+**Title:** Prepare durable native OpenBMC tools profile optimized binary and enabled user service
 **Status:** IN_PROGRESS
 
-Full verification parent DONE on committed399ce139/v294:2048Rust/0failures/
-9existing live/manual ignores across31 targets; bridge61; strict workspace
-all-target/all-feature Clippy/fmt; full real desktop release-quality13helper+
-PTY/keymap/resize/daemon snapshots/perf/README/utility/embedded2; exact current
-Cargo binary docs/doctor/headless/29pinned rasters/roadmap/source2891 PASS.
-Logs /tmp/yoctui-demo-final-*-v294.log. No new skips/weakened gates. This is
-local full quality, not native optimized/reboot/hosted CI/publication.
+Full local quality DONE product399ce139/v294 (handoff02842aeb):2048Rust/61bridge/
+strictworkspaceClippy/fmt/fullrelease/docs/source2891/roadmap PASS;9 existing
+ignores unchanged. Reconciled proof order: native cold setup -> optimized real
+screen/boot/GDB rehearsal -> final native README/screenshots/flamegraph/runbook
+-> hosted CI/final source install -> coordinated actual post-reboot proof.
+Publication waits for CI and native parent, including real post-reboot check.
+Native parent split into this cold-setup child and DEMO-NATIVE-POSTREBOOT-001.
+Do not label cold restart as actual reboot, or stop independent CI work merely
+because a laptop reboot needs coordination. Never reboot uncoordinated.
 
-Refresh README/operator/performance evidence from actual current optimized
-OpenBMC source and report exact workload/flags/binary hashes and limitations.
-Historical v64 generic flamegraph remains archival; final report must be latest.
-Screenshots must be genuine and clearly separate fixture/live/native evidence.
-Resolve ordering before implementation: current docs task precedes native
-persistence/installation but user final acceptance requires plain native demo
-and reboot-ready prerequisites, and final screenshot/flamegraph/runbook should
-describe the accepted native setup rather than duplicate interim container work.
-Reconcile these dependency/proof boundaries in one governance commit before
-implementation; do not claim unavailable native readiness or simulate evidence.
-Native service final binary and actual coordinated post-reboot proof are
-distinct from cold restart. No uncoordinated laptop reboot or privilege bypass.
+User requires plain native yoctui attach, not a container launcher. Inspect exact
+retained OpenBMC source/build configuration and tools first, do not assume host
+Python3.14 is incompatible or infer native availability from container state.
+Native ARM QEMU11.0.2 already runs from retained durable qemu-helper-native sysroot;
+host lacks ARM GDB, user systemd manager available but no enabled Yoctui service.
+No root privilege bypass. Install only required verified durable user-scoped
+prerequisites, preserve source/image/debug hashes and unrelated processes.
+Build/install exact current optimized binary as this service prerequisite, then
+reuse its hash in the independent live rehearsal (no circular install proof).
+Validate native selected source/build initialization/API/discovery; resolve any
+container absolute paths using normal owned build-profile/config authority with
+backups, never root-owned aliases, upstream edits or forged daemon records.
+Before handoff stop only owned idle validation-container service after actual
+jobs/PTYS/client checks; never run concurrent native/container BitBake in same
+build. Existing unrelated ZCU daemon/clients remain untouched. No full image
+rebuild inferred; retain two BitBake/make/Cargo workers and watch disk capacity.
+
+Enable supported unprivileged systemd user startup using durable executable/
+wrapper/profile and normal /run/user/1000 endpoint. Cold restart+plain native
+attach must work with current authoritative Romulus metadata, no /tmp tools or
+container launcher. Record exact commands/source/binary/path/hash evidence and
+honest optional missing capabilities. Full native all-screen/QEMU/GDB proof is
+next install/live task; actual post-login reboot proof is later distinct child.
 
 ```bash
-./scripts/test-flamegraph.sh
-python3 scripts/test_performance_documentation.py
-./scripts/check-docs.sh
-./scripts/test-readme-quickstart.sh
+cargo build --release --locked -p yoctui --bin yoctui
+# Manual: native prerequisites/profile/metadata/installed release hash/service
+# Manual: enabled user service cold restart and plain native yoctui attach
+# Manual: original boot/debug hashes unchanged and only owned idle handoff
 ./scripts/verify-roadmap.sh
 ```
 
