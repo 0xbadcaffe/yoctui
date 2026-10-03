@@ -19,6 +19,7 @@ mod terminal_launch_dialog;
 mod terminal_workspace;
 #[cfg(test)]
 pub(crate) use metadata_backend::metadata_backend_start_required;
+pub(crate) use terminal_workspace::terminal_kill_review_key;
 
 pub(crate) fn begin_startup_platform_inspection(app: &mut App) -> Option<Screen> {
     app.reconcile_platform_menuconfigs();

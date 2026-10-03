@@ -1,5 +1,15 @@
 use super::*;
 
+/// Outer Some traps every key, including keys without a supported Input mapping.
+pub(crate) fn terminal_kill_review_key(
+    app: &App,
+    key: crossterm::event::KeyEvent,
+) -> Option<Option<Action>> {
+    (app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation).then(|| {
+        input_from_key(key).and_then(|input| yoctui_app::terminal_workspace_action(app, input))
+    })
+}
+
 impl InteractiveRuntime {
     pub(super) async fn route_terminal_workspace(
         &mut self,
@@ -26,6 +36,9 @@ impl InteractiveRuntime {
                 }
                 _ => {}
             }
+        } else if runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation
+        {
+            // Unmapped review input must never reach the current writer.
         } else if runtime.app.selected_terminal_is_writer() {
             if let (Some(bytes), Some(session), Some(details)) = (
                 terminal_input_bytes_for_app(&runtime.app, input),

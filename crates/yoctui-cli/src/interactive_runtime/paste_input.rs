@@ -3,6 +3,9 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) fn handle_paste(&mut self, text: String) -> Result<()> {
         let runtime = self;
+        if runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation {
+            return Ok(());
+        }
         if matches!(runtime.app.active_dialog(), Some(Dialog::KernelDebug(_))) {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,

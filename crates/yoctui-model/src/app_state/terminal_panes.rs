@@ -69,6 +69,7 @@ impl App {
                 })
                 .unwrap_or(usize::MAX);
         }
+        self.invalidate_terminal_kill_review();
     }
 
     fn bind_terminal_pane(&mut self, pane: PaneId, session: Option<u64>) {
@@ -117,6 +118,7 @@ impl App {
             .get(self.pty_selection)
             .map(|session| session.id);
         self.bind_terminal_pane(self.pane_layout.focused, session);
+        self.invalidate_terminal_kill_review();
     }
 
     pub fn select_terminal_pane(&mut self, pane: PaneId, index: usize) -> bool {
@@ -129,6 +131,7 @@ impl App {
         }
         self.pty_selection = index;
         self.bind_terminal_pane(pane, Some(self.daemon.pty_sessions[index].id));
+        self.invalidate_terminal_kill_review();
         true
     }
 
@@ -138,6 +141,7 @@ impl App {
         let session = self.remember_focused_terminal();
         self.pane_layout = layout;
         self.bind_terminal_pane(pane, session);
+        self.invalidate_terminal_kill_review();
         Ok(pane)
     }
 

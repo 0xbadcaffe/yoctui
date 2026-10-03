@@ -29,6 +29,15 @@ pub struct TerminalWorkbenchState {
     pub client_id: Option<[u8; 16]>,
     pub pane_sessions: Vec<(crate::PaneId, Option<u64>)>,
     pub pane_daemon_instance: Option<crate::DaemonModelInstanceId>,
+    pub kill_target: Option<TerminalKillTarget>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TerminalKillTarget {
+    pub daemon_instance: Option<crate::DaemonModelInstanceId>,
+    pub session_id: u64,
+    pub name: String,
+    pub pane: crate::PaneId,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -133,6 +142,7 @@ impl TerminalWorkbenchState {
         self.mode = TerminalWorkbenchMode::Live;
         self.rename.clear();
         self.pending_paste.clear();
+        self.kill_target = None;
     }
 
     pub fn append_query(&mut self, character: char) -> bool {

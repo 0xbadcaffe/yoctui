@@ -4,6 +4,19 @@
 **Title:** Trap terminal kill confirmation and prevent retargeted termination
 **Status:** IN_PROGRESS
 
+v0.1.309 implementation pins typed daemon/session/name/pane target, focuses
+Terminal Sessions/Workspace and revalidates current same running identity.
+Reconciliation cancels invalid targets, preserving stable reorder. CLI traps
+all keys (including unmapped raw keys) before platform/prefix/global dispatch;
+paste and mouse are ignored during review. Existing inline warning renders
+the pinned name/ID; ended Close unchanged. Three before-code regressions fail
+as expected; all ten final model/app/CLI/responsive TestBackend regressions pass.
+Updating and ordinary full2127Rust/0failures/9unchanged ignores32targets PASS;
+strictClippy3m10 including lock wait/67bridge/fmt/source2921/UI/roadmap/version PASS.
+34goldens only308->309 identity,6concept/23README rasters regenerated/checked.
+Optimized install and native owned-only cancellation/input-trap/confirmation
+and original/history proof remain required before DONE.
+
 Dependencies focus, relay and native inspection lease are DONE. Current atomic
 task: correct the existing destructive inline kill preview's focus, input trap
 and stable reviewed target. Before-code design: typed target records daemon
@@ -86,7 +99,7 @@ python3 -m pytest bridge/tests
 # recipe environment/pwd, normal exit0, repeat inspection, original/history checks.
 ```
 
-## Paused native inspection lease (IN_PROGRESS, real embedded proof pending)
+## Historical native inspection lease before live embedded acceptance
 
 Implementation v0.1.307 closes the native worker's private bridge before
 publishing its result and returns a lazy per-read metadata adapter. Config,

@@ -1,4 +1,12 @@
 M114 current: DEMO-TERMINAL-KILL-SAFETY-001 IN_PROGRESS.
+v309 code pins typed daemon/session/name/pane, atomic screen/Workspace focus,
+same-current-running identity confirm and invalid-target cancellation; stable
+reorder/ended Close retained. CLI early key trap, paste/mouse suppression and
+existing inline pinned identity render. Three before-code regressions reproduce
+defects; ten final pure/model/app/CLI/responsive UI regressions pass. Updating/
+ordinary full2127Rust/0/9unchanged ignores32targets; strictClippy3m10 including
+lock wait/67bridge/fmt/source2921/UI/roadmap/version PASS;34identity-only goldens/
+29verified rasters. Source-bound optimized install/native owned-only proof pending.
 Before-code design records typed reviewed daemon/session/name/pane identity,
 atomic Terminal Sessions/Workspace focus, current/running same-identity confirm
 and snapshot/pane invalidation. Stable reorder retained, stale/replaced/removed/

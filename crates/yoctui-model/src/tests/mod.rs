@@ -3,6 +3,7 @@
 use super::*;
 mod rootfs_browser;
 mod startup_screen;
+mod terminal_kill_safety;
 use proptest::prelude::*;
 
 pub(crate) fn log(message: &str) -> LogEntry {

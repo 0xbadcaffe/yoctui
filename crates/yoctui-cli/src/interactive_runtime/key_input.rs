@@ -14,6 +14,16 @@ impl KeyRouteOutcome {
 impl InteractiveRuntime {
     pub(super) async fn handle_key(&mut self, k: crossterm::event::KeyEvent) -> Result<bool> {
         let runtime = self;
+        if let Some(action) = terminal_kill_review_key(&runtime.app, k) {
+            if let Some(action) = action
+                && let Some(effect) = compatibility_workspace_action(&mut runtime.app, action)
+            {
+                let _ =
+                    submit_daemon_effect(&mut runtime.daemon_runtime, &mut runtime.app, &effect);
+            }
+            runtime.render_scheduler.invalidate(RenderCause::State);
+            return Ok(true);
+        }
         if let Some(effect) = platform_menuconfig_key(&mut runtime.app, k) {
             if let Some(effect) = effect {
                 let _ =

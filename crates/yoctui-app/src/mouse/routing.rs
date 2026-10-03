@@ -49,6 +49,9 @@ pub fn mouse_action_for_app(
     terminal_width: u16,
     terminal_height: u16,
 ) -> Option<Action> {
+    if app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation {
+        return None;
+    }
     if !app.preferences.mouse_enabled {
         return None;
     }

@@ -41,7 +41,8 @@ pub enum Input {
 }
 
 /// Resolve terminal-workbench control keys. `None` deliberately means the
-/// input remains eligible for forwarding to the daemon PTY writer.
+/// input remains eligible for forwarding to the daemon PTY writer, except
+/// KillConfirmation, whose surrounding dispatch traps every unmapped input.
 pub fn terminal_workspace_action(app: &yoctui_model::App, input: Input) -> Option<Action> {
     use yoctui_model::TerminalWorkbenchMode as Mode;
     match app.terminal.mode {
@@ -281,7 +282,8 @@ pub fn workspace_text_input_active(app: &yoctui_model::App) -> bool {
 }
 
 pub fn terminal_owns_input(app: &yoctui_model::App) -> bool {
-    (app.screen == yoctui_model::Screen::TerminalSessions || app.platform_menuconfig_visible())
+    app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation
+        || (app.screen == yoctui_model::Screen::TerminalSessions || app.platform_menuconfig_visible())
         && app.focus == FocusTarget::Workspace
         && (app.selected_terminal_is_writer()
             || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live)

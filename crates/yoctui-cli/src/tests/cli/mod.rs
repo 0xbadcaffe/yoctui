@@ -2,6 +2,7 @@ use super::*;
 mod modifier_shortcuts;
 mod rootfs_browser;
 mod startup_screen;
+mod terminal_kill_safety;
 
 mod task_identity_unknown_statistics_use_existing_job_progress_without_a_task_row;
 

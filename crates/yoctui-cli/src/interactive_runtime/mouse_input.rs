@@ -3,6 +3,9 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) async fn handle_mouse(&mut self, mouse: crossterm::event::MouseEvent) -> Result<()> {
         let runtime = self;
+        if runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation {
+            return Ok(());
+        }
         if runtime.app.screen == Screen::Hardware
             && (runtime.app.hardware.projects.form.is_some()
                 || runtime.app.hardware.projects.import_browser.is_some())

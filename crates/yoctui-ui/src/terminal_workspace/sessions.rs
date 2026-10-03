@@ -176,8 +176,10 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
                 + 1
         ),
         yoctui_model::TerminalWorkbenchMode::KillConfirmation => {
-            "KILL CONFIRMATION · terminate the selected process group? Enter confirm · Esc cancel"
-                .into()
+            app.terminal.kill_target.as_ref().map_or_else(
+                || "KILL CONFIRMATION · target unavailable · Esc cancel".into(),
+                |target| format!("KILL #{}:{} process group? Enter confirm · Esc cancel", target.session_id, target.name),
+            )
         }
         yoctui_model::TerminalWorkbenchMode::Help => {
             "PREFIX HELP · Esc/? close · terminal input is paused while help is open".into()

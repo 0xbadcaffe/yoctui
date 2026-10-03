@@ -18,6 +18,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.terminal.mode = TerminalWorkbenchMode::Live;
         }
         Action::TerminalStagePaste(text) => {
+            if app.terminal.mode == TerminalWorkbenchMode::KillConfirmation {
+                return None;
+            }
             if !app.selected_terminal_is_writer() {
                 app.notification =
                     Some("Paste is disabled until this client owns the writer lease.".into());
@@ -116,8 +119,26 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 );
                 return None;
             }
-            if let Some(session) = app.selected_terminal_session() {
+            if let Some(session) = app.selected_terminal_session().cloned() {
                 if session.lifecycle == ClientDaemonLifecycle::Running {
+                    let index = app.selected_terminal_index()?;
+                    let pane = app.pane_layout.focused;
+                    if !app.select_terminal_pane(pane, index) {
+                        return None;
+                    }
+                    app.restore_startup_screen(Screen::TerminalSessions);
+                    app.focus = FocusTarget::Workspace;
+                    app.focus_return = None;
+                    if app.zoomed_pane.is_some() {
+                        app.zoomed_pane = Some(FocusTarget::Workspace);
+                    }
+                    app.terminal.reset_transient_mode();
+                    app.terminal.kill_target = Some(crate::TerminalKillTarget {
+                        daemon_instance: app.daemon.instance_id,
+                        session_id: session.id,
+                        name: session.name,
+                        pane,
+                    });
                     app.terminal.mode = TerminalWorkbenchMode::KillConfirmation;
                 } else {
                     return Some(Effect::Terminal(TerminalEffect::Close {
@@ -127,12 +148,18 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::TerminalConfirmKill => {
-            if app.terminal.mode == TerminalWorkbenchMode::KillConfirmation
-                && let Some(session) = app.selected_terminal_session()
-            {
-                let session_id = session.id;
+            if app.terminal.mode == TerminalWorkbenchMode::KillConfirmation {
+                let session_id = app
+                    .terminal
+                    .kill_target
+                    .as_ref()
+                    .map(|target| target.session_id);
+                let valid = app.terminal_kill_target_is_current();
                 app.terminal.reset_transient_mode();
-                return Some(Effect::Terminal(TerminalEffect::Terminate { session_id }));
+                if valid && let Some(session_id) = session_id {
+                    return Some(Effect::Terminal(TerminalEffect::Terminate { session_id }));
+                }
+                app.notification = Some("Terminal kill review cancelled: target changed.".into());
             }
         }
         Action::TerminalCancelMode => app.terminal.reset_transient_mode(),

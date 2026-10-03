@@ -11,4 +11,5 @@ include!("app_state/artifacts_and_sessions.rs");
 include!("app_state/dialogs_and_menus.rs");
 include!("app_state/terminal_selection.rs");
 include!("app_state/terminal_panes.rs");
+include!("app_state/terminal_kill_review.rs");
 include!("app_state/local_availability.rs");

@@ -2,6 +2,7 @@
 
 use super::*;
 mod rootfs_browser;
+mod terminal_kill_safety;
 
 pub(crate) fn compatibility_workspace_authority(
     generation: u64,
