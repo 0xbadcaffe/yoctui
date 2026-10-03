@@ -335,6 +335,23 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                             app.focus_return = None;
                             app.prepare_created_terminal_selection();
                             app.notification = Some("Debug tool requested. Press o to take writer control; Ctrl+B returns to Yoctui terminal controls.".into());
+                        } else if dialog.request.completion.is_none()
+                            && (matches!(
+                                dialog.request.kind,
+                                TerminalCreationKind::BuildShell
+                                    | TerminalCreationKind::DevtoolShell
+                                    | TerminalCreationKind::Devshell
+                                    | TerminalCreationKind::Menuconfig
+                            ) || (dialog.request.kind == TerminalCreationKind::Utility
+                                && dialog.request.arguments.first().map(String::as_str)
+                                    == Some("devtool")
+                                && dialog.request.arguments.get(1).map(String::as_str)
+                                    == Some("edit-recipe")))
+                        {
+                            app.screen = Screen::TerminalSessions;
+                            app.focus = FocusTarget::Workspace;
+                            app.focus_return = None;
+                            app.prepare_created_terminal_selection();
                         }
                         Effect::Terminal(TerminalEffect::Create {
                             name: dialog.request.name,

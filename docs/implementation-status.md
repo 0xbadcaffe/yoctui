@@ -1,4 +1,12 @@
 M114 current: DEMO-INTERACTIVE-LAUNCH-FOCUS-001 IN_PROGRESS; parent audit paused.
+v306 implementation passes five reducer/one responsive TestBackend regressions,
+ordinary full2105Rust/0failures/nine unchanged ignores31targets,67bridge/fmt/
+source2911/UI/version/roadmap;34exact version-only goldens and29verified rasters.
+No auto writer lease; cancelled/detached/platform/completion/unrelated Utility
+routes retained. Strict all-target/all-feature Clippy PASS (54.42s); optimized
+install/native proof still pending.
+293stale internal outputs668435739B and3unused compiled probes105053936B cleared,
+installed optimized305/sources/images/symbols/presentation preserved.
 Three native305 defects split before code: ordinary embedded confirmation keeps
 old history selected, completed recipe metadata retains an exclusive BitBake
 connection blocking devshell, inline kill preview lacks focus and can retarget.

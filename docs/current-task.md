@@ -4,6 +4,21 @@
 **Title:** Focus the new ordinary embedded interactive terminal after confirmation
 **Status:** IN_PROGRESS
 
+Implementation v0.1.306: ordinary embedded BuildShell/Devshell/Menuconfig/
+DevtoolShell and exact devtool edit-recipe Utility requests enter Terminal
+Sessions/Workspace and reuse pending-slot preparation. Completion and unrelated
+Utility requests remain unchanged. Before-code normal/empty regressions fail,
+cancel/detached/platform/completion controls pass. Five final reducer regressions
+and responsive TestBackend regression pass; updating and ordinary full suite
+2105Rust/zero failures/nine unchanged ignores31targets,67bridge/fmt/source2911/
+UI/version/roadmap PASS. All34goldens only305->306, other bytes exact;29rasters
+rebuilt/verified. Strict all-target/all-feature Clippy PASS (54.42s); optimized
+install and native proof pending.
+Safely cleared293 stale internal compiler outputs668435739B and three unused
+input-latency example executables105053936B after UID/link/live-use checks.
+Installed/top-level optimized305 hashfc7cfa3a preserved; sources/images/symbols
+and presentation untouched. Two jobs/disk AAiva6, approximately300MiB currently.
+
 Parent native demo audit paused for three independently reproduced defects.
 This child only restores the specified ordinary embedded chooser transition:
 BuildShell, recipe Devshell/Menuconfig, Devtool shell/edit-recipe must enter

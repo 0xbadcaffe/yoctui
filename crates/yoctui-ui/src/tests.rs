@@ -70,6 +70,7 @@ mod demo_terminal_exit;
 mod demo_terminal_pane_binding;
 mod demo_terminal_viewport;
 mod golden_support;
+mod interactive_launch_focus;
 mod tasks_navigator;
 use golden_support::*;
 
