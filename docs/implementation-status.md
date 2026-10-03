@@ -1,4 +1,14 @@
-M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; navigation child DONE.
+M114 current: DEMO-TASKS-NAVIGATOR-MOUSE-001 IN_PROGRESS; parent audit paused.
+Native303 Tasks160x50 two-click Devtool/QEMU remains Tasks; Dashboard->Devtool
+works. Mouse uses old literal map based on total160 columns, whereas renderer
+selects literal only for26-cell Navigator area. Split shared actual-area correction
+and app/reducer/TestBackend responsive regressions before implementation. No new
+feature/layout/shortcut. Previous navigation child remains DONE.
+Current native Layers steady-state60s/10s warmup: client0.208019%/daemon0.998700%,
+combined independently trimmed1.229365% of one logical CPU. Real source-bound
+perf60s619samples/filter unresolved1745ppm (<5000 ceiling) passes; report/SVG
+pending parent/docs inclusion, not stress/M67 certification. Snapshot histories
+and original configuration remain unchanged; latest capture quit normally0.
 Source7a29c948/v303 optimized7e3d1a6f installed; native2509796 ready after224s,
 4799recipes/nine layers. Actual plain2509951 palette Testing before and after
 authority, Navigator SDK/Security/QA and F12 Testing open without owned probe

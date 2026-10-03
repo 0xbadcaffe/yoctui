@@ -394,9 +394,20 @@ title = "Install optimized release and rehearse all OpenBMC demo screens and ses
 status = "IN_PROGRESS"
 priority = 3504
 required = true
-depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-BRIDGE-IMPORT-001", "DEMO-TERMINAL-EXIT-WRITER-001", "DEMO-TERMINAL-VIEWPORT-001", "DEMO-TERMINAL-FUNCTION-KEYS-001", "DEMO-NATIVE-METADATA-ENV-001", "DEMO-NAVIGATION-PROBE-001"]
+depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-BRIDGE-IMPORT-001", "DEMO-TERMINAL-EXIT-WRITER-001", "DEMO-TERMINAL-VIEWPORT-001", "DEMO-TERMINAL-FUNCTION-KEYS-001", "DEMO-NATIVE-METADATA-ENV-001", "DEMO-NAVIGATION-PROBE-001", "DEMO-TASKS-NAVIGATOR-MOUSE-001"]
 verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: installed optimized binary equals committed source-bound release hash/version; plain native yoctui attach discovers healthy exact OpenBMC daemon after login without container launcher", "Manual: real native OpenBMC screen-by-screen audit, supported recipe/devtool/devshell, rootfs/packages/services/artifacts and reviewed QEMU boot/kernel debugging/reconnect/cleanup; report unavailable optional screens honestly", "./scripts/verify-roadmap.sh"]
 notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed native release, normal workstation endpoint and durable working artifacts; container-only rehearsal and mocks do not meet acceptance. Prepare reproducible two-minute path and real screenshots/recovery checklist; no physical-board actions or long clean image rebuild inferred."
+
+[[task]]
+id = "DEMO-TASKS-NAVIGATOR-MOUSE-001"
+milestone = "M114"
+title = "Match Tasks Navigator mouse routing to its rendered geometry"
+status = "IN_PROGRESS"
+priority = 3572
+required = true
+depends_on = ["DEMO-NAVIGATION-PROBE-001"]
+verify = ["cargo test -p yoctui-app --all-features tasks_navigator", "cargo test -p yoctui-ui --all-features tasks_navigator", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-ui-spec.sh", "Manual: optimized actual native Tasks grouped Navigator two-click Devtool/QEMU-Wic works; responsive/literal26 mapping matches rendered rows and creates no jobs", "./scripts/verify-roadmap.sh"]
+notes = "Native303 Tasks160x50 grouped Navigator cannot activate clicked Devtool/QEMU; Dashboard-origin Devtool opens. Mouse routing selects old literal tree by total160 terminal columns, renderer by actual26-cell area. Relevant app mouse/shared geometry and external app/UI tests; align existing hit-test condition with renderer, preserve legacy literal26/responsive/compact/modal/focus behavior. No new layout/workflow/binding. Add before-code regressions, update spec/architecture/status, bump/full baseline/commit/push/current optimized installed native proof before DONE. Parent real profile619samples/1745ppm source-bound303 collected; retain separately for final report, do not bundle unrelated optimization in this child."
 
 [[task]]
 id = "DEMO-NAVIGATION-PROBE-001"

@@ -1,8 +1,36 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Rehearse remaining native OpenBMC demo screens and sessions
+**ID:** DEMO-TASKS-NAVIGATOR-MOUSE-001
+**Title:** Match Tasks Navigator mouse routing to its rendered geometry
 **Status:** IN_PROGRESS
+
+Parent audit paused for a native303 reproduction: grouped Tasks Navigator at
+160x50 renders its current pane width, but hit testing unconditionally selects
+the legacy literal-tree map whenever total terminal width is160. Devtool and
+QEMU/Wic two-clicks remain on Tasks; the same Devtool destination works from
+Dashboard. UI chooses literal-tree rows only for a26-cell Navigator area.
+Use the same shared actual-area condition in mouse routing, preserving both
+literal26 and grouped/responsive behavior, focus and dialogs. Add app pure
+mapping/reducer and actual TestBackend cross-checks across160x50/160x48 and
+compact/narrow sizes. No new destination, layout or shortcut. Bump, baseline,
+commit/push/install and actual native Tasks -> Devtool/QEMU navigation proof.
+Relevant files: app mouse routing/shared geometry, external app/UI regressions,
+spec/architecture/status/registry. Do not mark DONE before native install proof.
+
+```bash
+cargo test -p yoctui-app --all-features tasks_navigator
+cargo test -p yoctui-ui --all-features tasks_navigator
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+# Manual: actual installed native Tasks -> two-click Devtool and QEMU/Wic,
+# literal26/grouped/compact mappings agree with real rendered rows.
+```
+
+## Paused native parent audit
 
 Navigation child DEMO-NAVIGATION-PROBE-001 DONE: source7a29c948/v303,
 optimized installed7e3d1a6f, native daemon2509796 ready4799recipes/nine layers
