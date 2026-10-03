@@ -1,4 +1,4 @@
-M114 current: DEMO-TERMINAL-FUNCTION-KEYS-001 IN_PROGRESS; native all-screen
+M114 current: DEMO-NATIVE-METADATA-ENV-001 IN_PROGRESS; native all-screen
 parent paused for two observed defects. Installed299 native Terminal Sessions
 read-only F4 is swallowed instead of Dashboard; correct existing direct dispatch
 without changing embedded menuconfig/dialog behavior. Separate queued native
@@ -6,7 +6,11 @@ recipe metadata child: plain attach bridge negotiation lacks selected bb module.
 No new features or image/config writes; source-bound verification required.
 Function-key implementation v300 passes full2075Rust/zero failures/nine unchanged
 ignores31targets/67bridge/strict workspace Clippy; optimized installed native
-proof pending. Existing editor F12 menu access deliberately preserved, not broadened
+proof PASS code7bc634df/hash49d23642: actual read-only history F4 Dashboard/F6
+nine layers, ordinary q/client2412326 clean0/terminal restoration,29 prior rows/
+original hashes exact, daemon2340904 healthy295/NRestarts0 unchanged wire.
+Evidence native-terminal-function-keys-v300.txt; function-key task DONE.
+Existing editor F12 menu access deliberately preserved, not broadened
 dialog suppression.34goldens only299->300 identity/29rasters checked. Cleared23
 validated unused prior299 test executables433647264B, rebuildable temporary
 cache only; originals/current outputs/user captures retained.

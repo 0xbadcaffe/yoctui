@@ -1,8 +1,44 @@
 # Current Task
 
-**ID:** DEMO-TERMINAL-FUNCTION-KEYS-001
-**Title:** Preserve global function keys in read-only terminal sessions
+**ID:** DEMO-NATIVE-METADATA-ENV-001
+**Title:** Initialize the selected native build environment for local metadata workers
 **Status:** IN_PROGRESS
+
+Function-key dependency DONE code7bc634df/v300 optimized49d23642. Real plain
+client2412326 read-only history -> F4 Dashboard/F6 nine layers; ordinary q clean0,
+controller/client absent,29 prior rows exact, originals unchanged, daemon2340904
+healthy295/NRestarts0 with unchanged wire. Evidence native-terminal-function-keys-
+v300.txt. Full2075Rust/67bridge/strictClippy/fmt/source/UI/version/29rasters PASS.
+
+Current atomic native defect: actual recipe inspection's worker calls
+select_backend_with_timeout with no selected build environment. Plain attach
+has no caller bb Python path and handshake rejects the daemon-selected API.
+Reuse the exact source/build initialization already used by platform inspection
+inside the existing asynchronous recipe metadata/dependency worker; keep its
+daemon-authorized backend negotiation, single-worker/returned backend/lifecycle,
+real failure reporting and cancellation. Do not mutate caller environment,
+upstream inputs or daemon capability records, synthesize API availability or
+silently fall back to ancestor/wrong build/legacy source. Inspect shared helper,
+recipe_inspection_operation.rs/backend_startup.rs; add normal/missing/wrong-source/
+wrong-build/fake child import coverage and genuine native recipe/source view.
+Update relevant architecture/spec/status, bump, baseline, commit/push/install.
+Parent all-screen/current QEMU/docs/CI/reboot/publication remain pending.
+
+```bash
+cargo test -p yoctui --bin yoctui metadata
+cargo test -p yoctui --bin yoctui platform_inspection
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+cargo fmt --all --check
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+# Manual: optimized plain native attach -> actual recipe metadata/provider;
+# selected source/build bb module works without inherited PYTHONPATH; wrong
+# environment still fails; original flash/config/symbol hashes unchanged.
+```
+
+## Completed DEMO-TERMINAL-FUNCTION-KEYS-001
 
 Native installed299 audit reproduces F4 swallowed with a read-only notice in
 Terminal Sessions. The existing global catalog requires Dashboard. Fix only
@@ -22,7 +58,7 @@ dispatch/reducer tests cover all ten function keys across three replica states,
 seven lifecycles and local/remote/absent writer authority plus empty history,
 palette/replay/dialog routing. Initial viewer regression fails before correction.
 Full Rust2075/zero failures/nine unchanged ignores31targets and67bridge PASS;
-strict workspace Clippy PASS; optimized installed native proof pending. All34 golden files
+strict workspace Clippy and optimized installed native proof PASS. All34 golden files
 change only299->300 identity;29 deterministic raster checks PASS.23 validated
 obsolete completed299 test executables433647264B cleared from explicit temporary
 cache paths after owner/link/live-use checks; original data/current outputs intact.

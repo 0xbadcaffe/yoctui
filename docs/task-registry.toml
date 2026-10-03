@@ -446,18 +446,18 @@ notes = "DONE code3d0d2940/v299 installed optimized3e03cc59. Actual native shell
 id = "DEMO-TERMINAL-FUNCTION-KEYS-001"
 milestone = "M114"
 title = "Preserve global function keys in read-only terminal sessions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3553
 required = true
 depends_on = ["DEMO-TERMINAL-VIEWPORT-001"]
 verify = ["cargo test -p yoctui --bin yoctui function_keys", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-ui-spec.sh", "Manual: optimized plain native attach read-only Terminal Sessions F4 opens Dashboard; embedded menuconfig retains its existing function-key input", "./scripts/verify-roadmap.sh"]
-notes = "Native299 audit F4 yields read-only notice instead of global Dashboard. Relevant CLI input_routing.rs and external dispatch tests. Existing function catalog, not new bindings/layout/wire. Preserve dialogs/context replay/embedded menuconfig/ordinary writer and terminal modes; native source-bound proof required. Parent temporarily paused."
+notes = "DONE code7bc634df/v300 optimized installed49d23642. Actual native client2412326 read-only history F4 Dashboard/F6 nine layers, ordinary q clean0/terminal restored, controller2412325 and client absent; all29 prior rows/workspace/instance/original input hashes unchanged, daemon2340904 healthy295/NRestarts0 unchanged wire. Evidence native-terminal-function-keys-v300.txt. Two external dispatch/reducer regressions across all10 keys/three replica states/seven lifecycles/local-remote-absent writer/empty/dialog/palette/replay plus unchanged embedded menuconfig test; full2075Rust/zero failures/nine unchanged ignores31targets/67bridge/strictClippy/fmt/source2902/UI/version/roadmap/29rasters PASS. All34 golden changes only299->300 identity. Existing editor F12 menu access preserved.23 validated obsolete299 temporary test executables433647264B removed after live-use checks, rebuildable cache only. Native metadata child active; final all-screen/daemon upgrade/reboot/docs/hosted CI/publication separately pending. Exact source hosted37100958618 release-quality/compatibility-fast PASS but test/performance-fast known Rust1.99/relocatedIPC checker FAIL; no CI claim."
 
 [[task]]
 id = "DEMO-NATIVE-METADATA-ENV-001"
 milestone = "M114"
 title = "Initialize the selected native build environment for local metadata workers"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3554
 required = true
 depends_on = ["DEMO-TERMINAL-FUNCTION-KEYS-001"]

@@ -11,7 +11,11 @@ caller Python path. Separate atomic children precede parent acceptance/docs/CI.
 Function-key v300 implementation covers all ten global catalog keys across
 viewer/history/stale/local/remote/empty states without changing embedded
 menuconfig, modal/editor F12 access or other workspace text handling. Full
-2075Rust/67bridge PASS, native installed proof still pending before DONE.
+2075Rust/67bridge/strictClippy PASS, optimized native proof PASS: actual read-only
+history F4 Dashboard/F6 nine layers, normal client2412326 q clean0,29 prior rows/
+originals preserved, healthy daemon295 unchanged protocol. Function task DONE
+code7bc634df/hash49d23642, evidence native-terminal-function-keys-v300.txt.
+Metadata environment child is now current; final all-screen/CI/reboot pending.
 
 Split terminal binding child DONE before ordinary autosize: source/live
 native26-session history exposes UI/mouse ordinal mapping that can hide the
