@@ -1,0 +1,79 @@
+Native read-only navigation acceptance, 2026-10-03
+
+Code7a29c9486a128f960dba9a198185982739b68f1f / Yoctui0.1.303.
+Locked optimized thinLTO/debug1/codegen1/frame-pointers build with two workers:
+6m21s; cargo install --locked --force --bin yoctui reused exact build in1.78s.
+Installed ~/.cargo/bin/yoctui SHA256 equals retained release:
+7e3d1a6fea1d345a264a7f7346a7ab0fa5e27d76868aae46b8298d6ddd2dc8f8.
+Full2093Rust tests/zero failures/nine existing ignores31targets,67bridge,
+strictworkspacealltargetallfeatureClippy/fmt/source2906/UI/version/roadmap PASS.
+Nine new regressions: seven model, one responsive TestBackend, one CLI guarded
+boundary. Valid before-code proof: two rollback failures/three negative controls.
+34goldens change only302->303 version, all other cells/styles byte-exact;
+29 deterministic raster assets rebuilt and verified.
+
+Correct enabled user yoctui.service gracefully stopped old2483737 and started
+native303 daemon2509796 at12:42:03 UTC; normal user socket, instance
+98db48ae66611a55ddfe156456b4a34b. Compatibility completed12:45:38, inventory
+ready12:45:47 (224s total):4799recipes/nine layers. NRestarts0. Selected exact
+source /home/bspguy-dev/src/openbmc, build /home/bspguy-dev/src/build-openbmc-romulus,
+workspace b261670860dd0336. Kernel boot1e696f44-57bb-4193-af55-449269824bde
+unchanged: service restart/login recovery is NOT an actual reboot proof.
+
+Actual plain installed native attach client2509951/controller2509950,160x50.
+No container launcher, caller BUILDDIR/BBPATH/BBSERVER/PYTHONPATH/PYTHONHOME or
+YOCTUI client environment bypass. F4 Dashboard -> real Ctrl+P query Open Testing
+-> Enter navigates while authority Unknown and again after Ready. Actual F12
+Navigate -> Open Testing -> Enter also opens the screen. Navigator two real
+clicks open SDK, Security and QA both before and after initial authority.
+No automatic owned-probe-denial notification or screen/palette rollback.
+Testing retains pending local capability/resulttool state; Security and QA
+remain not inspected. SDK genuinely lacks SDK_DEPLOY and reports that failure.
+These are navigation proofs, NOT optional-tool execution or fabricated results.
+Maintenance negative control still enters existing ClientLocal inspection and
+loading request1. It remains loading after startup; completion is NOT certified
+and belongs to the parent audit. Regression tests preserve its exact effect/state
+and legacy probing, explicit owned-probe denial/rollback and ordinary inventories.
+
+Normal q/confirmation exits0/restores alternate screen with no F4/detach workaround
+or forced kill; both owned capture actors absent. Pre-upgrade/read-only running/
+ready/post-quit protocol snapshots: all19 jobs and31 PTY records byte-exact.
+No new jobs, terminal sessions, QEMU, GDB or optional-tool processes launched.
+Original local.conf e14135366b356ceea7ebc99083661456ae3d8986f3d80c933633cbb005bf433d
+and bblayers.conf f1dc6040f1884e5598ac7dd879dd83679c7229723f9c6483a43a1507b16688d3
+unchanged; devtool workspace still absent, not initialized or enabled.
+
+Accepted actual frame hashes, above Git presentation/assets (not committed):
+demo-native-v303-testing-before-authority.txt
+6ea1f05aac62fc4a2e4cdee4e8202f2c12d5766c0c73d12b60df3f8e68b94fbe
+demo-native-v303-testing-menu.txt
+730bf40586bf9a9b6cfc6675278fc7933a4b5c090a5b68e3bde415c7f1e47cc2
+demo-native-v303-testing-ready-palette.txt
+3876f469da097666d0095dba63e6c55885e2476916a627d5eb7f11e38d914f51
+demo-native-v303-testing-ready.txt
+869051ce4f212407fb5cdcabaa7304fce10bc77b00ee22211d4e5bedc1d6feb0
+demo-native-v303-sdk-ready.txt
+08c5b4e4503fec7a54c1d5109e2abd76ae06ef84814338ab5a7f2526152afb7d
+demo-native-v303-security-ready.txt
+f00268c4caa0f41172ac20b007edd040dc79cad93ce393d6871381f2be994382
+demo-native-v303-qa-ready.txt
+d2950d96eff8bc3a3fa5db2bbccc67d6bc9ae224c81b8e78a77ec38a86bf13ab
+demo-native-v303-maintenance-ready.txt
+0ca4f90fc732008ad35ed8a124214dd0dc2988d08a91ba8f2028d20ac3559893
+
+Crash recovery and durable indexing safeguard: original user session OOM killed
+LibreOffice, kernel boot unchanged; no actual reboot inferred. Previously approved
+temporary GNOME index reset/runtime mask preserved. Explicit new user approval
+to exclude only generated OpenBMC build folder:149B .trackerignore added there;
+installed ignored-directories-with-content already includes .trackerignore.
+Existing GSettings exclusions unchanged, source/user files untouched. Marker
+survives reboot; no permanent global indexer disablement performed.
+32 additional unused obsolete compiled outputs708077789B cleared after owner,
+regular-file/link/live-use checks before303build, current outputs preserved.
+Build cache moved off RAM /tmp to ~/.cache/yoctui-demo-cargo.AAiva6; root~810MiB
+free, RAM~12GiB available. Watch storage; do not launch wide parallel rebuilds.
+
+Exact hosted CI37123161917: release-quality/compatibility-fast success;
+test/performance-fast known lint/source-checker failures remain, queued after
+demo/docs per user. Full parent screen/workbench/current303 QEMU/profile/docs,
+coordinated actual reboot and immutable publication remain pending.

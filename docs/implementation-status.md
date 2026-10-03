@@ -1,11 +1,21 @@
-M114 current: DEMO-NAVIGATION-PROBE-001 IN_PROGRESS; parent native audit paused.
+M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; navigation child DONE.
+Source7a29c948/v303 optimized7e3d1a6f installed; native2509796 ready after224s,
+4799recipes/nine layers. Actual plain2509951 palette Testing before and after
+authority, Navigator SDK/Security/QA and F12 Testing open without owned probe
+rollback; honest pending/not-inspected/unavailable state preserved. Maintenance
+still enters ClientLocal inspection/loading, completion not certified. Normal
+q/confirmation0/terminal restored; owned actors gone,19jobs/31PTY byte-exact,
+original conf hashes unchanged/workspace absent. Evidence native-navigation-
+v303.txt. Approved durable build-only .trackerignore, source indexing untouched.
+Actual reboot/full parent/docs/CI/publication not certified. Disk~810MiB/RAM12GiB;
+32 extra obsolete compiled outputs708077789B safely cleared before303 build.
 Implementation303 full2093Rust/zero failures/nine unchanged ignores31targets,
 67bridge/strictworkspaceClippy/fmt/source2906/UI/version/roadmap PASS. Nine new
 regressions: seven model/one responsive TestBackend/one CLI. Before-code two
 real rollback failures/three valid negative controls; explicit guards/legacy/
 ClientLocal maintenance preserved.34goldens only302->303 identity/other cells
-and styles exact;29rasters rebuilt/verified. Optimized install/native proof
-pending; no complete parent/CI/reboot/publication claim.
+and styles exact;29rasters rebuilt/verified. Optimized install/native proof PASS;
+no complete parent/CI/reboot/publication claim.
 Native302 actual main rootfs pie/table/real root:root hostname preview/systemd195
 End/backscroll/artifacts17 sizes and UTC timestamps PASS. Current managed native
 Romulus flash boot6.18.49/start_kernel/source/fresh reconnect/idle bt/registers/

@@ -1,8 +1,25 @@
 # Current Task
 
-**ID:** DEMO-NAVIGATION-PROBE-001
-**Title:** Keep native read-only screen navigation independent of daemon-owned probes
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Rehearse remaining native OpenBMC demo screens and sessions
 **Status:** IN_PROGRESS
+
+Navigation child DEMO-NAVIGATION-PROBE-001 DONE: source7a29c948/v303,
+optimized installed7e3d1a6f, native daemon2509796 ready4799recipes/nine layers
+after224s. Plain client2509951 Navigator SDK/Security/QA, palette Testing before
+and after authority, F12 menu Testing all open without rollback. Capabilities
+remain pending/not inspected or genuinely unavailable; no optional tool session
+claim. Maintenance retains ClientLocal inspection/loading (not suppressed; its
+completion remains for the parent audit). Normal q/confirmation exits0/restores
+terminal; owned controller/client absent,19jobs/31PTY histories byte-exact,
+original local/bblayers hashes unchanged/workspace absent. Evidence
+artifacts/live-openbmc/romulus/native-navigation-v303.txt. Resume remaining
+screen/workbench/managed boot-debug audit below; do not infer parent completion.
+User-approved durable GNOME build-only exclusion: .trackerignore added in
+generated OpenBMC build root, existing ignored-content settings unchanged;
+runtime index pause retained, source indexing unaffected. No actual reboot yet.
+
+## Completed navigation child
 
 Implementation v303: two native-context navigation guards, no authority bypass
 or capability synthesis. Seven model regressions (including explicit denials,
@@ -12,8 +29,8 @@ pass. Before-code regressions reproduce two rollback failures while three
 negative controls pass. Full2093Rust/zero failures/nine unchanged ignores31
 targets/67bridge/strictworkspaceClippy/fmt/source2906/UI/version/roadmap PASS.
 All34goldens only302->303 identity, other cells/styles exact;29 deterministic
-rasters rebuilt/verified. Optimized source-bound install/native proof pending;
-do not mark DONE or certify full parent/docs/CI/reboot/publication yet.
+rasters rebuilt/verified. Optimized source-bound install/native proof PASS as
+above; full parent/docs/CI/reboot/publication remain pending.
 
 Native302 reproduction: Navigator or palette Open Testing advertises Ready,
 but automatic InspectTestCapability is correctly denied as daemon-owned and
@@ -45,8 +62,10 @@ and temporarily runtime-masked under prior approval; user files untouched.
 Retained release cache moved OFF RAM-backed /tmp to
 /home/bspguy-dev/.cache/yoctui-demo-cargo.AAiva6/release; identical71ea03b6 hash.
 Use parent AAiva6 as CARGO_TARGET_DIR for subsequent builds, two jobs/debug0/
-no incremental dev/test. Memory available10GiB vs5.1GiB initially; monitor disk
-(2.7GiB remaining) and do not rebuild into the old RAM cache.
+no incremental dev/test. Memory available12GiB vs5.1GiB initially; monitor disk
+(approximately810MiB remaining after303 build) and do not rebuild into the old
+RAM cache. Additional32 obsolete compiled outputs708077789B cleared with
+owner/link/live-use checks; current303 outputs preserved.
 
 ```bash
 cargo test -p yoctui-model --all-features native_navigation
@@ -62,11 +81,7 @@ python3 -m pytest bridge/tests
 # remains a negative control: its ClientLocal inspection still works.
 ```
 
-## Paused parent handoff
-
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Rehearse remaining native OpenBMC demo screens and sessions
-**Status:** IN_PROGRESS
+## Parent handoff and remaining requirements
 
 Native metadata/status prerequisites DONE. Current source87fd8a95/v302 installed
 optimized71ea03b6; both native daemon2440420 and plain client verified. Startup
