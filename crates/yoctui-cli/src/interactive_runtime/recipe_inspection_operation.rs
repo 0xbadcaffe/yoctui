@@ -64,6 +64,7 @@ impl InteractiveRuntime {
         }
 
         let build_dir = self.session_build_dir.clone();
+        let source_dir = self.app.workspace.source_dir.clone();
         let cancellation_timeout = self.cancellation_timeout;
         let authoritative = self.metadata_backend_authoritative;
         let placeholder: Box<dyn BitBakeBackend> = Box::new(ProcessBackend::new(build_dir.clone()));
@@ -72,10 +73,26 @@ impl InteractiveRuntime {
         let handle = tokio::spawn(async move {
             let mut ready = authoritative;
             if !ready {
-                match select_backend_with_timeout(
+                let environment = match super::metadata_backend::initialized_metadata_environment(
+                    &build_dir,
+                    source_dir.as_deref(),
+                )
+                .await
+                {
+                    Ok(environment) => environment,
+                    Err(error) => {
+                        return (
+                            backend,
+                            false,
+                            failed_result(worker_request, format!("{error:#}")),
+                        );
+                    }
+                };
+                match select_backend_with_environment(
                     Backend::Bridge,
                     build_dir.clone(),
                     Some(cancellation_timeout),
+                    Some(environment),
                 )
                 .await
                 {

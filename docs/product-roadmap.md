@@ -16,6 +16,11 @@ history F4 Dashboard/F6 nine layers, normal client2412326 q clean0,29 prior rows
 originals preserved, healthy daemon295 unchanged protocol. Function task DONE
 code7bc634df/hash49d23642, evidence native-terminal-function-keys-v300.txt.
 Metadata environment child is now current; final all-screen/CI/reboot pending.
+Metadata v301 code reuses selected platform initialization for the existing
+recipe/dependency worker before daemon-authorized bridge startup. Four new
+fake-child tests/retained six environment guards/full2079Rust/67bridge/strict
+Clippy/source/UI/version/29rasters PASS; real installed native recipe/source
+proof remains pending before DONE, no all-screen/CI/reboot inference.
 
 Split terminal binding child DONE before ordinary autosize: source/live
 native26-session history exposes UI/mouse ordinal mapping that can hide the

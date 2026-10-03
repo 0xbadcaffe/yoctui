@@ -10,7 +10,7 @@ controller/client absent,29 prior rows exact, originals unchanged, daemon2340904
 healthy295/NRestarts0 with unchanged wire. Evidence native-terminal-function-keys-
 v300.txt. Full2075Rust/67bridge/strictClippy/fmt/source/UI/version/29rasters PASS.
 
-Current atomic native defect: actual recipe inspection's worker calls
+Current atomic native defect: actual recipe inspection's worker previously called
 select_backend_with_timeout with no selected build environment. Plain attach
 has no caller bb Python path and handshake rejects the daemon-selected API.
 Reuse the exact source/build initialization already used by platform inspection
@@ -23,6 +23,21 @@ recipe_inspection_operation.rs/backend_startup.rs; add normal/missing/wrong-sour
 wrong-build/fake child import coverage and genuine native recipe/source view.
 Update relevant architecture/spec/status, bump, baseline, commit/push/install.
 Parent all-screen/current QEMU/docs/CI/reboot/publication remain pending.
+
+Implementation v301: worker captures typed source alongside session build,
+reuses existing selected platform environment through private metadata alias,
+then passes that map to the existing daemon-authorized backend selector. No
+ambient environment mutation or capability bypass. Four new fake-child tests
+cover exact bb import, missing bb failure, initializer failure/no fallback and
+abort/reaping; all six existing platform environment guards retained. Full2079
+Rust/zero failures/nine unchanged ignores31targets/67bridge/strict workspace
+Clippy/fmt/source2902/UI/version/roadmap/29rasters PASS.34goldens only300->301
+identity, all other cells/styles exact. Optimized source-bound install and real
+plain native recipe/source inspection still pending; task remains IN_PROGRESS.
+Storage:58 validated obsolete pre300 internal dev/release libraries811577076B
+and23 completed300 temporary test executables433683864B cleared after owner/
+link/live-use checks; current outputs/external dependency caches/original data
+and presentation/user captures intact. Rebuildable compiler cache only.
 
 ```bash
 cargo test -p yoctui --bin yoctui metadata

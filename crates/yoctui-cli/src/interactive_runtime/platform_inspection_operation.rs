@@ -113,7 +113,7 @@ impl InteractiveRuntime {
     }
 }
 
-async fn initialized_platform_environment(
+pub(super) async fn initialized_platform_environment(
     build_dir: &Path,
     source_dir: Option<&Path>,
 ) -> Result<BTreeMap<String, String>> {

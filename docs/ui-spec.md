@@ -64,8 +64,13 @@ for the selected BitBake package's own vendored parser. The backend initializes
 that dependency only inside its bridge child; missing or unrelated imports still
 produce the existing unavailable inspection result. No UI/workflow change.
 
-Kernel/Firmware inspection uses the selected workspace source and build even
-when they are sibling directories. Missing selected initializer or an initializer
+Metadata inspection uses the selected workspace source and build even
+when they are sibling directories. Recipe metadata and dependency workers use
+the same selected source/build initialization before starting their existing
+daemon-authorized bridge; plain native attachment needs no caller Python-path
+workaround. Missing/wrong initialization remains a typed inspection failure,
+not a capability override or fallback to another workspace. No layout change.
+Missing selected initializer or an initializer
 that selects another build produces the existing inspection failure notice;
 it must not silently inspect a different environment. No layout/shortcut change.
 Kernel configuration discovery also uses the exact metadata-reported shared

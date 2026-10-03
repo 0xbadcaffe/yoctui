@@ -25,6 +25,13 @@ no image build, config mutation or new workflow is introduced.
 
 ## M114 selected platform inspection environment
 
+Recipe metadata/dependency workers capture the same exact typed source/build
+identity and reuse the existing selected environment adapter before starting
+their daemon-authorized backend. The bounded asynchronous worker, returned
+backend ownership, single-worker guard, failure/cancellation paths and authority
+negotiation remain unchanged. Only child process environment is supplied; no
+caller environment, upstream files or daemon capability record is rewritten.
+
 CLI platform workers capture the attached typed workspace's exact source and
 session build directory before spawning. Explicit source initialization supports
 sibling source/build layouts; ancestor discovery is only a legacy fallback when

@@ -4,6 +4,16 @@ read-only F4 is swallowed instead of Dashboard; correct existing direct dispatch
 without changing embedded menuconfig/dialog behavior. Separate queued native
 recipe metadata child: plain attach bridge negotiation lacks selected bb module.
 No new features or image/config writes; source-bound verification required.
+Metadata v301 implementation reuses exact selected source/build initialization
+for the existing asynchronous recipe/dependency bridge worker, retains daemon
+authority and failure/cancellation/returned backend behavior. Four new real fake-
+child import/missing-bb/initializer-failure/abort-reaping tests and all six prior
+platform guards; full2079Rust/zero failures/nine unchanged ignores31targets/
+67bridge/strictClippy/fmt/source2902/UI/version/roadmap/29rasters PASS.34goldens
+only300->301 identity. Optimized installed native recipe proof still pending.
+Only58 obsolete pre300 internal compiler libraries811577076B and23 prior300
+test executables433683864B cleared after owner/link/live-use checks; rebuildable
+temporary cache, not current outputs/external dependencies/original assets.
 Function-key implementation v300 passes full2075Rust/zero failures/nine unchanged
 ignores31targets/67bridge/strict workspace Clippy; optimized installed native
 proof PASS code7bc634df/hash49d23642: actual read-only history F4 Dashboard/F6
