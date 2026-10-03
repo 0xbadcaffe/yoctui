@@ -4,7 +4,11 @@
 
 Native305 parent rehearsal split existing launch-focus, metadata-connection
 handoff and kill-preview safety defects into separate atomic children before
-code. Focus child current; full baseline/source-bound optimized native proof
+code. Focus child DONE; lease307 code/full baseline/optimized install and native
+inspection/config/release proof pass, but real devshell exposes a separate
+embedded-relay gap. Split DEMO-EMBEDDED-DEVSHELL-RELAY-001 before code and require
+it before final lease/live completion. Approved older Poky generated host-tool
+work cleanup resolves15GiB disk guard, originals unchanged. Full baseline/source-bound optimized native proof
 required per child. No new feature, unchanged authority/history boundaries.
 Parent all-screen/docs/CI/actual reboot/publication resume after the children.
 

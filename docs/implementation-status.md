@@ -1,4 +1,22 @@
-M114 current: DEMO-NATIVE-INSPECTION-LEASE-001 IN_PROGRESS; focus child DONE.
+M114 current: DEMO-EMBEDDED-DEVSHELL-RELAY-001 IN_PROGRESS; lease paused.
+Split before code: native307 source2c253e38/optimized installed SHAfd2a0bde,
+recipe/repeat/BB_NUMBER_THREADS=2 variable detail and owned bridge release pass;
+normal client2657925 q0/restored, old34PTY/19jobs/fullcompatibility/six originals
+exact. Initial reviewed devshell35 exited1 on unchanged15GiB/8GiB disk guards.
+Explicitly approved older Poky /src/build/tmp/work/x86_64-linux cleanup performed
+after owner/resolved-target/in-use checks; directory absent, root~56GiB free;
+source/download/image/guest kernel-symbol/demo hashes untouched. Nine temporary
+test executables restored to disk cache. No RAM compilation target or guard change.
+Actual plain native2681242 repeat inspection -> reviewed cached217-sstate
+devshell36 reaches do_devshell, but Embedded defaults to desktop GNOME because
+only Menuconfig uses the existing relay. Owned desktop bash2682995 exact recipe
+sources/parent2485979 scoped HUP-cleaned, rejected as normal embedded acceptance.
+Relay child reuses existing validated handoff for typed Devshell, preserving
+argv/environment/authority/private socket/wrapper bounds and other terminal kinds.
+No new feature. Complete real shell normal exit/repeat inspection before both
+relay/lease DONE; kill safety/all-screen/docs/CI/actual reboot/publication remain.
+
+Previous M114 current: DEMO-NATIVE-INSPECTION-LEASE-001 IN_PROGRESS; focus child DONE.
 v307 implementation and eight lease lifecycle/pending chooser regressions pass.
 Native worker releases its private bridge before publishing; lazy scoped adapter
 preserves initialized/current-authorized detail reads without an idle connection.

@@ -1,8 +1,42 @@
 # Current Task
 
-**ID:** DEMO-NATIVE-INSPECTION-LEASE-001
-**Title:** Release the native metadata connection before reviewed interactive BitBake execution
+**ID:** DEMO-EMBEDDED-DEVSHELL-RELAY-001
+**Title:** Keep the existing embedded devshell handoff in its daemon-owned PTY
 **Status:** IN_PROGRESS
+
+Split before code after actual307 native validation: completed recipe/config
+inspection releases its private bridge; reviewed qemu-helper-native devshell
+reaches actual do_devshell using217cached sstate. Once approved older Poky
+host-tool work cleanup removed the disk blocker, Embedded still invokes default
+desktop GNOME because only Menuconfig uses the existing relay. New owned desktop
+bash2682995 exact recipe sources/parent2485979 scoped HUP-cleaned, not accepted
+as a normal embedded session. Original config/image/symbol hashes unchanged.
+
+This atomic child reuses the existing validated custom-terminal relay for typed
+Devshell as well as Menuconfig creation. Preserve exact reviewed BitBake argv,
+selected build environment, capability authority, private socket/wrapper checks,
+bounded diagnostics/owned cleanup, detached launch and every other terminal kind.
+No source/config edit, desktop selection override or new feature. Existing relay
+internal names may remain for compatibility; avoid unrelated renaming.
+Add wire mapping/argument/negative-kind and fake handoff regressions, full
+baseline/bump/commit/push/optimized install, then actual native inspection ->
+embedded cached devshell/pwd/environment/normal exit0/repeat inspection proof.
+Only then complete both relay and paused lease tasks and resume kill safety.
+
+```bash
+cargo test --workspace --all-features embedded_devshell
+cargo test --workspace --all-features menuconfig_relay
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+# Manual: native reviewed cached devshell appears inside owned PTY, exact
+# recipe environment/pwd, normal exit0, repeat inspection, original/history checks.
+```
+
+## Paused native inspection lease (IN_PROGRESS, real embedded proof pending)
 
 Implementation v0.1.307 closes the native worker's private bridge before
 publishing its result and returns a lazy per-read metadata adapter. Config,

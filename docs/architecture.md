@@ -1,5 +1,14 @@
 # Yoctui Architecture
 
+## M114 embedded devshell handoff correction
+
+CLI maps typed Menuconfig and Devshell creation through the same existing
+validated private custom-terminal relay. The relay forwards the exact reviewed
+BitBake argv, initializes no alternate build, and executes only the validated
+generated wrapper inside its daemon-owned PTY. Desktop terminals are not an
+implicit embedded fallback. Socket isolation, path validation, bounded
+diagnostics, daemon capability authority and detached launch remain unchanged.
+
 ## M114 native metadata connection scope
 
 Native recipe/dependency workers close their private capability-authorized

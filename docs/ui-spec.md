@@ -1,5 +1,11 @@
 # Yoctui UI Specification
 
+The existing Embedded devshell destination must render and control the actual
+recipe shell inside its daemon-owned PTY, not open BitBake's default desktop
+terminal. It retains the selected recipe environment, explicit writer lease,
+normal shell exit and existing launch review/cancellation. Detached selection
+retains the current desktop-launch workflow. No new layout or shortcut.
+
 Tasks Navigator mouse activation follows its rendered area, not total terminal
 columns. The existing26-cell literal project tree uses literal rows; other
 widths use the grouped Navigator's visible rows and viewport, including compact
