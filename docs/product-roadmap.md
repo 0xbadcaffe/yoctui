@@ -2,6 +2,13 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Native299 all-screen audit splits existing function-key dispatch and recipe
+worker environment defects before implementation. Read-only Terminal Sessions
+must retain global F4/Dashboard as already specified; embedded menuconfig and
+modal traps stay intact. Plain attach recipe metadata must initialize the exact
+selected native source/build for the daemon-authorized bridge, not depend on a
+caller Python path. Separate atomic children precede parent acceptance/docs/CI.
+
 Split terminal binding child DONE before ordinary autosize: source/live
 native26-session history exposes UI/mouse ordinal mapping that can hide the
 selected owned later shell/GDB while input still targets it. Restore existing

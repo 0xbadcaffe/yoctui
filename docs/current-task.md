@@ -1,8 +1,31 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
+**ID:** DEMO-TERMINAL-FUNCTION-KEYS-001
+**Title:** Preserve global function keys in read-only terminal sessions
 **Status:** IN_PROGRESS
+
+Native installed299 audit reproduces F4 swallowed with a read-only notice in
+Terminal Sessions. The existing global catalog requires Dashboard. Fix only
+the shared CLI direct function-key route for ordinary terminal viewers/ended/
+stale sessions; preserve embedded menuconfig forwarding, dialogs, replayed
+context, live terminal controls and other workspace text handling. Add external
+typed dispatch/reducer tests across lifecycle/authority/modal cases; native
+installed-source F4 proof, bump/commit/push, full baseline and optimized install.
+Parent native audit paused; recipe inspection also exposes a separate selected
+build bridge environment failure. That atomic child follows this correction.
+
+```bash
+cargo test -p yoctui --bin yoctui function_keys
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+# Manual: plain installed attach -> read-only Terminal Sessions -> F4 Dashboard.
+```
+
+## Paused parent: DEMO-INSTALL-LIVE-001
 
 Terminal children DONE. Latest code3d0d2940/v299 installed optimized3e03cc59;
 actual plain native shell29/native GDB17.1 read-only matching vmlinux load,

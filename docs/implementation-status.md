@@ -1,4 +1,9 @@
-M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; native all-screen parent resumes.
+M114 current: DEMO-TERMINAL-FUNCTION-KEYS-001 IN_PROGRESS; native all-screen
+parent paused for two observed defects. Installed299 native Terminal Sessions
+read-only F4 is swallowed instead of Dashboard; correct existing direct dispatch
+without changing embedded menuconfig/dialog behavior. Separate queued native
+recipe metadata child: plain attach bridge negotiation lacks selected bb module.
+No new features or image/config writes; source-bound verification required.
 Viewport DONE code3d0d2940/v299 optimized installed3e03cc59. Actual native
 shell29/GDB17.1 size reports match UI across98x32/96x15/split48x32/split62x42/
 full126x42/narrow78x7/restored98x31 with history. Normal GDB/shell exit, client

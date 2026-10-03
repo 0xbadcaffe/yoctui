@@ -394,7 +394,7 @@ title = "Install optimized release and rehearse all OpenBMC demo screens and ses
 status = "IN_PROGRESS"
 priority = 3504
 required = true
-depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-BRIDGE-IMPORT-001", "DEMO-TERMINAL-EXIT-WRITER-001", "DEMO-TERMINAL-VIEWPORT-001"]
+depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-BRIDGE-IMPORT-001", "DEMO-TERMINAL-EXIT-WRITER-001", "DEMO-TERMINAL-VIEWPORT-001", "DEMO-TERMINAL-FUNCTION-KEYS-001", "DEMO-NATIVE-METADATA-ENV-001"]
 verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: installed optimized binary equals committed source-bound release hash/version; plain native yoctui attach discovers healthy exact OpenBMC daemon after login without container launcher", "Manual: real native OpenBMC screen-by-screen audit, supported recipe/devtool/devshell, rootfs/packages/services/artifacts and reviewed QEMU boot/kernel debugging/reconnect/cleanup; report unavailable optional screens honestly", "./scripts/verify-roadmap.sh"]
 notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed native release, normal workstation endpoint and durable working artifacts; container-only rehearsal and mocks do not meet acceptance. Prepare reproducible two-minute path and real screenshots/recovery checklist; no physical-board actions or long clean image rebuild inferred."
 
@@ -441,6 +441,28 @@ required = true
 depends_on = ["DEMO-TERMINAL-EXIT-WRITER-001", "DEMO-TERMINAL-PANE-BINDING-001"]
 verify = ["cargo test -p yoctui-app terminal", "cargo test -p yoctui-ui terminal", "cargo test -p yoctui --bin yoctui terminal", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "Manual: real native shell/GDB ordinary terminal at160x50 follows visible pane dimensions, cursor/long-line output remains visible across resize/split and no remote/exited writer resize", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
 notes = "DONE code3d0d2940/v299 installed optimized3e03cc59. Actual native shell29/helper2398264/GDB17.1child2398369/client2398207: stty and GDB width/height agree with UI at98x32,96x15,split48x32,split62x42,full126x42,narrow78x7,restored98x31/history4. Existing28 rows/workspace/daemon instance unchanged; normal GDB/shell exits/helper absent, q/confirmation client clean0/terminal restored, daemon2340904 remains295/healthy/NRestarts0 unchanged protocol. Original image/config/symbol hashes unchanged; actual reboot/full QEMU debug rehearsal/final daemon upgrade later, local GDB sizing not a live kernel stop claim. Evidence native-terminal-viewport-v299.txt. Four pure geometry/three TestBackend cell-count regressions and actual geometry/coalescing/remote/stale/ended fake socket guard, pre-fix3failures; full2073Rust/zero failures/nine unchanged ignores31targets/67bridge/strictClippy/fmt/source2902/UI/version/roadmap/29rasters PASS,34goldens only encoded298->299 identity.200 validated obsolete temporary outputs2883105299B cleared, rebuildable cache only/original data/current outputs preserved. No new layout/shortcut/wire or relaxed bounds."
+
+[[task]]
+id = "DEMO-TERMINAL-FUNCTION-KEYS-001"
+milestone = "M114"
+title = "Preserve global function keys in read-only terminal sessions"
+status = "IN_PROGRESS"
+priority = 3553
+required = true
+depends_on = ["DEMO-TERMINAL-VIEWPORT-001"]
+verify = ["cargo test -p yoctui --bin yoctui function_keys", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-ui-spec.sh", "Manual: optimized plain native attach read-only Terminal Sessions F4 opens Dashboard; embedded menuconfig retains its existing function-key input", "./scripts/verify-roadmap.sh"]
+notes = "Native299 audit F4 yields read-only notice instead of global Dashboard. Relevant CLI input_routing.rs and external dispatch tests. Existing function catalog, not new bindings/layout/wire. Preserve dialogs/context replay/embedded menuconfig/ordinary writer and terminal modes; native source-bound proof required. Parent temporarily paused."
+
+[[task]]
+id = "DEMO-NATIVE-METADATA-ENV-001"
+milestone = "M114"
+title = "Initialize the selected native build environment for local metadata workers"
+status = "NOT_STARTED"
+priority = 3554
+required = true
+depends_on = ["DEMO-TERMINAL-FUNCTION-KEYS-001"]
+verify = ["cargo test -p yoctui --bin yoctui metadata", "python3 -m pytest bridge/tests", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "Manual: plain native installed attach inspects an actual OpenBMC recipe through the daemon-authorized bridge without inherited Python paths; wrong/missing build environment still fails safely", "./scripts/verify-roadmap.sh"]
+notes = "Native299 real recipe inspection fails handshake compatibility_negotiation_failed: selected BitBake API but initialized environment lacks bb module. Diagnose actual metadata_backend/recipe workers/backend_startup environment handling; initialize exact source/build only inside child, preserve daemon authority/bridge import errors/cancellation/bounds and originals. No invented capability/version fallback. Separate from completed vendored pysh import correction and function-key routing."
 
 [[task]]
 id = "DEMO-DOCS-JSON-STREAM-001"
