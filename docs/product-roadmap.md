@@ -7,6 +7,9 @@ Split a backend status safety child before implementation; inspection must not
 create/enable a workspace. Original bblayers restored to verified checksum,
 generated files retained. Metadata/environment and parent acceptance resume after
 fail-closed preflight tests and installed native configuration-preservation proof.
+Status safety v302 passes full2084Rust/67bridge/strictClippy and five new
+preflight regressions; selected child BUILDDIR and fixed SDK status retained.
+Optimized installed daemon/client proof remains pending, not claimed DONE.
 
 Native299 all-screen audit splits existing function-key dispatch and recipe
 worker environment defects before implementation. Read-only Terminal Sessions

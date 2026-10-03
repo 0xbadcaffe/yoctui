@@ -19,6 +19,20 @@ existing membership, custom paths and fake-process cancellation. Update spec,
 architecture/status; bump and full baseline; install current daemon/client and
 repeat native recipe inspection while original configuration hashes stay exact.
 
+Implementation v302: backend capability-gated preflight skips absent default
+workspace initialization, refuses custom/disabled/ambiguous configuration, and
+preserves upstream fixed SDK status. Only bounded regular configuration files
+are read; Unix reads cannot block on FIFO open. Normal status child BUILDDIR is
+the selected build. Five new external tests plus existing membership/missing
+tool/source/cancellation and daemon worker tests pass. Final full2084Rust/zero
+failures/nine unchanged ignores31targets/67bridge/strictworkspaceClippy/fmt/
+source2904/UI/version/roadmap/29rasters PASS.34goldens only301->302 identity,
+all other cells/styles exact. Native installed source acceptance still pending.
+89 validated obsolete temporary compiler outputs1417444584B cleared after owner/
+link/live-use checks; current binaries/original data preserved. The two generated
+workspace files were moved intact to the above-Git presentation validation-
+recovery/devtool-workspace-v301 folder; original bblayers checksum still exact.
+
 ```bash
 cargo test -p yoctui-bitbake --all-features devtool
 cargo test -p yoctui --bin yoctui devtool

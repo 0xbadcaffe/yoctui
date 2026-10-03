@@ -738,7 +738,12 @@ not authorize workspace initialization: a backend preflight must prevent status
 from creating or enabling the upstream workspace. Absent default workspaces are
 empty without execution; disabled or ambiguous existing configuration fails
 closed with a typed availability reason. Explicit confirmed operations retain
-their existing planner. Raw Devtool and Git records do
+their existing planner. Upstream fixed SDK setups already skip initialization
+and retain ordinary status/failure behavior. Configuration reads are regular-file
+only, bounded to64KiB and nonblocking on Unix. No BitBake expression is evaluated:
+only a single unambiguous literal BBLAYERS assignment authorizes the normal-build
+status process, whose child BUILDDIR is pinned to the selected build. Custom
+devtool.conf and complex layer configuration fail closed. Raw tool records do
 not cross into the reducer or widgets. Missing executables, missing source
 directories, non-repositories, non-zero exits, and malformed records remain
 separate model states. The model keys requests and results by recipe name plus

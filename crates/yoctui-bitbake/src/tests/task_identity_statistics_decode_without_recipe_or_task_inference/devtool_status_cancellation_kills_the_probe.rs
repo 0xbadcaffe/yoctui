@@ -4,6 +4,7 @@ use super::*;
 #[tokio::test]
 async fn devtool_status_cancellation_kills_the_probe() {
     let root = fixture_script("devtool-status-cancel");
+    initialized_devtool_workspace(&root);
     fs::create_dir_all(&root).unwrap();
     let pid_file = root.join("probe.pid");
     let devtool = root.join("devtool");

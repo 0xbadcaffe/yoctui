@@ -79,10 +79,41 @@ impl DevtoolInspector {
                 };
             }
         };
+        if !command.executable().exists() {
+            return DevtoolStatus {
+                identity,
+                capability: DevtoolCapability::MissingExecutable,
+                workspace: DevtoolWorkspace::NotMember,
+                git: DevtoolGitState::NotApplicable,
+                error: None,
+            };
+        }
+        match status_preflight::inspect(build_dir, command.executable()) {
+            Ok(status_preflight::WorkspaceStatusPreflight::Ready) => {}
+            Ok(status_preflight::WorkspaceStatusPreflight::Empty) => {
+                return DevtoolStatus {
+                    identity,
+                    capability: DevtoolCapability::Available,
+                    workspace: DevtoolWorkspace::NotMember,
+                    git: DevtoolGitState::NotApplicable,
+                    error: None,
+                };
+            }
+            Err(reason) => {
+                return DevtoolStatus {
+                    identity,
+                    capability: DevtoolCapability::Unavailable { reason },
+                    workspace: DevtoolWorkspace::NotMember,
+                    git: DevtoolGitState::NotApplicable,
+                    error: None,
+                };
+            }
+        }
         let mut process = TokioCommand::new(command.executable());
         process
             .args(command.arguments())
             .current_dir(build_dir)
+            .env("BUILDDIR", build_dir)
             .kill_on_drop(true);
         let output = process.output().await;
         let output = match output {

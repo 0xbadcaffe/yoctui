@@ -17,6 +17,7 @@ async fn devtool_metadata_distinguishes_missing_tool_and_workspace_directory() {
     assert_eq!(missing.capability, DevtoolCapability::MissingExecutable);
 
     let devtool = root.join("devtool");
+    initialized_devtool_workspace(&root);
     let absent_source = root.join("sources/absent");
     fs::write(
         &devtool,

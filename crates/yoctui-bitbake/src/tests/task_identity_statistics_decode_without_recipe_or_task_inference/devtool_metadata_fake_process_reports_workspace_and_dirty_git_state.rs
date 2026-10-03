@@ -3,6 +3,7 @@ use super::*;
 #[tokio::test]
 async fn devtool_workspace_git_reports_repository_tracking_and_dirty_state() {
     let root = fixture_script("devtool-workspace");
+    initialized_devtool_workspace(&root);
     let source = root.join("sources/busybox");
     fs::create_dir_all(&source).unwrap();
     let devtool = root.join("devtool");

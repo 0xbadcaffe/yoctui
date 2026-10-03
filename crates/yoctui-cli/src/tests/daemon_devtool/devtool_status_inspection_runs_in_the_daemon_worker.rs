@@ -8,6 +8,14 @@ async fn devtool_status_inspection_runs_in_the_daemon_worker() {
     ));
     let source = root.join("workspace/busybox");
     fs::create_dir_all(&source).unwrap();
+    fs::create_dir_all(root.join("workspace/conf")).unwrap();
+    fs::create_dir_all(root.join("conf")).unwrap();
+    fs::write(root.join("workspace/conf/layer.conf"), "# fixture\n").unwrap();
+    fs::write(
+        root.join("conf/bblayers.conf"),
+        format!("BBLAYERS ?= \"{}\"\n", root.join("workspace").display()),
+    )
+    .unwrap();
     let executable = root.join("devtool");
     fs::write(
         &executable,

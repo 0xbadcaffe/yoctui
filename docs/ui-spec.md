@@ -2435,6 +2435,7 @@ workspace is empty without launching the mutating upstream initializer. Existing
 workspaces require verified already enabled configuration before status runs;
 ambiguous or disabled configuration is unavailable with a safety explanation,
 not inferred membership. Explicit confirmed modifying operations are unchanged.
+Already fixed SDK setups retain their ordinary status and failure behavior.
 
 Recipe rows show resolved and preferred version separately, provider layer,
 append count, workspace/Devtool status, and build status. Search matches recipe

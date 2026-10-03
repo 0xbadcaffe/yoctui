@@ -1,6 +1,19 @@
 //! Regression tests grouped around task_identity_statistics_decode_without_recipe_or_task_inference.
 use super::*;
 
+fn initialized_devtool_workspace(root: &Path) {
+    fs::create_dir_all(root.join("workspace/conf")).unwrap();
+    fs::create_dir_all(root.join("conf")).unwrap();
+    fs::write(root.join("workspace/conf/layer.conf"), "# fixture\n").unwrap();
+    fs::write(
+        root.join("conf/bblayers.conf"),
+        format!("BBLAYERS ?= \"{}\"\n", root.join("workspace").display()),
+    )
+    .unwrap();
+}
+
+mod devtool_status_preflight;
+
 mod task_identity_statistics_decode;
 
 mod devtool_metadata_fake_process_reports_workspace_and_dirty_git_state;
