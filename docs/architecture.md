@@ -1,5 +1,15 @@
 # Yoctui Architecture
 
+## M114 native navigation/probe boundary
+
+The pure navigation reducers must not automatically emit daemon-owned capability
+probes in an installed native daemon context. Read-only screen/focus/menu/palette
+transitions remain independent of those probes so the existing effect-authority
+rollback cannot undo navigation. Not-inspected state remains unchanged; no
+operation is authorized or capability synthesized. Explicit probes retain the
+same denial boundary, while ordinary authorized inventory and legacy non-daemon
+reducer acquisition remain intact. No protocol or backend mutation change.
+
 ## M114 native bridge vendored import correction
 
 The native audit exposed a retained generated BitBake parser importing its

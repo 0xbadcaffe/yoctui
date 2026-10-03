@@ -1,0 +1,88 @@
+Native retained OpenBMC rootfs and managed QEMU/GDB rehearsal — 2026-10-03
+Partial parent evidence; not all-screen, reboot, final CI or publication acceptance.
+
+IDENTITY
+Source87fd8a95/v0.1.302, installed optimized SHA256
+71ea03b6a02f14b2e931ad9b08cb7f759897001cdba3eac12f621c5bc4433cb7.
+Native daemon2440420, instance2b078a9a4de6e8e8fa76afecf4d6965e.
+Plain installed yoctui attach; selected native OpenBMC source/build, no container
+or inherited caller BitBake/Python environment. Read-only inventory18 prior jobs,
+29 prior PTY summaries; this rehearsal added owned utility30 and build shell31.
+
+ROOTFS
+Real obmc-phosphor-image composition renders pie and exact package table:
+228 packages,81062873 package bytes,1778 package files; physical tree2628 entries,
+1665 files/257 directories/706 symlinks/81096497 bytes, overflow false.
+Partial filesystem package correlation is explicit: IMAGE_ROOTFS traversal cannot
+establish package ownership. Image attributes come from Pseudo, not host ownership.
+With Workspace focused, /etc expands to83 visible tree rows. /etc/hostname
+previews actual romulus,8 bytes,-rw-r--r--/0644/root(0):root(0).
+Offline systemd195 rows: End shows195/195 with rows160–195; Up/PageUp returns
+184/195, rows149–184. D-Bus inventory and40 udev rules inspected offline.
+Artifacts17 rows include exact byte sizes and modified UTC timestamps; End17/17.
+The earlier empty initramfs tree and navigation-focused paging frames are not
+accepted as failures of the main image. Capture filenames alone are not proof.
+
+REAL CURRENT MANAGED QEMU/GDB
+Kernel -> Debugging -> QEMU/GDB; reviewed explicit OpenBMC Romulus flash mode,
+512MiB, retained exact .qemuboot.conf/static.mtd/reference zImage/matching DWARF
+vmlinux6.18.49-c060b55. No rebuild, deployment, privileged change or guest network.
+Owned helper2454992/runqemu helper2455007/QEMU2455008/GDB2455012; utility30.
+Private directory /tmp/yoctui-qgdb-64e9469cf8269ab75cbef673b1e8ec2c, snapshot
+copied flash, paused CPU/private gdb.sock, bounded separate qemu.log.
+Writer set substitute-path /usr/src/kernel to selected work-shared kernel-source.
+hbreak start_kernel ->0x80a00ad4; continue stops init/main.c:866. Actual list,
+PC/SP and bt execute. Continue boots Linux6.18.49 and OpenBMC3.1.0-dev to
+romulus login. Build shell31 views actual serial milestones; no guest login proof.
+Guest reports absent device/watchdog limitations; no physical-board certification.
+First controller2444929/client2444976 exit normally q/confirmation/exit0 with
+alternate-screen restoration. Snapshot utility30 still Running/writer null/
+viewers0, same owned helper/QEMU/GDB PIDs alive; build shell31 Exited0.
+Fresh plain client selects utility30, claims writer and Ctrl+C stops cpu_v6_do_idle
+at arch/arm/mm/proc-v6.S:82. bt12 shows idle -> rest_init -> start_kernel; actual
+PC0x801172cc/SP0x80b01fa8/LR0x807492e0. Optimized ARM unwind reports identical
+previous frame/corrupt-stack limit; do not promise unrestricted reliable unwinding.
+Continue/interrupt/quit/y ends utility30 exit0. Fresh client also exits normally
+q/confirmation/exit0 and restores alternate screen. All four owned PIDs absent;
+private directory retains only mode0600 qemu.log40801B, no socket or flash copy.
+
+ORIGINAL INPUTS / CLEANUP
+All six original hashes still exact after cleanup:
+local.conf e14135366b356ceea7ebc99083661456ae3d8986f3d80c933633cbb005bf433d
+bblayers.conf f1dc6040f1884e5598ac7dd879dd83679c7229723f9c6483a43a1507b16688d3
+kernel .config 0f809ea0922169c20ad329e51f580a16ac8e5b9b1f1393847e2732d663f2fc5c
+vmlinux 68c5e164595aa24b4f6ed7f6936fab17b971ce2d39d69e3722c2a92c57b0cd50
+static.mtd 00c37b3aed9961a37d50a70afc3c670c50a25282c93784f7022b8e67d1c4f7f0
+qemuboot.conf d98b4ed13f5b1b4b301fac04954489c615c0c52cde3202f026f1712a0e261f75
+Default devtool workspace remains absent; unrelated ZCU daemon/clients preserved.
+
+ACTUAL CAPTURES / REPRO
+Driver/assets above Git, never committed/pushed:
+/home/bspguy-dev/projects/yoctui-ydd2026-presentation/capture_native_openbmc.py
+and inspect_native_daemon.py (read-only normal protocol endpoint).
+Accepted assets/{basename}.{txt,cells,ansi}:
+demo-native-v302-main-rootfs-workspace
+demo-native-v302-real-etc-expanded
+demo-native-v302-hostname-selected
+demo-native-v302-systemd-end
+demo-native-v302-systemd-scroll-back
+demo-native-v302-artifacts-final-entry
+demo-native-v302-qgdb-reviewed
+demo-native-v302-start-kernel
+demo-native-v302-start-kernel-source-registers
+demo-native-v302-boot-milestones-real
+demo-native-v302-reconnected-debug-30
+demo-native-v302-reconnected-backtrace
+demo-native-v302-registers-settled
+demo-native-v302-qgdb-owned-cleanup
+Actual .txt SHA256:
+hostname a90e20b4d55601c733d0f2c371a2c0258c0f7a5fa88d52bb340628213ed95d05
+start-kernel b6cf76cc5c7f07560730fb7f4885a9f509a120960f39ea2c7c30cd733995386e
+boot e8d65426d23cbb4185ab4f34e1157eb4303ed3c9eebd6c6784c20c00625b3fd9
+backtrace e5756ca3df49bfcb2af1a1bce157e75319314e2809e64489c98e711fe6b3525b
+cleanup 679be208fb821fa5b285dc5c6eb528bcd5674fb30d44494257e394ef02d7d5ae
+Snapshots /tmp/yoctui-native-qgdb-{running,shell,detached,cleanup}-v302.json.
+Rejected interim captures include wrongly selected shell/session frames, incomplete
+typed commands and misnamed initramfs/navigation frames. No pixels reconstructed
+or fake typed state injected. Normal utility/shell lifecycle differs from client
+quit; ended historical lease fields are not evidence of live writer authority.

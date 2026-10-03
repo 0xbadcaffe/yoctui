@@ -79,6 +79,18 @@ remote/stale ownership and history, no new layout or budget relaxation. Parent
 all-screen audit resumes after those children. Native large Doctor JSON argv
 gate failure is a separate streamed-validation child before final docs/CI.
 
+Native audit splits DEMO-NAVIGATION-PROBE-001 before code: native302 read-only
+Testing/Security/QA/Maintenance navigation emits a forbidden client capability
+probe, and correct authority rollback undoes the screen change. Retain daemon
+ownership/explicit denials; separate native-context navigation from automatic
+probes without inventing capabilities or new workflows. Main rootfs real image
+attributes/systemd scrolling and current managed QEMU/GDB/boot/reconnect/cleanup
+PASS in native-rootfs-qgdb-v302.txt; remaining screens/CI/docs/reboot/pub pending.
+OOM recovery: enabled native service autostarted on new login, same kernel boot,
+inventory4799/nine layers and optimized302 intact. Cleared only unused compiler
+outputs/rebuildable approved search index; retained release cache now on disk
+AAiva6 to avoid RAM-backed /tmp pressure. No actual reboot proof claimed.
+
 Native audit splits DEMO-NATIVE-BRIDGE-IMPORT-001 before implementation: actual
 retained BitBake generated parser needs its vendored package parent in bridge
 child imports, otherwise plain native Kernel inspection reports unavailable.

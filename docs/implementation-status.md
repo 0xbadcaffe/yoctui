@@ -1,4 +1,23 @@
-M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS. Metadata/status children DONE:
+M114 current: DEMO-NAVIGATION-PROBE-001 IN_PROGRESS; parent native audit paused.
+Native302 actual main rootfs pie/table/real root:root hostname preview/systemd195
+End/backscroll/artifacts17 sizes and UTC timestamps PASS. Current managed native
+Romulus flash boot6.18.49/start_kernel/source/fresh reconnect/idle bt/registers/
+owned cleanup PASS;30/31 Exited0/all helpers/socket/staged copy absent, originals
+exact, both normal client quits0. Evidence native-rootfs-qgdb-v302.txt. Remaining
+navigation fails because automatic daemon-owned probe denial rolls back read-only
+screen changes. Split narrow model correction before code; guard stays intact,
+no fake capability projection or new workflow. Full parent/docs/CI/pub pending.
+Laptop session recovered after kernel OOM killed LibreOffice08:32:56UTC; daemon
+stopped gracefully, same bootID. Enabled service automatically started2483737
+on login11:51:48, inventory4799/nine layers ready11:55:36, optimized302 exact.
+264 unused dev outputs3949992900B plus nine unused release hash duplicates
+1411066648B cleared after owner/link/live-use checks; installed/current top-level
+release preserved. Search index reset/runtime paused under prior approval.
+Retained release cache moved to disk ~/.cache/yoctui-demo-cargo.AAiva6/release,
+same71ea03b6 SHA. Available RAM10GiB, disk2.7GiB; future builds must not refill
+RAM /tmp cache. Original files and above-Git presentation untouched. Not a reboot.
+
+Previous M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS. Metadata/status children DONE:
 source87fd8a95/v302 optimized installed71ea03b6, native daemon2440420 upgraded
 gracefully after owned work check; startup223s/4799recipes/nine layers/NRestarts0.
 Plain native python3-crc/BusyBox metadata loaded; no workspace created, original

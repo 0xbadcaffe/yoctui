@@ -1,5 +1,54 @@
 # Current Task
 
+**ID:** DEMO-NAVIGATION-PROBE-001
+**Title:** Keep native read-only screen navigation independent of daemon-owned probes
+**Status:** IN_PROGRESS
+
+Native302 reproduction: Navigator or palette Open Testing advertises Ready,
+but automatic InspectTestCapability is correctly denied as daemon-owned and
+the authority rollback restores the old screen/palette. Security, QA and
+Maintenance have the same automatic probe pattern. Preserve daemon probe
+authority and explicit probe denials; do not fabricate tool presence or enable
+operations. In the two pure model navigation branches, avoid automatic owned
+capability probing for the native daemon context while retaining navigation,
+focus/menu/palette transitions and honest NotInspected state. Preserve legacy
+pure reducer probe behavior, other authorized inventory effects, offline/viewer
+rules and modal trapping. Add normal/unknown/unavailable authority matrix,
+Navigator/palette/menu, explicit denial and unaffected inventory tests plus
+TestBackend rendering. Bump, full baseline, commit/push/install, repeat plain
+native navigation, then resume the parent audit. Relevant files: navigation
+reducers, model compatibility tests, CLI/UI tests, specification/architecture.
+
+Crash recovery: kernel OOM at08:32:56 UTC killed LibreOffice, daemon2440420
+stopped gracefully08:33:07; kernel boot ID unchanged. Login automatically
+started enabled yoctui.service2483737 at11:51:48, metadata ready11:55:36,
+4799recipes/nine layers/installed302 SHA71ea03b6 unchanged. No actual reboot
+claim. Saved current QEMU/rootfs evidence and presentation captures survived.
+264 unused generated dev outputs3949992900B and nine unused hashed release
+duplicates1411066648B cleared after UID/link/symlink/live-use checks. Installed
+and top-level optimized binary preserved. Rebuildable file-search index reset
+and temporarily runtime-masked under prior approval; user files untouched.
+Retained release cache moved OFF RAM-backed /tmp to
+/home/bspguy-dev/.cache/yoctui-demo-cargo.AAiva6/release; identical71ea03b6 hash.
+Use parent AAiva6 as CARGO_TARGET_DIR for subsequent builds, two jobs/debug0/
+no incremental dev/test. Memory available10GiB vs5.1GiB initially; monitor disk
+(2.7GiB remaining) and do not rebuild into the old RAM cache.
+
+```bash
+cargo test -p yoctui-model --all-features native_navigation
+cargo test -p yoctui-ui --all-features native_navigation
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+# Manual: plain installed native attach -> Navigator and palette Testing,
+# Security, QA and Maintenance; inspect honest capability states, no new jobs.
+```
+
+## Paused parent handoff
+
 **ID:** DEMO-INSTALL-LIVE-001
 **Title:** Rehearse remaining native OpenBMC demo screens and sessions
 **Status:** IN_PROGRESS
@@ -13,6 +62,16 @@ Controller2440883/client2440884/bridge2442385 normal q clean0 and actors absent.
 viewer fields on ended26–29, then history byte-exact. Evidence native-recipe-
 status-safety-v302.txt. Full2084Rust/67bridge/strictClippy/fmt/source/UI/version/
 29rasters PASS. All-screen/current QEMU/docs/CI/reboot/publication not certified.
+
+Native302 retained main image/rootfs actual pie/table, /etc expansion/hostname
+0644 root:root preview, systemd195 End/back scroll and artifacts17 sizes/mtime
+PASS. Real managed Romulus512MiB flash boot/matching6.18.49 start_kernel/source/
+fresh reconnect/interrupt/idle bt/registers/owned cleanup PASS; utility30 and
+shell31 Exited0, all owned helpers/socket/staged copy gone, six original hashes
+exact. Both client quits normal0 with terminal restoration. Optimized ARM unwind
+and guest-device limits explicit. Evidence native-rootfs-qgdb-v302.txt; no all-
+screen/reboot/CI/pub claim. Native navigation rollback child follows before
+finishing the remaining optional views and recipe workbench authorization.
 
 Resume actual screen-by-screen native rehearsal. Use normal image picker to
 select obmc-phosphor-image (current saved selection aspeed-image-initramfs is
