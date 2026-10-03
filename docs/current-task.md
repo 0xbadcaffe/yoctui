@@ -9,8 +9,11 @@ Parent audit paused for a native303 reproduction: grouped Tasks Navigator at
 the legacy literal-tree map whenever total terminal width is160. Devtool and
 QEMU/Wic two-clicks remain on Tasks; the same Devtool destination works from
 Dashboard. UI chooses literal-tree rows only for a26-cell Navigator area.
+The literal26 map also contains indices from the previous Navigator order; it
+can open Insights for Layers. Correct that same hit-map defect with a pure model
+destination-to-index lookup, rather than duplicated stale numeric positions.
 Use the same shared actual-area condition in mouse routing, preserving both
-literal26 and grouped/responsive behavior, focus and dialogs. Add app pure
+literal26 and grouped/responsive visible destinations, focus and dialogs. Add app pure
 mapping/reducer and actual TestBackend cross-checks across160x50/160x48 and
 compact/narrow sizes. No new destination, layout or shortcut. Bump, baseline,
 commit/push/install and actual native Tasks -> Devtool/QEMU navigation proof.

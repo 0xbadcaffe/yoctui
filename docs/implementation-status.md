@@ -3,7 +3,10 @@ Native303 Tasks160x50 two-click Devtool/QEMU remains Tasks; Dashboard->Devtool
 works. Mouse uses old literal map based on total160 columns, whereas renderer
 selects literal only for26-cell Navigator area. Split shared actual-area correction
 and app/reducer/TestBackend responsive regressions before implementation. No new
-feature/layout/shortcut. Previous navigation child remains DONE.
+feature/layout/shortcut. Literal26 source map also uses stale previous-order
+indices (Layers->Insights); correct the same hit-map defect using a pure model
+destination-index lookup and exact rendered-row regressions, not new UI actions.
+Previous navigation child remains DONE.
 Current native Layers steady-state60s/10s warmup: client0.208019%/daemon0.998700%,
 combined independently trimmed1.229365% of one logical CPU. Real source-bound
 perf60s619samples/filter unresolved1745ppm (<5000 ceiling) passes; report/SVG
