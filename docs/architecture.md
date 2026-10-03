@@ -1,5 +1,14 @@
 # Yoctui Architecture
 
+## M114 interactive terminal launch focus correction
+
+The pure ConfirmTerminalLaunch reducer owns the ordinary embedded screen/focus
+transition and reuses prepare_created_terminal_selection to clear only the
+focused old pane binding and select the pending appended slot. CLI/daemon retain
+creation and leases; no UI process parsing or automatic writer acquisition.
+Specialized platform/GitUI/debug/completion routes remain distinct. Cancellation
+and detached launches preserve local view state. No protocol/layout change.
+
 ## M114 daemon idle recovery catalog reuse
 
 The recovery predicate borrows the compiled immutable built-in capability

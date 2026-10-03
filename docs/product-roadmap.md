@@ -2,6 +2,12 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Native305 parent rehearsal split existing launch-focus, metadata-connection
+handoff and kill-preview safety defects into separate atomic children before
+code. Focus child current; full baseline/source-bound optimized native proof
+required per child. No new feature, unchanged authority/history boundaries.
+Parent all-screen/docs/CI/actual reboot/publication resume after the children.
+
 Native metadata/status children DONE after source87fd8a95/v302 real installed
 client/daemon proof, not merely code presence: BusyBox/CRC metadata, no workspace
 initialization, original six hashes preserved, normal quit/owned actors absent.

@@ -1,8 +1,38 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
+**ID:** DEMO-INTERACTIVE-LAUNCH-FOCUS-001
+**Title:** Focus the new ordinary embedded interactive terminal after confirmation
 **Status:** IN_PROGRESS
+
+Parent native demo audit paused for three independently reproduced defects.
+This child only restores the specified ordinary embedded chooser transition:
+BuildShell, recipe Devshell/Menuconfig, Devtool shell/edit-recipe must enter
+Terminal Sessions with Workspace focus and prepare the newly created slot, not
+retain an old bound history session. Opening/cancelling or detached launch must
+preserve screen, focus and selection; platform menuconfig, GitUI, debug and file
+completion workflows retain their specialized transitions. No new layout/key.
+Relevant model ConfirmTerminalLaunch reducer, external reducer/TestBackend tests,
+docs/ui-spec.md and architecture/status/registry. Dependency catalog child DONE.
+Add before-code failure tests, bounded/empty/history/split and negative controls;
+bump version, run full baseline, commit/push/install optimized source-bound
+release and confirm a real native new shell is selected and exits normally.
+Then immediately continue separately registered metadata lease and kill safety
+children; all-screen/docs/CI/reboot/publication are still incomplete.
+
+```bash
+cargo test -p yoctui-model --all-features interactive_launch_focus
+cargo test -p yoctui-ui --all-features interactive_launch_focus
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+# Manual: current installed native chooser -> new shell selected, take writer,
+# normal exit and client quit; prior history and original build files unchanged.
+```
+
+## Paused parent handoff
 
 Resume remaining native all-screen/recipe workbench/current managed QEMU-GDB
 validation, then docs/CI/actual reboot/publication. Catalog child DONE: source

@@ -1,4 +1,14 @@
-M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; catalog child DONE.
+M114 current: DEMO-INTERACTIVE-LAUNCH-FOCUS-001 IN_PROGRESS; parent audit paused.
+Three native305 defects split before code: ordinary embedded confirmation keeps
+old history selected, completed recipe metadata retains an exclusive BitBake
+connection blocking devshell, inline kill preview lacks focus and can retarget.
+Focus child first; separate lease and kill safety children follow. Owned33
+terminated through UI, normal native client quit released its metadata actors;
+all absent. Same initialized native qemu-helper devshell dry-run succeeds0 with
+cached prerequisites. Daemon2553232 remains active/NRestarts0, originals preserved.
+No new product feature, real devshell success or complete demo certification yet.
+
+Previous M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; catalog child DONE.
 Code07f08ce0/v305 optimized installed SHAfc7cfa3a, native daemon2553232 ready
 4799/nine layers after225s/NRestarts0. Actual plain2553310 Layers160x50 and normal
 q0/terminal restored/owned actors gone;19jobs/31PTY and capability environment/

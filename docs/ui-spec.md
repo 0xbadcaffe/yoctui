@@ -6147,6 +6147,14 @@ launches keep the editor in place; cancelling a chooser never suspends it.
 
 ### Interactive-session destination chooser
 
+Ordinary embedded confirmation enters Terminal Sessions with Workspace focus
+and waits for the new session slot, even with retained history or split pane
+bindings. It must not keep a previous shell selected. Opening or cancelling
+the chooser and detached confirmation do not change the current screen, focus
+or pane/session selection. Platform menuconfig remains in its platform workspace;
+GitUI, prepared debug tools and file-completion operations keep their specialized
+existing transitions. Failed creation never grants writer control to an old row.
+
 Every request to start a build shell, selected-recipe devshell/menuconfig, a
 Devtool workspace shell, or interactive `devtool edit-recipe` first opens one
 focus-trapped chooser. It shows the exact session kind, recipe when applicable,
