@@ -2,14 +2,16 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
-Split terminal binding child is current before ordinary autosize: source/live
+Split terminal binding child DONE before ordinary autosize: source/live
 native26-session history exposes UI/mouse ordinal mapping that can hide the
 selected owned later shell/GDB while input still targets it. Restore existing
 typed client-local pane/session context across split/focus/selection/close and
 replaced/removed identities; no new layout/wire/shortcut or history deletion.
 Binding implementation v298 passes full2066Rust/67bridge/strictClippy/fmt/source/
-UI/version/roadmap/29rasters; optimized actual native two-shell proof pending,
-task still IN_PROGRESS. Viewport depends on this atomic correction and has no
+UI/version/roadmap/29rasters; actual optimized native two-shell split/mouse/input/
+close/normal exits/clean q proof PASS code44512807/rasterfc6cb51b/hashd538bd24.
+Evidence native-terminal-pane-binding-v298.txt;26 prior rows/input hashes intact.
+Viewport now current after this atomic correction and has no
 implementation yet. Initial synthetic CLI mouse fixture mismatch was corrected
 without weaker assertions and the full suite rerun; original inputs preserved.
 

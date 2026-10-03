@@ -1,4 +1,11 @@
-M114 current: DEMO-TERMINAL-PANE-BINDING-001 IN_PROGRESS, split before code.
+M114 current: DEMO-TERMINAL-VIEWPORT-001 IN_PROGRESS, no autosize code yet.
+Pane binding DONE v298 code44512807/rasterfc6cb51b/installedd538bd24. Actual
+native shells27/28 distinct split output, mouse27 routes input only27, close27
+pane preserves both processes/selects28; normal exits both0 preserve26 prior
+rows/workspace/daemon identity. Client2385897 ordinary q/confirmation clean0,
+terminal restored/owned actors gone. Daemon2340904 healthy295/NRestarts0 with
+unchanged protocol. Evidence native-terminal-pane-binding-v298.txt; final
+daemon upgrade/all-screen/reboot/CI/publication pending separately.
 Implementation v298 uses shared typed pane/session projection, bounded local
 daemon-scoped bindings, replica reconciliation and existing reducer/mouse/prefix
 routes. Five model, four UI, protocol replica and later-history mouse regressions
@@ -9,7 +16,7 @@ nine unchanged ignores31targets/67bridge/strict workspaceClippy/fmt/source2900/
 UI/version/roadmap/29rasters PASS; all34 goldens only encoded297->298 identity.
 Initial full run exposed a similarly inconsistent CLI mouse fixture, corrected
 without weakening assertions before a complete passing rerun. Optimized native
-two-shell acceptance remains pending, not DONE. Storage preflight cleared173
+two-shell acceptance PASS as above. Storage preflight cleared173
 validated unused temporary outputs2393014573B (90dev libraries,23old297 test
 executables,60old release libraries), owner/link/live-use checks; current
 generated outputs/original source/images/symbols/assets preserved/rebuildable.
@@ -18,7 +25,7 @@ Viewport inspection exposes an existing pane/history identity mismatch: with
 not the selected owned later shell/GDB addressed by input/inspector. Atomic
 typed client-local binding correction now precedes autosize; preserve other
 pane context and replaced/removed identity safety, no new layout/wire/feature
-or history/process deletion. Viewport remains NOT_STARTED until that child DONE.
+or history/process deletion. Viewport now active after binding DONE.
 DEMO-TERMINAL-EXIT-WRITER-001 DONE source8a30ba9f/v297, optimized installed
 3b25186b (thinLTO/frame pointers/two workers). Plain native client2363585 owns
 real build shell26/helper2363644; ordinary command/pwd/exit yields helper exit0,

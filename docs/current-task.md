@@ -1,8 +1,26 @@
 # Current Task
 
-**ID:** DEMO-TERMINAL-PANE-BINDING-001
-**Title:** Keep focused split terminal output bound to the selected session
+**ID:** DEMO-TERMINAL-VIEWPORT-001
+**Title:** Size ordinary owned terminal sessions to their actual visible pane
 **Status:** IN_PROGRESS
+
+Dependencies writer and pane binding DONE. Exact v298 code44512807/rasterfc6cb51b,
+optimized installedd538bd24; real shells27/28 separate split output, click27
+routes ordinary input only27, close27 pane preserves both processes/selects28.
+Normal exits both0 preserve26 prior rows. Client2385897 normal q/confirmation
+exit0/terminal restoration, owned actors gone, daemon2340904 healthy295/NRestarts0.
+Evidence native-terminal-pane-binding-v298.txt. Reboot/all-screen/CI pending.
+
+Correct ordinary visible-cell resize, not a new layout/shortcut/wire: shell/GDB
+120x40 clips within smaller panes. Generalize menuconfig geometry/polling to the
+actual focused PaneId, mirroring tabs/access/prefix/border/status/search/history.
+Preserve in-place menuconfig, zoom/narrow/split geometry and copy/search modes;
+current live-owned writer only, no remote/stale/exited/zero-sized hidden resize,
+unchanged coalesced transport/deadlines/budgets. Relevant app workbench_geometry,
+CLI polling, external geometry/TestBackend/fake socket/native shell/GDB tests.
+No autosize implementation yet; bump/commit/push/optimized source verification.
+
+## Completed terminal pane binding (v298)
 
 Dependency DEMO-TERMINAL-EXIT-WRITER-001 DONE: source8a30ba9f/v297 optimized
 installed3b25186b, actual native shell26/helper2363644 exits0, historical matching
@@ -26,7 +44,7 @@ real native two owned shells/split/session switching/clean owned exit required.
 Relevant model terminal_workbench/terminal_selection/selection reducer, shared
 app mouse mapping, UI pane projection and CLI existing prefix split/close routes.
 
-Implementation v298 underway: shared typed projection and daemon-scoped bindings,
+Implementation v298 complete: shared typed projection and daemon-scoped bindings,
 snapshot reconciliation and existing prefix/mouse/reducer routes. Five model
 regressions, four TestBackend render regressions, real protocol replica replacement
 and high-history mouse mapping pass focused checks (model42+worker1/app57/UI31).
@@ -37,13 +55,14 @@ failures/nine unchanged ignores31targets/67bridge/full strictClippy/fmt/source29
 UI/version/roadmap/29rasters PASS, all34 goldens only297->298 identity. The first
 full run exposed another inconsistent CLI mouse fixture; its intended session2
 setup was corrected without weakening assertions and the entire suite rerun.
-Optimized install and real native two-shell acceptance pending; not DONE.
+Optimized install and real native two-shell acceptance PASS; task DONE, evidence
+native-terminal-pane-binding-v298.txt. Original inputs/26 prior rows unchanged.
 Storage preflight cleared173 validated obsolete temporary compiler outputs:
 90old dev libraries996455182B,23prior297 test executables433223448B,60old release
 libraries963335943B; owner/link/live-use checks, original data/current outputs
 preserved. These caches are rebuildable, not deleted source/image/debug assets.
 
-Ordinary autosize remains the next DEMO-TERMINAL-VIEWPORT-001, not implemented:
+Ordinary autosize is now current DEMO-TERMINAL-VIEWPORT-001, not implemented:
 actual native ordinary GDB/build shells retain120x40 while the visible pane is
 narrower/shorter. Current geometry and polling restrict resize to menuconfig.
 Correct existing visible-cell contract for ordinary live owned PTYs, selecting
@@ -65,9 +84,8 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 scripts/check-library-layout.py
 ./scripts/verify-ui-spec.sh
 ./scripts/verify-roadmap.sh
-# Manual: real native selected later-history shells remain visible in their
-# focused split panes; switching/focusing/closing preserves other output and
-# input goes to the displayed owned session; original history/processes preserved.
+# Manual: native shell/GDB dimensions match rendered cells at160x50 and resize/
+# split; visible cursor/output preserved, no remote/exited writer resize.
 ```
 
 ## Completed terminal lifecycle/writer correction (v297)
