@@ -394,9 +394,20 @@ title = "Install optimized release and rehearse all OpenBMC demo screens and ses
 status = "IN_PROGRESS"
 priority = 3504
 required = true
-depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-BRIDGE-IMPORT-001", "DEMO-TERMINAL-EXIT-WRITER-001", "DEMO-TERMINAL-VIEWPORT-001", "DEMO-TERMINAL-FUNCTION-KEYS-001", "DEMO-NATIVE-METADATA-ENV-001", "DEMO-NAVIGATION-PROBE-001", "DEMO-TASKS-NAVIGATOR-MOUSE-001"]
+depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-BRIDGE-IMPORT-001", "DEMO-TERMINAL-EXIT-WRITER-001", "DEMO-TERMINAL-VIEWPORT-001", "DEMO-TERMINAL-FUNCTION-KEYS-001", "DEMO-NATIVE-METADATA-ENV-001", "DEMO-NAVIGATION-PROBE-001", "DEMO-TASKS-NAVIGATOR-MOUSE-001", "DEMO-DAEMON-CATALOG-HOTSPOT-001"]
 verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: installed optimized binary equals committed source-bound release hash/version; plain native yoctui attach discovers healthy exact OpenBMC daemon after login without container launcher", "Manual: real native OpenBMC screen-by-screen audit, supported recipe/devtool/devshell, rootfs/packages/services/artifacts and reviewed QEMU boot/kernel debugging/reconnect/cleanup; report unavailable optional screens honestly", "./scripts/verify-roadmap.sh"]
 notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed native release, normal workstation endpoint and durable working artifacts; container-only rehearsal and mocks do not meet acceptance. Prepare reproducible two-minute path and real screenshots/recovery checklist; no physical-board actions or long clean image rebuild inferred."
+
+[[task]]
+id = "DEMO-DAEMON-CATALOG-HOTSPOT-001"
+milestone = "M114"
+title = "Reuse the immutable capability catalog in the daemon idle recovery check"
+status = "IN_PROGRESS"
+priority = 3573
+required = true
+depends_on = ["DEMO-TASKS-NAVIGATOR-MOUSE-001"]
+verify = ["cargo test --workspace --all-features backend_recovery", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-ui-spec.sh", "Manual: current source-bound native same-host/build/geometry idle Layers before/after10s warmup60s process CPU and real filtered flamegraph; no authority/history/original changes", "./scripts/verify-roadmap.sh"]
+notes = "Native303 real619samples shows repeated immutable catalog construction41.7% inclusive weighted CPU and drop10% (nested, not additive), daemon0.998700% steady-state. BackendRecovery needed builds138-entry compiled catalog every poll. Cache only immutable catalog via private OnceLock borrowed helper; never cache current predicate/environment snapshots/results or skip actual probes. Preserve retries/cancel/override/identity/generation/fallback and recover probe path. Relevant daemon recovery, external pure/fake-process tests, architecture/status/reports. Source304 exact baseline before source305 optimized replacement; full tests/commit/push/install/measured native proof before DONE. No new UI/protocol/workflow or unrelated lint/CI correction bundled."
 
 [[task]]
 id = "DEMO-TASKS-NAVIGATOR-MOUSE-001"

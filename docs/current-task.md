@@ -1,8 +1,40 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Rehearse remaining native OpenBMC demo screens and sessions
+**ID:** DEMO-DAEMON-CATALOG-HOTSPOT-001
+**Title:** Reuse the immutable capability catalog in the daemon idle recovery check
 **Status:** IN_PROGRESS
+
+Native303 source-bound619-sample flamegraph shows catalog construction41.7%
+inclusive weighted CPU and catalog drop10% (do not add nested percentages);
+daemon steady-state0.998700%/client0.208019% of one logical CPU. Actual source
+BackendRecovery::poll calls needed(current) each idle loop; needed constructs
+the138-entry immutable built-in catalog again even when all backend APIs are
+already known. Cache only that compiled immutable catalog with OnceLock/private
+borrowed helper; do not cache environment snapshots, predicate results, tool
+observations or authority. Keep actual probes,30s retry/cancel/override/identity/
+generation/fallback boundaries unchanged, including recover's real probe path.
+Add pure cached-identity and current-state equivalence matrix regressions,
+retain existing fake-process success/negative/identity/throttle tests. Bump,
+full baseline, source-bound optimized install/native same-scenario before/after
+CPU and flamegraph/probe/history checks before DONE; then parent demo audit.
+Relevant daemon_compatibility/backend_recovery.rs, external CLI tests, measured
+reports and architecture/status/registry. No new UI/protocol/workflow. Source304
+baseline currently gathering from a real idle native Layers client and daemon.
+
+```bash
+cargo test --workspace --all-features backend_recovery
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+# Manual: exact optimized native idle Layers same host/build/geometry/process
+# roles,10s warmup/60s CPU windows; real filtered perf before/after/source hashes.
+# Preserve authority, probe/retry semantics, existing histories and original files.
+```
+
+## Paused native parent handoff
 
 Tasks Navigator child DEMO-TASKS-NAVIGATOR-MOUSE-001 DONE: source d5612973,
 optimized installed304 SHA10935028, daemon2529907 ready4799/nine layers after

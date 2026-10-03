@@ -1,4 +1,13 @@
-M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; Tasks Navigator child DONE.
+M114 current: DEMO-DAEMON-CATALOG-HOTSPOT-001 IN_PROGRESS; parent audit paused.
+Measured native303619-sample profile: repeated immutable catalog creation41.7%
+inclusive weighted CPU, drop10% (nested, not additive); daemon0.998700%/client
+0.208019% of one logical CPU. Source needed(current) rebuilds138-entry catalog
+each idle poll even when backend APIs are known. Split private OnceLock catalog
+reuse before code, preserving all current-snapshot authority/probe/retry/cancel/
+identity/fallback semantics. Fresh source304 native baseline gathering before
+comparison. Pure identity/equivalence regressions, existing fake-process tests,
+full verification and actual optimized measured before/after required. No UI/
+protocol/new workflow or cache of capability results; Tasks child remains DONE.
 Source d5612973/optimized304 SHA10935028 installed, native daemon2529907 healthy
 and ready4799recipes/nine layers after223s. Plain2529940 actual160x50 Tasks ->
 Devtool/shared Images-QEMU-Wic;160x48 literal -> Layers/Devtool/Wic, including
