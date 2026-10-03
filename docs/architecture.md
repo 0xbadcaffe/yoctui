@@ -4,13 +4,14 @@
 
 The pure navigation reducers must not automatically emit daemon-owned capability
 probes in an installed native daemon context, including attached/retained instance
-identity before capabilities arrive. SDK, Testing, Security, QA and Maintenance
+identity before capabilities arrive. SDK, Testing, Security and QA
 navigation retain honest NotInspected state. Read-only screen/focus/menu/palette
 transitions remain independent of those probes so the existing effect-authority
 rollback cannot undo navigation. Not-inspected state remains unchanged; no
 operation is authorized or capability synthesized. Explicit probes retain the
 same denial boundary, while ordinary authorized inventory and legacy non-daemon
-reducer acquisition remain intact. No protocol or backend mutation change.
+reducer acquisition remain intact, including Maintenance's ClientLocal automatic
+inspection. No protocol or backend mutation change.
 
 ## M114 native bridge vendored import correction
 

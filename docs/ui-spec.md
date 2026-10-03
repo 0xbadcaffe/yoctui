@@ -27,7 +27,7 @@ Status: **Authoritative product and interaction contract**
 
 ### M114 OpenBMC demo release polish (no new features)
 
-Native read-only navigation to SDK, Testing, Security, QA and Maintenance must remain
+Native read-only navigation to SDK, Testing, Security and QA must remain
 available independently of automatic environment probing. An installed daemon
 context owns those probes; merely opening a screen must not emit a client probe
 or cause authority rollback to undo the screen/focus/menu/palette transition.
@@ -35,7 +35,8 @@ Unknown/not-inspected tool state remains honest and operations stay gated by
 the exact daemon capability snapshot. Explicit client probe requests remain
 denied; daemon identity before capability discovery also counts as native
 context. Other authorized inventory acquisition and non-daemon reducer behavior
-are unchanged. No new shortcut, layout or workflow.
+are unchanged. Maintenance's ClientLocal inspection must still run normally;
+it is not a daemon-owned probe. No new shortcut, layout or workflow.
 
 Terminal write authority requires a current replica, a `Running` session and
 this client's writer ID, not merely a retained writer ID. Connecting/stopping,

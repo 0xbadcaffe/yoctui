@@ -6,8 +6,9 @@
 
 Native302 reproduction: Navigator or palette Open Testing advertises Ready,
 but automatic InspectTestCapability is correctly denied as daemon-owned and
-the authority rollback restores the old screen/palette. SDK, Security, QA and
-Maintenance have the same automatic probe pattern. Native context includes
+the authority rollback restores the old screen/palette. SDK, Security and QA
+have the same automatic probe pattern. Source inspection confirms Maintenance
+inspection is ClientLocal and must remain unchanged, not suppressed. Native context includes
 an attached/retained daemon identity even before capability discovery finishes.
 Preserve daemon probe
 authority and explicit probe denials; do not fabricate tool presence or enable
@@ -46,7 +47,8 @@ python3 -m pytest bridge/tests
 ./scripts/verify-ui-spec.sh
 ./scripts/verify-roadmap.sh
 # Manual: plain installed native attach -> Navigator and palette Testing,
-# Security, QA and Maintenance; inspect honest capability states, no new jobs.
+# SDK, Security and QA; inspect honest capability states, no new jobs. Maintenance
+# remains a negative control: its ClientLocal inspection still works.
 ```
 
 ## Paused parent handoff

@@ -80,10 +80,11 @@ all-screen audit resumes after those children. Native large Doctor JSON argv
 gate failure is a separate streamed-validation child before final docs/CI.
 
 Native audit splits DEMO-NAVIGATION-PROBE-001 before code: native302 read-only
-Testing/Security/QA/Maintenance navigation emits a forbidden client capability
+SDK/Testing/Security/QA navigation emits a forbidden client capability
 probe, and correct authority rollback undoes the screen change. Retain daemon
 ownership/explicit denials; separate native-context navigation from automatic
-probes without inventing capabilities or new workflows. Main rootfs real image
+probes without inventing capabilities or new workflows; source confirms local
+Maintenance acquisition must remain intact. Main rootfs real image
 attributes/systemd scrolling and current managed QEMU/GDB/boot/reconnect/cleanup
 PASS in native-rootfs-qgdb-v302.txt; remaining screens/CI/docs/reboot/pub pending.
 OOM recovery: enabled native service autostarted on new login, same kernel boot,

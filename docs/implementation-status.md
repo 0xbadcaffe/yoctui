@@ -4,9 +4,12 @@ End/backscroll/artifacts17 sizes and UTC timestamps PASS. Current managed native
 Romulus flash boot6.18.49/start_kernel/source/fresh reconnect/idle bt/registers/
 owned cleanup PASS;30/31 Exited0/all helpers/socket/staged copy absent, originals
 exact, both normal client quits0. Evidence native-rootfs-qgdb-v302.txt. Remaining
-navigation (including SDK when not inspected) fails because automatic daemon-owned probe denial rolls back read-only
+SDK/Testing/Security/QA navigation fails because automatic daemon-owned probe denial rolls back read-only
 screen changes. Split narrow model correction before code; guard stays intact,
-no fake capability projection or new workflow. Full parent/docs/CI/pub pending.
+no fake capability projection or new workflow. Maintenance source inspection
+confirms ClientLocal acquisition, preserved as an unaffected negative control;
+earlier provisional inclusion in the owned-probe scope is corrected before code.
+Full parent/docs/CI/pub pending.
 Laptop session recovered after kernel OOM killed LibreOffice08:32:56UTC; daemon
 stopped gracefully, same bootID. Enabled service automatically started2483737
 on login11:51:48, inventory4799/nine layers ready11:55:36, optimized302 exact.
