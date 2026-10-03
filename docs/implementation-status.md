@@ -1,4 +1,10 @@
-M114 current: DEMO-TERMINAL-VIEWPORT-001 IN_PROGRESS, split before code.
+M114 current: DEMO-TERMINAL-PANE-BINDING-001 IN_PROGRESS, split before code.
+Viewport inspection exposes an existing pane/history identity mismatch: with
+26 native retained sessions, split UI/mouse use first pane-count history rows,
+not the selected owned later shell/GDB addressed by input/inspector. Atomic
+typed client-local binding correction now precedes autosize; preserve other
+pane context and replaced/removed identity safety, no new layout/wire/feature
+or history/process deletion. Viewport remains NOT_STARTED until that child DONE.
 DEMO-TERMINAL-EXIT-WRITER-001 DONE source8a30ba9f/v297, optimized installed
 3b25186b (thinLTO/frame pointers/two workers). Plain native client2363585 owns
 real build shell26/helper2363644; ordinary command/pwd/exit yields helper exit0,

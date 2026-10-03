@@ -34,6 +34,13 @@ access line must not offer an active lease or misidentify a historical owner as
 another live client. Stale replicas advertise reconnect, never writer access.
 Each split pane's status uses that pane's own lifecycle, including unfocused
 historical sessions; the selected session's access cannot authorize another pane.
+The focused terminal pane displays the selected session even when its global
+history index exceeds the pane count. Splitting, choosing another session,
+focusing or closing a pane preserves the other panes' session identities;
+keyboard/paste/inspector/resize selection and the displayed focused session
+must agree. Mouse selection uses the displayed pane's binding, not its ordinal
+as an index into all daemon history. Removed sessions and replaced daemon
+identities cannot silently rebind a pane to another process with a reused ID.
 Exited/lost session history remains viewable without
 forwarding ordinary keys, paste or resize to a dead process, or advertising an
 active writer lease. Existing Quit/global routes regain normal application

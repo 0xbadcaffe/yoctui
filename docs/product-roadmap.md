@@ -2,6 +2,13 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Split terminal binding child is current before ordinary autosize: source/live
+native26-session history exposes UI/mouse ordinal mapping that can hide the
+selected owned later shell/GDB while input still targets it. Restore existing
+typed client-local pane/session context across split/focus/selection/close and
+replaced/removed identities; no new layout/wire/shortcut or history deletion.
+Viewport depends on this atomic correction; neither implementation is claimed.
+
 Terminal lifecycle/writer child DONE source8a30ba9f/v297 installed optimized
 3b25186b: actual plain native owned shell26 exit0 retains historical owner but
 UI becomes read-only; ordinary q/confirmation closes client2363585 clean0 and

@@ -2193,6 +2193,13 @@ major versions fail. Within a negotiated compatible minor version, unknown
 optional capabilities and incremental daemon events decode as `Unknown` and
 are ignored; unknown commands and required snapshot fields are errors.
 
+Terminal split presentation uses typed client-local PaneId-to-session identity
+bindings in model state, scoped to the daemon instance. Model selection/focus/
+split/close transitions preserve other bindings and reconcile removed sessions
+or replaced daemon identities. UI and mouse geometry consume the same typed
+projection; neither treats a pane ordinal as global terminal-history selection.
+This is client presentation only: no new wire/backend mutation or raw ANSI parsing.
+
 ### Attach, detach, and synchronization
 
 Attach authenticates the local peer, negotiates protocol/capabilities, then

@@ -1,7 +1,7 @@
 # Current Task
 
-**ID:** DEMO-TERMINAL-VIEWPORT-001
-**Title:** Size ordinary owned terminal sessions to their actual visible pane
+**ID:** DEMO-TERMINAL-PANE-BINDING-001
+**Title:** Keep focused split terminal output bound to the selected session
 **Status:** IN_PROGRESS
 
 Dependency DEMO-TERMINAL-EXIT-WRITER-001 DONE: source8a30ba9f/v297 optimized
@@ -12,7 +12,22 @@ Healthy daemon2340904 remains verified295/917a9788; no backend/wire change or
 restart needed for that client-side lifecycle proof. Final daemon upgrade and
 actual reboot remain separate later acceptance, not claimed here.
 
-Actual native ordinary GDB/build shells retain120x40 while the visible pane is
+Atomic prerequisite split before viewport code: actual native history has26
+sessions, but UI terminal_session_panes chooses first pane-count session indices
+whenever split. Selected owned shell/GDB26 can disappear from rendered panes
+while input/inspector still address it. Mouse mapping has the same ordinal
+assumption. Correct existing session/pane context, not a new layout or feature:
+typed client-local PaneId/session bindings scoped to daemon identity, preserved
+across split/session changes/focus/close, pruned for removed sessions/replacement.
+UI/mouse/selected input/inspector must agree; no history/process deletion or
+new wire/shortcut. Pure/reducer/app/TestBackend regressions for high history
+index, two actual panes/outputs, mouse/focus/close and replaced/removed state;
+real native two owned shells/split/session switching/clean owned exit required.
+Relevant model terminal_workbench/terminal_selection/selection reducer, shared
+app mouse mapping, UI pane projection and CLI existing prefix split/close routes.
+
+Ordinary autosize remains the next DEMO-TERMINAL-VIEWPORT-001, not implemented:
+actual native ordinary GDB/build shells retain120x40 while the visible pane is
 narrower/shorter. Current geometry and polling restrict resize to menuconfig.
 Correct existing visible-cell contract for ordinary live owned PTYs, selecting
 the actual focused PaneId rather than treating global session index as pane
@@ -32,8 +47,9 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 scripts/check-library-layout.py
 ./scripts/verify-ui-spec.sh
 ./scripts/verify-roadmap.sh
-# Manual: real native owned shell/GDB at160x50 follows actual pane dimensions,
-# long-line/cursor output remains visible across resize/split; no remote/dead resize.
+# Manual: real native selected later-history shells remain visible in their
+# focused split panes; switching/focusing/closing preserves other output and
+# input goes to the displayed owned session; original history/processes preserved.
 ```
 
 ## Completed terminal lifecycle/writer correction (v297)
