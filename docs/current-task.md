@@ -1,7 +1,7 @@
 # Current Task
 
-**ID:** DEMO-NATIVE-BOOTSTRAP-001
-**Title:** Prepare durable native OpenBMC tools profile optimized binary and enabled user service
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Rehearse all OpenBMC demo screens and sessions with installed native optimized release
 **Status:** IN_PROGRESS
 
 Full local quality DONE product399ce139/v294 (handoff02842aeb):2048Rust/61bridge/
@@ -14,35 +14,46 @@ Native parent split into this cold-setup child and DEMO-NATIVE-POSTREBOOT-001.
 Do not label cold restart as actual reboot, or stop independent CI work merely
 because a laptop reboot needs coordination. Never reboot uncoordinated.
 
-User requires plain native yoctui attach, not a container launcher. Inspect exact
-retained OpenBMC source/build configuration and tools first, do not assume host
-Python3.14 is incompatible or infer native availability from container state.
-Native ARM QEMU11.0.2 already runs from retained durable qemu-helper-native sysroot;
-host lacks ARM GDB, user systemd manager available but no enabled Yoctui service.
-No root privilege bypass. Install only required verified durable user-scoped
-prerequisites, preserve source/image/debug hashes and unrelated processes.
-Build/install exact current optimized binary as this service prerequisite, then
-reuse its hash in the independent live rehearsal (no circular install proof).
-Validate native selected source/build initialization/API/discovery; resolve any
-container absolute paths using normal owned build-profile/config authority with
-backups, never root-owned aliases, upstream edits or forged daemon records.
-Before handoff stop only owned idle validation-container service after actual
-jobs/PTYS/client checks; never run concurrent native/container BitBake in same
-build. Existing unrelated ZCU daemon/clients remain untouched. No full image
-rebuild inferred; retain two BitBake/make/Cargo workers and watch disk capacity.
+Dependency native bootstrap DONE: installed ~/.cargo/bin/yoctui v0.1.294,
+built7eef0058 SHA c0f800a1462fcc2acfc1c2347a997821ccb870b7014f181a3ab9c7254ad22c72,
+optimized thinLTO/debug1/frame-pointers/two Cargo workers. Native Ubuntu26.04/
+Python3.14/BitBake2.19.1 real metadata/API4799recipes/nine layers/Romulus/two
+workers PASS. Durable native QEMU11.0.2/GDB-multiarch17.1 login-PATH wrappers,
+exact initialized source/sibling-build profile and enabled user service work.
+Normal /run/user/1000/yoctui endpoint; plain native attach/cold restart PASS.
+Current PID2315820/instance2745eabac4955de353e2af293d5c3541, metadata ready.
+First native scan349s/cached restart222s; do not confuse warm-up with failure.
+117available/16unknown/5unavailable capabilities are not universal live proof.
+Evidence artifacts/live-openbmc/romulus/native-bootstrap-v294.txt. Same boot ID:
+actual reboot NOT verified. Owned idle container daemon stopped after actual
+snapshot/process/client checks; unrelated ZCU daemon/clients remain untouched.
 
-Enable supported unprivileged systemd user startup using durable executable/
-wrapper/profile and normal /run/user/1000 endpoint. Cold restart+plain native
-attach must work with current authoritative Romulus metadata, no /tmp tools or
-container launcher. Record exact commands/source/binary/path/hash evidence and
-honest optional missing capabilities. Full native all-screen/QEMU/GDB proof is
-next install/live task; actual post-login reboot proof is later distinct child.
+Use the installed native release and existing real source/build/profile for
+independent all-screen audit: actual recipe/layer/config/devtool/devshell,
+rootfs/packages/services/artifacts/file views, honest missing SDK/testing/etc.
+Review real QEMU boot/matching kernel GDB start_kernel breakpoint/source,
+continue to OpenBMC login, detach/new client/reconnect/interrupt/backtrace/
+registers and owned helper/guest/GDB/socket/staged-copy cleanup through Yoctui.
+Never use unmanaged QEMU or container-only screenshots as native acceptance.
+Preserve original image/debug/config hashes and user history/hardware documents;
+no full image rebuild, root/policy changes, deployment or physical action.
+Native capture driver and assets are above project in presentation directory,
+remain uncommitted/unpushed. Click actual visible truncated Navigator labels
+when the Layers navigator is narrow, not guessed full text. Raw PTY capture
+answers CPR from actual composed cursor; client close must restore terminal/
+exit0. Record exact paths/source/hash and unavailable optional capabilities.
+Prepare reproducible two-minute path/recovery checklist for final docs task.
+Split only genuinely observed correctness defects before implementation; no
+new features. Hosted CI atomic/version-policy/moved-source checks follow docs.
+Actual coordinated post-login reboot is a separate later child, no automatic
+reboot/session replay. Publication remains gated by that actual proof and CI.
 
 ```bash
 cargo build --release --locked -p yoctui --bin yoctui
-# Manual: native prerequisites/profile/metadata/installed release hash/service
-# Manual: enabled user service cold restart and plain native yoctui attach
-# Manual: original boot/debug hashes unchanged and only owned idle handoff
+# Manual: current installed optimized source-bound release hash/version
+# Manual: real native screen-by-screen/devtool/devshell/artifact/rootfs audit
+# Manual: actual reviewed Yoctui QEMU boot/GDB/reconnect/owned cleanup
+# Manual: original inputs/unrelated work preserved; optional limits explicit
 ./scripts/verify-roadmap.sh
 ```
 

@@ -2,6 +2,14 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Native cold bootstrap DONE v294/source7eef0058, installed optimizedc0f800a1.
+Actual native Python3.14/BitBake2.19.1 Romulus inventory4799/nine layers/two
+workers, durable ARM QEMU/GDB/profile/enabled user service/normal endpoint and
+plain native attach/cold restart PASS. Original inputs/unrelated work preserved.
+Evidence native-bootstrap-v294.txt records349s first scan/222s cached startup
+and optional limits. Same boot ID: actual coordinated reboot is NOT verified.
+DEMO-INSTALL-LIVE-001 active for real native every-screen/boot/GDB rehearsal.
+
 Proof dependency reconciliation: after full quality, atomic native cold bootstrap
 installs the optimized service prerequisite and validates tools/profile/normal
 endpoint; independent real all-screen/boot/GDB rehearsal follows, then final
@@ -14,8 +22,8 @@ Full verification DONE exact399ce139/v294:2048Rust/61bridge/strictworkspace
 Clippy/fmt/full desktop release-quality/all docs/current Cargo binary/source/
 roadmap PASS;9existing ignores unchanged. Final docs/native reboot readiness/
 optimized all-screen live rehearsal/hosted CI/publication remain pending.
-Final docs proof ordering is being reconciled with native acceptance before
-implementation, rather than certifying interim container evidence as final.
+Final docs proof ordering was reconciled before native implementation;
+interim container evidence does not certify the final native demo.
 
 PTY harness child DONE v294: real desktop startup/keymap/resize+recovery/daemon
 snapshots/synchronized visible frame/clean exit+restoration gates pass;13 pure

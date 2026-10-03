@@ -1,4 +1,17 @@
-M114 current: DEMO-NATIVE-BOOTSTRAP-001 IN_PROGRESS; full quality DONE v294.
+M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; native cold bootstrap DONE v294.
+Native Ubuntu26.04/Python3.14 actual BitBake2.19.1 imports/config/API inventory
+PASS exact home source/sibling Romulus build,4799recipes/nine layers/two workers.
+Verified native ARM QEMU11.0.2 and private APT-checksummed GDB-multiarch17.1;
+durable login-PATH wrappers, exact profile, installed optimized294/c0f800a1
+source7eef0058, enabled user service/normal /run/user/1000 endpoint PASS.
+Idle owned container handoff only; unrelated ZCU daemon/clients preserved.
+Plain native attach and cold restart/new instance/current metadata PASS, same
+bootID: NOT actual reboot. First native warmup349s, cached cold restart222s;
+optional capability limits remain honest117available/16unknown/5unavailable.
+Original flash/qemuboot/debug hashes unchanged; no upstream edits/root bypass/
+image rebuild. Evidence artifacts/live-openbmc/romulus/native-bootstrap-v294.txt.
+All-screen/boot/GDB native optimized rehearsal active; actual coordinated reboot
+remains separate after final docs/CI and gates publication/native parent.
 Governance reconciles proof order before implementation: native cold tools/
 profile/optimized installation/enabled service -> actual all-screen/QEMU/GDB
 rehearsal -> final native screenshots/flamegraph/runbook -> hosted CI/final
@@ -16,8 +29,8 @@ headless/29pinned rasters/source2891/UI/roadmap PASS. Logs final-*-v294 under
 /tmp. No new skips/bounds weakening/identity masking; old exit1/forced-kill
 acceptance tightened. This completes local full quality, not native/reboot/
 hosted CI/registry release. Final docs must describe accepted native setup;
-existing docs-before-native/install ordering needs governance reconciliation
-before implementation to avoid pretending container-only evidence is final.
+proof order was reconciled before native implementation; final docs follow
+accepted native rehearsal, not interim container evidence.
 13 external helper regressions/private env/actual Cargo target/fail-closed binary/
 honest initialized executable offline profile/nonbuildable fixture/actual composed
 CPR including fragments/unknown rejection/frame draining/title not readiness/

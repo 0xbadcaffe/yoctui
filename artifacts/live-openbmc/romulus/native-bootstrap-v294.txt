@@ -1,0 +1,107 @@
+M114 native OpenBMC cold bootstrap — PASS (not actual reboot/live-debug proof)
+Date: 2026-10-03, laptop Ubuntu 26.04, native Python 3.14.4, UID1000.
+
+IDENTITY
+Built source: 7eef0058c2b615f3bc2ee6c29eafe3ea0c7a4482; product v0.1.294.
+Product code/full local quality baseline: 399ce139393d18ce551be927d89a87d1f5751d8b.
+Intervening commits change task/evidence documents, not product code.
+Installed executable: /home/bspguy-dev/.cargo/bin/yoctui.
+Installed and freshly built release SHA256 (equal):
+c0f800a1462fcc2acfc1c2347a997821ccb870b7014f181a3ab9c7254ad22c72.
+Release: optimized, thin LTO, codegen-units1, debug1, force-frame-pointers=yes;
+CARGO_BUILD_JOBS=2, CARGO_INCREMENTAL=0. Temporary compiler cache is not a
+runtime prerequisite: service/client use the durable installed executable.
+Build/install commands, with CARGO_TARGET_DIR=/tmp/yoctui-openbmc-cargo.G9B7ac:
+  RUSTFLAGS='-C force-frame-pointers=yes' cargo build --release --locked -p yoctui --bin yoctui
+  RUSTFLAGS='-C force-frame-pointers=yes' cargo install --path crates/yoctui-cli --force --locked --bin yoctui
+Logs: /tmp/yoctui-native-{release,install}-v294.log.
+Not a registry install/publication; hosted CI and actual reboot remain required.
+
+NATIVE TOOLS AND AUTHORITY
+Source /home/bspguy-dev/src/openbmc:
+34f11d15c1b17df26a1063602918eead23253669; BitBake2.19.1.
+Build /home/bspguy-dev/src/build-openbmc-romulus; nine configured layers.
+Exact source oe-init-build-env initializes this sibling build on native host.
+Python3.14 imports bb/tinfoil/cooker/command and actual native API inventory
+works. No unsupported-Python assumption, alternate Python or container needed.
+PYTHONPATH includes upstream-layers/bitbake/lib and its lib/bb for pysh.
+Build configs already use native home paths; no upstream/config relocation edit.
+local.conf SHA e14135366b356ceea7ebc99083661456ae3d8986f3d80c933633cbb005bf433d
+bblayers.conf SHA f1dc6040f1884e5598ac7dd879dd83679c7229723f9c6483a43a1507b16688d3
+Live datastore: MACHINE=romulus, DISTRO=openbmc-openpower,
+BB_NUMBER_THREADS=2, PARALLEL_MAKE='-j 2', 4799 total recipes, nine layers.
+This total inventory is not the historical selected-core-layer756 recipe view.
+
+ARM QEMU11.0.2 retained at BUILD/tmp/work/x86_64-linux/qemu-helper-native/1.0/
+recipe-sysroot-native/usr/bin/qemu-system-arm; --version works natively.
+Executable SHA179ccce5b2a59151f027113f859013fd2ad14cf89c477e9bda1f6e610d36609f.
+This is persistent Yocto build storage, not volatile OS /tmp. Preserve this
+native sysroot/tools; an explicit future Yocto clean could remove them.
+Native gdb-multiarch17.1-2ubuntu1 privately extracted under
+/home/bspguy-dev/.local/lib/yoctui-demo/gdb-17.1; matching host gdb/dependencies
+already installed. Official APT archive SHA checked before extraction:
+bdf666723214e6ee4964a41664760766c4a40fbba027815244468b84328823e7.
+Extracted executable SHA450401555504d3cd80e67a1a4b993e7e5b830f5d7a129153a29b01459b102039.
+ldd has no missing libraries; --version, set architecture arm and selected
+debug symbols/start_kernel address0x80a00ad4 work. This is prerequisite proof,
+not a live GDB breakpoint. --symbols alone starts auto/i386 until ARM target
+selection; explicit ARM probe works, real remote handshake is rehearsed next.
+Durable executable wrappers ~/.local/bin/{gdb-multiarch,runqemu,qemu-system-arm}
+exec the verified native tools; plain login PATH already includes ~/.local/bin
+and ~/.cargo/bin. No container launcher, root install, device/policy change.
+
+SERVICE AND COLD RESTART
+Existing supported `yoctui daemon service install` generated user unit
+~/.config/systemd/user/yoctui.service, referencing installed ~/.cargo/bin/yoctui.
+Drop-in ~/.config/systemd/user/yoctui.service.d/openbmc-demo.conf replaces
+ExecStart with ~/.local/lib/yoctui-demo/start-daemon and uses native source cwd.
+Wrapper initializes exact source/build above, durable tools PATH/PYTHONPATH,
+PYTHON=python3/PYTHONDONTWRITEBYTECODE=1 and executes installed binary with
+~/.config/yoctui/openbmc-demo-daemon.toml (bridge/default obmc-phosphor-image).
+Dedicated service config inherits initialized BUILDDIR rather than trying
+ancestor discovery for the sibling build. Existing user preferences/history
+and hardware documents remain intact. No global shell/environment rewrite.
+Unit/drop-in/profile private0600, wrappers0755. bash/sh syntax and user-unit
+verification PASS (unrelated existing spice-vdagent unit warning retained).
+`systemctl --user enable --now yoctui.service`: enabled/active, NRestarts0.
+Normal endpoint /run/user/1000/yoctui/daemon.sock, socket0600/record0600.
+State is normal user persistent state, not the validation container /tmp state.
+
+Initial native instance ffc03a1ac4b5f3507c9bf01f801ba8b2, PID2313537:
+ready04:36:42 IDT; compatibility04:40:15; inventory ready04:42:31 (~349s).
+Native Python cold recipe parse04:40:16->04:42:30; no recipe/image task.
+Existing retained native terminal/job history is retained, not called new
+successful work. Recovered old workspace is replaced only by current API data.
+After first client clean0 exit/alternate-screen restoration and no active
+jobs/PTYS, restarted ONLY owned service with systemctl --user restart.
+Old instance gracefully stopped; new PID2315820, instance
+2745eabac4955de353e2af293d5c3541, ready04:43:27; compatibility04:47:00;
+inventory ready04:47:09 (~222s; warmed recipe cache).
+Fresh plain installed `yoctui attach` (no source command/container/runtime
+override) connects and receives current Romulus inventory/workspace.
+Read-only protocol1.5 confirms canonical source/build, identity b261670860dd0336,
+4799recipes/nine layers/two workers and metadata-ready log. No active jobs/PTYS;
+117 available/16 unknown/5 unavailable capability records, not universal support.
+Cold boot ID remains 1e696f44-57bb-4193-af55-449269824bde:
+THIS IS A SERVICE RESTART, NOT AN ACTUAL LAPTOP REBOOT.
+Post-login service is enabled, but actual user-coordinated reboot verification
+is distinct DEMO-NATIVE-POSTREBOOT-001. No reboot or arbitrary command replay.
+
+OWNERSHIP AND PRESERVATION
+Before handoff, actual container protocol snapshot had no jobs/active PTYS or
+attached clients; retained PTYS1/2/3 were Exited. Process tree had only owned
+daemon3142, no live BitBake/QEMU/GDB. Stopped just validation-container daemon
+instance826d7bdaa62bb63b3f5cc470ddc3c42f using its private namespace endpoint.
+No simultaneous native/container BitBake access to this build. Container and
+its source/build mounts remain preserved. Unrelated ZCU daemon1735934 and
+clients2063103/2063194 remain running, untouched.
+Original flash SHA00c37b3aed9961a37d50a70afc3c670c50a25282c93784f7022b8e67d1c4f7f0
+qemuboot SHAd98b4ed13f5b1b4b301fac04954489c615c0c52cde3202f026f1712a0e261f75
+matching debug SHA68c5e164595aa24b4f6ed7f6936fab17b971ce2d39d69e3722c2a92c57b0cd50
+unchanged after native initialization/cold restart. No image rebuild or deploy.
+Root free~5.3GiB; OS /tmp free~4GiB. Reclaimed only123 obsolete own compiler
+outputs2079410542bytes after ownership checks; recoverable through Cargo.
+User four retry-active-dashboard captures untouched/untracked.
+Native bootstrap raw UI captures/driver are outside Git in presentation folder;
+pre-authority captures stay labeled bootstrap, not accepted demo screenshots.
+Final native all-screen/QEMU/GDB cleanup, latest docs/report and hosted CI next.
