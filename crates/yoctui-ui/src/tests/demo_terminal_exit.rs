@@ -118,6 +118,7 @@ fn terminal_split_roles_use_each_panes_own_lifecycle() {
     app.pane_layout
         .split(root, yoctui_model::SplitAxis::Horizontal)
         .unwrap();
+    app.pane_layout.focus(root).unwrap();
     assert!(app.selected_terminal_is_writer());
     let output = rendered_region_rows(200, 30, |frame, area| {
         terminal_workspace::terminal_sessions_workspace(frame, &app, area);

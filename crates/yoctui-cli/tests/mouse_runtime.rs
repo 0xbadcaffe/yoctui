@@ -20,6 +20,8 @@ fn next_generation_mouse_runtime_routes_exact_terminal_and_dialog_focus() {
             viewers: 1,
         });
     }
+    // Initial focus and selection both address the second session.
+    app.pty_selection = 1;
     assert_eq!(
         mouse_action_for_app(
             MouseInput {

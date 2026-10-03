@@ -102,7 +102,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     app.screen = Screen::TerminalSessions;
                     app.focus = FocusTarget::Workspace;
                     app.focus_return = None;
-                    app.pty_selection = app.daemon.pty_sessions.len();
+                    app.prepare_created_terminal_selection();
                     app.notification = Some(
                         "Image Console requested; press o when the session appears to take writer control."
                             .into(),
@@ -298,7 +298,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.screen = Screen::TerminalSessions;
             app.focus = FocusTarget::Workspace;
             app.focus_return = None;
-            app.pty_selection = app.daemon.pty_sessions.len();
+            app.prepare_created_terminal_selection();
             app.notification = Some("QEMU console requested; press o to take writer control. Ctrl+B K terminates the session.".into());
             return Some(Effect::Terminal(TerminalEffect::Create {
                 name: "QEMU console".into(),

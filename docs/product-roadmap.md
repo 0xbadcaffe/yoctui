@@ -7,7 +7,11 @@ native26-session history exposes UI/mouse ordinal mapping that can hide the
 selected owned later shell/GDB while input still targets it. Restore existing
 typed client-local pane/session context across split/focus/selection/close and
 replaced/removed identities; no new layout/wire/shortcut or history deletion.
-Viewport depends on this atomic correction; neither implementation is claimed.
+Binding implementation v298 passes full2066Rust/67bridge/strictClippy/fmt/source/
+UI/version/roadmap/29rasters; optimized actual native two-shell proof pending,
+task still IN_PROGRESS. Viewport depends on this atomic correction and has no
+implementation yet. Initial synthetic CLI mouse fixture mismatch was corrected
+without weaker assertions and the full suite rerun; original inputs preserved.
 
 Terminal lifecycle/writer child DONE source8a30ba9f/v297 installed optimized
 3b25186b: actual plain native owned shell26 exit0 retains historical owner but

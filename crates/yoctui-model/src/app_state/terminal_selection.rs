@@ -9,6 +9,24 @@ impl App {
                     .position(|session| session.id == id)
             })
             .or_else(|| {
+                if !self.terminal.pane_sessions.is_empty()
+                    && self.terminal.pane_daemon_instance != self.daemon.instance_id
+                {
+                    return None;
+                }
+                if let Some((_, session)) = self
+                    .terminal
+                    .pane_sessions
+                    .iter()
+                    .find(|(pane, _)| *pane == self.pane_layout.focused)
+                {
+                    return session.and_then(|id| {
+                        self.daemon
+                            .pty_sessions
+                            .iter()
+                            .position(|session| session.id == id)
+                    });
+                }
                 (self.pty_selection < self.daemon.pty_sessions.len()).then_some(self.pty_selection)
             })
     }
@@ -316,13 +334,10 @@ fn platform_terminal_waiting(terminal: &PlatformTerminalState, daemon: &ClientDa
     let running = daemon.pty_sessions.iter().any(|session| {
         session.id == session_id && session.lifecycle == ClientDaemonLifecycle::Running
     });
-    let screen_ready = daemon
-        .pty_screens
-        .iter()
-        .any(|screen| {
-            screen.session_id == session_id
-                && screen.application_cursor
-                && screen.rows.iter().any(|row| !row.trim().is_empty())
-        });
+    let screen_ready = daemon.pty_screens.iter().any(|screen| {
+        screen.session_id == session_id
+            && screen.application_cursor
+            && screen.rows.iter().any(|row| !row.trim().is_empty())
+    });
     !running || !screen_ready
 }

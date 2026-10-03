@@ -1,4 +1,18 @@
 M114 current: DEMO-TERMINAL-PANE-BINDING-001 IN_PROGRESS, split before code.
+Implementation v298 uses shared typed pane/session projection, bounded local
+daemon-scoped bindings, replica reconciliation and existing reducer/mouse/prefix
+routes. Five model, four UI, protocol replica and later-history mouse regressions
+pass focused checks; pre-fix selected26 render assertion fails as expected.
+Existing inconsistent synthetic split fixtures now explicitly align initial
+focus/selection while retaining their assertions. Full rerun2066Rust/zero failures/
+nine unchanged ignores31targets/67bridge/strict workspaceClippy/fmt/source2900/
+UI/version/roadmap/29rasters PASS; all34 goldens only encoded297->298 identity.
+Initial full run exposed a similarly inconsistent CLI mouse fixture, corrected
+without weakening assertions before a complete passing rerun. Optimized native
+two-shell acceptance remains pending, not DONE. Storage preflight cleared173
+validated unused temporary outputs2393014573B (90dev libraries,23old297 test
+executables,60old release libraries), owner/link/live-use checks; current
+generated outputs/original source/images/symbols/assets preserved/rebuildable.
 Viewport inspection exposes an existing pane/history identity mismatch: with
 26 native retained sessions, split UI/mouse use first pane-count history rows,
 not the selected owned later shell/GDB addressed by input/inspector. Atomic

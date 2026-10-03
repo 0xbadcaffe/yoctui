@@ -18,6 +18,8 @@ fn next_generation_mouse_traps_dialogs_and_resizes_exact_terminal_axis() {
                 viewers: 1,
             });
     }
+    // The initially focused second pane displays the second session.
+    app.pty_selection = 1;
     let select_first = mouse_action_for_app(
         MouseInput {
             kind: MouseKind::Down,

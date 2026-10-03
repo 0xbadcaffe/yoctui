@@ -31,4 +31,6 @@ mod daemon_status_event_updates_client_telemetry_without_mutating_snapshot_shape
 
 mod client_replica_installs_authority_without_replacing_presentation;
 
+mod terminal_pane_replica_reconciles_session_and_daemon_identity;
+
 mod daemon_jobs_populate_shared_job_history;

@@ -1,6 +1,5 @@
 pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
     let layout = &app.pane_layout;
-    let selected_index = app.selected_terminal_index().unwrap_or(app.pty_selection);
     let mut panes = Vec::new();
     if app.platform_menuconfig_visible() {
         panes.push((area, layout.focused));
@@ -9,12 +8,8 @@ pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
     }
     let pane_count = panes.len();
     for (index, (rect, id)) in panes.into_iter().enumerate() {
-        let session_index = if pane_count == 1 {
-            selected_index
-        } else {
-            index
-        };
-        let session = app.daemon.pty_sessions.get(session_index);
+        let session_index = app.terminal_pane_session_index(id, index, pane_count);
+        let session = session_index.and_then(|index| app.daemon.pty_sessions.get(index));
         let title = session
             .map(|session| format!(" {} #{} {:?} ", session.name, id.0, session.lifecycle))
             .unwrap_or_else(|| format!(" pane #{} ", id.0));
@@ -30,7 +25,7 @@ pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
                 .iter()
                 .find(|details| details.id == session.id)
         });
-        let block = pane_block(app, &title, session_index == selected_index);
+        let block = pane_block(app, &title, id == layout.focused);
         let inner = block.inner(rect);
         frame.render_widget(block, rect);
         let status = session.map_or_else(

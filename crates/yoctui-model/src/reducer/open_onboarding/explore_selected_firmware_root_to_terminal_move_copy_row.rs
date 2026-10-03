@@ -215,23 +215,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.navigator_groups_expanded[group] = true;
         }
         Action::SelectPtySession { delta } => {
-            let count = app.daemon.pty_sessions.len();
-            app.pty_selection = if count == 0 {
-                0
-            } else if delta.is_negative() {
-                app.pty_selection
-                    .saturating_sub(delta.unsigned_abs())
-                    .min(count.saturating_sub(1))
-            } else {
-                app.pty_selection
-                    .saturating_add(delta as usize)
-                    .min(count.saturating_sub(1))
-            };
+            app.select_terminal_session(delta);
         }
         Action::SelectPtyPane { pane, index } => {
-            if index < app.daemon.pty_sessions.len() && app.pane_layout.focus(pane).is_ok() {
-                app.pty_selection = index;
-            }
+            app.select_terminal_pane(pane, index);
         }
         Action::TerminalTakeControl => {
             if app.daemon.status != ClientReplicaStatus::Current {
@@ -324,7 +311,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                             app.screen = Screen::TerminalSessions;
                             app.focus = FocusTarget::Workspace;
                             app.focus_return = None;
-                            app.pty_selection = app.daemon.pty_sessions.len();
+                            app.prepare_created_terminal_selection();
                             app.notification = Some("GitUI requested. Press o for writer control; Ctrl+B e returns to the retained editor; Ctrl+B t shows sessions.".into());
                         } else if dialog.request.kind == TerminalCreationKind::Menuconfig
                             && matches!(app.screen, Screen::Kernel | Screen::Firmware)
@@ -337,7 +324,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                             app.screen = Screen::TerminalSessions;
                             app.focus = FocusTarget::Workspace;
                             app.focus_return = None;
-                            app.pty_selection = app.daemon.pty_sessions.len();
+                            app.prepare_created_terminal_selection();
                             app.notification = Some("Debug tool requested. Press o to take writer control; Ctrl+B returns to Yoctui terminal controls.".into());
                         }
                         Effect::Terminal(TerminalEffect::Create {

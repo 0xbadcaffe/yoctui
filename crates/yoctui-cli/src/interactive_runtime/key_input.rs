@@ -150,11 +150,7 @@ impl InteractiveRuntime {
                         } else {
                             yoctui_model::SplitAxis::Vertical
                         };
-                        match runtime
-                            .app
-                            .pane_layout
-                            .split(runtime.app.pane_layout.focused, axis)
-                        {
+                        match runtime.app.split_terminal_pane(axis) {
                             Ok(_) => runtime.app.notification = Some("Terminal pane split".into()),
                             Err(error) => {
                                 runtime.app.notification =
@@ -163,11 +159,7 @@ impl InteractiveRuntime {
                         }
                     }
                     if command == PrefixCommand::ClosePane {
-                        match runtime
-                            .app
-                            .pane_layout
-                            .close(runtime.app.pane_layout.focused)
-                        {
+                        match runtime.app.close_terminal_pane() {
                             Ok(_) => runtime.app.notification = Some("Terminal pane closed".into()),
                             Err(error) => {
                                 runtime.app.notification =

@@ -27,6 +27,8 @@ pub struct TerminalWorkbenchState {
     pub scrollback_offset: usize,
     pub copy_row: usize,
     pub client_id: Option<[u8; 16]>,
+    pub pane_sessions: Vec<(crate::PaneId, Option<u64>)>,
+    pub pane_daemon_instance: Option<crate::DaemonModelInstanceId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

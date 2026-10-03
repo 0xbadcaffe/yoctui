@@ -26,6 +26,23 @@ real native two owned shells/split/session switching/clean owned exit required.
 Relevant model terminal_workbench/terminal_selection/selection reducer, shared
 app mouse mapping, UI pane projection and CLI existing prefix split/close routes.
 
+Implementation v298 underway: shared typed projection and daemon-scoped bindings,
+snapshot reconciliation and existing prefix/mouse/reducer routes. Five model
+regressions, four TestBackend render regressions, real protocol replica replacement
+and high-history mouse mapping pass focused checks (model42+worker1/app57/UI31).
+Pre-fix selected26 output regression failed as expected. Existing synthetic
+split fixtures now explicitly align initial focus with their selected session;
+their original behavior assertions remain unchanged. Full rerun2066Rust/zero
+failures/nine unchanged ignores31targets/67bridge/full strictClippy/fmt/source2900/
+UI/version/roadmap/29rasters PASS, all34 goldens only297->298 identity. The first
+full run exposed another inconsistent CLI mouse fixture; its intended session2
+setup was corrected without weakening assertions and the entire suite rerun.
+Optimized install and real native two-shell acceptance pending; not DONE.
+Storage preflight cleared173 validated obsolete temporary compiler outputs:
+90old dev libraries996455182B,23prior297 test executables433223448B,60old release
+libraries963335943B; owner/link/live-use checks, original data/current outputs
+preserved. These caches are rebuildable, not deleted source/image/debug assets.
+
 Ordinary autosize remains the next DEMO-TERMINAL-VIEWPORT-001, not implemented:
 actual native ordinary GDB/build shells retain120x40 while the visible pane is
 narrower/shorter. Current geometry and polling restrict resize to menuconfig.
@@ -39,6 +56,7 @@ geometry/TestBackend/fake socket/live shell/GDB tests. No new layout/shortcut/
 wire or relaxed budget. Bump/commit/push/optimized install/live source proof.
 
 ```bash
+cargo test -p yoctui-model terminal
 cargo test -p yoctui-app terminal
 cargo test -p yoctui-ui terminal
 cargo test -p yoctui --bin yoctui terminal

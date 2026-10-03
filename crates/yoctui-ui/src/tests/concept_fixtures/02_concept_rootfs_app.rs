@@ -220,6 +220,7 @@ pub(crate) fn concept_terminal_sessions_app() -> App {
     app.pane_layout
         .split(first, SplitAxis::Vertical)
         .expect("concept fixture can split its terminal layout");
+    app.pane_layout.focus(first).expect("selected shell owns first pane");
     app.pty_selection = 0;
     app.daemon.pty_sessions = [
         yoctui_model::ClientDaemonPtySummary {

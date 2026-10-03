@@ -368,8 +368,10 @@ pub(crate) fn ux_terminal_render_fixture() -> App {
                 dropped_line_feeds_lower_bound: 312,
             });
     }
+    let first = app.pane_layout.focused;
     app.pane_layout
-        .split(app.pane_layout.focused, yoctui_model::SplitAxis::Vertical)
+        .split(first, yoctui_model::SplitAxis::Vertical)
         .unwrap();
+    app.pane_layout.focus(first).unwrap();
     app
 }

@@ -276,16 +276,12 @@ pub(crate) fn terminal_session_mouse_action(
             } else {
                 collect_terminal_mouse_panes(&app.pane_layout.root, shell, &mut leaves);
             }
-            let single_pane = leaves.len() == 1;
+            let pane_count = leaves.len();
             leaves
                 .into_iter()
                 .enumerate()
                 .find_map(|(index, (area, pane))| {
-                    let session_index = if single_pane {
-                        app.selected_terminal_index().unwrap_or(app.pty_selection)
-                    } else {
-                        index
-                    };
+                    let session_index = app.terminal_pane_session_index(pane, index, pane_count)?;
                     (session_index < app.daemon.pty_sessions.len() && area.contains(mouse))
                         .then_some(Action::SelectPtyPane {
                             pane,
