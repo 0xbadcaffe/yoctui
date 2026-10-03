@@ -1,26 +1,26 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui  •  Project: unavailable  •  – Idle  •  Target: not selected                                            Daemon: ✓ Connected  •  BitBake: – Disconnected│
-┌Navigator───────────────┐┌Tasks: Build───────────────────────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
-│▾ Layers                ││Overall  progress unknown⠋  0/?                                                        ││No task selected.                          │
+│yoctui v0.1.294 • Git: unavailable • Project: build • T:not selected                                     D:✓ Connected/Local • BB:– Disconnected • Local 00:00│
+│Daemon health: ✓ Connected/Local · BitBake: – Disconnected                                                                                                    │
+│Workspace: /tmp/yoctui-snapshot-qz6yg1em/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                           │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator───────────────┐┌Tasks: not selected · All──────────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
+│▾ Layers                ││Overall  build not started · 0%                                                        ││No task selected.                          │
 │  ▱ discovering…        ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                                  ││Task facts appear as typed BitBake events  │
-│▾ Recipes               ││Task                   Recipe                Status        Time      Progress          ││arrive.                                    │
+│▾ Recipes               ││Task                Recipe             Status        Time      Progress                ││arrive.                                    │
 │  ▸ discovering…        ││                                                                                       ││                                           │
 │▾ Images                ││                                                                                       ││                                           │
 │  ▱ none discovered     ││                                                                                       ││                                           │
 │▾ Tasks                 ││                                                                                       ││                                           │
 │  ▱ Build               ││                                                                                       ││                                           │
-│  ▱ Test                ││                                                                                       ││                                           │
-│  ▱ QA                  ││                                                                                       │└───────────────────────────────────────────┘
-│  ▱ Devtool             ││                                                                                       │┌Secondary facts · Paths · Dependencies─────┐
-│  ▱ Wic                 ││                                                                                       ││Secondary facts, paths, and dependencies   │
-│  ▱ SDK                 ││                                                                                       ││unavailable.                               │
+│  ▱ Test                ││                                                                                       │└───────────────────────────────────────────┘
+│  ▱ QA                  ││                                                                                       │┌Secondary facts · Paths · Dependencies─────┐
+│  ▱ Devtool             ││                                                                                       ││Secondary facts, paths, and dependencies   │
+│  ▱ Wic                 ││                                                                                       ││unavailable.                               │
+│  ▱ SDK                 ││                                                                                       ││                                           │
 │  ▱ Security            ││                                                                                       ││                                           │
-│  ▱ Utility             ││                                                                                       ││                                           │
-│▾ Targets               │└───────────────────────────────────────────────────────────────────────────────────────┘│                                           │
-│  ▱ unknown             │┌Log Viewer — no task selected · ▶ Follow───────────────────────────────────────────────┐│                                           │
-│                        ││No task-specific log is available.                                                     ││                                           │
-│                        ││                                                                                       ││                                           │
-│                        ││                                                                                       ││                                           │
+│  ▱ Utility             │└───────────────────────────────────────────────────────────────────────────────────────┘│                                           │
+│▾ Targets               │┌Log Viewer — no task selected · ▶ Follow───────────────────────────────────────────────┐│                                           │
+│  ▱ unknown             ││No task-specific log is available.                                                     ││                                           │
 │                        ││                                                                                       ││                                           │
 │                        ││                                                                                       │└───────────────────────────────────────────┘
 │                        ││                                                                                       │┌Recent output · Recent Log (tail)──────────┐
@@ -28,21 +28,21 @@
 │                        ││                                                                                       ││                                           │
 │                        ││                                                                                       ││                                           │
 │                        ││                                                                                       ││                                           │
-│                        ││                                                                                       │└───────────────────────────────────────────┘
-│                        ││                                                                                       │┌Contextual Actions─────────────────────────┐
-│                        ││                                                                                       ││× Cancel active build  [c] — Disabled      │
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
+│                        │┌Job History · Active 0 · Queued 0 · Failed 0 · Recent complete 0 · Daemon-owned 0──────┐┌Contextual Actions─────────────────────────┐
+│                        ││Status        Operation       Type         Target / Context         Started   Elapsed  ││× Cancel active build  [c] — Disabled      │
 │                        ││                                                                                       ││  Reason: No active build can be cancelled.│
-│                        ││                                                                                       ││  Reason: No current environment capability│
+│                        ││                                                                                       ││  Reason: Direct probing was inconclusive; │
+│                        ││                                                                                       ││  Limitation: Modern Tinfoil API family is │
+│                        ││                                                                                       ││  Implementation: tinfoil.adapter.modern   │
 │                        ││                                                                                       ││✓ Open Logs            [l] — Local         │
-│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│✓ Build History        [h] — Local         │
-│                        │┌Job History · Active 0 · Queued 0 · Failed 0 · Recent complete 0 · Daemon-owned 0──────┐│? Build options        [B] — Unknown       │
-│                        ││Status        Operation       Type         Target / Context         Started   Elapsed  ││  Reason: No current environment capability│
 │                        ││                                                                                       │└───────────────────────────────────────────┘
 │                        ││                                                                                       │┌System Status──────────────────────────────┐
-│                        ││                                                                                       ││✓ Daemon Connected · version unavailable ·…│
-│                        ││                                                                                       ││– BitBake Disconnected · vunavailable · Jo…│
-│                        ││                                                                                       ││! Compat Unavailable · PTY 0 · Clients 0   │
-│L: --  R: --  P:--      ││                                                                                       ││! Workspace unknown · Build FS unavailable │
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│✓ Daemon Connected · Local · version unava…│
+│                        │┌Resources──────────────────────────────────────────────────────────────────────────────┐│– BitBake Disconnected · vunavailable · Jo…│
+│                        ││CPU --                       RAM 54%                      FS 66%                       ││! Compat Degraded g1 · A0 L12 U105 ?21 · P…│
+│L: --  R: --  P:--      ││unavailable                  ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫ ││✓ Build FS 66% · 3.4/10.0 GiB free · Works…│
 └────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
-│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   Tab Inspector   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit      00:00:00│
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Tab Focus   ↑/↓ select   h/l groups   Enter open   Ctrl+B prefix   F3 History   F4 Dashboard   F5 Logs   F6 Layers   F7 Recipes   F1 Help   F12 Menu   q Quit │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

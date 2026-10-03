@@ -314,12 +314,12 @@ notes = "DONE v293: explicit v4 half-intensity foreground projection after rever
 id = "DEMO-RELEASE-PTY-HARNESS-001"
 milestone = "M114"
 title = "Restore hermetic current-contract real PTY release acceptance"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3539
 required = true
 depends_on = ["DEMO-DOC-FIXTURE-MAINTENANCE-001"]
 verify = ["python3 -m unittest scripts/test_pty_acceptance.py", "./scripts/verify-release-quality.sh", "./scripts/check-docs.sh", "cargo fmt --all --check", "python3 scripts/check-library-layout.py", "./scripts/verify-roadmap.sh"]
-notes = "Split actual full-quality failures from parent before implementation: committed597dfe9e/v293 full2048Rust/61bridge/strictClippy/fmt PASS9existing ignores. Desktop PTY inherits DISPLAY -> outside XTerm/no observed frame; headless startup/keymap pass then flow obsolete capitalized title false failure exit0; hosted05fd97cf snapshot explicit uninitialized build lacks initializer. Make private environment/no-graphics test PTY/current built Cargo target/rendered readiness/current anchors and honest initialized daemon fixture, preserve8s/3s/per-stage bounds/negative/terminal restoration/resize checks, require clean exit rather than accepting forced kill. Add external helper tests, stop only owned fixture processes. Testing docs/version and full release gate; no new UI/product behavior or fake live claims. Source size<=500. Separate hosted atomic API deprecation stays later CI scope."
+notes = "DONE v294:13 helper regressions private immutable-input env/actual default-relative-absolute target/missing or nonexecutable fail-closed/initialized executable profile/no fake build/CPR actual cursor+fragmented+unknown/frame drain/title-not-readiness/negative missing restore/forced-kill rejection. Real desktop full release gate PASS startup/keymap/40x12 warning+160x48 recovery/3 real IPC daemon snapshots/visible synchronized first-frame0.377700+0.394362s/clean0 exits/restoration/README/utility/embedded2. Startup8s/quit3s/snapshot dismissal0.5/task2 bounds unchanged; output262144 cap enforced. Docs/CLIhelp+doctor+headless current Cargo binary/UI377/fmt/source2891/UI/version/roadmap PASS. Logs /tmp/yoctui-demo-release-harness-v294.log and harness-docs/harness-ui-v294.log. Historical six live entries/original concepts unchanged;34 goldens only293->294 identity,29 pinned PNGs refreshed. Offline snapshot provenance and former invalid setup-escape metrics explicit; no product feature/current native/post-reboot proof. Parent full verification still required; new-stable API deprecation separate later CI."
 
 [[task]]
 id = "DEMO-LAYOUT-HYGIENE-001"

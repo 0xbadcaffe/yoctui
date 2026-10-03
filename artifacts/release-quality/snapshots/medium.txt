@@ -1,30 +1,30 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui • Project: unavailable • – Idle • T:not selected          D:✓ Connected • BB:– Disconnected│
-┌Navigator 2/27──────┐┌Current Build · Idle────────────────────────────────────────────────────────┐
-│▾ OVERVIEW          ││Overall  progress unknown⠋  0/?                                             │
+│yoctui v0.1.294 • Git: unavailable • Project…D:✓ Connected/Local • BB:– Disconnected • Local 00:00│
+│Daemon health: ✓ Connected/Local · BitBake: – Disconnected                                        │
+│Workspace: /tmp/yoctui-snapshot-_ibyevmr/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--…│
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator · 2/31 ↓──┐┌Build Overview──────────────────────────────────────────────────────────────┐
+│▾ OVERVIEW          ││Overall  build not started · 0%                                             │
 │  ▱ Dashboard       ││A0 W0 !0 ✕0 --                                                              │
-│▾ CONTENT           ││Target: none  Backend: bridge  Status: Idle  Exit code: none                │
-│  ? Layers          ││Parse progress: not parsing  Tasks: 0/? (active: 0)  Warnings: 0  Errors: 0 │
-│  ? Recipes         ││Machine: unknown  Distro: unknown  Release: unknown                         │
-│  ? Packages        ││Host CPU: unavailable  Build disk free: unavailable  Environment: ready     │
-│  ? Images          ││Sstate reuse: unavailable — backend does not report progress                │
-│  ? SDK             ││                                                                            │
-│▾ BUILD             │└────────────────────────────────────────────────────────────────────────────┘
-│  ? Tasks           │┌Active Tasks · 0 active · 0 retained comple┐┌Next Action────────────────────┐
-│  ▱ Logs        LIVE││No active task events. Start a build with B││Recommended                    │
-│  ▱ Errors          ││                                           ││Build image [B] — unknown      │
-│  ? Configuration   ││                                           ││Reason: No current environment │
-│  ? Dependencies    ││                                           ││capability snapshot:           │
-│▾ VALIDATE          ││                                           ││bitbake.build.                 │
-│  ? Testing         ││                                           ││                               │
-│  ? Security        │└───────────────────────────────────────────┘└───────────────────────────────┘
-│  ? QA              │┌Attention · 0 retained · e review──┐┌Workbench Center · live source projecti┐
-│▾ TOOLS             ││✓ No retained warnings or errors.  ││Next: Build image [B] · unknown        │
-│  ? Raw Mode        ││[e] opens diagnostics.             ││[F3] Context: none retained            │
-│  ? Terminal Session││                                   ││[F2/F3] Active: tasks 0 · jobs 0       │
-│  ? Devtool         ││                                   ││[e] Failure: none retained             │
-│  ? QEMU / Wic      ││                                   ││[F8] Artifact: none retained           │
-│  ? Maintenance     ││                                   ││[f] Favorite: none                     │
-└────────────────────┘└───────────────────────────────────┘└───────────────────────────────────────┘
-B build   f favorites   t terminals   F2 Tasks   e errors   ? Help   Ctrl+P Menu   q Quit   00:00:00
-────────────────────────────────────────────────────────────────────────────────────────────────────
+│  ▱ Insights        ││Exit code: none  Status: Idle  Target: none  Backend: bridge                │
+│▾ CONTENT           ││Parse progress: not parsing  Tasks: 0/— (active: 0)  Warnings: 0  Errors: 0 │
+│    Layers          ││Machine: unknown  Distro: unknown  Release: unknown                         │
+│    Recipes         ││Host CPU: unavailable  Build disk free: 3.4 GiB  Environment: ready         │
+│    Packages        ││Sstate reuse: unavailable — summary unavailable, stale, or no sstate request│
+│    Images          ││                                                                            │
+│  ▱ Hardware        ││                                                                            │
+│    Kernel          │└────────────────────────────────────────────────────────────────────────────┘
+│    U-Boot / BIOS   │┌Operational Command Center──────────────────────────────────────────────────┐
+│    SDK             ││Next: Build image [Alt+b] — unknown                                         │
+│▾ BUILD             ││Active: 0 task(s) · 0 job(s) | Attention: none retained                     │
+│    Tasks           ││Context: none retained                                                      │
+│  ▱ Logs        LIVE││Artifact: none retained                                                     │
+│  ▱ Errors          ││Favorite: none [f]                                                          │
+│    Configuration   │└────────────────────────────────────────────────────────────────────────────┘
+│    Dependencies    │┌Resources───────────────────────────────────────────────────────────────────┐
+│▾ VALIDATE          ││CPU --                   RAM 54%                   FS 66%                   │
+│    Testing         ││unavailable              ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫ │
+└────────────────────┘└────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│h/l groups   Enter open   Ctrl+B prefix   ? Help   Ctrl+P Menu   q Quit                           │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘

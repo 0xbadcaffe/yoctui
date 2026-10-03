@@ -1,4 +1,17 @@
-M114 current: DEMO-RELEASE-PTY-HARNESS-001 IN_PROGRESS; full parent remains pending.
+M114 current: DEMO-FULL-VERIFY-001 IN_PROGRESS; PTY harness child DONE v294.
+13 external helper regressions/private env/actual Cargo target/fail-closed binary/
+honest initialized executable offline profile/nonbuildable fixture/actual composed
+CPR including fragments/unknown rejection/frame draining/title not readiness/
+missing restore/forced-kill negatives PASS. Real desktop full release gate PASS:
+startup/keymap/40x12 warning+wide recovery/3 actual IPC daemon snapshots/perf/
+clean0 exit+restoration/README/utility/embedded2. Unchanged8s/3s/0.5s/task2s
+bounds; output cap enforced. Synchronized visible fixture startup0.377700 and
+0.394362s includes50msquiet; not comparable to old setup-only1-exit samples.
+Current-Cargo-binary docs+doctor+headless/UI377/fmt/source2891/UI/version/roadmap
+PASS. All34 goldens only293->294 identity;29 rasters refreshed; historical six
+live entries/original images untouched. Logs release-harness-v294/harness-docs/
+harness-ui-v294 under/tmp. No new product/UI feature or native/reboot claim.
+Final full baseline on committed294 then docs/native/optimized/CI/pub pending.
 Committed597dfe9e/v293 full2048Rust/61bridge/strictworkspaceClippy/fmt PASS;
 9existing ignores unchanged. Original desktop release probe escaped its observed
 PTY into XTerm due DISPLAY; owned private client2297854 stopped, unrelated

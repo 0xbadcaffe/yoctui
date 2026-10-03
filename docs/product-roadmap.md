@@ -2,6 +2,13 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+PTY harness child DONE v294: real desktop startup/keymap/resize+recovery/daemon
+snapshots/synchronized visible frame/clean exit+restoration gates pass;13 pure
+positive/negative helper tests, actual Cargo target and private environment,
+honest offline fixture provenance, unchanged bounds. Docs/UI377/source/fmt
+checks pass; full parent now requires final committed-source baseline rerun.
+Native durable/reboot/optimized rehearsal and final hosted CI remain pending.
+
 Full parent v293 baseline passes2048Rust/61bridge/strictClippy/fmt, but real PTY
 release gate exposed desktop-handoff and obsolete readiness/profile fixtures.
 DEMO-RELEASE-PTY-HARNESS-001 is the atomic current child: hermetic observed PTY,

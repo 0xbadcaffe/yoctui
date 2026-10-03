@@ -1,24 +1,24 @@
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│yoctui • – Idle • T:not selected                                 D:✓ Connected│
-Panes: Navigator  [Workspace]  Inspector  Tab/Shift+Tab
-┌Current Build · Idle──────────────────────────────────────────────────────────┐
-│Overall  progress unknown⠋  0/?                                               │
-│A0 W0 !0 ✕0 --                                                                │
-│Target: none  Backend: bridge  Status: Idle  Exit code: none                  │
-│Parse progress: not parsing  Tasks: 0/? (active: 0)  Warnings: 0  Errors: 0   │
-│Machine: unknown  Distro: unknown  Release: unknown                           │
-│Host CPU: unavailable  Build disk free: unavailable  Environment: ready       │
-│Sstate reuse: unavailable — backend does not report progress                  │
-│                                                                              │
-│                                                                              │
+│yoctui v0.1.294 • Git: unavailable • T:not selectedD:✓ Connected/Local • 00:00│
+│Daemon health: ✓ Connected/Local · BitBake: – Disconnected                    │
+│Workspace: /tmp/yoctui-snapshot-81h_738h/build  |  Build: none  |  Task: 0 / …│
 └──────────────────────────────────────────────────────────────────────────────┘
-┌Operational Command Center────────────────────────────────────────────────────┐
-│Next: Build image [B] — unknown                                               │
-│Active: 0 task(s) · 0 job(s) | Attention: none retained                       │
-│Context: none retained                                                        │
-│Artifact: none retained                                                       │
-│Favorite: none [f]                                                            │
-│Terminal: none [t]                                                            │
+Panes: [Navigator]  Tab/Shift+Tab
+┌Navigator · 2/31 ↓────────────────────────────────────────────────────────────┐
+│▾ OVERVIEW                                                                    │
+│  ▱ Dashboard                                                                 │
+│  ▱ Insights                                                                  │
+│▾ CONTENT                                                                     │
+│    Layers                                                                    │
+│    Recipes                                                                   │
+│    Packages                                                                  │
+│    Images                                                                    │
+│  ▱ Hardware                                                                  │
+│    Kernel                                                                    │
+│    U-Boot / BIOS                                                             │
+│    SDK                                                                       │
+│▾ BUILD                                                                       │
 └──────────────────────────────────────────────────────────────────────────────┘
-B build   f favorites   t terminals   F2 Tasks   ? Help   Ctrl+P Menu   q Quit
-────────────────────────────────────────────────────────────────────────────────
+┌──────────────────────────────────────────────────────────────────────────────┐
+│h/l groups   Enter open   Ctrl+B prefix   ? Help   Ctrl+P Menu   q Quit       │
+└──────────────────────────────────────────────────────────────────────────────┘

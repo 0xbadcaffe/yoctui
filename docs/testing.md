@@ -25,6 +25,42 @@ and answer the displayed quit confirmation before requiring successful exit
 and terminal restoration. The initial window-title escape sequence is not
 treated as a rendered frame.
 
+All five release PTY probes now share private XDG/Yocto environment setup and
+explicit `YOCTUI_TERMINAL_GRAPHICS=none`, so a graphical desktop cannot move
+the client into an unobserved XTerm. They resolve the actual `CARGO_TARGET_DIR`
+binary (including relative targets); a missing configured binary fails instead
+of falling back to an old repository binary. The documentation headless probe
+uses the same binary resolver. This changes test setup, not normal graphics
+handoff behavior.
+
+The terminal compositor answers cursor-position requests from its observed
+cursor, including fragmented requests, and drains the completed frame before
+sending the next key. This prevents a partial footer from coalescing Escape
+with a cursor report. Startup/quit bounds remain eight/three seconds; snapshot
+onboarding dismissal and task routing retain their 0.5/two-second bounds.
+Resize coverage requires the actual below-80x24 warning and wide recovery;
+forced termination or exit status one is no longer an accepted successful run.
+All probes require alternate-screen entry and restoration.
+The first-frame metric includes the bounded 50 ms quiet-output synchronization
+used to finish the observed frame and answer its queries. Earlier tracked samples
+that measured only terminal setup escapes and exited with status one are not
+valid startup-performance baselines; do not compare them as a speed regression.
+
+Snapshot captures use a real isolated Yoctui daemon with a temporary executable
+initializer, configuration files and the existing deterministic bridge fixture.
+The fixture BitBake command accepts only `--version`, never an image build.
+The wide snapshot must show the current unset-target Tasks title, footer routes
+and actual connected daemon. Capture occurs before the quit overlay; version
+identity is retained. These tests are offline integration evidence, not live
+Yocto/OpenBMC, optimized-installation or post-reboot certification. Only their
+owned fixture daemon/client is stopped. Thirteen positive/negative helper tests
+run at the release-quality boundary:
+
+```bash
+python3 -m unittest scripts/test_pty_acceptance.py
+./scripts/verify-release-quality.sh
+```
+
 ## Environment path setup regression
 
 `cargo test --workspace environment_setup` covers the typed draft, Unicode and

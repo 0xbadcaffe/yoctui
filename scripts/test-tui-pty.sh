@@ -9,29 +9,17 @@ import os, pty, select, struct, subprocess, sys, tempfile, time, termios, fcntl
 
 root = sys.argv[1]
 sys.path.insert(0, os.path.join(root, "scripts"))
-from pty_acceptance import TerminalAcceptance
+from pty_acceptance import binary_path, isolated_environment, TerminalAcceptance
 artifact_root = os.path.join(root, "artifacts", "release-quality")
 os.makedirs(artifact_root, exist_ok=True)
 with tempfile.TemporaryDirectory(prefix="yoctui-pty-", dir="/tmp") as build:
-    isolated_env = os.environ.copy()
-    isolated_env["TERM"] = "xterm-256color"
-    for key in list(isolated_env):
-        if key.startswith("YOCTUI_") or key in {"BUILDDIR", "BBPATH", "BBSERVER", "TEMPLATECONF"}:
-            isolated_env.pop(key)
-    for variable, directory in (
-        ("XDG_CONFIG_HOME", "config"),
-        ("XDG_STATE_HOME", "state"),
-        ("XDG_RUNTIME_DIR", "runtime"),
-    ):
-        path = os.path.join(build, directory)
-        os.mkdir(path, mode=0o700)
-        isolated_env[variable] = path
+    isolated_env = isolated_environment(build)
     master, slave = pty.openpty()
     fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
     def become_session_leader():
         os.setsid()
         fcntl.ioctl(0, termios.TIOCSCTTY, 0)
-    proc = subprocess.Popen([os.path.join(root, "target/debug/yoctui"), "--backend", "process", "--no-color"], stdin=slave, stdout=slave, stderr=slave, preexec_fn=become_session_leader, env=isolated_env)
+    proc = subprocess.Popen([binary_path(root), "--backend", "process", "--no-color"], stdin=slave, stdout=slave, stderr=slave, preexec_fn=become_session_leader, env=isolated_env)
     os.close(slave)
     raw = bytearray()
     terminal = TerminalAcceptance(master, proc, raw, 80, 24)

@@ -7,16 +7,16 @@
     {
       "width": 80,
       "height": 24,
-      "first_frame_seconds": 0.009438060999855225,
-      "bytes": 1084,
-      "returncode": 1
+      "first_frame_seconds": 0.3776997340028174,
+      "bytes": 9156,
+      "returncode": 0
     },
     {
       "width": 160,
       "height": 48,
-      "first_frame_seconds": 0.012482910000471747,
-      "bytes": 1086,
-      "returncode": 1
+      "first_frame_seconds": 0.39436197799659567,
+      "bytes": 18369,
+      "returncode": 0
     }
   ]
 }

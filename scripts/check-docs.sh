@@ -279,7 +279,14 @@ do
 done
 
 cargo build -q -p yoctui
-headless_output="$(./scripts/headless-workload.sh target/debug/yoctui bridge)"
+docs_binary="$(python3 - "$repo_root" <<'PY'
+import sys
+sys.path.insert(0, "scripts")
+from pty_acceptance import binary_path
+print(binary_path(sys.argv[1]))
+PY
+)"
+headless_output="$(./scripts/headless-workload.sh "$docs_binary" bridge)"
 if [[ "$headless_output" != *"headless diagnostic completed"* ]]; then
   printf '%s\n' 'documentation check: isolated headless bridge diagnostic did not complete' >&2
   exit 1

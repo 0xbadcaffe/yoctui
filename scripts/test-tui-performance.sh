@@ -4,40 +4,35 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 cargo build -p yoctui >/dev/null
 python3 - "$repo_root" <<'PY'
-import json, os, pty, select, struct, subprocess, sys, termios, fcntl, time, tempfile
+import json, os, sys, tempfile, time
 root = sys.argv[1]
-reports = os.path.join(root, 'artifacts', 'release-quality', 'performance')
+sys.path.insert(0, os.path.join(root, "scripts"))
+from pty_acceptance import isolated_environment, start_terminal
+reports = os.path.join(root, "artifacts", "release-quality", "performance")
 os.makedirs(reports, exist_ok=True)
 rows = []
 for width, height in ((80, 24), (160, 48)):
-    with tempfile.TemporaryDirectory(prefix='yoctui-perf-', dir='/tmp') as tmp:
-        os.mkdir(os.path.join(tmp, 'build'))
-        master, slave = pty.openpty()
-        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', height, width, 0, 0))
+    with tempfile.TemporaryDirectory(prefix="yoctui-perf-", dir="/tmp") as tmp:
+        build = os.path.join(tmp, "build")
+        os.mkdir(build)
+        environment = isolated_environment(tmp)
         started = time.perf_counter()
-        proc = subprocess.Popen([os.path.join(root, 'target/debug/yoctui'), '--backend', 'process', '--build-dir', os.path.join(tmp, 'build'), '--no-color'], stdin=slave, stdout=slave, stderr=slave, start_new_session=True)
-        os.close(slave)
-        raw = bytearray(); first_frame = None; deadline = time.monotonic() + 8
-        while time.monotonic() < deadline:
-            ready, _, _ = select.select([master], [], [], .05)
-            if ready:
-                try: raw.extend(os.read(master, 65536))
-                except OSError: break
-                # Compact 80-column layouts can omit the product title. A
-                # terminal clear/home sequence still proves that a frame was
-                # rendered, so accept it as the first-frame signal.
-                if first_frame is None and (b'yoctui' in raw.lower() or b'\x1b[2J' in raw or b'\x1b[H' in raw):
-                    first_frame = time.perf_counter() - started
-                if first_frame is not None: break
-        os.write(master, b'q\r')
-        try: proc.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            proc.kill(); proc.wait(timeout=2)
-        os.close(master)
-        rows.append({'width': width, 'height': height, 'first_frame_seconds': first_frame, 'bytes': len(raw), 'returncode': proc.returncode})
-if any(row['first_frame_seconds'] is None or row['first_frame_seconds'] > 8 for row in rows):
-    raise SystemExit(f'performance budget exceeded: {rows}')
-with open(os.path.join(reports, 'tui.json'), 'w') as handle:
-    json.dump({'budgets': {'first_frame_seconds': 8, 'output_bytes': 262144}, 'samples': rows}, handle, indent=2)
-print('TUI performance budgets passed')
+        terminal = start_terminal(root, environment, width, height,
+                                  "--backend", "process", "--build-dir", build, "--no-color")
+        try:
+            # Window title and setup clear/home escapes are not a rendered frame.
+            terminal.wait_for("Esc dismiss")
+            first_frame = time.perf_counter() - started
+            terminal.dismiss_onboarding()
+            terminal.finish()
+            rows.append({"width": width, "height": height, "first_frame_seconds": first_frame,
+                         "bytes": len(terminal.raw), "returncode": terminal.process.returncode})
+        finally:
+            terminal.cleanup()
+            os.close(terminal.master)
+with open(os.path.join(reports, "tui.json"), "w") as handle:
+    json.dump({"budgets": {"first_frame_seconds": 8, "output_bytes": 262144}, "samples": rows}, handle, indent=2)
+if any(row["first_frame_seconds"] > 8 or row["bytes"] > 262144 or row["returncode"] != 0 for row in rows):
+    raise SystemExit(f"performance budget exceeded: {rows}")
+print("TUI performance budgets passed")
 PY

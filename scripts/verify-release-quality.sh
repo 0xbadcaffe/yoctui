@@ -2,6 +2,7 @@
 set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
+python3 -m unittest scripts/test_pty_acceptance.py
 ./scripts/test-tui-pty.sh
 ./scripts/test-tui-keymap.sh
 ./scripts/test-tui-flow.sh

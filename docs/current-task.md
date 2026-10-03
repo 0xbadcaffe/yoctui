@@ -1,39 +1,35 @@
 # Current Task
 
-**ID:** DEMO-RELEASE-PTY-HARNESS-001
-**Title:** Restore hermetic current-contract real PTY release acceptance
+**ID:** DEMO-FULL-VERIFY-001
+**Title:** Pass full Rust Python and release quality checks for demo code
 **Status:** IN_PROGRESS
 
-Parent DEMO-FULL-VERIFY-001 remains IN_PROGRESS. Committed597dfe9e/v293 full
-workspace2048Rust/61bridge/strictClippy/fmt PASS;9 existing ignores unchanged.
-Original desktop run fails Esc-dismiss readiness because inherited DISPLAY
-launches XTerm outside the observed PTY. Headless rerun passes startup/keymap
-then flow fails only obsolete capitalized title check despite exit0. Hosted
-05fd97cf snapshot gate fails explicit uninitialized build lacking initializer.
-Owned stray test client2297854/private yoctui-pty-nnqocgz0 and its XTerm stopped;
-unrelated daemons/clients preserved. Evidence final-*-v293/headless-release
-logs under /tmp. Hosted new-stable atomic API deprecation is a separate later
-CI task, not mixed into this harness correction.
+Committed prerequisites include v294 hermetic real PTY harness child:
+13 pure helper tests; unchanged startup8s/quit3s/snapshot-dismiss0.5s/task2s
+bounds; actual configured Cargo binary; isolated no-graphics PTY; fragmented
+CPR from composed cursor and bounded frame draining; honest initialized offline
+daemon fixture with unset-target title; clean0 exit/restoration/resize recovery.
+Full release-quality/README/docs/UI377/fmt/source2891/UI/version/roadmap PASS.
+Two fixture synchronized startup samples0.377700/0.394362s with0 exits, not
+optimized/native proof or comparable to old setup-escape samples with1 exits.
+Tracked generated snapshots are offline temporary profile evidence, not live
+OpenBMC; original live evidence/source/images/symbols preserved. No new UI behavior.
 
-Small coherent child outcome: all real PTY release probes use private XDG/
-Yocto environment and explicit no-graphics test terminal, actual configured
-Cargo build target, rendered screen synchronization/current case and honest
-daemon profile fixture. Reuse existing deterministic bridge if needed; never
-claim fixture is real Yocto. Preserve startup8s/quit3s/current per-stage bounds,
-all negative/terminal restoration/geometry checks; require clean exit rather
-than legacy forced-kill acceptance. Capture workbench before quit overlay,
-resize through unsupported dimensions and back, stop only owned fixture daemon.
-Add pure helper/protocol/environment/binary-selection positive/negative tests.
-No product behavior/UI change inferred. Update testing provenance/runbook,
-bump maintained script change; keep sources<=500. Verify full release gate,
-then resume parent full verification, final docs/native/reboot/optimized/CI/pub.
+Now run full workspace2048Rust/61bridge/strictworkspace Clippy plus release/
+docs/roadmap on the committed current source/binary, not earlier293 certificate.
+Do not newly ignore tests or weaken gates. Remaining final docs/source-bound
+flamegraph/native durable tools/profile/user service/cold restart/coordinated
+actual reboot/optimized real all-screen boot/GDB/CI/publication remain pending.
+Hosted new-stable atomic API deprecation is a separate later CI correction.
+Two compile workers; preserve user captures and unrelated daemon/client jobs.
 
 ```bash
-python3 -m unittest scripts/test_pty_acceptance.py
+cargo fmt --all --check
+cargo test --workspace --all-features --no-fail-fast
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
 ./scripts/verify-release-quality.sh
 ./scripts/check-docs.sh
-cargo fmt --all --check
-python3 scripts/check-library-layout.py
 ./scripts/verify-roadmap.sh
 ```
 
