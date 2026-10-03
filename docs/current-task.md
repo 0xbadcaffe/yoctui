@@ -1,8 +1,26 @@
 # Current Task
 
-**ID:** DEMO-PUBLISH-001
-**Title:** Publish verified public crate graph to crates.io and verify registry availability
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
 **Status:** IN_PROGRESS
+
+Publication-only user request completed; this pre-existing demo task is the
+deferred queue handoff, not authorization to resume it in this turn. Do not
+refresh README/operator guide, repair CI, restart daemon or reboot until work
+is resumed under user direction. No broader demo-readiness claim.
+
+DEMO-PUBLISH-001 DONE: all seven public crates published as0.1.309 by Cargo1.97
+from clean5284a3f2, with unchanged feed7995 public application source. Full
+package verification and locked batch dry-run/upload exit0. Each exact public
+index version is not yanked; uploaded archive SHA256 and independently downloaded
+static.crates.io archive SHA256 match its index checksum. Private e2e/shell
+remain unpublished. Receipt: artifacts/release-quality/cratesio/0.1.309.json.
+Installed optimized309/0cefb0ca remains unchanged. Final service check found
+daemon2732515 exited gracefully at20:15:36UTC, status0/Result=success; enabled
+but inactive, cause not established. No daemon restart performed in this pass;
+active demo availability is not certified by publication.
+
+## Completed publication verification and historical scope
 
 DEMO-PUBLISH-HELP-CONTRACT-001 DONE: sourced Bash help contract accepts actual
 committed banner/Usage/options/doctor/attach/daemon and rejects 14 independent
@@ -12,7 +30,7 @@ packaged version/help/private doctor. Successful log:
 /tmp/yoctui-publish-package-verified-v309.log. Original failure retained:
 /tmp/yoctui-publish-package-v309.log. Bash syntax, fmt/UI/roadmap checks pass.
 Public source/Cargo lock/README/operator guide/CI remain identical to feed7995.
-Resume authenticated dry-run and authorized existing309 publication now.
+Authenticated locked dry-run/publication and registry checksums are now DONE.
 
 ```bash
 ./scripts/test-cratesio-package-contract.sh
@@ -23,20 +41,21 @@ cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```
 
-Parent scope retained below:
+Completed publication scope retained below:
 2026-10-03 user override: from publication/README/CI, do only publication now,
 then explain manual commands and automation. Publish existing 0.1.309 public
 source without a version bump/product change. Dependencies DEMO-FULL-VERIFY-001
 and DEMO-TERMINAL-KILL-SAFETY-001 are DONE. Sourcefeed7995 has ordinary full
 2127Rust/zero failures/nine unchanged ignores,67bridge/strictClippy evidence.
-Native installed client/daemon309 remains running; do not restart it.
+Native installed client309 remains unchanged; final daemon graceful stop is
+recorded above. Do not restart it in this publish-only pass.
 
 No README/operator-guide refresh, CI repair, coordinated reboot, new image/kernel
 build, presentation commit/push or unrelated cleanup this turn. Previous parent
 DEMO-INSTALL-LIVE-001, docs/CI/reboot tasks remain incomplete. Known hosted
 test/performance-fast failures must not be represented as green.
 
-Run existing package verification unchanged: seven public archives under10MiB,
+Completed existing package verification: seven public archives under10MiB,
 no target/artifacts/Git contents, bundled bridge, extracted public graph build
 and packaged version/help/doctor. Check current registry absence and authenticated
 Cargo dry-run before uploading only yoctui-utils/model/protocol/bitbake/app/ui
@@ -56,7 +75,7 @@ cargo publish --dry-run --locked -j 2 --registry crates-io \
 ./scripts/verify-roadmap.sh
 ```
 
-Update registry/status/current task and commit evidence after a verified outcome.
+Registry/status/current handoff and publication receipt record the verified outcome.
 Do not mark deferred docs/CI/reboot/parent work DONE or resume it this turn.
 The retained sections below describe the historical parent/child work, not an
 additional active task or authorization to repair CI/change the product now.

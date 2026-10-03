@@ -1,21 +1,31 @@
-M114 current: DEMO-PUBLISH-001 IN_PROGRESS; help-contract child DONE.
+M114 publication-only request DONE; deferred handoff DEMO-INSTALL-LIVE-001.
+All seven public0.1.309 crates uploaded from clean5284a3f2, locked dry-run and
+publish exit0; public source/Cargo lock/README/operator guide/CI match feed7995.
+Each exact not-yanked index entry checksum matches uploaded and independently
+downloaded archives. Receipt artifacts/release-quality/cratesio/0.1.309.json.
+Private e2e/shell unpublished; installed optimized309/0cefb0ca unchanged.
+Final daemon health check: enabled but inactive, graceful2732515 stop20:15:36UTC,
+status0/Result=success/NRestarts0; cause not established, not a crash claim.
+No daemon restart or broader demo/README/CI/reboot work in this publish-only pass.
+
+Help-contract child DONE.
 Sourced Bash verifier accepts real309 help and rejects 14 independent obsolete/
 incomplete negatives. Full package size/exclusions/bundled bridge/extracted
 all-feature graph build/version/help/private doctor PASS in
 /tmp/yoctui-publish-package-verified-v309.log; original failed log retained.
 Bash syntax/fmt/UI/roadmap PASS. Public source/Cargo lock/README/operator guide/
-CI identical to feed7995. No product source/version change; publication next.
+CI identical to feed7995. No product source/version change; publication DONE.
 
-M114 parent: DEMO-PUBLISH-001 IN_PROGRESS (2026-10-03 publish-only override).
+Completed M114 parent: DEMO-PUBLISH-001 DONE (2026-10-03 publish-only override).
 User requests existing v0.1.309 publication plus manual/automated instructions,
 not README refresh or CI repair. Those tasks and coordinated reboot/full parent
 acceptance remain incomplete. Sourcefeed7995 has prior ordinary full2127Rust/
 67bridge/strictClippy evidence; no application/version change is planned.
-All seven registry crates currently latest0.1.118, no0.1.309 entry. Existing
+Before publication all seven registry crates latest0.1.118, no0.1.309 entry. Existing
 verify-cratesio-package.sh checks archives, size/exclusions, bundled bridge
 and extracted graph/build/CLI/doctor. Package verification passes;
-dry-run, authenticated uploads and registry checksums remain unverified.
-Native installed/daemon309 service is active; no environment change/restart.
+dry-run, authenticated uploads and registry checksums now pass.
+Native installed309 unchanged; final graceful daemon stop recorded above.
 
 Historical M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; native children DONE.
 Kill DONE sourcefeed7995/v309 optimized0cefb0ca/build6m30/install1.53s. Actual

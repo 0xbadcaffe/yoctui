@@ -3,10 +3,16 @@
 ## M114 — OpenBMC presentation/demo release polish
 
 2026-10-03 immediate user override: publish existing v0.1.309 only, then provide
-manual commands and explain existing automation. DEMO-PUBLISH-001 is current;
+manual commands and explain existing automation. DEMO-PUBLISH-001 DONE;
 DEMO-PUBLISH-HELP-CONTRACT-001 DONE: actual help accepted, 14 independent
 incomplete/obsolete negatives rejected, full package/build/CLI/doctor checks
-pass. Public source remains feed7995; authenticated publication is next.
+pass. All seven0.1.309 public crates published from clean5284a3f2; unchanged
+feed7995 application source, locked dry-run/upload exit0, each not-yanked index
+checksum equals uploaded and independently downloaded archive. Receipt:
+artifacts/release-quality/cratesio/0.1.309.json. Installed optimized309 unchanged;
+final service check found graceful daemon stop/status0, enabled but inactive.
+No restart in publish-only scope; active demo availability not certified.
+DEMO-INSTALL-LIVE-001 is the deferred handoff, not resumed work in this turn.
 README/operator-guide refresh, CI repair and coordinated reboot/full parent
 acceptance remain incomplete and deferred. Package/build verification and exact
 registry/checksum evidence remain required. No product source/version change,
