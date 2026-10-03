@@ -1,6 +1,7 @@
 M114 current: DEMO-DAEMON-CATALOG-HOTSPOT-001 IN_PROGRESS; parent audit paused.
-Measured native303619-sample profile: repeated immutable catalog creation41.7%
-inclusive weighted CPU, drop10% (nested, not additive); daemon0.998700%/client
+Measured native303619-sample profile: needed52.17% inclusive weighted CPU,
+catalog constructor41.58%/drop9.96% beneath it (do not add parent/child);
+daemon0.998700%/client
 0.208019% of one logical CPU. Source needed(current) rebuilds138-entry catalog
 each idle poll even when backend APIs are known. Split private OnceLock catalog
 reuse before code, preserving all current-snapshot authority/probe/retry/cancel/

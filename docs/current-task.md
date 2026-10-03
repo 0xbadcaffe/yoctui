@@ -4,8 +4,9 @@
 **Title:** Reuse the immutable capability catalog in the daemon idle recovery check
 **Status:** IN_PROGRESS
 
-Native303 source-bound619-sample flamegraph shows catalog construction41.7%
-inclusive weighted CPU and catalog drop10% (do not add nested percentages);
+Native303 source-bound619-sample flamegraph shows needed52.17% inclusive
+weighted CPU; its catalog constructor41.58% and catalog drop9.96% dominate
+that path (do not add parent/child percentages);
 daemon steady-state0.998700%/client0.208019% of one logical CPU. Actual source
 BackendRecovery::poll calls needed(current) each idle loop; needed constructs
 the138-entry immutable built-in catalog again even when all backend APIs are
