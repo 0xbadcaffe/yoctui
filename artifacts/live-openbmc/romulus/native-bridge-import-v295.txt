@@ -1,5 +1,5 @@
-M114 native bridge vendored imports — implementation verification (partial)
-2026-10-03; product0.1.295. Installed-client acceptance still pending.
+M114 native bridge vendored imports — PASS (not full demo/reboot/CI acceptance)
+2026-10-03; product0.1.295, committed62716abc4653ee7d79b3289a4f92ce760613c51f.
 
 The actual retained OpenBMC BitBake2.19.1 generated parser imports
 pysh.pyshtables from bb.pysh.pyshyacc. Plain local source/build workers had only
@@ -62,5 +62,36 @@ SHAaa9ce28bbb8a2cdf73559247d4eb975ce9c2c0e0c3ade85b1535590e42086347.
 stderr /tmp/yoctui-native-import-metadata-v295.log; genuine native parse/warm-up
 is not compared with historical container or setup-only timing.
 This check uses the patched source bridge, NOT the still-installed v294 binary.
-Task remains IN_PROGRESS until exact committed optimized v295 install/plain
-native Kernel screen/config inspection succeeds with original inputs unchanged.
+FINAL INSTALLED NATIVE CHECK — PASS
+Two-worker optimized thinLTO/debug1/frame-pointers release built exact62716abc;
+build6m22s/install1.57s, /tmp/yoctui-native-{release,install}-v295.log exit0.
+Installed ~/.cargo/bin/yoctui and cache release equal SHA:
+917a9788e34c80103505ea4e8db93c2f6dc4efc6bd1e8e4692faf8d15c0f0bc0.
+Only four unrelated user captures untracked, tracked product tree clean.
+Before owned service restart: actual snapshot18terminal jobs(13exited/5failed),
+25terminal PTYs(24exited/1lost), no clients/children; unrelated daemons untouched.
+Old2315820 stops gracefully; new2340904/instance20921e3a1f994603dabf6b9043dda64f
+ready05:55:16 IDT; compatibility05:58:52, inventory05:59:01 (~225s).
+Enabled/active/NRestarts0, normal user endpoint and same exact source/build
+identity b261670860dd0336, actual4799recipes/nine layers. Same bootID:
+1e696f44-57bb-4193-af55-449269824bde; NOT actual reboot.
+Actual plain native capture controller53077 (no client PYTHONPATH/container):
+Kernel Enter inspection succeeds within35s, actual virtual/kernel provider,
+three authoritative roots, bounded4096file inventory and shared .config105069B.
+Intentional scan limitation stays visible; no deadline/budget increase. Config
+view1 and Enter show actual clean file contents including CONFIG_UNWINDER_ARM=y,
+CONFIG_ARM_UNWIND=y; no save/edit. Client exits0/restores terminal normally.
+Above-Git assets/{name}.{txt,cells,ansi}:
+  demo-native-v295-kernel-inspection-first
+  demo-native-v295-kernel-configuration-verified
+  demo-native-v295-kernel-config-content
+Hash rechecks unchanged:
+  .config0f809ea0922169c20ad329e51f580a16ac8e5b9b1f1393847e2732d663f2fc5c
+  flash00c37b3aed9961a37d50a70afc3c670c50a25282c93784f7022b8e67d1c4f7f0
+  symbols68c5e164595aa24b4f6ed7f6936fab17b971ce2d39d69e3722c2a92c57b0cd50.
+DONE bridge import child only. Parent still audits menuconfig/devshell task
+authorization (local metadata has task while global snapshot remains Unknown),
+new-session selection and every remaining screen; no optional workflow falsely
+certified. Native terminated-writer input and clipped ordinary viewport defects
+are now explicit atomic children, not hidden by the capture driver's F4 route.
+Final native docs/profiles/hosted CI/actual reboot/publication remain pending.

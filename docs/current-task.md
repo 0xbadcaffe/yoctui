@@ -1,8 +1,41 @@
 # Current Task
 
-**ID:** DEMO-NATIVE-BRIDGE-IMPORT-001
-**Title:** Initialize retained BitBake vendored imports inside the native bridge child
+**ID:** DEMO-TERMINAL-EXIT-WRITER-001
+**Title:** Stop treating terminated PTY sessions as writable terminals
 **Status:** IN_PROGRESS
+
+Atomic child split from actual native GDB cleanup before implementation.
+Dependency DEMO-NATIVE-BRIDGE-IMPORT-001 DONE: source62716abc/v295 optimized
+installed917a9788, healthy native daemon2340904/instance20921e3a1f994603dabf6b9043dda64f;
+plain native Kernel/config/source viewing PASS and client53077 clean exit0.
+During real v294 managed GDB quit, the exited PTY retained the client's writer
+ID. Model selected_terminal_is_writer checked replica/ID but not lifecycle;
+ordinary q was forwarded to the dead session despite the q Quit footer.
+Daemon correctly rejected input; global F4 escapes, but stale write-role/input
+must be corrected, not called a successful normal quit. Historical writer IDs
+may remain diagnostic facts, never active input/resize authority after exit/loss.
+Relevant pure model terminal_selection.rs, typed app terminal input and UI role
+projection plus external model/reducer/app/TestBackend/real PTY regressions.
+Preserve live current owner input, remote viewers, stale replicas, copy/history,
+focus traps and global routes; no new shortcut/layout, history deletion or wire.
+DONE requires terminal lifecycle failure cases, no ordinary forwarding/resize
+to terminated sessions, truthful role/hints and clean native exit after owned
+helper terminates. Bump/version/commit/push/source-bound release normal flow.
+
+```bash
+cargo test -p yoctui-model terminal
+cargo test -p yoctui-app terminal
+cargo test -p yoctui-ui terminal
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 scripts/check-library-layout.py
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+# Manual: actual owned native shell exit -> q Quit/clean0 without F4 workaround;
+# live writer/other-client viewer/history and original artifacts unaffected.
+```
+
+## Completed native bridge import verification (v295)
 
 Atomic child split from the installed native screen audit before implementation.
 Implementation v295: bridge-child bootstrap and six subprocess regressions;
@@ -11,26 +44,27 @@ UI377/strict workspace Clippy/fmt/source2892/UI/version/pinned29rasters pass;
 all34 golden changes are only294->295 identity. Actual source-only native bridge
 with only bitbake/lib returns virtual/kernel63tasks/nine packages/three sources
 and STAGING_KERNEL_BUILDDIR with real conf/bitbake.conf:494 provenance, exit0.
-This is not installed-client acceptance; exact committed release installation/
-plain native Kernel inspection still required. Full workspace2048/zero failures/
+Source-only check is distinct from the later installed native Kernel/config/
+clean client-exit acceptance, which now PASS source62716abc/optimized917a9788.
+Full workspace2048/zero failures/
 nine unchanged live/manual ignores31targets PASS. check-docs reaches the real
 native Doctor but fails its old argv JSON transport at183406bytes (OS per-arg
 limit); retain that distinct harness defect for an atomic correction before
 final docs/CI. Initial wrong-profile docs attempt filled only the temporary
 compiler cache; owned generated failure outputs cleaned, low-space rerun used.
 Plain client workers initialize the selected source/build with only bitbake/lib.
-The actual retained BitBake2.19.1 generated parser imports pysh.pyshtables and
-fails with ModuleNotFoundError: pysh. The enabled daemon's explicit lib/bb path
-works; local Kernel inspection therefore incorrectly falls back to an unavailable
-legacy adapter. Reproduction is recorded in native-rehearsal-v294.txt.
-Initialize only the imported real bb package's existing vendored package parent
+Before correction, the actual retained BitBake2.19.1 generated parser imported
+pysh.pyshtables and failed ModuleNotFoundError: pysh. The daemon's explicit
+lib/bb path worked; local Kernel inspection fell back to an unavailable legacy
+adapter. Reproduction is recorded in native-rehearsal-v294.txt.
+Correction initializes only the imported real bb package's existing vendored package parent
 inside the owned Python bridge process, not the laptop/client environment or
 upstream source. Preserve old single-module adapters and genuine import failures;
 never synthesize API availability, change selected implementations or relax bounds.
 Relevant bridge tinfoil_workspace.py and external bridge import regression tests.
-DONE requires package/legacy/no-vendor/failure subprocess coverage, embedded bridge
-checks, version bump, native selected Kernel metadata/config inspection and exact
-source evidence. No UI layout/wire change. Resume DEMO-INSTALL-LIVE-001 afterwards.
+Package/legacy/no-vendor/failure subprocess coverage, embedded bridge checks,
+version bump, installed native Kernel/config inspection and source evidence
+passed. No UI layout/wire change. Native parent resumes after terminal children.
 
 ```bash
 python3 -m pytest bridge/tests

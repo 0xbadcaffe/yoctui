@@ -350,7 +350,7 @@ title = "Refresh README real screenshots measured flamegraph report and operator
 status = "NOT_STARTED"
 priority = 3503
 required = true
-depends_on = ["DEMO-FULL-VERIFY-001", "DEMO-INSTALL-LIVE-001"]
+depends_on = ["DEMO-FULL-VERIFY-001", "DEMO-INSTALL-LIVE-001", "DEMO-DOCS-JSON-STREAM-001"]
 verify = ["./scripts/test-flamegraph.sh", "python3 scripts/test_performance_documentation.py", "./scripts/check-docs.sh", "./scripts/test-readme-quickstart.sh", "Manual: current real OpenBMC screenshot provenance and explicit unavailable optional capabilities, projector walkthrough matching installed shortcuts", "./scripts/verify-roadmap.sh"]
 notes = "Relevant README.md, docs/operator-guide.md, docs/performance.md, production screenshot manifest/assets and measured report. Distinguish fixture workbench stress from real OpenBMC runtime and startup from steady state; quantify findings without old stale performance certification. Add actual demo route, exact paths/tool prerequisites/cleanup/recovery and optional missing-data boundaries. Presentation remains outside Git uncommitted/unpushed."
 
@@ -394,7 +394,7 @@ title = "Install optimized release and rehearse all OpenBMC demo screens and ses
 status = "IN_PROGRESS"
 priority = 3504
 required = true
-depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-BRIDGE-IMPORT-001"]
+depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-BRIDGE-IMPORT-001", "DEMO-TERMINAL-EXIT-WRITER-001", "DEMO-TERMINAL-VIEWPORT-001"]
 verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: installed optimized binary equals committed source-bound release hash/version; plain native yoctui attach discovers healthy exact OpenBMC daemon after login without container launcher", "Manual: real native OpenBMC screen-by-screen audit, supported recipe/devtool/devshell, rootfs/packages/services/artifacts and reviewed QEMU boot/kernel debugging/reconnect/cleanup; report unavailable optional screens honestly", "./scripts/verify-roadmap.sh"]
 notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed native release, normal workstation endpoint and durable working artifacts; container-only rehearsal and mocks do not meet acceptance. Prepare reproducible two-minute path and real screenshots/recovery checklist; no physical-board actions or long clean image rebuild inferred."
 
@@ -402,12 +402,45 @@ notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. 
 id = "DEMO-NATIVE-BRIDGE-IMPORT-001"
 milestone = "M114"
 title = "Initialize retained BitBake vendored imports in the native bridge child"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3542
 required = true
 depends_on = ["DEMO-NATIVE-BOOTSTRAP-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "python3 scripts/check-library-layout.py", "Manual: actual installed current-source native Kernel inspection/config metadata with exact selected source/build and no inherited client PYTHONPATH workaround", "./scripts/verify-roadmap.sh"]
-notes = "Atomic correction split before implementation from genuine native v294 audit. Retained BitBake2.19.1 imports generated pysh.pyshtables, failing without the actual imported bb package parent in the child path. Native daemon explicit lib/bb works but plain local workers do not. Reproduce fail/positive using actual native source; correct bridge-child bootstrap only for real packaged vendored modules, preserve legacy single-module adapter/no-vendor/import-failure semantics, no upstream/global client environment change, guessed build authority, API fabrication, version fallback, timeout relaxation or UI/wire feature. Relevant tinfoil_workspace.py and external bridge subprocess tests; exact regression/live/version/source evidence and architecture/status updates required. Resume parent audit then final docs/CI."
+notes = "DONE code62716abc/v295, installed optimized917a9788. Six new external subprocess regressions/all67 bridge, full2048Rust/zero failures/nine unchanged ignores31targets, full strict workspace Clippy/fmt/source2892/UI/version/29rasters pass. Actual native source-only kernel metadata63tasks/nine packages/three sources plus provenance and installed plain native Kernel inspection/shared .config105069B/clean file view/client53077 exit0 PASS, original config/flash/symbol hashes unchanged. Enabled service2340904/instance20921e3a1f994603dabf6b9043dda64f/4799recipes/nine layers/~225s/NRestarts0. Same bootID, not reboot or all-screen proof. Evidence native-bridge-import-v295.txt. Only imported real bb vendored parent initialized in owned bridge child; legacy/no-vendor/unrelated failures preserved, no upstream/global environment edits, fabricated API/version fallback or relaxed bounds. Native terminal lifecycle/viewport children follow before parent resumes; large183406byte Doctor argv defect separately queued before final docs/CI."
+
+[[task]]
+id = "DEMO-TERMINAL-EXIT-WRITER-001"
+milestone = "M114"
+title = "Remove writable input authority from terminated terminal sessions"
+status = "IN_PROGRESS"
+priority = 3551
+required = true
+depends_on = ["DEMO-NATIVE-BRIDGE-IMPORT-001"]
+verify = ["cargo test -p yoctui-model terminal", "cargo test -p yoctui-app terminal", "cargo test -p yoctui-ui terminal", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 scripts/check-library-layout.py", "./scripts/verify-ui-spec.sh", "Manual: real owned native shell process exit then ordinary q/confirmation closes client clean0 without global F4 workaround, active owner and remote viewers remain correct", "./scripts/verify-roadmap.sh"]
+notes = "Actual native v294 GDB helper exit leaves historical writer ID. Current model predicate ignores lifecycle, so ordinary q is forwarded to dead session and daemon rejects it despite q Quit footer; capture driver forced termination, not counted clean. Correct model/app/UI typed lifecycle ownership semantics, keep historical IDs diagnostic without input/resize authority. No new shortcuts/layout/wire or session/history deletion. Add external pure/reducer/app/TestBackend/live failure-path coverage, preserve active owners/remote viewers/stale replicas/history/focus traps and normal version/commit/push/source release flow."
+
+[[task]]
+id = "DEMO-TERMINAL-VIEWPORT-001"
+milestone = "M114"
+title = "Size ordinary owned terminal sessions to their actual visible pane"
+status = "NOT_STARTED"
+priority = 3550
+required = true
+depends_on = ["DEMO-TERMINAL-EXIT-WRITER-001"]
+verify = ["cargo test -p yoctui-app terminal", "cargo test -p yoctui-ui terminal", "cargo test -p yoctui --bin yoctui terminal", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "Manual: real native shell/GDB ordinary terminal at160x50 follows visible pane dimensions, cursor/long-line output remains visible across resize/split and no remote/exited writer resize", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh"]
+notes = "Actual native managed GDB/build shell retain120x40 while rendered pane is narrower/shorter; last command prompt/output is clipped. Current geometry/polling explicitly restrict autosize to menuconfig. Correct existing visible-cell/writer resize contract for ordinary terminals with exact focused pane identity, preserve menuconfig/zoom/narrow/split allocations, remote lease safety, coalesced bounded requests and copy/search semantics. No new layout/shortcut/wire or timeout/resource-budget relaxation. Split before implementation; external geometry/TestBackend/fake process/live coverage and normal versioned source-bound workflow required."
+
+[[task]]
+id = "DEMO-DOCS-JSON-STREAM-001"
+milestone = "M114"
+title = "Validate full Doctor JSON without the OS argument-size limit"
+status = "NOT_STARTED"
+priority = 3506
+required = true
+depends_on = ["DEMO-INSTALL-LIVE-001"]
+verify = ["python3 scripts/test_doctor_json_stream.py", "CARGO_BUILD_JOBS=2 CARGO_PROFILE_DEV_DEBUG=0 CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 ./scripts/check-docs.sh", "Manual: actual native183406byte Doctor report validates unchanged schema/authority checks through streamed input, malformed/schema/authority negatives still fail", "python3 scripts/check-library-layout.py", "./scripts/verify-roadmap.sh"]
+notes = "Genuine v295 native check-docs fails line303 passing183406byte valid Doctor JSON as one argv argument (OS limit), not JSON schema/authority failure. Stream complete report without shortening/faking/omitting fields or relaxing assertions. Add pure/real subprocess oversized positive and malformed/schema/authority negatives, keep actual Cargo target/private diagnostic config and low-space two-worker/no-incremental flags. Separate harness maintenance before final docs/CI; no product/UI feature."
 
 [[task]]
 id = "DEMO-GITHUB-CI-001"

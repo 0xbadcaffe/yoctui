@@ -27,6 +27,14 @@ Status: **Authoritative product and interaction contract**
 
 ### M114 OpenBMC demo release polish (no new features)
 
+Terminal write authority requires a current live owned session, not merely a
+retained writer ID. Exited/lost session history remains viewable without
+forwarding ordinary keys, paste or resize to a dead process, or advertising an
+active writer lease. Existing Quit/global routes regain normal application
+behavior when no live writer owns input. Ordinary live terminal panes, including
+build shells/GDB, must size the owned PTY to actual visible cells just like
+menuconfig; preserve remote viewer authority and existing split/narrow layouts.
+
 Plain native attachment must not require a caller-side Python path workaround
 for the selected BitBake package's own vendored parser. The backend initializes
 that dependency only inside its bridge child; missing or unrelated imports still

@@ -2,6 +2,15 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Bridge child DONE exact62716abc/v295 optimized native917a9788: actual Kernel
+inspection/.config/source viewing and clean native client exit0 pass; healthy
+enabled new instance metadata4799/nine layers225s, no original input mutation.
+Same bootID, actual reboot still pending. Split real terminal cleanup authority
+and ordinary visible-pane sizing defects before implementation; preserve live/
+remote/stale ownership and history, no new layout or budget relaxation. Parent
+all-screen audit resumes after those children. Native large Doctor JSON argv
+gate failure is a separate streamed-validation child before final docs/CI.
+
 Native audit splits DEMO-NATIVE-BRIDGE-IMPORT-001 before implementation: actual
 retained BitBake generated parser needs its vendored package parent in bridge
 child imports, otherwise plain native Kernel inspection reports unavailable.

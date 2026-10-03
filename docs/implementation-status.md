@@ -1,10 +1,23 @@
-M114 current: DEMO-NATIVE-BRIDGE-IMPORT-001 IN_PROGRESS, split before code.
+M114 current: DEMO-TERMINAL-EXIT-WRITER-001 IN_PROGRESS, split before code.
+Bridge import DONE source62716abc/v295 optimized native install917a9788;
+plain native Kernel/provider/.config(105069bytes)/clean source view PASS,
+client53077 exit0, original config/flash/symbol hashes unchanged. New enabled
+native service2340904/20921e3a1f994603dabf6b9043dda64f metadata4799/nine layers
+ready225s/NRestarts0, same bootID (not actual reboot). All-screen parent remains
+IN_PROGRESS. Native debug cleanup additionally exposes terminated writer IDs
+still owning input, and ordinary120x40 PTYs clipped by smaller visible panes.
+Atomic lifecycle then viewport corrections queued before parent resumes; no
+new features/history deletion or fake cleanup proof. Large Doctor JSON argv
+harness correction separately queued after accepted native rehearsal, before
+final docs/CI. Exact62716abc CI37090891462 release-quality/compatibility PASS;
+strict latest-stable21 redundant must_use async lint failures and moved IPC
+source-contract failures remain; atomic fetch_update deprecation also visible.
 Implementation v295 source-only positive native Tinfoil metadata63tasks/nine
 packages/three actual source files and STAGING_KERNEL_BUILDDIR/provenance PASS,
-only bitbake/lib in caller path; no upstream or global path mutation. Five new
-subprocess import regressions (six), all67 bridge/BitBake299/UI377/full workspace
+only bitbake/lib in caller path; no upstream or global path mutation. Six new
+subprocess import regressions, all67 bridge/BitBake299/UI377/full workspace
 strictClippy/fmt/source2892/UI/version/29rasters PASS. All34 golden changes only version.
-Installed exact committed-source plain Kernel inspection remains pending; full
+Installed exact committed-source plain Kernel inspection/config view PASS; full
 workspace rerun PASS2048/zero failures/nine unchanged ignores31targets. check-docs
 fails existing Doctor JSON argv transport at183406bytes against OS per-arg limit;
 distinct harness correction needed before final docs/CI, not silently bypassed.
@@ -17,10 +30,10 @@ Corrected driver93428 clean native client exit0; early failed cleanup not hidden
 Native v294 audit genuinely boots Romulus to login, hits start_kernel/source,
 and reconnects a new plain client to interrupt/bt/registers; owned helper/QEMU/
 GDB/socket/staged copy cleaned, original inputs unchanged. This is partial native
-rehearsal, not all-screen/reboot/CI readiness. Kernel inspection exposes actual
-BitBake generated-parser ModuleNotFoundError: pysh in local worker initialization.
-Correct only the owned bridge package import bootstrap, retain fail-closed legacy/
-missing-package behavior and test actual native inspection before resuming parent.
+rehearsal, not all-screen/reboot/CI readiness. Pre-fix Kernel inspection exposed
+actual generated-parser ModuleNotFoundError: pysh; owned bridge bootstrap now
+corrected, fail-closed legacy/missing-package behavior retained and native
+inspection verified. Parent resumes after the newly split terminal children.
 Evidence artifacts/live-openbmc/romulus/native-rehearsal-v294.txt.
 Native cold bootstrap DONE v294; parent DEMO-INSTALL-LIVE-001 remains IN_PROGRESS.
 Native Ubuntu26.04/Python3.14 actual BitBake2.19.1 imports/config/API inventory
