@@ -1,0 +1,124 @@
+{
+  "schema": "yoctui.performance.runtime-profile.v1",
+  "captured_at_utc": "2026-10-03T13:43:42.509550+00:00",
+  "scenario": "native-openbmc-layers-v304-before",
+  "revision": "d561297396ecd9c3ee89a090158cf7d905786da2",
+  "host": {
+    "kernel": "7.0.0-34-generic",
+    "machine": "x86_64"
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/.cargo/bin/yoctui",
+    "sha256": "109350286d2aafc902e57d7e464a43b84e1521903fec07e118fdcf59d0b49bc8"
+  },
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "fp",
+    "duration_seconds": 60,
+    "samples": 597,
+    "unresolved_stack_lines": 1,
+    "dropped_unresolved_ppm": 1862,
+    "maximum_dropped_unresolved_ppm": 5000
+  },
+  "processes": [
+    {
+      "role": "client",
+      "pid": 2533006,
+      "executable": "/home/bspguy-dev/.cargo/bin/yoctui",
+      "command": "/home/bspguy-dev/.cargo/bin/yoctui attach"
+    },
+    {
+      "role": "daemon",
+      "pid": 2529907,
+      "executable": "/home/bspguy-dev/.cargo/bin/yoctui",
+      "command": "/home/bspguy-dev/.cargo/bin/yoctui --config /home/bspguy-dev/.config/yoctui/openbmc-demo-daemon.toml daemon foreground"
+    }
+  ],
+  "artifacts": {
+    "svg_sha256": "07870f70f9318667a852337fbfb6ea8cd1f735592d5c9200609aef7186ce77b6",
+    "flat_report_sha256": "d02a211106c7c774d2d6218364d0848810de9b17ca3f68c86355c99245155807"
+  },
+  "top_self_symbols": [
+    {
+      "self_percent": 9.95,
+      "symbol": "_int_malloc"
+    },
+    {
+      "self_percent": 6.54,
+      "symbol": "__libc_malloc2"
+    },
+    {
+      "self_percent": 6.18,
+      "symbol": "_int_free_merge_chunk"
+    },
+    {
+      "self_percent": 5.88,
+      "symbol": "_int_free_chunk"
+    },
+    {
+      "self_percent": 4.59,
+      "symbol": "<yoctui_model::compatibility_catalog::CapabilityCatalog>::builtin"
+    },
+    {
+      "self_percent": 3.96,
+      "symbol": "yoctui_model::compatibility::valid_text"
+    },
+    {
+      "self_percent": 3.77,
+      "symbol": "cfree@GLIBC_2.2.5"
+    },
+    {
+      "self_percent": 3.05,
+      "symbol": "malloc"
+    },
+    {
+      "self_percent": 3.03,
+      "symbol": "unlink_chunk.isra.0"
+    },
+    {
+      "self_percent": 2.63,
+      "symbol": "__memmove_avx_unaligned_erms"
+    },
+    {
+      "self_percent": 2.55,
+      "symbol": "__strncmp_avx2"
+    },
+    {
+      "self_percent": 1.46,
+      "symbol": "core::fmt::write"
+    },
+    {
+      "self_percent": 1.43,
+      "symbol": "_int_malloc"
+    },
+    {
+      "self_percent": 1.1,
+      "symbol": "0x0000000000214591"
+    },
+    {
+      "self_percent": 1.06,
+      "symbol": "yoctui::daemon_server::background::poll"
+    },
+    {
+      "self_percent": 1.03,
+      "symbol": "cfree@GLIBC_2.2.5"
+    },
+    {
+      "self_percent": 1.0,
+      "symbol": "_int_free_maybe_trim"
+    },
+    {
+      "self_percent": 0.92,
+      "symbol": "__memcmp_avx2_movbe"
+    },
+    {
+      "self_percent": 0.9,
+      "symbol": "0x000000000024589a"
+    },
+    {
+      "self_percent": 0.88,
+      "symbol": "__GI___readdir64"
+    }
+  ]
+}

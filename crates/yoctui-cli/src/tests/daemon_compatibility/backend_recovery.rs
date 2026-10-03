@@ -35,6 +35,87 @@ fn probe(fixture: &mut RuntimeFixture, version: &str, capabilities: &[&str]) {
     write_tool(&python, &format!("printf '%s\\n' '{report}'"));
 }
 
+#[test]
+fn backend_recovery_needed_reads_current_states_without_caching_authority() {
+    use yoctui_model::{CapabilityCatalog, CapabilityProbeSpec, CapabilityReason};
+
+    let fixture = RuntimeFixture::new();
+    let mut base = unknown(&fixture);
+    let reason = CapabilityReason::new("test.predicate", "Predicate fixture", None).unwrap();
+    for record in &mut base.snapshot.capabilities {
+        record.state = CapabilityState::Unavailable {
+            reason: reason.clone(),
+        };
+    }
+    assert!(!needed(&base));
+    let states = [
+        CapabilityState::Available,
+        CapabilityState::AvailableWithLimitations {
+            reason: reason.clone(),
+            limitations: vec!["Fixture limitation".into()],
+        },
+        CapabilityState::Unavailable {
+            reason: reason.clone(),
+        },
+        CapabilityState::Unknown {
+            reason: reason.clone(),
+        },
+        CapabilityState::Unsupported { reason },
+    ];
+    for entry in CapabilityCatalog::builtin().entries {
+        let backend_only = !entry.probes.is_empty()
+            && entry
+                .probes
+                .iter()
+                .all(|probe| matches!(probe, CapabilityProbeSpec::BackendCapability { .. }));
+        let mut current = base.clone();
+        for state in &states {
+            current.snapshot.generation += 1;
+            current
+                .snapshot
+                .capabilities
+                .iter_mut()
+                .find(|record| record.id == entry.id)
+                .unwrap()
+                .state = state.clone();
+            let before = current.clone();
+            assert_eq!(
+                needed(&current),
+                backend_only && matches!(state, CapabilityState::Unknown { .. }),
+                "{:?}: {state:?}",
+                entry.id
+            );
+            assert_eq!(current, before);
+        }
+        current
+            .snapshot
+            .capabilities
+            .retain(|record| record.id != entry.id);
+        assert!(
+            !needed(&current),
+            "missing {:?} must not infer unknown authority",
+            entry.id
+        );
+    }
+}
+
+#[test]
+fn backend_recovery_catalog_reuses_exact_builtin_data_across_threads() {
+    use crate::daemon_compatibility::backend_recovery::recovery_catalog;
+
+    let catalog = recovery_catalog();
+    assert_eq!(catalog, &yoctui_model::CapabilityCatalog::builtin());
+    catalog.validate().unwrap();
+    let address = catalog as *const _ as usize;
+    for _ in 0..4 {
+        let other = std::thread::spawn(|| recovery_catalog() as *const _ as usize)
+            .join()
+            .unwrap();
+        assert_eq!(address, other);
+    }
+    assert!(std::ptr::eq(catalog, recovery_catalog()));
+}
+
 #[tokio::test]
 async fn backend_recovery_replaces_only_backend_records_after_positive_probe() {
     let mut fixture = RuntimeFixture::new();

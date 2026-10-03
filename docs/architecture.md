@@ -1,5 +1,16 @@
 # Yoctui Architecture
 
+## M114 daemon idle recovery catalog reuse
+
+The recovery predicate borrows the compiled immutable built-in capability
+catalog from a private crate-scoped OnceLock helper, instead of constructing
+and dropping it on every idle loop. Only catalog definitions are shared:
+current environment snapshots, state, generations, observations, implementations
+and predicate results are never cached by this helper. Every call still checks
+the supplied current snapshot. Real probe execution, identity/fallback validation,
+retry deadlines, cancellation and explicit bridge-override boundaries remain
+unchanged. No wire, UI layout, polling cadence or backend authority changes.
+
 ## M114 Tasks Navigator mouse geometry
 
 App mouse routing selects the literal Tasks tree only when the shared actual

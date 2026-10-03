@@ -1,0 +1,195 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 619  of event 'cycles:u'
+# Event count (approx.): 934346233
+#
+# Overhead  Command          Shared Object     Symbol                                                                                                                                                                                                                                                                                
+# ........  ...............  ................  ......................................................................................................................................................................................................................................................................................
+#
+     7.52%  yoctui           libc.so.6         [.] _int_malloc
+     7.35%  yoctui           libc.so.6         [.] __libc_malloc2
+     6.55%  yoctui           yoctui            [.] yoctui_model::compatibility::valid_text
+     5.54%  yoctui           yoctui            [.] <yoctui_model::compatibility_catalog::CapabilityCatalog>::builtin
+     4.61%  yoctui           libc.so.6         [.] _int_free_chunk
+     3.64%  yoctui           libc.so.6         [.] _int_free_merge_chunk
+     3.23%  yoctui           libc.so.6         [.] unlink_chunk.isra.0
+     3.04%  yoctui           libc.so.6         [.] cfree@GLIBC_2.2.5
+     2.93%  yoctui           libc.so.6         [.] __memmove_avx_unaligned_erms
+     2.69%  git              git               [.] 0x0000000000214591
+     2.53%  yoctui           libc.so.6         [.] malloc
+     1.74%  git              libc.so.6         [.] _int_malloc
+     1.62%  yoctui           yoctui            [.] <yoctui::interactive_runtime::state::InteractiveRuntime>::poll_runtime::{closure#0}
+     1.45%  notify-rs inoti  libc.so.6         [.] _int_malloc
+     1.38%  yoctui           yoctui            [.] alloc::fmt::format::format_inner
+     1.31%  yoctui           yoctui            [.] yoctui_model::compatibility_catalog::definition
+     1.01%  yoctui           libc.so.6         [.] __memcmp_avx2_movbe
+     0.83%  yoctui           libc.so.6         [.] _int_free_maybe_trim
+     0.83%  notify-rs inoti  yoctui            [.] <inotify::watches::WatchDescriptor as core::cmp::PartialEq>::eq
+     0.80%  git              libc.so.6         [.] __strncmp_avx2
+     0.68%  notify-rs inoti  yoctui            [.] <<yoctui::source_git::SourceGitPoller>::install_watcher::{closure#0} as notify::EventHandler>::handle_event
+     0.66%  notify-rs inoti  libc.so.6         [.] malloc
+     0.65%  notify-rs inoti  yoctui            [.] <notify::inotify::EventLoop>::handle_event
+     0.61%  yoctui           yoctui            [.] <ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>
+     0.61%  git              git               [.] 0x000000000024525d
+     0.58%  yoctui           yoctui            [.] <core::str::pattern::CharSearcher as core::str::pattern::Searcher>::next_match
+     0.58%  yoctui           yoctui            [.] <unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next
+     0.54%  git              git               [.] 0x00000000001f343c
+     0.53%  yoctui           yoctui            [.] yoctui::daemon_server::background::poll
+     0.52%  git              git               [.] 0x000000000021468a
+     0.51%  git              libc.so.6         [.] __GI___readdir64
+     0.50%  yoctui           libc.so.6         [.] realloc
+     0.49%  git              libc.so.6         [.] malloc
+     0.49%  yoctui           libc.so.6         [.] _int_realloc
+     0.48%  git              git               [.] 0x000000000024589a
+     0.48%  git              git               [.] 0x00000000002145a0
+     0.47%  yoctui           yoctui            [.] core::fmt::write
+     0.47%  yoctui           yoctui            [.] yoctui::daemon_compatibility::backend_recovery::needed
+     0.47%  yoctui           yoctui            [.] yoctui_model::compatibility_catalog::command
+     0.47%  yoctui           yoctui            [.] core::ptr::drop_glue::<yoctui_model::compatibility_catalog::CapabilityProbeSpec>
+     0.45%  yoctui           libc.so.6         [.] __GI___setsockopt
+     0.45%  yoctui           libc.so.6         [.] __syscall_cancel
+     0.44%  git              git               [.] 0x0000000000358f29
+     0.43%  git              libc.so.6         [.] __memcmp_avx2_movbe
+     0.42%  git              git               [.] 0x0000000000290ce0
+     0.41%  git              git               [.] 0x0000000000327d9a
+     0.41%  yoctui           yoctui            [.] yoctui_model::reducer::update
+     0.39%  notify-rs inoti  yoctui            [.] <inotify::events::Events as core::iter::traits::iterator::Iterator>::next
+     0.37%  git              git               [.] 0x0000000000327d80
+     0.37%  yoctui           yoctui            [.] core::ptr::drop_glue::<yoctui::package_operations::poll_package_operation::{closure#0}>
+     0.37%  yoctui           yoctui            [.] core::ptr::drop_glue::<ratatui_widgets::table::row::Row>
+     0.36%  git              libc.so.6         [.] realloc
+     0.36%  yoctui           yoctui            [.] <yoctui_protocol::daemon::DaemonSnapshotJournal>::synchronize_with_limit
+     0.35%  yoctui           yoctui            [.] __rustc::__rust_alloc
+     0.35%  git              git               [.] 0x0000000000358f3a
+     0.35%  yoctui           yoctui            [.] <core::fmt::Formatter>::pad
+     0.35%  yoctui           yoctui            [.] core::ptr::drop_glue::<yoctui_model::compatibility_catalog::CapabilityCatalogEntry>
+     0.34%  git              git               [.] 0x000000000024525b
+     0.34%  git              libc.so.6         [.] _int_free_maybe_trim
+     0.32%  yoctui           yoctui            [.] yoctui_model::compatibility_catalog::tool_command
+     0.32%  notify-rs inoti  libc.so.6         [.] unlink_chunk.isra.0
+     0.32%  git              libc.so.6         [.] __strlen_avx2
+     0.32%  yoctui           yoctui            [.] <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+     0.32%  yoctui           yoctui            [.] <alloc::string::String as core::fmt::Write>::write_str
+     0.32%  git              git               [.] 0x0000000000290dd0
+     0.30%  yoctui           yoctui            [.] <str>::trim_matches::<<char>::is_whitespace>
+     0.30%  git              git               [.] 0x0000000000327ef9
+     0.26%  git              git               [.] 0x0000000000245247
+     0.26%  yoctui           yoctui            [.] <yoctui::client_runtime::InteractiveDaemonRuntime>::poll
+     0.25%  notify-rs inoti  libc.so.6         [.] __libc_malloc2
+     0.25%  notify-rs inoti  libc.so.6         [.] __syscall_cancel_arch_end
+     0.24%  notify-rs inoti  libc.so.6         [.] __memset_avx2_unaligned_erms
+     0.23%  git              libc.so.6         [.] __libc_calloc2
+     0.23%  git              libc.so.6         [.] __GI___lstat64
+     0.23%  yoctui           yoctui            [.] yoctui::daemon_server::run_daemon_foreground::{closure#0}
+     0.22%  notify-rs inoti  libc.so.6         [.] _int_free_merge_chunk
+     0.22%  git              git               [.] 0x00000000001cf01c
+     0.22%  git              git               [.] 0x00000000001f16fc
+     0.22%  yoctui           yoctui            [.] yoctui_ui::package_render::layers
+     0.22%  yoctui           yoctui            [.] <ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next
+     0.21%  git              git               [.] 0x0000000000293101
+     0.21%  git              git               [.] 0x0000000000327d8d
+     0.20%  yoctui           yoctui            [.] <alloc::raw_vec::RawVecInner>::finish_grow
+     0.20%  yoctui           yoctui            [.] <crossterm::event::source::unix::mio::UnixInternalEventSource as crossterm::event::source::EventSource>::try_read
+     0.20%  yoctui           yoctui            [.] <alloc::vec::Vec<ratatui_core::text::span::Span> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<ratatui_core::text::span::Span, core::iter::adapters::map::Map<core::str::iter::Lines, <ratatui_core::text::span::Span>::raw<&str>>>>::from_iter
+     0.20%  yoctui           yoctui            [.] <std::path::Components as core::cmp::PartialEq>::eq
+     0.20%  yoctui           yoctui            [.] <yoctui_model::raw_mode::RawHistoryRecord>::validate
+     0.20%  git              git               [.] 0x000000000024588d
+     0.19%  git              git               [.] 0x00000000001f1d54
+     0.19%  yoctui           yoctui            [.] <alloc::vec::Vec<ratatui_core::text::line::Line> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<ratatui_core::text::line::Line, core::iter::adapters::map::Map<core::str::iter::Lines, <ratatui_core::text::line::Line as core::convert::From<&str>>::from>>>::from_iter
+     0.19%  git              git               [.] 0x0000000000358ab6
+     0.19%  git              libc.so.6         [.] _int_free_chunk
+     0.18%  git              git               [.] 0x00000000001f1ca3
+     0.18%  yoctui           yoctui            [.] unicode_width::tables::lookup_width
+     0.18%  git              git               [.] 0x0000000000358f8a
+     0.18%  git              git               [.] 0x0000000000358f31
+     0.18%  git              libc.so.6         [.] __close_nocancel
+     0.18%  git              git               [.] 0x00000000003589b0
+     0.18%  git              git               [.] 0x00000000001f1fb4
+     0.18%  git              git               [.] 0x00000000003589a2
+     0.18%  git              git               [.] 0x000000000031df84
+     0.18%  git              libc.so.6         [.] unlink_chunk.isra.0
+     0.18%  git              git               [.] 0x0000000000354a0f
+     0.18%  yoctui           yoctui            [.] core::ptr::drop_glue::<yoctui::client_transport::ClientTransportError>
+     0.18%  yoctui           yoctui            [.] <ratatui_core::terminal::Terminal<ratatui_crossterm::CrosstermBackend<std::io::stdio::Stdout>>>::draw::<<yoctui::interactive_runtime::state::InteractiveRuntime>::poll_runtime::{closure#0}::{closure#2}>
+     0.18%  git              git               [.] 0x00000000001f1fb8
+     0.18%  yoctui           [vdso]            [.] 0x0000000000000a09
+     0.17%  git              [unknown]         [k] 0xffffffff9da00080
+     0.17%  git              git               [.] 0x0000000000358e9e
+     0.17%  git              git               [.] 0x00000000002458cd
+     0.17%  git              git               [.] 0x0000000000327ef5
+     0.17%  git              git               [.] 0x0000000000290d15
+     0.17%  git              libc.so.6         [.] __opendir
+     0.17%  git              git               [.] 0x00000000001f201b
+     0.17%  git              git               [.] 0x00000000002145a6
+     0.17%  git              git               [.] 0x0000000000358997
+     0.17%  git              libc.so.6         [.] __libc_malloc2
+     0.17%  yoctui           yoctui            [.] <&ratatui_core::text::span::Span as ratatui_core::widgets::widget::Widget>::render
+     0.17%  git              git               [.] memcpy@plt
+     0.16%  git              git               [.] 0x0000000000194495
+     0.16%  git              git               [.] 0x00000000001f1dcf
+     0.16%  git              git               [.] 0x0000000000290d20
+     0.16%  yoctui           yoctui            [.] yoctui_model::compatibility_catalog::task
+     0.16%  git              git               [.] 0x00000000001f1ed3
+     0.16%  git              git               [.] 0x00000000001f2029
+     0.16%  git              git               [.] 0x00000000001f3833
+     0.16%  git              git               [.] 0x00000000003589ae
+     0.16%  yoctui           yoctui            [.] <&str as core::fmt::Display>::fmt
+     0.16%  yoctui           yoctui            [.] <alloc::raw_vec::RawVec<(yoctui_model::task_types::TaskId, core::option::Option<u8>)>>::grow_one
+     0.16%  git              libc.so.6         [.] __syscall_cancel_arch_start
+     0.15%  git              git               [.] 0x000000000024589d
+     0.15%  git              git               [.] 0x00000000001f14b0
+     0.15%  notify-rs inoti  libc.so.6         [.] __memmove_avx_unaligned_erms
+     0.15%  git              git               [.] 0x0000000000290d77
+     0.15%  git              git               [.] 0x000000000031c62c
+     0.15%  yoctui           yoctui            [.] <tokio::sync::mpsc::list::Rx<()>>::pop
+     0.15%  git              git               [.] 0x0000000000290b9e
+     0.15%  yoctui           yoctui            [.] <ratatui_core::buffer::cell::Cell>::set_symbol
+     0.15%  git              git               [.] 0x0000000000327f02
+     0.15%  git              git               [.] 0x00000000001f1fab
+     0.15%  git              git               [.] 0x0000000000358edb
+     0.15%  git              git               [.] 0x00000000001f3ae7
+     0.15%  git              git               [.] 0x0000000000245890
+     0.14%  yoctui           libc.so.6         [.] __errno_location
+     0.14%  notify-rs inoti  libc.so.6         [.] __syscall_cancel
+     0.14%  git              git               [.] 0x00000000001f1fb0
+     0.14%  git              git               [.] 0x00000000001ec73d
+     0.14%  notify-rs inoti  libc.so.6         [.] _int_realloc
+     0.14%  yoctui           yoctui            [.] yoctui_model::compatibility_catalog::bitbake_option
+     0.13%  git              git               [.] 0x0000000000358eb3
+     0.13%  git              git               [.] 0x0000000000214560
+     0.13%  notify-rs inoti  yoctui            [.] std::sys::backtrace::__rust_begin_short_backtrace::<<notify::inotify::EventLoop>::run::{closure#0}, ()>
+     0.13%  yoctui           libc.so.6         [.] clock_gettime@@GLIBC_2.17
+     0.13%  yoctui           yoctui            [.] core::ptr::drop_glue::<<yoctui::test_coordinator::TestCliCoordinator>::poll::{closure#0}>
+     0.12%  notify-rs inoti  yoctui            [.] <inotify::inotify::Inotify>::read_events
+     0.12%  notify-rs inoti  yoctui            [.] <alloc::raw_vec::RawVecInner>::finish_grow
+     0.12%  yoctui           yoctui            [.] <tokio::sync::mpsc::chan::Rx<yoctui::daemon_bitbake::DaemonBitBakeEvent, tokio::sync::mpsc::bounded::Semaphore>>::try_recv::{closure#0}
+     0.12%  notify-rs inoti  yoctui            [.] <std::path::Path>::_join
+     0.11%  git              git               [.] strncmp@plt
+     0.11%  notify-rs inoti  yoctui            [.] <alloc::raw_vec::RawVec<std::path::PathBuf>>::grow_one
+     0.11%  git              git               [.] 0x000000000019444f
+     0.11%  notify-rs inoti  yoctui            [.] <alloc::raw_vec::RawVec<notify_types::event::Event>>::grow_one
+     0.11%  git              git               [.] 0x00000000001f0732
+     0.11%  git              git               [.] 0x00000000001f0a07
+     0.11%  git              git               [.] 0x00000000002791ec
+     0.11%  git              git               [.] 0x00000000002904fd
+     0.11%  git              git               [.] 0x0000000000290b61
+     0.11%  git              git               [.] 0x0000000000291525
+     0.11%  git              git               [.] 0x00000000002b5622
+     0.11%  git              git               [.] 0x0000000000327d8a
+     0.11%  git              git               [.] 0x0000000000327de9
+     0.11%  git              git               [.] 0x0000000000327ee8
+     0.11%  git              git               [.] 0x0000000000327fbe
+     0.11%  git              libc.so.6         [.] __memmove_avx_unaligned_erms
+     0.11%  notify-rs inoti  libc.so.6         [.] alloc_perturb
+     0.11%  yoctui           yoctui            [.] <yoctui_model::app_state::App>::job_summary
+     0.11%  yoctui           yoctui            [.] yoctui::termination::termination_requested
+     0.10%  yoctui           yoctui            [.] <yoctui::interactive_runtime::state::InteractiveRuntime>::handle_terminal_event::{closure#0}
+     0.10%  git              git               [.] 0x0000000000291463
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

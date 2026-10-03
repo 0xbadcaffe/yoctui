@@ -1,4 +1,16 @@
 M114 current: DEMO-DAEMON-CATALOG-HOTSPOT-001 IN_PROGRESS; parent audit paused.
+Implementation305 caches only immutable catalog definitions. New authority
+state/generation/missing matrix and cross-thread exact identity regressions:
+focused6 pass/one existing live ignore; full updating2099Rust/zero failures/nine
+unchanged ignores31targets and67bridge PASS. All34goldens version-only304->305,
+29rasters verified. Ordinary full2099/zero failures/nine unchanged ignores and
+strict all-target/all-feature Clippy/fmt/source2909/UI/version/roadmap PASS;
+optimized install and actual after measurement pending. Exact304 baseline client0.228826%, daemon
+1.000509%, combined1.291700% independently trimmed one-CPU means;597 samples,
+1862ppm unresolved; needed54.26% inclusive/constructor38.68% weighted. Source
+d5612973/installed SHA10935028;19jobs/31PTY/no clients before upgrade. Removed50
+obsolete rebuildable compiler outputs987259663B after exact owner/link/use checks,
+originals/installed/top-level binary preserved; disk cache AAiva6/two jobs.
 Measured native303619-sample profile: needed52.17% inclusive weighted CPU,
 catalog constructor41.58%/drop9.96% beneath it (do not add parent/child);
 daemon0.998700%/client

@@ -1,6 +1,7 @@
 use std::{
     collections::BTreeMap,
     path::Path,
+    sync::OnceLock,
     time::{Duration, Instant},
 };
 
@@ -61,13 +62,19 @@ impl BackendRecovery {
 }
 
 pub(crate) fn needed(current: &DaemonCompatibilitySnapshot) -> bool {
-    CapabilityCatalog::builtin().entries.iter().any(|entry| {
+    recovery_catalog().entries.iter().any(|entry| {
         backend_only(&entry.probes)
             && current
                 .snapshot
                 .capability(entry.id)
                 .is_some_and(|record| matches!(record.state, CapabilityState::Unknown { .. }))
     })
+}
+
+pub(crate) fn recovery_catalog() -> &'static CapabilityCatalog {
+    // Only compiled catalog data is shared; every predicate reads current authority.
+    static CATALOG: OnceLock<CapabilityCatalog> = OnceLock::new();
+    CATALOG.get_or_init(CapabilityCatalog::builtin)
 }
 
 fn backend_only(probes: &[CapabilityProbeSpec]) -> bool {

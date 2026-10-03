@@ -20,7 +20,25 @@ full baseline, source-bound optimized install/native same-scenario before/after
 CPU and flamegraph/probe/history checks before DONE; then parent demo audit.
 Relevant daemon_compatibility/backend_recovery.rs, external CLI tests, measured
 reports and architecture/status/registry. No new UI/protocol/workflow. Source304
-baseline currently gathering from a real idle native Layers client and daemon.
+baseline captured from a real idle native Layers client and daemon.
+
+Implementation v0.1.305: private OnceLock holds only immutable catalog data;
+two added regressions cover current-state/generation/missing authority and
+exact shared catalog identity across threads. Before-cache semantic matrix and
+existing fake-process tests pass; after-cache focused6 pass/one unchanged live
+ignore. Full updating run2099Rust/zero failures/nine unchanged ignores31targets,
+67bridge PASS; all34goldens only304->305, other cells/styles exact;29rasters
+rebuilt/checked. Ordinary full suite2099/zero failures/nine unchanged ignores,
+strict all-target/all-feature Clippy, fmt/source2909/UI/version/roadmap PASS.
+Optimized installation and measured native after proof pending.
+Exact304 before: client0.228826%/daemon1.000509%/combined1.291700% independently
+trimmed one-CPU means;597 real perf samples/1862ppm unresolved, recovery needed
+54.26% inclusive/catalog constructor38.68% weighted. Source d5612973 and installed
+SHA10935028. Histories19jobs/31PTY and no clients preserved before replacement.
+Safely cleared50 obsolete compiler outputs987259663B; original inputs, installed
+and top-level release binaries preserved. Two-job disk cache AAiva6 remains in
+use; root disk is tight. Generated profiling records are source-bound, not a
+claim of after-performance, reboot, publication or complete demo readiness.
 
 ```bash
 cargo test --workspace --all-features backend_recovery
