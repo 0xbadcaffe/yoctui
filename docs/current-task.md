@@ -1,27 +1,27 @@
 # Current Task
 
-**ID:** DEMO-UI-HYGIENE-001
-**Title:** Split palette projection helpers under existing UI module size limit
+**ID:** DEMO-LAYOUT-HYGIENE-001
+**Title:** Restore existing source size and external test module hygiene
 **Status:** IN_PROGRESS
 
-Dependency bridge hygiene DONE v291: exact original Rust scope tokens and all20
-Python helper/test ASTs preserved,61 cases still collected; bitbake299/bridge61/
-UI377 and strict affected/fmt/UI/version/roadmap PASS (existing live ignores only).
-Only palette_render511 source-size finding remains. Move cohesive command/
-global-search detail projections to a private sibling module and re-export their
-existing names/visibility, preserving every typed value/style/label/width bound
-and exact body tokens. No input/focus/layout/theme change or500line exemption.
-Bump, maintain exact34 golden identity version-only, full UI and strict Clippy,
-then full source/library gate plus full-workspace hygiene parent. Faithful DIM/
-fixture/provenance maintenance and full release quality follow; actual native
-reboot-ready optimized OpenBMC/QEMU/GDB/CI/publication remain required. Preserve
-sources/images/symbols/user captures/unrelated clients, two compile workers.
+All four coherent children CLI289/model290/bridge291/UI292 DONE. Original
+runtime/test body tokens/ASTs preserved, exact34 goldens maintained only product
+identity, no semantics/focus/layout/policy or test/limit weakening. Full source/
+library gate PASS2890sources<=500 (largest500), all Rust tests in test folders.
+Parent now runs full Rust workspace/all features/no fail-fast, bridge tests,
+strict all-target/all-feature Clippy, fmt/roadmap. Existing ignored live tests
+remain explicit, not newly skipped. Diagnose any remaining failure before fixing,
+split a genuine unrelated defect before code; never broad DONE from child gates.
+Then faithful DIM/fixture/provenance maintenance, full release quality/docs and
+actual native reboot-ready optimized OpenBMC/QEMU/GDB/CI/publication. Preserve
+sources/images/symbols/user captures/unrelated processes, two compile workers.
 
 ```bash
-cargo test -p yoctui-ui --all-features
-cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 python3 scripts/check-library-layout.py
 cargo fmt --all --check
+cargo test --workspace --all-features --no-fail-fast
+python3 -m pytest bridge/tests
+cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
 

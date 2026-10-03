@@ -292,12 +292,12 @@ notes = "DONE v291: external scope test retains original bridge_backend::local_a
 id = "DEMO-UI-HYGIENE-001"
 milestone = "M114"
 title = "Split palette projection helpers under existing UI module size limit"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3537
 required = true
 depends_on = ["DEMO-BRIDGE-HYGIENE-001"]
 verify = ["cargo test -p yoctui-ui --all-features","cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings","python3 scripts/check-library-layout.py","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
-notes = "Relevant511line palette_render.rs. Move a cohesive helper projection into a sibling private module, preserve rendering/focus/typed state/text/geometry and full UI snapshots byte-for-byte except product version. No layout, key or theme change. External tests remain intact; versioned coherent commit."
+notes = "DONE v292: palette typed command/content-search detail projections moved to private sibling module and original names/visibility re-exported. Exact body tokens/styles/labels/bounds preserved; parent398/details118 lines, no input/focus/geometry/theme change. Full UI377/strictUIClippy/fmt/UI/version/roadmap PASS. Full source/library checker PASS2890sources<=500 (largest500), all Rust tests in test folders/utilities/registry consistent, no exemptions. All34 goldens differ only291->292 exact version identity. Log ui-hygiene-v292 under/tmp. All atomic hygiene children done; parent still requires full workspace/bridge/strict gates, no broad release/native acceptance."
 
 [[task]]
 id = "DEMO-DOC-FIXTURE-MAINTENANCE-001"
@@ -314,7 +314,7 @@ notes = "Existing full-quality blockers: native raster generator rejects DIM use
 id = "DEMO-LAYOUT-HYGIENE-001"
 milestone = "M114"
 title = "Restore existing source size and external test module hygiene"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3515
 required = true
 depends_on = ["DEMO-INTEGRATION-001", "DEMO-CLI-HYGIENE-001", "DEMO-MODEL-HYGIENE-001", "DEMO-BRIDGE-HYGIENE-001", "DEMO-UI-HYGIENE-001"]

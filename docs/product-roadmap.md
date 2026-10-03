@@ -60,6 +60,9 @@ Bridge and palette remain, then full source-layout/workspace verification.
 Bridge child DONE v291: exact Rust scope tokens and all20 Python method ASTs
 preserved,61 tests still collected; bitbake299/bridge61/UI377/strict gates pass
 with only existing live ignores. Palette remains before full hygiene verification.
+Palette child DONE v292 with exact projection tokens preserved, full UI377 and
+strict affected gates PASS. Source/library gate PASS2890sources<=500/all external
+Rust tests/no exemptions. Full hygiene parent still verifies the full workspace.
 Selected-source init DONE v271 with real provider/firmware .config evidence;
 DEMO-PLATFORM-CONFIG-001 fixes separately observed kernel config starvation
 within existing bounded scans before contract fixtures; no quota increase.

@@ -1,4 +1,12 @@
-M114 current: DEMO-UI-HYGIENE-001 IN_PROGRESS; bridge hygiene DONE v291.
+M114 current: DEMO-LAYOUT-HYGIENE-001 IN_PROGRESS; palette child DONE v292.
+Private detail projection module preserves exact original tokens/styles/labels/
+bounds and re-exports existing names/visibility; parent398/details118 lines.
+No input/focus/geometry/theme change. Full UI377/strictUIClippy/fmt/UI/version/
+roadmap PASS. Full source/library gate PASS2890sources<=500 (largest500), Rust
+tests in test folders/utilities/registry consistent, no exemptions. All34 exact
+goldens differ only291->292 identity. Log /tmp/yoctui-demo-ui-hygiene-v292.log.
+All four atomic children done; parent now requires full workspace/bridge/strict
+gates before DONE. Full release docs/native/reboot/CI/publication remain pending.
 External scope test retains original namespace/exact tokens/assertions. Python
 metadata392/disk-guard131 files retain all20 original helper/test ASTs/literals/
 assertions and61 collected cases; historical disk-guard verify path maintained.

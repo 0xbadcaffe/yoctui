@@ -1073,6 +1073,11 @@ Python disk-guard tests live in a separate discovered test class, sharing the
 existing support helpers; native metadata tests retain all other cases. This
 boundary preserves every test body, fake-process literal and transport assertion.
 
+UI palette command/content-search detail projections live in a private sibling
+module, re-exported under their original names and visibility. The renderer still
+consumes only typed model values with the same styles, labels and cell bounds;
+input, focus, geometry and capability policy remain unchanged.
+
 The app focus router reserves `Right` for opening or expanding the Layers
 hierarchy and reserves both horizontal arrows for the open tree; it maps
 Navigator `Right`/`Left` to group expansion/collapse while `Tab`/`Shift+Tab`
