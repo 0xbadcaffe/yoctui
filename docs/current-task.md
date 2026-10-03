@@ -62,7 +62,8 @@ the selected build. Five new external tests plus existing membership/missing
 tool/source/cancellation and daemon worker tests pass. Final full2084Rust/zero
 failures/nine unchanged ignores31targets/67bridge/strictworkspaceClippy/fmt/
 source2904/UI/version/roadmap/29rasters PASS.34goldens only301->302 identity,
-all other cells/styles exact. Native installed source acceptance still pending.
+all other cells/styles exact. Native installed acceptance subsequently passed,
+as recorded in native-recipe-status-safety-v302.txt and the current handoff.
 89 validated obsolete temporary compiler outputs1417444584B cleared after owner/
 link/live-use checks; current binaries/original data preserved. The two generated
 workspace files were moved intact to the above-Git presentation validation-
@@ -119,7 +120,9 @@ abort/reaping; all six existing platform environment guards retained. Full2079
 Rust/zero failures/nine unchanged ignores31targets/67bridge/strict workspace
 Clippy/fmt/source2902/UI/version/roadmap/29rasters PASS.34goldens only300->301
 identity, all other cells/styles exact. Optimized source-bound install and real
-plain native recipe/source inspection still pending; task remains IN_PROGRESS.
+plain native recipe/source inspection subsequently passed on301 and302; status
+safety correction preserves original inputs. This metadata task is now DONE;
+native-recipe-status-safety-v302.txt records the actual scope and earlier defect.
 Storage:58 validated obsolete pre300 internal dev/release libraries811577076B
 and23 completed300 temporary test executables433683864B cleared after owner/
 link/live-use checks; current outputs/external dependency caches/original data

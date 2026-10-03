@@ -11,6 +11,8 @@ status-safety-v302.txt. Parent remaining screens/current QEMU/docs/CI/reboot and
 publication resume; same boot, not reboot completion. Full2084Rust/67bridge/
 strictClippy and focused CLI13 pass; source-bound proof recorded honestly.
 
+### Historical native implementation phases before v302 acceptance
+
 Native301 metadata proof exposed automatic devtool workspace initialization.
 Split a backend status safety child before implementation; inspection must not
 create/enable a workspace. Original bblayers restored to verified checksum,
