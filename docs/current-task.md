@@ -1,70 +1,58 @@
 # Current Task
 
-**ID:** DEMO-TERMINAL-EXIT-WRITER-001
-**Title:** Stop treating terminated PTY sessions as writable terminals
+**ID:** DEMO-TERMINAL-VIEWPORT-001
+**Title:** Size ordinary owned terminal sessions to their actual visible pane
 **Status:** IN_PROGRESS
 
-Follow-up v297 review: the per-pane renderer still had an independent historical
-writer-ID check. Expanded TestBackend regression fails on v296; correction now
-projects each non-running pane as read-only history, including an unfocused
-ended pane beside a running writer. Additional split regression added. v296
-optimized build was deliberately interrupted (130) before install; native
-installed/client/service remain verified v295. v297 full workspace rerun PASS:
-2055Rust/zero failures/nine unchanged ignores31targets,67bridge, strict full
-Clippy/fmt/source2895/UI/version/roadmap/29rasters. All34 golden diffs only
-296->297 header identity. Initial full Rust/bridge attempts hit OS/tmp ENOSPC,
-not counted passing; original failure evidence retained and both rerun fully.
-Only127 validated unused prior executable/library/metadata outputs totaling
-2522469334B were cleared from owned temporary Cargo cache, preserving all297
-outputs/native release/tools/source/images/debug symbols and user captures.
-Optimized committed-source install/live ordinary q acceptance pending; not DONE.
+Dependency DEMO-TERMINAL-EXIT-WRITER-001 DONE: source8a30ba9f/v297 optimized
+installed3b25186b, actual native shell26/helper2363644 exits0, historical matching
+writer/epoch retained, current client2363585 observes read-only history and
+ordinary q/confirmation closes clean0/restores terminal without F4/manual detach.
+Healthy daemon2340904 remains verified295/917a9788; no backend/wire change or
+restart needed for that client-side lifecycle proof. Final daemon upgrade and
+actual reboot remain separate later acceptance, not claimed here.
 
-Implementation v296: model writer authority now additionally requires the
-selected session lifecycle Running. UI access/inspector project non-running
-sessions as read-only history/no active writer and stale replicas as retained
-read-only; historical writer IDs/epochs remain unchanged. New pure/reducer/app/
-TestBackend/fake socket regressions cover non-running lifecycle, owner identity,
-paste-review exit race, ordinary Quit/focus traps, history and no resize frame.
-Pre-fix lifecycle regression fails Disconnected; post-fix model terminal and
-app55/UI26/CLI36 focused tests PASS (one existing manual CLI ignore unchanged).
-Full bumped workspace2054Rust/zero failures/nine unchanged live/manual ignores
-in31targets, strict full workspace Clippy,67bridge/fmt/source2895/UI/version/
-roadmap and29 pinned rasters PASS. All34 goldens differ only295->296 header
-identity; symbols/styles otherwise byte-exact. Source-bound optimized install
-and native ordinary q acceptance remain pending; no DONE or final CI/publication
-claim yet. Removed only27 validated unused prior test executables (650082480B of
-rebuildable cache), preserving current outputs/source/images/debug symbols.
-
-Atomic child split from actual native GDB cleanup before implementation.
-Dependency DEMO-NATIVE-BRIDGE-IMPORT-001 DONE: source62716abc/v295 optimized
-installed917a9788, healthy native daemon2340904/instance20921e3a1f994603dabf6b9043dda64f;
-plain native Kernel/config/source viewing PASS and client53077 clean exit0.
-During real v294 managed GDB quit, the exited PTY retained the client's writer
-ID. Model selected_terminal_is_writer checked replica/ID but not lifecycle;
-ordinary q was forwarded to the dead session despite the q Quit footer.
-Daemon correctly rejected input; global F4 escapes, but stale write-role/input
-must be corrected, not called a successful normal quit. Historical writer IDs
-may remain diagnostic facts, never active input/resize authority after exit/loss.
-Relevant pure model terminal_selection.rs, typed app terminal input and UI role
-projection plus external model/reducer/app/TestBackend/real PTY regressions.
-Preserve live current owner input, remote viewers, stale replicas, copy/history,
-focus traps and global routes; no new shortcut/layout, history deletion or wire.
-DONE requires terminal lifecycle failure cases, no ordinary forwarding/resize
-to terminated sessions, truthful role/hints and clean native exit after owned
-helper terminates. Bump/version/commit/push/source-bound release normal flow.
+Actual native ordinary GDB/build shells retain120x40 while the visible pane is
+narrower/shorter. Current geometry and polling restrict resize to menuconfig.
+Correct existing visible-cell contract for ordinary live owned PTYs, selecting
+the actual focused PaneId rather than treating global session index as pane
+index. Mirror actual borders/tabs/prefix/history/search status allocations.
+Preserve menuconfig/in-place/zoom/narrow/split geometry, remote/stale/non-running
+lease safety, bounded coalesced resize and copy/search modes. Relevant app
+mouse/workbench_geometry.rs, CLI interactive_runtime/polling.rs and external
+geometry/TestBackend/fake socket/live shell/GDB tests. No new layout/shortcut/
+wire or relaxed budget. Bump/commit/push/optimized install/live source proof.
 
 ```bash
-cargo test -p yoctui-model terminal
 cargo test -p yoctui-app terminal
 cargo test -p yoctui-ui terminal
+cargo test -p yoctui --bin yoctui terminal
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 scripts/check-library-layout.py
 ./scripts/verify-ui-spec.sh
 ./scripts/verify-roadmap.sh
-# Manual: actual owned native shell exit -> q Quit/clean0 without F4 workaround;
-# live writer/other-client viewer/history and original artifacts unaffected.
+# Manual: real native owned shell/GDB at160x50 follows actual pane dimensions,
+# long-line/cursor output remains visible across resize/split; no remote/dead resize.
 ```
+
+## Completed terminal lifecycle/writer correction (v297)
+
+Model authority requires current Running selected session plus matching owner.
+All three UI role surfaces (access/pane/inspector) project dead/retained roles
+honestly; each split pane uses its own lifecycle. Seven new pure/reducer/app/
+TestBackend/fake socket regressions cover stale/remote/lifecycle/paste exit race/
+Quit traps/history/no resize wire request. Both old predicate and independent
+pane role regressions fail before correction. Full297 rerun2055Rust/zero failures/
+nine unchanged ignores31targets/67bridge/fullstrictClippy/fmt/source2895/UI/
+version/roadmap/29rasters PASS; all34 goldens only296->297 identity. Native plain
+installed exact release acceptance PASS. Evidence native-terminal-exit-v297.txt.
+Prior296 release interrupted130 before install after review; initial297 full
+Rust/bridge ENOSPC attempts not counted passing, both fully rerun. Only127
+validated obsolete temporary compiler outputs/2522469334B cleared, original
+inputs/current297 outputs/user captures preserved. Not all-screen/CI/reboot/
+publication proof. Source2964e0c8a14 CI release-quality/compatibility PASS but
+strict hosted async must_use and moved IPC source gates fail, still queued.
 
 ## Completed native bridge import verification (v295)
 

@@ -1,0 +1,61 @@
+Native terminal exit/writer authority acceptance: PASS
+2026-10-03 06:59 Asia/Jerusalem; same boot, not actual reboot.
+
+Final code source: 8a30ba9f069f6bfe8dfd4336b05f3f029ae37cef (v0.1.297)
+Initial model correction: 4e0c8a144e49dfd622f6cac591a65782e5b611d5 (v296)
+Installed /home/bspguy-dev/.cargo/bin/yoctui SHA256:
+3b25186b5cfbfb94aea7c663b77551995c39dc687411c4994b00dbbfd9f23d19
+Matches /tmp/yoctui-openbmc-cargo.G9B7ac/release/yoctui byte identity.
+Release: locked/thin LTO/codegen-units1/debug1/frame pointers/two workers,
+6m24s build; exact cached install1.67s. v296 build interrupted130 before install.
+
+Native daemon2340904 remains healthy enabled v295/source62716abc,
+SHA917a9788e34c80103505ea4e8db93c2f6dc4efc6bd1e8e4692faf8d15c0f0bc0,
+instance20921e3a1f994603dabf6b9043dda64f, NRestarts0. This is a client model/UI
+correction with unchanged protocol/backend, so no daemon restart was inferred.
+Default /run/user/1000/yoctui/daemon.sock, canonical native source/build identity
+b261670860dd0336. Final daemon upgrade/all-screen/reboot acceptance still pending.
+Idle BitBake lifecycle Disconnected is distinct from connected daemon and retained
+current workspace/capability authority; no running build was claimed.
+
+Actual installed plain native attach client2363585 (no container/PYTHONPATH
+override) -> Ctrl+B t -> Ctrl+B c creates managed build shell26 -> select actual
+new session -> Ctrl+B o/current writer -> Tab Workspace. Native /bin/sh helper
+2363644 is child2340904, cwd /home/bspguy-dev/src/build-openbmc-romulus.
+Writer00eeeeb5 /epoch1/current Running/viewer1/120x40 verified actual snapshot.
+Ordinary input: printf 'YOCTUI_NATIVE_EXIT_V297\n'; pwd; exit<CR>.
+Actual helper exits0/disappears; typed PTY26 Exited/exit_code0 retains the exact
+writer identity/epoch. Real screen preserves command/cwd/output and shows
+READ-ONLY/no active writer and per-pane read-only history, not enabled writer.
+Ordinary q/confirmation client exit0 and alternate-screen restore are checked
+by actual TerminalAcceptance.finish. No F4/manual Ctrl+B detach workaround,
+forced client kill, daemon restart or forged state. Client/helper PIDs absent
+after acceptance; daemon active/NRestarts0. Retained session/history preserved.
+
+Actual captures above repository (presentation/assets, never committed/pushed):
+demo-native-v297-shell-writer-focus.txt SHA256
+f847ff59d502e628c61bcdd991cfb12bae0e83de4e64e8d3aecba5fe1afb27c7
+demo-native-v297-shell-exited-owned.txt SHA256
+f8da6f3bf925613d285df1d5b0bc528d447daffd0e3290181db74c9c4f47a854
+demo-native-v297-shell-exited-owned.cells SHA256
+589be71311f9b343de6b023acd908e387310c36f5da9a9500a08d7d0a95d81b3
+Those captures precede ordinary q; the successful driver finish receipt verifies
+exit/restoration separately, not falsely claimed as present in saved pre-quit ANSI.
+
+Seven new external pure/reducer/app/TestBackend/fake socket regressions.
+Pre-fix model lifecycle and independent per-pane role tests fail as expected.
+Full final workspace2055 passed/0 failed/9 unchanged live/manual ignores,
+31 targets; strict full workspace Clippy/fmt/67bridge/source2895/UI/roadmap/
+coherent297 version and29 pinned rasters pass. All34 golden diffs only version,
+remaining symbols/styles byte-exact. Initial297 Rust and six bridge failures
+were OS/tmp ENOSPC, explicitly not counted passing; complete reruns pass.
+Only127 validated unused older temporary executable/library/metadata outputs
+2522469334B cleared after ownership/version/live-user checks. Rebuildable Cargo
+cache only, current297 outputs/native tools/source/images/debug/user data retained.
+
+Original inputs remain byte-exact:
+kernel .config 0f809ea0922169c20ad329e51f580a16ac8e5b9b1f1393847e2732d663f2fc5c
+static.mtd 00c37b3aed9961a37d50a70afc3c670c50a25282c93784f7022b8e67d1c4f7f0
+matching debug vmlinux 68c5e164595aa24b4f6ed7f6936fab17b971ce2d39d69e3722c2a92c57b0cd50
+Boot ID 1e696f44-57bb-4193-af55-449269824bde unchanged.
+Not final viewport/all-screen/README/profile/hosted CI/publication/post-reboot proof.

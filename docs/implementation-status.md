@@ -1,36 +1,30 @@
-M114 current: DEMO-TERMINAL-EXIT-WRITER-001 IN_PROGRESS, split before code.
-v297 follow-up catches the independent per-pane historical owner check before
-install: expanded rendering regression fails on296, each non-running pane now
-read-only history; split test keeps active selected owner and unfocused ended
-pane distinct. v296 release build interrupted130 before install; native remains
-healthy verified295. v297 full bumped rerun PASS2055Rust/zero failures/nine
-unchanged ignores31targets/67bridge/fullstrictClippy/fmt/source2895/UI/version/
-roadmap/29rasters; all34 goldens only296->297 header. Initial Rust/bridge
-ENOSPC attempts explicitly not passing; full reruns succeed. Only127 unused
-prior generated cache outputs/2522469334B cleared after ownership/version/
-live-user checks, current297 outputs/original data untouched. Optimized source
-release/native ordinary q acceptance pending, not DONE. No external artifact
-or user history changed.
-v296 correction implemented: selected current Running session plus matching
-owner required for keyboard/paste/resize authority. Non-running UI roles/hints
-show read-only history/no active writer; stale roles request reconnect, retained
-IDs/epochs/history unchanged. New pure/reducer/app/TestBackend/fake wire tests
-cover lifecycle/paste exit race/Quit/focus traps/no resize request. Pre-fix test
-fails as expected; focused model/app55/UI26/CLI36 PASS, one existing manual
-CLI ignore unchanged. Prior v296 full workspace2054Rust/zero failures/nine existing
-live/manual ignores31targets and strict full Clippy/67bridge/fmt/source2895/UI/
-version/roadmap/29rasters PASS; all34 goldens only header295->296. Optimized
-install/native ordinary q acceptance pending, task not DONE; no final readiness/
-CI/publication claim. Only27 superseded own test executables/650082480B rebuildable
-cache cleared after ownership/live-user checks; current outputs/data preserved.
+M114 current: DEMO-TERMINAL-VIEWPORT-001 IN_PROGRESS, split before code.
+DEMO-TERMINAL-EXIT-WRITER-001 DONE source8a30ba9f/v297, optimized installed
+3b25186b (thinLTO/frame pointers/two workers). Plain native client2363585 owns
+real build shell26/helper2363644; ordinary command/pwd/exit yields helper exit0,
+historical matching writer/epoch retained but all UI access/pane/inspector roles
+become read-only history. Ordinary q/confirmation closes client0 and restores
+terminal without F4/manual detach/forced kill. Native daemon2340904 remains
+healthy295/917a9788/NRestarts0 for unchanged-protocol client-side proof; final
+daemon upgrade/all-screen/CI/reboot remain later acceptance, not claimed here.
+Evidence native-terminal-exit-v297.txt; all original hashes/user history preserved.
+Seven new pure/reducer/app/TestBackend/fake socket regressions, including
+unfocused ended split pane beside live writer. Model/pane pre-fix tests fail;
+full297 rerun2055Rust/zero failures/nine unchanged ignores31targets/67bridge/
+fullstrictClippy/fmt/source2895/UI/version/roadmap/29rasters PASS. All34 goldens
+only296->297 header. Initial297 ENOSPC Rust/bridge attempts not counted passing,
+complete reruns pass. Prior296 release interrupted130 before installation after
+per-pane review. Only127 validated unused temporary compiler outputs/2522469334B
+cleared, all297 outputs/source/images/debug/user data retained. No final hosted
+CI/publication/reboot/all-screen proof. Ordinary120x40 PTY clipping now active.
 Bridge import DONE source62716abc/v295 optimized native install917a9788;
 plain native Kernel/provider/.config(105069bytes)/clean source view PASS,
 client53077 exit0, original config/flash/symbol hashes unchanged. New enabled
 native service2340904/20921e3a1f994603dabf6b9043dda64f metadata4799/nine layers
 ready225s/NRestarts0, same bootID (not actual reboot). All-screen parent remains
-IN_PROGRESS. Native debug cleanup additionally exposes terminated writer IDs
-still owning input, and ordinary120x40 PTYs clipped by smaller visible panes.
-Atomic lifecycle then viewport corrections queued before parent resumes; no
+IN_PROGRESS. Native lifecycle/writer cleanup now verified; ordinary120x40 PTYs
+still clip in smaller visible panes. Atomic viewport correction follows before
+parent resumes; no
 new features/history deletion or fake cleanup proof. Large Doctor JSON argv
 harness correction separately queued after accepted native rehearsal, before
 final docs/CI. Exact62716abc CI37090891462 release-quality/compatibility PASS;

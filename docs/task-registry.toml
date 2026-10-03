@@ -413,18 +413,18 @@ notes = "DONE code62716abc/v295, installed optimized917a9788. Six new external s
 id = "DEMO-TERMINAL-EXIT-WRITER-001"
 milestone = "M114"
 title = "Remove writable input authority from terminated terminal sessions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3551
 required = true
 depends_on = ["DEMO-NATIVE-BRIDGE-IMPORT-001"]
 verify = ["cargo test -p yoctui-model terminal", "cargo test -p yoctui-app terminal", "cargo test -p yoctui-ui terminal", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 scripts/check-library-layout.py", "./scripts/verify-ui-spec.sh", "Manual: real owned native shell process exit then ordinary q/confirmation closes client clean0 without global F4 workaround, active owner and remote viewers remain correct", "./scripts/verify-roadmap.sh"]
-notes = "IN_PROGRESS v297 follow-up: expanded rendering regression exposes independent per-pane historical-ID check on296; each non-running pane now read-only history, split regression preserves live owner beside unfocused ended pane. v296 release interrupted130 before install; verified native295 unchanged. Seven new pure/reducer/app/UI/fake socket regressions; v297 full rerun PASS2055Rust/zero failures/nine unchanged ignores31targets/67bridge/fullstrictClippy/fmt/source2895/UI/version/roadmap/29rasters, all34 goldens only296->297 header. Initial Rust/bridge ENOSPC attempts explicitly not passing; full reruns succeed. Only127 validated unused prior temporary compiler outputs/2522469334B cleared, current297 outputs/actual data preserved. Optimized source-bound install/native ordinary q acceptance pending, not DONE. Model current Running selected session plus matching owner required, historical IDs/epochs/history retained. No new shortcuts/layout/wire/history deletion; live acceptance cannot use F4 workaround."
+notes = "DONE source8a30ba9f/v297 optimized installed3b25186b. Actual plain native client2363585 owns build shell26/helper2363644: ordinary command/pwd/exit -> real helper exit0/disappears, same historical writer/epoch retained but access/pane/inspector become read-only; ordinary q/confirmation clean0/terminal restoration without F4/manual detach/forced kill. Healthy native daemon2340904 remains295/917a9788/NRestarts0 for unchanged-protocol client-side proof; final daemon upgrade/all-screen/CI/reboot pending separately. Evidence native-terminal-exit-v297.txt, original hashes/history unchanged. Seven new pure/reducer/app/UI/fake socket regressions and pre-fix failures; full297 rerun2055Rust/zero failures/nine existing ignores31targets/67bridge/fullstrictClippy/fmt/source2895/UI/version/roadmap/29rasters PASS, all34 goldens only296->297 header. Initial297 ENOSPC attempts not passing, full reruns pass;296 release interrupted130 before install. Only127 validated obsolete temporary compiler outputs/2522469334B cleared, current297 outputs/actual data preserved. No new shortcuts/layout/wire/history deletion."
 
 [[task]]
 id = "DEMO-TERMINAL-VIEWPORT-001"
 milestone = "M114"
 title = "Size ordinary owned terminal sessions to their actual visible pane"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3550
 required = true
 depends_on = ["DEMO-TERMINAL-EXIT-WRITER-001"]

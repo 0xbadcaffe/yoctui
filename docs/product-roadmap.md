@@ -2,6 +2,16 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Terminal lifecycle/writer child DONE source8a30ba9f/v297 installed optimized
+3b25186b: actual plain native owned shell26 exit0 retains historical owner but
+UI becomes read-only; ordinary q/confirmation closes client2363585 clean0 and
+restores terminal without F4 workaround. Seven new regressions/full2055Rust/
+67bridge/full strict Clippy/fmt/source/UI/version/29rasters pass; no original
+input/history mutation. Native daemon stays healthy295 with unchanged protocol;
+final daemon upgrade/all-screen/CI/reboot acceptance remains later. Visible-pane
+sizing child is current, preserving menuconfig/narrow/split/remote authority.
+Evidence native-terminal-exit-v297.txt; initial ENOSPC failures not hidden.
+
 Bridge child DONE exact62716abc/v295 optimized native917a9788: actual Kernel
 inspection/.config/source viewing and clean native client exit0 pass; healthy
 enabled new instance metadata4799/nine layers225s, no original input mutation.
