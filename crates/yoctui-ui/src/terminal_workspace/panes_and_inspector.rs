@@ -38,6 +38,8 @@ pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
             |session| {
                 let access = if app.daemon.status != yoctui_model::ClientReplicaStatus::Current {
                     "retained read-only"
+                } else if session.lifecycle != yoctui_model::ClientDaemonLifecycle::Running {
+                    "read-only history"
                 } else if app.terminal.client_id.is_some()
                     && details.is_some_and(|details| details.writer == app.terminal.client_id)
                 {

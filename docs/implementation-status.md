@@ -1,15 +1,27 @@
 M114 current: DEMO-TERMINAL-EXIT-WRITER-001 IN_PROGRESS, split before code.
+v297 follow-up catches the independent per-pane historical owner check before
+install: expanded rendering regression fails on296, each non-running pane now
+read-only history; split test keeps active selected owner and unfocused ended
+pane distinct. v296 release build interrupted130 before install; native remains
+healthy verified295. v297 full bumped rerun PASS2055Rust/zero failures/nine
+unchanged ignores31targets/67bridge/fullstrictClippy/fmt/source2895/UI/version/
+roadmap/29rasters; all34 goldens only296->297 header. Initial Rust/bridge
+ENOSPC attempts explicitly not passing; full reruns succeed. Only127 unused
+prior generated cache outputs/2522469334B cleared after ownership/version/
+live-user checks, current297 outputs/original data untouched. Optimized source
+release/native ordinary q acceptance pending, not DONE. No external artifact
+or user history changed.
 v296 correction implemented: selected current Running session plus matching
 owner required for keyboard/paste/resize authority. Non-running UI roles/hints
 show read-only history/no active writer; stale roles request reconnect, retained
 IDs/epochs/history unchanged. New pure/reducer/app/TestBackend/fake wire tests
 cover lifecycle/paste exit race/Quit/focus traps/no resize request. Pre-fix test
 fails as expected; focused model/app55/UI26/CLI36 PASS, one existing manual
-CLI ignore unchanged. Full bumped workspace2054Rust/zero failures/nine existing
+CLI ignore unchanged. Prior v296 full workspace2054Rust/zero failures/nine existing
 live/manual ignores31targets and strict full Clippy/67bridge/fmt/source2895/UI/
 version/roadmap/29rasters PASS; all34 goldens only header295->296. Optimized
 install/native ordinary q acceptance pending, task not DONE; no final readiness/
-CI/publication claim. Only27 superseded own test executables/649MB rebuildable
+CI/publication claim. Only27 superseded own test executables/650082480B rebuildable
 cache cleared after ownership/live-user checks; current outputs/data preserved.
 Bridge import DONE source62716abc/v295 optimized native install917a9788;
 plain native Kernel/provider/.config(105069bytes)/clean source view PASS,

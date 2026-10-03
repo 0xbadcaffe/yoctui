@@ -60,6 +60,11 @@ fn terminal_exit_renders_read_only_history_not_an_active_writer_offer() {
             assert!(output.contains("READ-ONLY · no active writer"), "{output}");
             assert!(!output.contains("writer held by another client"));
             assert!(!output.contains("writer available"));
+            assert!(!output.contains("BuildShell · writer ·"), "{output}");
+            assert!(
+                output.contains("BuildShell · read-only history ·"),
+                "{output}"
+            );
             for (width, height) in [(20, 8), (80, 24), (160, 50)] {
                 let _ = rendered_text_at(&app, width, height, literal_now());
             }
@@ -96,4 +101,34 @@ fn terminal_live_writer_viewer_and_stale_roles_remain_distinct() {
         assert!(!inspector.contains("enabled"));
         assert!(!inspector.contains("another client owns writer"));
     }
+}
+
+#[test]
+fn terminal_split_roles_use_each_panes_own_lifecycle() {
+    let mut app = terminal_fixture();
+    let mut ended = app.daemon.pty_sessions[0].clone();
+    ended.id = 2;
+    ended.name = "ended-gdb".into();
+    ended.lifecycle = Life::Exited;
+    app.daemon.pty_sessions.push(ended);
+    let mut details = app.daemon.pty_details[0].clone();
+    details.id = 2;
+    app.daemon.pty_details.push(details);
+    let root = app.pane_layout.focused;
+    app.pane_layout
+        .split(root, yoctui_model::SplitAxis::Horizontal)
+        .unwrap();
+    assert!(app.selected_terminal_is_writer());
+    let output = rendered_region_rows(200, 30, |frame, area| {
+        terminal_workspace::terminal_sessions_workspace(frame, &app, area);
+    })
+    .join("\n");
+    assert!(output.contains("BuildShell · writer ·"), "{output}");
+    assert!(
+        output.contains("BuildShell · read-only history ·"),
+        "{output}"
+    );
+    assert!(output.contains("ended-gdb"));
+    assert_eq!(app.daemon.pty_details[1].writer, Some([3; 16]));
+    assert_eq!(app.daemon.pty_sessions[1].lifecycle, Life::Exited);
 }

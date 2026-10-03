@@ -32,6 +32,8 @@ this client's writer ID, not merely a retained writer ID. Connecting/stopping,
 exited/failed/lost or disconnected sessions are read-only; their inspector and
 access line must not offer an active lease or misidentify a historical owner as
 another live client. Stale replicas advertise reconnect, never writer access.
+Each split pane's status uses that pane's own lifecycle, including unfocused
+historical sessions; the selected session's access cannot authorize another pane.
 Exited/lost session history remains viewable without
 forwarding ordinary keys, paste or resize to a dead process, or advertising an
 active writer lease. Existing Quit/global routes regain normal application

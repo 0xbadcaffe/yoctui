@@ -4,6 +4,21 @@
 **Title:** Stop treating terminated PTY sessions as writable terminals
 **Status:** IN_PROGRESS
 
+Follow-up v297 review: the per-pane renderer still had an independent historical
+writer-ID check. Expanded TestBackend regression fails on v296; correction now
+projects each non-running pane as read-only history, including an unfocused
+ended pane beside a running writer. Additional split regression added. v296
+optimized build was deliberately interrupted (130) before install; native
+installed/client/service remain verified v295. v297 full workspace rerun PASS:
+2055Rust/zero failures/nine unchanged ignores31targets,67bridge, strict full
+Clippy/fmt/source2895/UI/version/roadmap/29rasters. All34 golden diffs only
+296->297 header identity. Initial full Rust/bridge attempts hit OS/tmp ENOSPC,
+not counted passing; original failure evidence retained and both rerun fully.
+Only127 validated unused prior executable/library/metadata outputs totaling
+2522469334B were cleared from owned temporary Cargo cache, preserving all297
+outputs/native release/tools/source/images/debug symbols and user captures.
+Optimized committed-source install/live ordinary q acceptance pending; not DONE.
+
 Implementation v296: model writer authority now additionally requires the
 selected session lifecycle Running. UI access/inspector project non-running
 sessions as read-only history/no active writer and stale replicas as retained
@@ -17,7 +32,7 @@ in31targets, strict full workspace Clippy,67bridge/fmt/source2895/UI/version/
 roadmap and29 pinned rasters PASS. All34 goldens differ only295->296 header
 identity; symbols/styles otherwise byte-exact. Source-bound optimized install
 and native ordinary q acceptance remain pending; no DONE or final CI/publication
-claim yet. Removed only27 validated unused prior test executables (649MB of
+claim yet. Removed only27 validated unused prior test executables (650082480B of
 rebuildable cache), preserving current outputs/source/images/debug symbols.
 
 Atomic child split from actual native GDB cleanup before implementation.
