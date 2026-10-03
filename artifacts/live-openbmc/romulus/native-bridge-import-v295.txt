@@ -1,0 +1,66 @@
+M114 native bridge vendored imports — implementation verification (partial)
+2026-10-03; product0.1.295. Installed-client acceptance still pending.
+
+The actual retained OpenBMC BitBake2.19.1 generated parser imports
+pysh.pyshtables from bb.pysh.pyshyacc. Plain local source/build workers had only
+bitbake/lib and failed ModuleNotFoundError: pysh, falling back to the unavailable
+legacy connector. The service's explicit lib/bb path worked independently.
+Native failure reproduction/provenance: native-rehearsal-v294.txt.
+
+CORRECTION
+tinfoil_workspace.py SHA41d4a5dfc5143fc882b6c96cc40e8c02c0093481fd173d5f84021f0a25eccb64.
+Before importing Tinfoil, append only the actual imported bb package's existing
+vendored pysh parent to the owned bridge child sys.path when not already present.
+Require absolute package __init__.py authority; no guessed layout, global caller
+environment, upstream source/generated parser edit, capability fabrication,
+selected implementation change, timeout/budget change or new UI/wire workflow.
+Legacy single-module server adapters/no-vendor package behavior unchanged.
+
+TESTS
+Six new subprocess tests in bridge/tests/test_tinfoil_imports.py:
+actual vendored import without parent override/caller environment unchanged,
+ordinary package without vendor, missing vendor fail-closed metadata,
+unrelated missing dependency despite vendor, legacy single-module connector,
+already-present vendored parent is not duplicated.
+Before source correction positive vendor test fails (valueNone, not romulus),
+four other original cases pass. After correction all67 bridge tests plus four subtests
+PASS; existing assertions/ignores unchanged. BitBake299/UI377/strict workspace
+Clippy/fmt/source2892/UI/version/pinned29rasters/README/performance prose pass.
+All34 golden changes verified byte-exact identity294->295 only, every other
+symbol/style retained. Historical six live captures/original concepts unchanged.
+Logs /tmp/yoctui-native-import-{ui,rust,clippy,readme}-v295.log.
+Full workspace rerun /tmp/yoctui-native-import-full-rust-v295.log PASS2048tests/
+zero failures/nine unchanged live/manual ignores31targets; strict full Clippy
+log /tmp/yoctui-native-import-full-clippy-v295.log PASS. No new skipped gates.
+check-docs fails existing Doctor JSON passed through one argv argument at
+183406bytes (OS per-argument limit), not a failed JSON schema/authority. Preserve
+this separate harness defect for atomic correction before final docs/CI.
+Initial docs attempt accidentally used default full debug/incremental and
+filled temporary cache; it already failed before cancellation could reach it.
+Validated owned eight generated incremental directories,259 failed CLI linker
+files911381522B and12 unused own default-debug libraries were removed with no
+Cargo/rustc/linker active. Cargo recreates them; no source/image/symbol/tool or
+user data removed. ~2.1GiB tmp space restored before correct low-space rerun.
+Correct rerun log /tmp/yoctui-native-import-docs-low-space-v295.log reaches the
+same JSON argv defect. Actual large Doctor JSON retained read-only at
+/tmp/yoctui-docs-doctor-large-v295.json; no bypass or fake diagnostic success.
+
+ACTUAL NATIVE SOURCE-ONLY CHECK
+Exact retained native source oe-init-build-env initializes sibling Romulus build;
+caller PYTHONPATH is only /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib,
+PYTHONDONTWRITEBYTECODE=1. Run real source bridge (not fake fixture) in that build,
+get_recipe_metadata virtual/kernel, get_variable STAGING_KERNEL_BUILDDIR for
+virtual/kernel, shutdown. Exit0/actual metadata63tasks/nine packages/three sources:
+  meta-aspeed/recipes-kernel/linux/linux-aspeed_git.bb
+  meta-phosphor/recipes-kernel/linux/linux-%.bbappend
+  meta-ibm/meta-romulus/recipes-kernel/linux/linux-aspeed_%.bbappend
+Shared build /home/bspguy-dev/src/build-openbmc-romulus/tmp/work-shared/romulus/
+kernel-build-artifacts; original ${TMPDIR}/work-shared/${MACHINE}/kernel-build-artifacts,
+actual source meta/conf/bitbake.conf:494 provenance. bridge_shutdown observed.
+NDJSON /tmp/yoctui-native-import-metadata-v295.ndjson
+SHAaa9ce28bbb8a2cdf73559247d4eb975ce9c2c0e0c3ade85b1535590e42086347.
+stderr /tmp/yoctui-native-import-metadata-v295.log; genuine native parse/warm-up
+is not compared with historical container or setup-only timing.
+This check uses the patched source bridge, NOT the still-installed v294 binary.
+Task remains IN_PROGRESS until exact committed optimized v295 install/plain
+native Kernel screen/config inspection succeeds with original inputs unchanged.

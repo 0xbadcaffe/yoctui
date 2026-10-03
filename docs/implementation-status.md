@@ -1,4 +1,19 @@
 M114 current: DEMO-NATIVE-BRIDGE-IMPORT-001 IN_PROGRESS, split before code.
+Implementation v295 source-only positive native Tinfoil metadata63tasks/nine
+packages/three actual source files and STAGING_KERNEL_BUILDDIR/provenance PASS,
+only bitbake/lib in caller path; no upstream or global path mutation. Five new
+subprocess import regressions (six), all67 bridge/BitBake299/UI377/full workspace
+strictClippy/fmt/source2892/UI/version/29rasters PASS. All34 golden changes only version.
+Installed exact committed-source plain Kernel inspection remains pending; full
+workspace rerun PASS2048/zero failures/nine unchanged ignores31targets. check-docs
+fails existing Doctor JSON argv transport at183406bytes against OS per-arg limit;
+distinct harness correction needed before final docs/CI, not silently bypassed.
+Owned wrong-profile docs incremental/failed-link/unused default-debug libraries
+were cleaned after process checks; no original data/symbols/tools removed.
+No all-screen/reboot/hosted CI/publication claim.
+Warm native v294 rootfs2628entries/actual root0 modes/sizes and offline systemd195
+units including End195/195 work, ownership-to-package mapping honestly partial.
+Corrected driver93428 clean native client exit0; early failed cleanup not hidden.
 Native v294 audit genuinely boots Romulus to login, hits start_kernel/source,
 and reconnects a new plain client to interrupt/bt/registers; owned helper/QEMU/
 GDB/socket/staged copy cleaned, original inputs unchanged. This is partial native

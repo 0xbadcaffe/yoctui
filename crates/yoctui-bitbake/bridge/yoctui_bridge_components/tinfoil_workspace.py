@@ -28,6 +28,18 @@ class TinfoilConnection:
 
     def __init__(self, module):
         self.module = module
+        # Retained BitBake parsers can import pysh.pyshtables rather than
+        # bb.pysh.pyshtables. Bootstrap only this imported package's vendor
+        # parent in our child, without changing the caller or upstream files.
+        package_file = getattr(module, "__file__", None)
+        if isinstance(package_file, str) and os.path.isabs(package_file):
+            package = os.path.dirname(os.path.realpath(package_file))
+            if (
+                os.path.basename(package_file) == "__init__.py"
+                and os.path.isdir(os.path.join(package, "pysh"))
+                and package not in sys.path
+            ):
+                sys.path.append(package)
         self.tinfoil_module = importlib.import_module("bb.tinfoil")
         self.tinfoil = None
         self.recipes_parsed = False

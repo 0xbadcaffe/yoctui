@@ -27,6 +27,11 @@ Status: **Authoritative product and interaction contract**
 
 ### M114 OpenBMC demo release polish (no new features)
 
+Plain native attachment must not require a caller-side Python path workaround
+for the selected BitBake package's own vendored parser. The backend initializes
+that dependency only inside its bridge child; missing or unrelated imports still
+produce the existing unavailable inspection result. No UI/workflow change.
+
 Kernel/Firmware inspection uses the selected workspace source and build even
 when they are sibling directories. Missing selected initializer or an initializer
 that selects another build produces the existing inspection failure notice;

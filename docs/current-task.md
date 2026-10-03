@@ -5,6 +5,19 @@
 **Status:** IN_PROGRESS
 
 Atomic child split from the installed native screen audit before implementation.
+Implementation v295: bridge-child bootstrap and six subprocess regressions;
+pre-fix positive vendor case fails, post-fix all67 bridge tests pass. BitBake299/
+UI377/strict workspace Clippy/fmt/source2892/UI/version/pinned29rasters pass;
+all34 golden changes are only294->295 identity. Actual source-only native bridge
+with only bitbake/lib returns virtual/kernel63tasks/nine packages/three sources
+and STAGING_KERNEL_BUILDDIR with real conf/bitbake.conf:494 provenance, exit0.
+This is not installed-client acceptance; exact committed release installation/
+plain native Kernel inspection still required. Full workspace2048/zero failures/
+nine unchanged live/manual ignores31targets PASS. check-docs reaches the real
+native Doctor but fails its old argv JSON transport at183406bytes (OS per-arg
+limit); retain that distinct harness defect for an atomic correction before
+final docs/CI. Initial wrong-profile docs attempt filled only the temporary
+compiler cache; owned generated failure outputs cleaned, low-space rerun used.
 Plain client workers initialize the selected source/build with only bitbake/lib.
 The actual retained BitBake2.19.1 generated parser imports pysh.pyshtables and
 fails with ModuleNotFoundError: pysh. The enabled daemon's explicit lib/bb path
@@ -31,6 +44,12 @@ python3 scripts/check-library-layout.py
 ```
 
 ## Parent native rehearsal (in progress)
+
+Warm v294 rootfs retry actually resolves IMAGE_ROOTFS:2628entries/195offline
+systemd units, real root(0) owners/modes/size; systemd End reaches195/195. The
+filesystem package-ownership mapping remains explicitly unavailable, not image
+uid/gid. Driver uses global F4 before q/y; native controller93428 closes clean0.
+Early cold timeout remains a recovery caveat, not silently bypassed/relaxed.
 
 Full local quality DONE product399ce139/v294 (handoff02842aeb):2048Rust/61bridge/
 strictworkspaceClippy/fmt/fullrelease/docs/source2891/roadmap PASS;9 existing
