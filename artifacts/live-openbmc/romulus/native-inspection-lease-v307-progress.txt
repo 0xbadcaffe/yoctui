@@ -1,0 +1,57 @@
+Native inspection connection scope — partial live proof, not completed devshell
+2026-10-03; source2c253e38125b4bb9bf88d41d491d55c34775a9ed; v0.1.307.
+Optimized release/install identical SHA256:
+fd2a0bdebbefb5ba3b76285b606429f4a2bce94e6b4489595d7fa2cf276ae86e
+Two-worker disk-cache build6m08s, install1.72s. Native enabled daemon2614647/v306,
+unchanged protocol, active/NRestarts0; this is not final daemon/reboot readiness.
+
+Plain installed native attach2657925: qemu-helper-native recipe metadata loaded,
+private bridge exits before idle state; no owned bridge child remains. Actual
+Config detail reads BB_NUMBER_THREADS=2 with selected local.conf provenance,
+then releases its bridge. Repeated recipe metadata after failed task also works.
+Layer tree shows nine layers/core756. Layer relationships fail closed because
+the actual bridge did not negotiate that API; not claimed supported or successful.
+Native q/confirmation exits0/restores terminal. Controller/client/owned actors gone.
+Read-only protocol before/after: original34PTY summaries,19jobs/full compatibility
+byte-equivalent; clients empty. Original six configuration/image/symbol hashes
+remain exactly the recorded native-rootfs-qgdb-v302 values.
+
+Reviewed actual devshell35 starts initialized native BitBake and sees217 current
+sstate entries, but exits1 on unchanged15GiB STOPTASKS/8GiB HALT disk thresholds.
+No guard weakened, no successful devshell inferred from dry-run or task startup.
+User explicitly approves only older Poky generated host-tool work directory
+/home/bspguy-dev/src/build/tmp/work/x86_64-linux cleanup (~31GiB du estimate).
+Resolved owned directory/non-symlink, no matching open files; exact directory
+removed. Root free space observed afterward54–59GiB; other concurrent filesystem
+changes are not attributed to this cleanup. Source repositories/downloads/
+deployed images/guest kernel-symbol artifacts/native build hashes untouched.
+Deleted generated host tools can only be recovered by rebuilding that older
+Poky environment. Nine completed test binaries temporarily staged in /tmp are
+restored to original disk cache paths; durable release/tools never moved to RAM.
+Additionally64obsolete unused test executables540811120B were scoped-cleared,
+preserving current test/release outputs and all live executables.
+
+Fresh plain native2681242 repeats real inspection, no idle metadata child, then
+reviewed embedded devshell36 reaches actual do_devshell with cached217 sstate
+without the prior setFeatures timeout. It incorrectly opens desktop GNOME:
+log.do_devshell.2682981 reports no custom terminal, then desktop attempts.
+Owned bash2682995 verified executable/usr/bin/bash, parent2485979 and exact
+BUILD/tmp/work/x86_64-linux/qemu-helper-native/1.0/sources cwd; scoped HUP cleanup
+only that new shell. BitBake/session36 exit0 subsequently, but HUP is NOT accepted
+as normal embedded interactive success. CLI/controller/BitBake/worker/shell absent,
+normal native q0/restoration; original prior history/jobs/hashes unchanged.
+Separate DEMO-EMBEDDED-DEVSHELL-RELAY-001 split before code; both it and lease
+require real embedded pwd/environment/normal exit/repeat inspection before DONE.
+
+Actual unedited presentation captures stay above Git under
+/home/bspguy-dev/projects/yoctui-ydd2026-presentation/assets/ with matching cells/ANSI:
+demo-native-v307-qemu-helper-inspection.txt e90b94009c14b4cd5a66e86962ca30f4dbca79031f60b94db4b802a097837e6d
+demo-native-v307-variable-detail-scoped.txt dee2486f5bcac69902596d01efee843b948e6f4532e5e58af0f008e10cc42b65
+demo-native-v307-repeat-inspection-after-task-refusal.txt 7f0c029efc16aba98e4d22e360941314cd478dc2d41438bdae38bbff97526dc9
+demo-native-v307-devshell-clean-space-control.txt 524d0894c4c4b511a74a0b437cea871fe76b48bf04c5719dd156aa9dd9c7246a
+
+Eight lease regressions, ordinary full2113Rust/0failures/9unchanged ignores31targets,
+strictClippy55.42s/67bridge/fmt/source2914/UI/roadmap/version PASS;34version-only
+goldens/29rasters verified. Earlier watcher failures retained, successful inotify
+trace/five unchanged uninstrumented reruns and ordinary full rerun pass, no
+assertion weakened. Full all-screen/CI/coordinated reboot/publication pending.

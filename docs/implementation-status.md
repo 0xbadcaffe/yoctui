@@ -1,4 +1,13 @@
 M114 current: DEMO-EMBEDDED-DEVSHELL-RELAY-001 IN_PROGRESS; lease paused.
+Implementation v308 uses existing validated relay for typed Devshell/Menuconfig;
+other kinds and exact argv retained. Two unit/wire and two owned fake-process
+handoff success/failure regressions plus seven existing relay tests pass.
+Updating and ordinary full rerun2117Rust/0/9unchanged ignores32targets; strict
+Clippy3m17 including lock wait/67bridge/fmt/source2916/UI/roadmap/version PASS.
+34identity-only goldens and29regenerated/verified rasters. Existing rootfs fixture
+Text file busy failure retained in /tmp/yoctui-embedded-devshell-full-final-v308.log;
+unchanged ordinary full rerun passes, no assertion weakened. Source-bound optimized
+installation and actual native embedded normal-exit proof still required.
 Split before code: native307 source2c253e38/optimized installed SHAfd2a0bde,
 recipe/repeat/BB_NUMBER_THREADS=2 variable detail and owned bridge release pass;
 normal client2657925 q0/restored, old34PTY/19jobs/fullcompatibility/six originals
@@ -25,7 +34,7 @@ Legacy behavior and daemon build ownership unchanged. Full ordinary2113Rust/0/
 roadmap/version and34version-only goldens/29verified rasters PASS. Existing Git
 watcher failed twice; trace proves successful inotify calls, five unchanged
 uninstrumented rechecks and full rerun pass; failed logs retained, no weakened
-assertion or watcher change. Optimized307/native real devshell proof pending.
+assertion or watcher change. Optimized307 install passes; native embedded proof pending.
 Source151cca55/v306 optimized installed24cab7a4, actual native2591056 chooser
 selects new shell34/Workspace automatically; explicit writer/pwd/BUILD/exit0,
 normal q0/restored, owned actors absent. Original33PTY summaries/19jobs/full

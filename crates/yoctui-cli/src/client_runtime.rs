@@ -17,7 +17,7 @@ use attach::random_client_id;
 #[cfg(test)]
 use effect_routing::daemon_command_for_effect;
 #[cfg(test)]
-use terminal_control::{prefix_daemon_command, wire_terminal_kind};
+use terminal_control::{embedded_terminal_command, prefix_daemon_command, wire_terminal_kind};
 
 pub(crate) const MAX_EVENTS_PER_POLL: usize = 64;
 pub(crate) const DAEMON_RECONNECT_INTERVAL: Duration = Duration::from_secs(1);

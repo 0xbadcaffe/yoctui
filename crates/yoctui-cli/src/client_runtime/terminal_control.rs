@@ -74,12 +74,7 @@ impl InteractiveDaemonRuntime {
                 arguments,
                 ..
             } => {
-                let (program, arguments) =
-                    if matches!(kind, yoctui_model::TerminalCreationKind::Menuconfig) {
-                        crate::menuconfig_relay::command(program, arguments)?
-                    } else {
-                        (program.clone(), arguments.clone())
-                    };
+                let command = embedded_terminal_command(*kind, program, arguments)?;
                 self.transport.command(CommandRequest {
                     request_id,
                     expected_generation: Some(app.daemon.generation),
@@ -87,11 +82,7 @@ impl InteractiveDaemonRuntime {
                         name: name.clone(),
                         kind: wire_terminal_kind(*kind),
                         cwd: cwd.display().to_string(),
-                        command: yoctui_protocol::daemon::PtyCommand {
-                            program: program.display().to_string(),
-                            arguments,
-                            environment_profile_id: None,
-                        },
+                        command,
                         dimensions: TerminalDimensions {
                             columns: 120,
                             rows: 40,
@@ -210,6 +201,27 @@ impl InteractiveDaemonRuntime {
             })?;
         Ok(())
     }
+}
+
+pub(super) fn embedded_terminal_command(
+    kind: yoctui_model::TerminalCreationKind,
+    program: &std::path::Path,
+    arguments: &[String],
+) -> std::io::Result<yoctui_protocol::daemon::PtyCommand> {
+    let (program, arguments) = if matches!(
+        kind,
+        yoctui_model::TerminalCreationKind::Menuconfig
+            | yoctui_model::TerminalCreationKind::Devshell
+    ) {
+        crate::menuconfig_relay::command(program, arguments)?
+    } else {
+        (program.to_owned(), arguments.to_owned())
+    };
+    Ok(yoctui_protocol::daemon::PtyCommand {
+        program: program.display().to_string(),
+        arguments,
+        environment_profile_id: None,
+    })
 }
 
 pub(super) fn wire_terminal_kind(

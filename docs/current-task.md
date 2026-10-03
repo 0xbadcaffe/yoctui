@@ -4,6 +4,18 @@
 **Title:** Keep the existing embedded devshell handoff in its daemon-owned PTY
 **Status:** IN_PROGRESS
 
+Implementation v0.1.308 routes typed Devshell and Menuconfig through the same
+existing validated relay, retaining exact arguments and every other terminal
+kind. Two wire-mapping/unit and two owned fake-process handoff regressions pass;
+existing seven menuconfig relay tests pass. Updating and ordinary full rerun:
+2117 Rust passed, zero failures, nine unchanged ignores across32 targets.
+The preceding ordinary run's existing rootfs fixture Text file busy failure is
+retained in /tmp/yoctui-embedded-devshell-full-final-v308.log; no assertion weakened.
+Strict all-target/all-feature Clippy passes (3m17 including build-lock wait),
+67bridge/fmt/source2916/UI/roadmap/version pass.34 goldens differ only307->308;
+6concept/23README rasters regenerated and checked. Optimized install and actual
+native embedded pwd/environment/normal exit/repeated inspection remain required.
+
 Split before code after actual307 native validation: completed recipe/config
 inspection releases its private bridge; reviewed qemu-helper-native devshell
 reaches actual do_devshell using217cached sstate. Once approved older Poky
@@ -51,9 +63,9 @@ source2914/UI/roadmap/version PASS.34 goldens differ only306->307 identity;
 are retained in /tmp/yoctui-lease-{full-final,source-git-workspace-recheck}-v307.log;
 inotify initialization/watch calls succeeded, five uninstrumented reruns and
 the complete ordinary rerun pass unchanged. No watcher assertion weakened.
-Optimized installation and actual native devshell/repeat-inspection proof remain
-required before DONE. Completed test binaries temporarily moved to bounded
-/tmp storage with original cache symlinks; release/tools/images remain on disk.
+Optimized307 installation passed; actual native embedded devshell/repeat-inspection
+proof remains required before DONE. All nine temporarily staged completed test
+binaries have been restored to the disk cache; release/tools/images stayed on disk.
 
 Focus child DONE: source151cca55/v306 optimized installed SHA24cab7a4, actual
 native2591056 chooser -> shell34 automatic selection/Workspace focus, explicit
