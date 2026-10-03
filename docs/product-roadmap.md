@@ -57,6 +57,9 @@ model/bridge/palette findings are still open; no global source gate exemption.
 Model child DONE v290: five findings removed with original reducer/action/test
 tokens preserved; full model586/app250/UI377 and strict affected gates pass.
 Bridge and palette remain, then full source-layout/workspace verification.
+Bridge child DONE v291: exact Rust scope tokens and all20 Python method ASTs
+preserved,61 tests still collected; bitbake299/bridge61/UI377/strict gates pass
+with only existing live ignores. Palette remains before full hygiene verification.
 Selected-source init DONE v271 with real provider/firmware .config evidence;
 DEMO-PLATFORM-CONFIG-001 fixes separately observed kernel config starvation
 within existing bounded scans before contract fixtures; no quota increase.

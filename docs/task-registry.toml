@@ -281,18 +281,18 @@ notes = "DONE v290: cohesive private Kernel/Firmware action factories, rootfs-co
 id = "DEMO-BRIDGE-HYGIENE-001"
 milestone = "M114"
 title = "Externalize bridge adapter tests and split oversized Python metadata regression file"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3536
 required = true
 depends_on = ["DEMO-MODEL-HYGIENE-001"]
 verify = ["cargo test -p yoctui-bitbake --all-features","python3 -m pytest bridge/tests","cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings","Manual: inline bridge types/stderr tests and517line Python test_metadata_events findings removed with exact assertions","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
-notes = "Relevant bitbake bridge_backend/types_and_stderr external tests and bridge/tests/test_metadata_events.py semantic split into another test file. Preserve discovery/import fixtures, every test/normal and failure assertion, literal contents and integration limits. No runtime/protocol change or checker exemption. Versioned coherent commit."
+notes = "DONE v291: external scope test retains original bridge_backend::local_api_scope_tests namespace and exact tokens/assertions. Python metadata392/disk-guard131 files retain all20 original helper/test ASTs, literals and assertions; collection61 unchanged and maintained historical task verification path now includes new file. Full bitbake299PASS/one existing unit ignore plus three existing external live ignores, bridge61PASS/UI377 and strictbitbakeClippy/fmt/UI/version/roadmap PASS. All34 goldens differ only290->291 exact identity. Only palette511 finding remains, no checker exemptions/runtime/protocol change. Log bridge-hygiene-v291 under/tmp. Reclaimed102 obsolete own generated libraries1534947884B before CLI289 cutoff from exact temporary cache after active compiler reference check; source/images/symbols/installed binaries untouched, Cargo regenerates. No native/full-release claim."
 
 [[task]]
 id = "DEMO-UI-HYGIENE-001"
 milestone = "M114"
 title = "Split palette projection helpers under existing UI module size limit"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3537
 required = true
 depends_on = ["DEMO-BRIDGE-HYGIENE-001"]
@@ -428,7 +428,7 @@ status = "DONE"
 priority = 3310
 required = true
 depends_on = ["XILINX-ZCU102-ENV-001"]
-verify = ["python3 -m pytest bridge/tests/test_metadata_events.py -k 'disk_guard or native_event'", "python3 -m pytest bridge/tests/test_server_adapters.py -k 'build or cancellation or bounded'", "cargo test -p yoctui-protocol disk_guard", "cargo test -p yoctui-model disk_guard", "cargo test -p yoctui-ui disk_guard", "cargo test -p yoctui-bitbake bridge_backend", "cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: real isolated Yoctui image request below unchanged disk guard reports Failed/partial progress and exact diagnostic, not image success"]
+verify = ["python3 -m pytest bridge/tests/test_metadata_events.py bridge/tests/test_disk_guard_events.py -k 'disk_guard or native_event'", "python3 -m pytest bridge/tests/test_server_adapters.py -k 'build or cancellation or bounded'", "cargo test -p yoctui-protocol disk_guard", "cargo test -p yoctui-model disk_guard", "cargo test -p yoctui-ui disk_guard", "cargo test -p yoctui-bitbake bridge_backend", "cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "./scripts/verify-ui-spec.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui", "Manual: real isolated Yoctui image request below unchanged disk guard reports Failed/partial progress and exact diagnostic, not image success"]
 notes = "DONE v0.1.268 commit ba76ae7a pushed, exact source-bound optimized debug0 release built/hash-verified; focused bridge/protocol/model/UI partial progress and four backend tests/strict backend Clippy/fmt/UI/version/roadmap pass. Real isolated job2 below unchanged guard: native STOPTASKS/DiskFull diagnostics, Failed/exit1, completed0/unknown total, no fabricated failed task; actual wide PTY shows Failed/Connected/full ZCU102. Evidence native-disk-guard-fixed.txt and checks file. Approved old archive cleanup ~4.4GiB and own generated Cargo cache cleanup preserved Git/source/images/debug and both releases; ~8GiB available for image retry. Full suite deferred; two unchanged extra editor/SDK expectation failures recorded, not weakened. Process-mode outcomes not certified by this native-event task."
 
 [[task]]

@@ -1,28 +1,26 @@
 # Current Task
 
-**ID:** DEMO-BRIDGE-HYGIENE-001
-**Title:** Externalize bridge adapter tests and split oversized Python metadata regression file
+**ID:** DEMO-UI-HYGIENE-001
+**Title:** Split palette projection helpers under existing UI module size limit
 **Status:** IN_PROGRESS
 
-Dependency model hygiene DONE v290: original reducer/action/test body tokens
-preserved, all five findings removed; model586/integrations1+5/app250/UI377/
-strict affected/fmt/UI/version/roadmap PASS, final post-format rerun PASS.
-Mechanically move bridge_backend/types_and_stderr inline tests into an actual
-tests folder without namespace/literal/assertion changes. Split517line Python
-test_metadata_events into a cohesive separate test file, preserving unittest/
-pytest discovery, shared support imports, fixtures and every normal/failure
-assertion. No bridge/runtime/protocol change, hidden test or500line exemption.
-Bump product, maintain only exact version identity in34 goldens; full bitbake/
-bridge/UI and strict affected verification. Then palette and full hygiene parent;
-faithful DIM/provenance maintenance, full release quality and actual native
-reboot-ready optimized OpenBMC/QEMU/GDB/CI/publication. Preserve user artifacts,
-sources/images/symbols and unrelated processes, two compile workers.
+Dependency bridge hygiene DONE v291: exact original Rust scope tokens and all20
+Python helper/test ASTs preserved,61 cases still collected; bitbake299/bridge61/
+UI377 and strict affected/fmt/UI/version/roadmap PASS (existing live ignores only).
+Only palette_render511 source-size finding remains. Move cohesive command/
+global-search detail projections to a private sibling module and re-export their
+existing names/visibility, preserving every typed value/style/label/width bound
+and exact body tokens. No input/focus/layout/theme change or500line exemption.
+Bump, maintain exact34 golden identity version-only, full UI and strict Clippy,
+then full source/library gate plus full-workspace hygiene parent. Faithful DIM/
+fixture/provenance maintenance and full release quality follow; actual native
+reboot-ready optimized OpenBMC/QEMU/GDB/CI/publication remain required. Preserve
+sources/images/symbols/user captures/unrelated clients, two compile workers.
 
 ```bash
-cargo test -p yoctui-bitbake --all-features
-python3 -m pytest bridge/tests
-cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings
-# Manual: adapter/Python findings removed with unchanged complete test discovery.
+cargo test -p yoctui-ui --all-features
+cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
+python3 scripts/check-library-layout.py
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

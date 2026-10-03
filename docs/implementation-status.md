@@ -1,4 +1,14 @@
-M114 current: DEMO-BRIDGE-HYGIENE-001 IN_PROGRESS; model hygiene DONE v290.
+M114 current: DEMO-UI-HYGIENE-001 IN_PROGRESS; bridge hygiene DONE v291.
+External scope test retains original namespace/exact tokens/assertions. Python
+metadata392/disk-guard131 files retain all20 original helper/test ASTs/literals/
+assertions and61 collected cases; historical disk-guard verify path maintained.
+Full bitbake299PASS/one existing unit ignore+three existing external live ignores,
+bridge61PASS/UI377, strictbitbakeClippy/fmt/UI/version/roadmap PASS. All34 goldens
+differ only290->291 identity. No runtime/protocol change/exemption; only palette
+511 finding remains. Log /tmp/yoctui-demo-bridge-hygiene-v291.log.
+Reclaimed102 obsolete own generated library files1534947884B before CLI289 cutoff
+from exact temporary cache after compiler-reference check; source/images/symbols/
+installed binaries unchanged, Cargo regenerates. Final native/full release pending.
 Private platform factories/rootfs and Devtool-upgrade bodies preserve original
 tokens/guards/effects/focus/defaults; moved Hardware and included QEMU tests retain
 names/shared fixtures/exact assertions/literals. Catalog492/rootfs parent490/
