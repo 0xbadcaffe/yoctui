@@ -1,0 +1,124 @@
+{
+  "schema": "yoctui.performance.runtime-profile.v1",
+  "captured_at_utc": "2026-10-03T14:52:28.846705+00:00",
+  "scenario": "native-openbmc-layers-v305-after-roles",
+  "revision": "07f08ce05bc2bf8a88c4fe0aa280f9ff1390920a",
+  "host": {
+    "kernel": "7.0.0-34-generic",
+    "machine": "x86_64"
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/.cargo/bin/yoctui",
+    "sha256": "fc7cfa3a42dc8bc220cd042bb610562b8e2471428d96441f0897fd4003c7f901"
+  },
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "fp",
+    "duration_seconds": 180,
+    "samples": 899,
+    "unresolved_stack_lines": 2,
+    "dropped_unresolved_ppm": 3615,
+    "maximum_dropped_unresolved_ppm": 5000
+  },
+  "processes": [
+    {
+      "role": "client",
+      "pid": 2553310,
+      "executable": "/home/bspguy-dev/.cargo/bin/yoctui",
+      "command": "/home/bspguy-dev/.cargo/bin/yoctui attach"
+    },
+    {
+      "role": "daemon",
+      "pid": 2553232,
+      "executable": "/home/bspguy-dev/.cargo/bin/yoctui",
+      "command": "/home/bspguy-dev/.cargo/bin/yoctui --config /home/bspguy-dev/.config/yoctui/openbmc-demo-daemon.toml daemon foreground"
+    }
+  ],
+  "artifacts": {
+    "svg_sha256": "e4a014952c29ff5298c5d61a22a425e4a948f99b0244120d061c45d028e5b63e",
+    "flat_report_sha256": "f84f78d25d43b23ebe0b451a6389de59bc11069d8b2b542137dfd09816312631"
+  },
+  "top_self_symbols": [
+    {
+      "self_percent": 2.98,
+      "symbol": "yoctui::daemon_server::background::poll"
+    },
+    {
+      "self_percent": 2.14,
+      "symbol": "<yoctui::interactive_runtime::state::InteractiveRuntime>::poll_runtime::{closure#0}"
+    },
+    {
+      "self_percent": 1.46,
+      "symbol": "<ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>"
+    },
+    {
+      "self_percent": 1.17,
+      "symbol": "0x00000000000b2185"
+    },
+    {
+      "self_percent": 1.03,
+      "symbol": "0x00000000000b3cf8"
+    },
+    {
+      "self_percent": 0.93,
+      "symbol": "0x000000000019759d"
+    },
+    {
+      "self_percent": 0.93,
+      "symbol": "cfree"
+    },
+    {
+      "self_percent": 0.91,
+      "symbol": "0x00000000000b23bc"
+    },
+    {
+      "self_percent": 0.87,
+      "symbol": "0x00000000000b0f89"
+    },
+    {
+      "self_percent": 0.69,
+      "symbol": "<core::iter::adapters::map::Map<core::str::iter::Lines, <ratatui_core::text::line::Line as core::convert::From<&str>>::from> as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 0.68,
+      "symbol": "<core::str::iter::Chars as core::iter::traits::double_ended::DoubleEndedIterator>::rfold::<(usize, unicode_width::tables::WidthInfo), unicode_width::tables::str_width::{closure#0}>"
+    },
+    {
+      "self_percent": 0.66,
+      "symbol": "core::ptr::drop_glue::<<yoctui::qa_coordinator::QaCliCoordinator>::poll_layer::{closure#0}>"
+    },
+    {
+      "self_percent": 0.63,
+      "symbol": "0x00000000001984d3"
+    },
+    {
+      "self_percent": 0.62,
+      "symbol": "0x00000000000b2498"
+    },
+    {
+      "self_percent": 0.6,
+      "symbol": "<unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 0.55,
+      "symbol": "<ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 0.54,
+      "symbol": "0x00000000000b23a9"
+    },
+    {
+      "self_percent": 0.53,
+      "symbol": "<crossterm::style::types::colored::Colored as core::fmt::Display>::fmt"
+    },
+    {
+      "self_percent": 0.52,
+      "symbol": "0x00000000000a039c"
+    },
+    {
+      "self_percent": 0.52,
+      "symbol": "yoctui::termination::termination_requested"
+    }
+  ]
+}

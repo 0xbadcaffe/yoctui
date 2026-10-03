@@ -1,4 +1,21 @@
-M114 current: DEMO-DAEMON-CATALOG-HOTSPOT-001 IN_PROGRESS; parent audit paused.
+M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; catalog child DONE.
+Code07f08ce0/v305 optimized installed SHAfc7cfa3a, native daemon2553232 ready
+4799/nine layers after225s/NRestarts0. Actual plain2553310 Layers160x50 and normal
+q0/terminal restored/owned actors gone;19jobs/31PTY and capability environment/
+states/evidence/implementations exact, six originals unchanged/workspace absent.
+CPU daemon trimmed1.000509->0.062398%, combined1.291700->0.332853%; untrimmed
+daemon1.000078->0.149791%, client roughly unchanged. Matched parent-role FP
+symbol-table views/correct pinned ELFs before60s/after180s2432/3615ppm pass
+unchanged5000. Before constructor50.57% inclusive, absent after; raw counts not
+duration-normalized throughput, no client/memory/general-workload claim.
+Inherited FP/DWARF failures retained/rejected; no quality gate weakened. Detailed
+proof/repro artifacts/performance/profiles/native-catalog-reuse-v305-report.txt.
+Full2099Rust/67bridge/strictClippy/fmt/source2909/UI/roadmap and34version-only
+goldens/29rasters pass. Retry optimized link/install pass after exact compiler
+cleanup; originals/installed/cached ELFs preserved. Parent remaining workbench/
+screens/current boot-debug/docs/CI/actual reboot/publication still pending.
+
+Historical catalog implementation record before live completion:
 Implementation305 caches only immutable catalog definitions. New authority
 state/generation/missing matrix and cross-thread exact identity regressions:
 focused6 pass/one existing live ignore; full updating2099Rust/zero failures/nine

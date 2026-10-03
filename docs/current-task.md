@@ -1,8 +1,37 @@
 # Current Task
 
-**ID:** DEMO-DAEMON-CATALOG-HOTSPOT-001
-**Title:** Reuse the immutable capability catalog in the daemon idle recovery check
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
 **Status:** IN_PROGRESS
+
+Resume remaining native all-screen/recipe workbench/current managed QEMU-GDB
+validation, then docs/CI/actual reboot/publication. Catalog child DONE: source
+07f08ce0/v305 installed optimized SHAfc7cfa3a, daemon2553232 ready4799/nine layers
+after225s/NRestarts0. Plain native2553310 actual populated Layers160x50 and normal
+q0/terminal restored; owned actors absent,19jobs/31PTY and compatibility environment/
+state/evidence/implementation exact, six originals unchanged/workspace absent.
+Same-scenario daemon CPU trimmed1.000509->0.062398%, independently combined
+1.291700->0.332853%; untrimmed daemon1.000078->0.149791%, no client gain claim.
+Pinned matched parent-role symbol-table FP before/after views2432/3615ppm pass
+unchanged5000 ceiling; before constructor50.57% inclusive, not sampled after.
+Inherited short/long FP and DWARF quality failures retained, not accepted; exact
+PID selection applied symmetrically, historical ELF hashes pinned, no-inline on
+both;60s/180s durations differ. Detailed caveats/repro and state/source proof:
+artifacts/performance/profiles/native-catalog-reuse-v305-report.txt.
+Full2099Rust/67bridge/strictClippy/fmt/source2909/UI/roadmap PASS;34version-only
+goldens/29rasters verified. No full demo/reboot/final CI/publication certification.
+Two-worker disk cache AAiva6/root~540MiB; scoped rebuildable outputs cleared after
+near-full linker SIGBUS; retry optimized build passed. Source/image/symbols intact.
+
+```bash
+cargo build --release --locked -p yoctui --bin yoctui
+# Manual: plain native current-source attach, remaining supported workbench/
+# optional views and reviewed matching retained Romulus QEMU-GDB/reconnect/
+# owned cleanup; original configuration and images preserved.
+./scripts/verify-roadmap.sh
+```
+
+## Completed catalog child implementation history
 
 Native303 source-bound619-sample flamegraph shows needed52.17% inclusive
 weighted CPU; its catalog constructor41.58% and catalog drop9.96% dominate
