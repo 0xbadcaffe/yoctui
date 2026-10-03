@@ -2,6 +2,12 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Native301 metadata proof exposed automatic devtool workspace initialization.
+Split a backend status safety child before implementation; inspection must not
+create/enable a workspace. Original bblayers restored to verified checksum,
+generated files retained. Metadata/environment and parent acceptance resume after
+fail-closed preflight tests and installed native configuration-preservation proof.
+
 Native299 all-screen audit splits existing function-key dispatch and recipe
 worker environment defects before implementation. Read-only Terminal Sessions
 must retain global F4/Dashboard as already specified; embedded menuconfig and

@@ -1,5 +1,37 @@
 # Current Task
 
+**ID:** DEMO-DEVTOOL-STATUS-SAFETY-001
+**Title:** Prevent status inspection from initializing or enabling a workspace
+**Status:** IN_PROGRESS
+
+Native v301 recipe metadata works, but automatic upstream devtool status created
+workspace/conf/layer.conf and README and enabled that layer without confirmation.
+The added bblayers line was removed only after reconstructing and verifying the
+original f1dc6040 checksum; generated workspace files remain, no user data removed.
+Implement a fail-closed backend preflight after existing capability authorization:
+absent default workspace is genuinely empty without launching devtool; an existing
+workspace must already be enabled in a safely understood configuration before
+status can run. Unknown/complex/custom configuration must report unavailable,
+not initialize or infer membership. Preserve executable failures, cancellation,
+Git inspection, explicit confirmed modify and daemon authority. Tests must prove
+no process/config mutation for absent/disabled/ambiguous workspace and normal
+existing membership, custom paths and fake-process cancellation. Update spec,
+architecture/status; bump and full baseline; install current daemon/client and
+repeat native recipe inspection while original configuration hashes stay exact.
+
+```bash
+cargo test -p yoctui-bitbake --all-features devtool
+cargo test -p yoctui --bin yoctui devtool
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+```
+
+## Paused selected metadata environment child
+
 **ID:** DEMO-NATIVE-METADATA-ENV-001
 **Title:** Initialize the selected native build environment for local metadata workers
 **Status:** IN_PROGRESS

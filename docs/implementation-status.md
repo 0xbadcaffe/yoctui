@@ -1,4 +1,12 @@
-M114 current: DEMO-NATIVE-METADATA-ENV-001 IN_PROGRESS; native all-screen
+M114 current: DEMO-DEVTOOL-STATUS-SAFETY-001 IN_PROGRESS. Native301 selected
+BusyBox metadata/source view and warm refresh work; clean retry exits0. Upstream
+automatic devtool status also created an unconfirmed workspace and enabled it.
+Exact original bblayers f1dc6040 restored by verified one-line removal; generated
+workspace files retained. Split a fail-closed status preflight before code. Parent
+and metadata acceptance paused until native inspection preserves configuration.
+No claim of all-screen, current QEMU, reboot, hosted CI or publication completion.
+
+Previous M114 current: DEMO-NATIVE-METADATA-ENV-001 IN_PROGRESS; native all-screen
 parent paused for two observed defects. Installed299 native Terminal Sessions
 read-only F4 is swallowed instead of Dashboard; correct existing direct dispatch
 without changing embedded menuconfig/dialog behavior. Separate queued native

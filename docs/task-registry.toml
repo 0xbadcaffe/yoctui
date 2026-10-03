@@ -460,9 +460,20 @@ title = "Initialize the selected native build environment for local metadata wor
 status = "IN_PROGRESS"
 priority = 3554
 required = true
-depends_on = ["DEMO-TERMINAL-FUNCTION-KEYS-001"]
+depends_on = ["DEMO-TERMINAL-FUNCTION-KEYS-001", "DEMO-DEVTOOL-STATUS-SAFETY-001"]
 verify = ["cargo test -p yoctui --bin yoctui metadata", "python3 -m pytest bridge/tests", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "Manual: plain native installed attach inspects an actual OpenBMC recipe through the daemon-authorized bridge without inherited Python paths; wrong/missing build environment still fails safely", "./scripts/verify-roadmap.sh"]
 notes = "Native299 real recipe inspection fails handshake compatibility_negotiation_failed: selected BitBake API but initialized environment lacks bb module. Diagnose actual metadata_backend/recipe workers/backend_startup environment handling; initialize exact source/build only inside child, preserve daemon authority/bridge import errors/cancellation/bounds and originals. No invented capability/version fallback. Separate from completed vendored pysh import correction and function-key routing."
+
+[[task]]
+id = "DEMO-DEVTOOL-STATUS-SAFETY-001"
+milestone = "M114"
+title = "Prevent inspection from creating or enabling a devtool workspace"
+status = "IN_PROGRESS"
+priority = 3555
+required = true
+depends_on = ["DEMO-TERMINAL-FUNCTION-KEYS-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features devtool", "cargo test -p yoctui --bin yoctui devtool", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-ui-spec.sh", "Manual: plain native recipe inspection leaves original bblayers/local configuration unchanged and reports disabled workspace unavailable", "./scripts/verify-roadmap.sh"]
+notes = "Native301 automatic devtool status created workspace layer and enabled it at09:16:49. Original bblayers checksum f1dc6040 restored by removing only verified added line; two generated workspace files preserved. Backend-only fail-closed preflight: absent default workspace empty/no child, existing workspace requires verified already enabled configuration, unknown/custom ambiguity unavailable rather than mutation. Relevant devtool_runner/workspace_inspection and external fake-process/daemon tests, spec/architecture/status. Preserve confirmed modifying operations, capability authority, real errors and cancellation; no fabricated status availability or broad configuration rewrites."
 
 [[task]]
 id = "DEMO-DOCS-JSON-STREAM-001"

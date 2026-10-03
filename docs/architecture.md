@@ -734,6 +734,11 @@ Devtool workspace inspection is a typed external-tool adapter in
 in the active build directory,
 normalizes membership and source paths, and then invokes Git porcelain-v2
 status only for an existing workspace source. Raw Devtool and Git records do
+not authorize workspace initialization: a backend preflight must prevent status
+from creating or enabling the upstream workspace. Absent default workspaces are
+empty without execution; disabled or ambiguous existing configuration fails
+closed with a typed availability reason. Explicit confirmed operations retain
+their existing planner. Raw Devtool and Git records do
 not cross into the reducer or widgets. Missing executables, missing source
 directories, non-repositories, non-zero exits, and malformed records remain
 separate model states. The model keys requests and results by recipe name plus
