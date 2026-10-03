@@ -1,29 +1,28 @@
 # Current Task
 
-**ID:** DEMO-MODEL-HYGIENE-001
-**Title:** Split oversized model catalog reducers and external model regression modules
+**ID:** DEMO-BRIDGE-HYGIENE-001
+**Title:** Externalize bridge adapter tests and split oversized Python metadata regression file
 **Status:** IN_PROGRESS
 
-Dependency CLI hygiene DONE v289: exact test/dialog body tokens preserved,
-all six CLI findings removed/main499/dialog473; CLI381+all integrations/UI377/
-strict affected/fmt/UI/version/roadmap PASS. No behavior change.
-Mechanically split oversized compatibility workspace action catalog and
-open_selected_package_recipe/reset_pane_subfocus reducer chunks into cohesive
-private helpers, move hardware tests into an actual tests folder without
-namespace changes, and split525line kernel debug tests while preserving shared
-fixtures/test names. Preserve branch order, every guard/effect/focus transition,
-literal/assertion contents, private visibility and default unreachable paths.
-No500line exemptions, hidden tests or runtime/UI change. Bump, exact version-only
-golden identity maintenance, full model/app/UI and strict affected verification.
-Then bridge/palette children and full hygiene parent; faithful DIM/provenance
-maintenance, full release quality and actual native reboot-ready optimized
-OpenBMC/QEMU/GDB/CI/publication. Preserve source/images/symbols/user captures.
+Dependency model hygiene DONE v290: original reducer/action/test body tokens
+preserved, all five findings removed; model586/integrations1+5/app250/UI377/
+strict affected/fmt/UI/version/roadmap PASS, final post-format rerun PASS.
+Mechanically move bridge_backend/types_and_stderr inline tests into an actual
+tests folder without namespace/literal/assertion changes. Split517line Python
+test_metadata_events into a cohesive separate test file, preserving unittest/
+pytest discovery, shared support imports, fixtures and every normal/failure
+assertion. No bridge/runtime/protocol change, hidden test or500line exemption.
+Bump product, maintain only exact version identity in34 goldens; full bitbake/
+bridge/UI and strict affected verification. Then palette and full hygiene parent;
+faithful DIM/provenance maintenance, full release quality and actual native
+reboot-ready optimized OpenBMC/QEMU/GDB/CI/publication. Preserve user artifacts,
+sources/images/symbols and unrelated processes, two compile workers.
 
 ```bash
-cargo test -p yoctui-model --all-features
-cargo test -p yoctui-app --all-features
-cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings
-# Manual: five model layout findings removed with exact behavior/assertions.
+cargo test -p yoctui-bitbake --all-features
+python3 -m pytest bridge/tests
+cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings
+# Manual: adapter/Python findings removed with unchanged complete test discovery.
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

@@ -54,6 +54,9 @@ integration and all selected dependency evidence, not final demo acceptance.
 CLI child DONE v289: preserved external test/dialog body tokens, main499 and
 dialog473lines; all CLI381/integration/UI377/strict affected gates pass. Remaining
 model/bridge/palette findings are still open; no global source gate exemption.
+Model child DONE v290: five findings removed with original reducer/action/test
+tokens preserved; full model586/app250/UI377 and strict affected gates pass.
+Bridge and palette remain, then full source-layout/workspace verification.
 Selected-source init DONE v271 with real provider/firmware .config evidence;
 DEMO-PLATFORM-CONFIG-001 fixes separately observed kernel config starvation
 within existing bounded scans before contract fixtures; no quota increase.

@@ -1,4 +1,13 @@
-M114 current: DEMO-MODEL-HYGIENE-001 IN_PROGRESS; CLI hygiene DONE v289.
+M114 current: DEMO-BRIDGE-HYGIENE-001 IN_PROGRESS; model hygiene DONE v290.
+Private platform factories/rootfs and Devtool-upgrade bodies preserve original
+tokens/guards/effects/focus/defaults; moved Hardware and included QEMU tests retain
+names/shared fixtures/exact assertions/literals. Catalog492/rootfs parent490/
+Devtool parent482/kernel tests446; all five model findings removed/no exemptions.
+Full model586/integrations1+5/app250/UI377, strict model/appClippy/fmt/explicit
+included factory rustfmt/UI/version/roadmap PASS. Final post-format model/app
+rerun PASS. All34 goldens differ only289->290 identity; no normalization.
+Logs model-hygiene-v290/model-hygiene-final-v290 under/tmp. Only bridge/palette
+layout findings remain; full release/native/reboot/CI/publication still pending.
 Four external adapter test files preserve exact lexical tokens/literals/assertions
 and original test module identities; extracted build dialog body tokens unchanged,
 delegated only after earlier routes decline. Daemon config helper preserves exact

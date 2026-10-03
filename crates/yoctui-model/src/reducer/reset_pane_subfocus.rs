@@ -3,6 +3,7 @@ use super::*;
 
 mod backspace_sdk_publish_toml_editor_to_preview_sdk_publish;
 mod reset_pane_subfocus_to_rootfs_composition_unavailable;
+mod rootfs_composition;
 mod rootfs_composition_failed_to_append_sdk_publish_toml_editor;
 
 pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {

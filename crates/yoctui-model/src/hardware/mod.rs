@@ -11,4 +11,5 @@ pub(crate) use reducer::reduce_hardware;
 pub use types::*;
 
 #[cfg(test)]
+#[path = "../tests/hardware_domain.rs"]
 mod tests;

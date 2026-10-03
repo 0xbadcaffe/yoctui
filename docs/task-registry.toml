@@ -270,18 +270,18 @@ notes = "DONE v289: four external adapter test files retain exact lexical token/
 id = "DEMO-MODEL-HYGIENE-001"
 milestone = "M114"
 title = "Split oversized model catalog reducers and external model regression modules"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3535
 required = true
 depends_on = ["DEMO-CLI-HYGIENE-001"]
 verify = ["cargo test -p yoctui-model --all-features","cargo test -p yoctui-app --all-features","cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings","Manual: five model source-layout findings removed with exact behavior/assertion preservation","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
-notes = "Relevant compatibility_ui/workspace_action_catalog, open_selected_package_recipe/reset_pane_subfocus oversized reducer chunks, hardware/tests.rs outside tests folder and525line kernel_debug tests. Semantic mechanical helper/module boundaries only; exact branch order/effects/guards/assertions/private visibility retained. No size-limit exemptions or new behavior. Versioned coherent commit and docs."
+notes = "DONE v290: cohesive private Kernel/Firmware action factories, rootfs-composition and Devtool-upgrade reducer bodies retain exact lexical tokens/guards/effects/focus/default behavior; moved Hardware test namespace unchanged, included managed QEMU tests keep shared fixtures and exact tokens/assertions. Catalog492/rootfs parent490/devtool parent482/kernel tests446; all five model checker findings removed without exemptions, only bridge/palette findings remain. Full model586/integrations1+5/app250/UI377 and strict model/app all-target/all-feature Clippy/fmt/explicit included factory rustfmt/UI/version/roadmap PASS. Final post-format model/app rerun PASS, logs model-hygiene-v290/model-hygiene-final-v290 under/tmp. All34 goldens differ only exact289->290 identity. No runtime/UI feature change or full-release/native claim."
 
 [[task]]
 id = "DEMO-BRIDGE-HYGIENE-001"
 milestone = "M114"
 title = "Externalize bridge adapter tests and split oversized Python metadata regression file"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3536
 required = true
 depends_on = ["DEMO-MODEL-HYGIENE-001"]

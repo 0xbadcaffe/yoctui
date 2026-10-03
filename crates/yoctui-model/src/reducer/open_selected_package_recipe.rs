@@ -1,6 +1,7 @@
 //! State transitions beginning with OpenSelectedPackageRecipe.
 use super::*;
 
+mod devtool_upgrade;
 mod layer_browser_enter_to_toggle_layer_browser_hidden;
 mod open_recipe_editor_to_layer_browser_expand;
 mod open_selected_package_recipe_to_cancel_devtool_deploy_confirmation;

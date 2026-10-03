@@ -1061,6 +1061,13 @@ identities and private parent access, not inline production-source test bodies.
 
 The model owns the cached layer tree by stable paths, expansion state,
 selection, Git/file metadata, preview classification, and Inspector mode.
+
+Model source-size boundaries use cohesive private platform action factories and
+rootfs-composition/Devtool-upgrade reducers. Forwarding preserves the original
+typed action groups, guarded bodies, effect returns, focus synchronization and
+unreachable default. Hardware tests retain their module identity through an
+external tests path; included kernel QEMU tests retain shared fixtures and names.
+
 The app focus router reserves `Right` for opening or expanding the Layers
 hierarchy and reserves both horizontal arrows for the open tree; it maps
 Navigator `Right`/`Left` to group expansion/collapse while `Tab`/`Shift+Tab`
