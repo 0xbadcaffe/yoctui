@@ -1,4 +1,13 @@
-M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; native cold bootstrap DONE v294.
+M114 current: DEMO-NATIVE-BRIDGE-IMPORT-001 IN_PROGRESS, split before code.
+Native v294 audit genuinely boots Romulus to login, hits start_kernel/source,
+and reconnects a new plain client to interrupt/bt/registers; owned helper/QEMU/
+GDB/socket/staged copy cleaned, original inputs unchanged. This is partial native
+rehearsal, not all-screen/reboot/CI readiness. Kernel inspection exposes actual
+BitBake generated-parser ModuleNotFoundError: pysh in local worker initialization.
+Correct only the owned bridge package import bootstrap, retain fail-closed legacy/
+missing-package behavior and test actual native inspection before resuming parent.
+Evidence artifacts/live-openbmc/romulus/native-rehearsal-v294.txt.
+Native cold bootstrap DONE v294; parent DEMO-INSTALL-LIVE-001 remains IN_PROGRESS.
 Native Ubuntu26.04/Python3.14 actual BitBake2.19.1 imports/config/API inventory
 PASS exact home source/sibling Romulus build,4799recipes/nine layers/two workers.
 Verified native ARM QEMU11.0.2 and private APT-checksummed GDB-multiarch17.1;

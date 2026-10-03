@@ -1,8 +1,36 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Rehearse all OpenBMC demo screens and sessions with installed native optimized release
+**ID:** DEMO-NATIVE-BRIDGE-IMPORT-001
+**Title:** Initialize retained BitBake vendored imports inside the native bridge child
 **Status:** IN_PROGRESS
+
+Atomic child split from the installed native screen audit before implementation.
+Plain client workers initialize the selected source/build with only bitbake/lib.
+The actual retained BitBake2.19.1 generated parser imports pysh.pyshtables and
+fails with ModuleNotFoundError: pysh. The enabled daemon's explicit lib/bb path
+works; local Kernel inspection therefore incorrectly falls back to an unavailable
+legacy adapter. Reproduction is recorded in native-rehearsal-v294.txt.
+Initialize only the imported real bb package's existing vendored package parent
+inside the owned Python bridge process, not the laptop/client environment or
+upstream source. Preserve old single-module adapters and genuine import failures;
+never synthesize API availability, change selected implementations or relax bounds.
+Relevant bridge tinfoil_workspace.py and external bridge import regression tests.
+DONE requires package/legacy/no-vendor/failure subprocess coverage, embedded bridge
+checks, version bump, native selected Kernel metadata/config inspection and exact
+source evidence. No UI layout/wire change. Resume DEMO-INSTALL-LIVE-001 afterwards.
+
+```bash
+python3 -m pytest bridge/tests
+cargo test -p yoctui-bitbake --all-features
+cargo fmt --all --check
+cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings
+python3 scripts/check-library-layout.py
+./scripts/verify-roadmap.sh
+# Manual: installed current source plain native attach -> Kernel inspection;
+# no inherited PYTHONPATH workaround, original artifacts/config unchanged.
+```
+
+## Parent native rehearsal (in progress)
 
 Full local quality DONE product399ce139/v294 (handoff02842aeb):2048Rust/61bridge/
 strictworkspaceClippy/fmt/fullrelease/docs/source2891/roadmap PASS;9 existing

@@ -394,9 +394,20 @@ title = "Install optimized release and rehearse all OpenBMC demo screens and ses
 status = "IN_PROGRESS"
 priority = 3504
 required = true
-depends_on = ["DEMO-NATIVE-BOOTSTRAP-001"]
+depends_on = ["DEMO-NATIVE-BOOTSTRAP-001", "DEMO-NATIVE-BRIDGE-IMPORT-001"]
 verify = ["cargo build --release --locked -p yoctui --bin yoctui", "Manual: installed optimized binary equals committed source-bound release hash/version; plain native yoctui attach discovers healthy exact OpenBMC daemon after login without container launcher", "Manual: real native OpenBMC screen-by-screen audit, supported recipe/devtool/devshell, rootfs/packages/services/artifacts and reviewed QEMU boot/kernel debugging/reconnect/cleanup; report unavailable optional screens honestly", "./scripts/verify-roadmap.sh"]
 notes = "Relevant installed binary/daemon setup/scripts and real demo evidence. User authorizes latest optimized installation and starting the correct OpenBMC daemon, not terminating active unrelated jobs or retrying ZCU102. Preserve sources/original images/matching debug symbols; stop only owned demo subprocesses after checks. Real demo must use current installed native release, normal workstation endpoint and durable working artifacts; container-only rehearsal and mocks do not meet acceptance. Prepare reproducible two-minute path and real screenshots/recovery checklist; no physical-board actions or long clean image rebuild inferred."
+
+[[task]]
+id = "DEMO-NATIVE-BRIDGE-IMPORT-001"
+milestone = "M114"
+title = "Initialize retained BitBake vendored imports in the native bridge child"
+status = "IN_PROGRESS"
+priority = 3542
+required = true
+depends_on = ["DEMO-NATIVE-BOOTSTRAP-001"]
+verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "python3 scripts/check-library-layout.py", "Manual: actual installed current-source native Kernel inspection/config metadata with exact selected source/build and no inherited client PYTHONPATH workaround", "./scripts/verify-roadmap.sh"]
+notes = "Atomic correction split before implementation from genuine native v294 audit. Retained BitBake2.19.1 imports generated pysh.pyshtables, failing without the actual imported bb package parent in the child path. Native daemon explicit lib/bb works but plain local workers do not. Reproduce fail/positive using actual native source; correct bridge-child bootstrap only for real packaged vendored modules, preserve legacy single-module adapter/no-vendor/import-failure semantics, no upstream/global client environment change, guessed build authority, API fabrication, version fallback, timeout relaxation or UI/wire feature. Relevant tinfoil_workspace.py and external bridge subprocess tests; exact regression/live/version/source evidence and architecture/status updates required. Resume parent audit then final docs/CI."
 
 [[task]]
 id = "DEMO-GITHUB-CI-001"

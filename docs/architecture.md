@@ -1,5 +1,15 @@
 # Yoctui Architecture
 
+## M114 native bridge vendored import correction
+
+The native audit exposed a retained generated BitBake parser importing its
+vendored package by a top-level name. The bridge child must make only the actual
+imported bb package's existing vendored package parent available before Tinfoil
+import. No global client/Python environment, upstream source or selected build
+authority is rewritten. Single-module legacy adapters remain unchanged and
+unrelated import failures still fail closed. Capability selection, typed result
+projection, UI layout, protocol and existing deadlines are unchanged.
+
 ## M114 bounded kernel configuration discovery
 
 Kernel CLI inspection queries virtual/kernel's STAGING_KERNEL_BUILDDIR alongside

@@ -2,6 +2,14 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Native audit splits DEMO-NATIVE-BRIDGE-IMPORT-001 before implementation: actual
+retained BitBake generated parser needs its vendored package parent in bridge
+child imports, otherwise plain native Kernel inspection reports unavailable.
+Preserve legacy adapters/import failures/authority/bounds; no upstream/global
+environment edits or UI feature. Native boot/login/start_kernel/source/fresh
+reconnect/interrupt/bt/registers/owned cleanup pass v294, but remaining screen
+audit, final docs/CI/reboot/publication are not certified by this partial proof.
+
 Native cold bootstrap DONE v294/source7eef0058, installed optimizedc0f800a1.
 Actual native Python3.14/BitBake2.19.1 Romulus inventory4799/nine layers/two
 workers, durable ARM QEMU/GDB/profile/enabled user service/normal endpoint and
