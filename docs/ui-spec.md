@@ -6147,6 +6147,16 @@ launches keep the editor in place; cancelling a chooser never suspends it.
 
 ### Interactive-session destination chooser
 
+Native read-only recipe/dependency inspection releases its private BitBake
+connection before publishing the result; it must not reserve the shared server
+while idle and block a later interactive task. Later metadata detail queries
+reinitialize the same selected environment on demand. Confirming an interactive
+BitBake/build/workspace shell while recipe or platform inspection is still in
+flight keeps the chooser open with a wait/retry reason, rather than starting a
+competing process. Esc still cancels without launch. Inspection cleanup failure
+is explicit, not reported as a successful interactive launch. Legacy backend
+and unrelated terminal destination behavior remain unchanged.
+
 Ordinary embedded confirmation enters Terminal Sessions with Workspace focus
 and waits for the new session slot, even with retained history or split pane
 bindings. It must not keep a previous shell selected. Opening or cancelling

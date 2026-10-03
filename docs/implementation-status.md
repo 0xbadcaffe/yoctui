@@ -7,6 +7,12 @@ Proof native-interactive-focus-v306.txt, full2105Rust/67bridge/strict baseline/
 34version-only goldens/29rasters PASS. Unintended detached shell from rapid
 invalid palette sequence scoped HUP-cleaned, excluded from embedded acceptance.
 Next narrow metadata connection handoff still needs design/tests/live proof;
+Before-code lease design: scope native worker bridge through inspection and
+bounded cleanup, return a lazy per-read selected-environment/daemon-authorized
+adapter preserving Config/layer detail queries; no idle client connection or
+client build/event ownership. Pending native inspection holds interactive
+chooser confirmation with explicit retry, Esc/unrelated launches unchanged.
+Legacy backend retained; full regressions/native session proof still pending.
 kill safety then parent audit/docs/CI/actual reboot/publication remain pending.
 
 Previous M114 current: DEMO-INTERACTIVE-LAUNCH-FOCUS-001 IN_PROGRESS; parent audit paused.

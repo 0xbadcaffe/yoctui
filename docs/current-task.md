@@ -17,6 +17,16 @@ successful inspection leaves a bridge owning BitBake's exclusive connection,
 so the next real devshell repeatedly cannot setFeatures. Normal client quit
 releases it, then initialized bitbake -n qemu-helper-native -c devshell succeeds0
 with cached prerequisites. Preserve exact environment and current authority;
+Selected design: native worker closes its owned bridge with bounded cleanup
+before returning data, then returns a scoped read-only adapter that lazily
+initializes the exact selected source/build and current capability-authorized
+bridge for subsequent Config/layer/detail queries and closes it after each.
+Native build/cancel/events remain daemon-owned, not implemented through this
+client inspection adapter. Legacy backend unchanged. Interactive chooser stays
+open with explicit wait/retry while recipe/platform inspection is pending;
+cancel/unrelated terminals unchanged. Test cleanup success/error/timeout,
+no idle spawn, repeat query/environment/authority and pending confirmation.
+Design recorded before code; native live devshell remains required, not assumed.
 do not kill daemon/shared server or unrelated builds. Determine narrow reviewed
 embedded/detached handoff, in-flight/cancellation/failure/late-result semantics
 and repeat-inspection behavior before code. Other non-BitBake terminals and
@@ -49,7 +59,7 @@ and responsive TestBackend regression pass; updating and ordinary full suite
 2105Rust/zero failures/nine unchanged ignores31targets,67bridge/fmt/source2911/
 UI/version/roadmap PASS. All34goldens only305->306, other bytes exact;29rasters
 rebuilt/verified. Strict all-target/all-feature Clippy PASS (54.42s); optimized
-install and native proof pending.
+install and native proof subsequently PASS as recorded above.
 Safely cleared293 stale internal compiler outputs668435739B and three unused
 input-latency example executables105053936B after UID/link/live-use checks.
 Installed/top-level optimized305 hashfc7cfa3a preserved; sources/images/symbols

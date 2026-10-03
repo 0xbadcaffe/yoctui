@@ -1,5 +1,19 @@
 # Yoctui Architecture
 
+## M114 native metadata connection scope
+
+Native recipe/dependency workers close their private capability-authorized
+bridge before returning typed results, following the platform-worker ownership
+pattern. The returned CLI metadata adapter opens a fresh selected source/build
+environment and current daemon-authorized bridge per read-only detail request,
+then closes it; Config/layer queries remain supported after recipe inspection.
+No idle client connection owns the shared BitBake server. Cleanup is bounded,
+fails explicitly and drops only the owned bridge, never terminates the shared
+server. Native build/cancel/event ownership remains with the daemon. Legacy
+worker/backend behavior remains intact. Chooser confirmation is held while a
+native recipe/platform worker is pending; cancel never launches. No wire,
+capability synthesis, source/config edit, layout or new shortcut is introduced.
+
 ## M114 interactive terminal launch focus correction
 
 The pure ConfirmTerminalLaunch reducer owns the ordinary embedded screen/focus
