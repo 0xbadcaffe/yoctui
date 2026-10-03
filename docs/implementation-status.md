@@ -1,4 +1,17 @@
-M114 current: DEMO-TERMINAL-KILL-SAFETY-001 IN_PROGRESS.
+M114 current: DEMO-INSTALL-LIVE-001 IN_PROGRESS; native children DONE.
+Kill DONE sourcefeed7995/v309 optimized0cefb0ca/build6m30/install1.53s. Actual
+plain native2730256 owned39/2731328 exactBUILD, Navigator review focuses Workspace,
+pins39/traps F4/Tab/prefix/text/paste/mouse; Esc preserves shell/real SURVIVES_CANCEL;
+fresh Enter terminates39 only. Normal q0/restored/actors gone, original37PTY/
+19jobs/fullcompatibility/six hashes exact/clients empty. Early script Enter batch
+confirmed onlyowned38 but rejected as cancel/trap proof; ended Close removed
+only38, bad captures retained/rejected. Proof native-terminal-kill-safety-v309.txt.
+Daemon2614647/v306 healthy unchanged wire, not final upgrade or reboot proof.
+Remaining parent current-service/screens/Devtool/current QEMU-GDB, docs/CI/
+coordinated reboot/publication incomplete. CI37145462383 test/performance-fast
+fail, release-quality/compatibility-fast pass; no publication attempted.
+
+Historical kill implementation before native acceptance:
 v309 code pins typed daemon/session/name/pane, atomic screen/Workspace focus,
 same-current-running identity confirm and invalid-target cancellation; stable
 reorder/ended Close retained. CLI early key trap, paste/mouse suppression and

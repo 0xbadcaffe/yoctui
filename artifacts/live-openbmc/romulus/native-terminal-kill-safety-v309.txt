@@ -1,0 +1,51 @@
+Native pinned terminal kill review acceptance
+2026-10-03; sourcefeed7995a1118384880621f3eececd083ff27825; v0.1.309.
+Optimized release build6m30/install1.53s, two workers/disk AAiva6/thin LTO/
+one codegen unit/debug1/frame pointers. Release and installed SHA256 match:
+0cefb0ca76c346aa2dbceae3e27f0cf37cd497db9a7253dfc47e3ed300bc6420
+Plain installed native client2730256/controller2730255; daemon2614647/v306
+unchanged protocol, active/NRestarts0. Not final daemon upgrade or reboot proof.
+
+Reviewed new build-shell39 /bin/sh at exact BUILD, automatic new selection and
+Workspace focus, explicit writer epoch1. Owned dash2731328 parent2614647 and
+PTY pwd both confirm /home/bspguy-dev/src/build-openbmc-romulus.
+Click Recipes once focuses Navigator; existing Ctrl+B K opens pinned inline
+KILL #39:build shell review with Workspace focus. Actual F4, Tab, Ctrl+B n,
+ordinary text and bracketed paste are trapped; clicking Recipes is ignored.
+Warning/Inspector retain39, shell viewport unchanged, no injected marker text.
+Esc clears review. Same owned writer executes printf SURVIVES_CANCEL, real
+output visible, process and PTY remain Running. Fresh review names39; separate
+Enter confirms only39. Daemon reports Exited (signal termination, no exit_code),
+owned dash gone. Native q/confirmation exits0/restores terminal; actors gone.
+
+Earlier rehearsal script mistakenly included Enter inside its input-trap batch,
+which correctly confirmed only new owned38; that batch is NOT accepted as
+cancellation/trap proof. Subsequent paste arrived after review closed and staged
+a paste-review transient; explicit Esc cleared it. Later existing ended-history
+Close removed only owned38. Mislabelled early captures are retained/rejected;
+accepted39 captures below use corrected distinct names and separate confirm.
+No original historical session was closed or terminated.
+
+Read-only before/after: original37PTY summaries,19jobs and full compatibility
+byte-equivalent, clients empty/no running sessions. Only ended39 is appended;
+historical writer/viewer fields are retained, not active authority. Six original
+local.conf/bblayers/kernel .config/matched6.18.49 symbols/retained flash/qemuboot
+hashes remain exact. No source/config change, desktop/container fallback or
+unrelated process cleanup. Presentation captures stay above Git.
+
+Three before-code regressions fail as expected, ten final model/app/CLI/
+responsive TestBackend regressions PASS. Updating+ordinary full2127Rust/
+0failures/9unchanged ignores32targets,67bridge/fmt/source2921/UI/roadmap/version
+PASS; strictClippy3m10 includes build-lock wait.34goldens only308->309 identity,
+6concept/23README deterministic rasters checked. Existing ended-history Close,
+other terminal modes/layout/keys/wire retained. CI37145462383 test/performance-
+fast fail, release-quality/compatibility-fast pass; logs retained separately.
+Full remaining native demo/docs/CI/actual reboot/publication still incomplete.
+
+Actual unedited txt/cells/ANSI under presentation/assets, accepted txt SHA256:
+demo-native-v309-kill39-trapped-input.txt
+3dfb1e1f3fed0cb31bae69a82af0cf906cf744fff54f318c0ab00c1c3405e760
+demo-native-v309-kill39-cancel-survives.txt
+62261b88c35c0ab5ad0d31076d1c11b4dd8b0abd96ecb16f59519287f173a6a0
+demo-native-v309-kill39-confirmed.txt
+086b2c961bef038dfe91374cb9a57f60abfbe4cbf8ea5390e73044634a5bc22b

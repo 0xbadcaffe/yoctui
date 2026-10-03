@@ -10,7 +10,11 @@ recipe bash/pwd/environment/normal exit0/repeated inspection+Config/normal q0,
 original36PTY/19jobs/fullcompatibility/six hashes exact, actors+socket gone.
 Proof native-embedded-devshell-v308.txt, full2117Rust/67bridge/strict baseline PASS.
 Approved older Poky generated host-tool work cleanup resolves15GiB guard;
-originals unchanged. Kill preview safety is current. No new feature or authority/
+originals unchanged. Kill safety subsequently DONE sourcefeed7995/v309 optimized
+0cefb0ca actual native2730256 owned39 Navigator review/focus/pinned input trap/
+cancel survives/fresh confirmation only39/normal q0, originals/history exact.
+Proof native-terminal-kill-safety-v309.txt; full2127Rust/67bridge/strict baseline.
+Parent remaining current native all-screen/QEMU-GDB work is current. No new feature or authority/
 history change; final daemon upgrade and real reboot not yet accepted.
 Parent all-screen/docs/CI/actual reboot/publication resume after the children.
 

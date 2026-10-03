@@ -1,8 +1,45 @@
 # Current Task
 
-**ID:** DEMO-TERMINAL-KILL-SAFETY-001
-**Title:** Trap terminal kill confirmation and prevent retargeted termination
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Install optimized release and rehearse all native OpenBMC demo screens
 **Status:** IN_PROGRESS
+
+All registered native bootstrap/bridge/terminal/navigation/metadata/launch-focus/
+catalog/lease/relay/kill children are DONE. Continue parent remaining supported
+Devtool/workbench/screens and current managed QEMU/GDB/boot/reconnect/cleanup.
+Upgrade only exact enabled native yoctui.service to installed309 after read-only
+proof of no active clients/jobs/PTYs; preserve37prior historical rows+new39,
+original19jobs/config/images/symbols and unrelated daemons/containers. Record
+expected restart lease resets, actual new instance/ready inventory and startup
+timing. Plain native attach must work, not container launcher/caller BB/Python env.
+Capture actual screens above Git for presentation; optional unsupported states
+stay honest. No new features/long clean image rebuild/physical-board/ZCU work.
+Then docs JSON harness, README/screenshots/latest honest performance/runbook,
+separate CI repair tasks, durable final install/coordinated actual reboot and
+immutable crates.io publication. Do not reboot or publish prematurely.
+
+```bash
+cargo build --release --locked -p yoctui --bin yoctui
+# Manual: exact current installed native service/attach, supported screens/
+# devshell/devtool, matching retained Romulus QEMU-GDB/boot/reconnect/cleanup.
+./scripts/verify-roadmap.sh
+```
+
+## Completed terminal kill safety
+
+DONE sourcefeed7995/v309 installed optimized0cefb0ca/build6m30/install1.53s.
+Actual plain native2730256 owned shell39/2731328 pwd exactBUILD; kill review from
+Navigator takes Workspace, traps F4/Tab/prefix/text/paste/mouse and pins39.
+Esc preserves shell/SURVIVES_CANCEL output; fresh separate Enter terminates39
+only. Native q0/restored/owned actors gone; original37PTY/19jobs/fullcompatibility/
+six hashes exact, clients empty. Owned38 script accidentally included Enter,
+correctly confirmed38 but rejected as cancellation/trap acceptance; later
+existing ended Close removed only owned38, bad captures retained/rejected.
+Evidence native-terminal-kill-safety-v309.txt. Daemon2614647/v306 active/NRestarts0
+is not final daemon upgrade/reboot readiness. CI37145462383 still fails test/
+performance-fast; release-quality/compatibility-fast pass.
+
+### Historical kill implementation before installed acceptance
 
 v0.1.309 implementation pins typed daemon/session/name/pane target, focuses
 Terminal Sessions/Workspace and revalidates current same running identity.
@@ -14,8 +51,7 @@ as expected; all ten final model/app/CLI/responsive TestBackend regressions pass
 Updating and ordinary full2127Rust/0failures/9unchanged ignores32targets PASS;
 strictClippy3m10 including lock wait/67bridge/fmt/source2921/UI/roadmap/version PASS.
 34goldens only308->309 identity,6concept/23README rasters regenerated/checked.
-Optimized install and native owned-only cancellation/input-trap/confirmation
-and original/history proof remain required before DONE.
+Optimized install and native owned-only acceptance subsequently pass as above.
 
 Dependencies focus, relay and native inspection lease are DONE. Current atomic
 task: correct the existing destructive inline kill preview's focus, input trap
