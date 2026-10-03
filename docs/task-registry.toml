@@ -303,7 +303,7 @@ notes = "DONE v292: palette typed command/content-search detail projections move
 id = "DEMO-DOC-FIXTURE-MAINTENANCE-001"
 milestone = "M114"
 title = "Maintain faithful disabled screenshot styles and current fixture provenance before release quality"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3538
 required = true
 depends_on = ["DEMO-LAYOUT-HYGIENE-001"]
@@ -314,12 +314,12 @@ notes = "Existing full-quality blockers: native raster generator rejects DIM use
 id = "DEMO-LAYOUT-HYGIENE-001"
 milestone = "M114"
 title = "Restore existing source size and external test module hygiene"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3515
 required = true
 depends_on = ["DEMO-INTEGRATION-001", "DEMO-CLI-HYGIENE-001", "DEMO-MODEL-HYGIENE-001", "DEMO-BRIDGE-HYGIENE-001", "DEMO-UI-HYGIENE-001"]
 verify = ["python3 scripts/check-library-layout.py", "cargo fmt --all --check", "cargo test --workspace --all-features --no-fail-fast", "python3 -m pytest bridge/tests", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "Baseline existing source-layout violations include inline tests outside test directories and files over500lines across bridge/CLI/bitbake/model/UI. Relevant checker findings; move tests and split oversized modules mechanically while preserving visibility and every assertion. No exemptions, raised limits or runtime behavior change. Verification against full suite after contract fixes required before release."
+notes = "DONE final product05fd97cf/v292 with four committed verified mechanical children. Full cargo test --workspace --all-features --no-fail-fast PASS2048tests/0failures/9existing live or manual ignores across31targets; bridge61PASS, strict workspace all-target/all-feature Clippy/fmt/roadmap and source/library gate PASS2890sources<=500/all external tests/no exemptions. Original bodies/tokens/ASTs/literals/assertions/focus/guards retained and exact34 goldens only version identity. Evidence /tmp/yoctui-demo-full-hygiene-v292.log. No newly skipped tests, full-release docs/native optimized/reboot/CI/pub still separate, unrelated physical/current-Poky/instrumentation blockers remain explicit."
 
 [[task]]
 id = "DEMO-FULL-VERIFY-001"

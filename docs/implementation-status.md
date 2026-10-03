@@ -1,4 +1,13 @@
-M114 current: DEMO-LAYOUT-HYGIENE-001 IN_PROGRESS; palette child DONE v292.
+M114 current: DEMO-DOC-FIXTURE-MAINTENANCE-001 IN_PROGRESS; hygiene parent DONE.
+Exact product05fd97cf/v292 full workspace all features/no-fail-fast PASS2048Rust
+tests/0failures/9existing live/manual ignores across31targets; bridge61PASS,
+strict workspace all-target/all-feature Clippy/fmt/roadmap/source gate PASS.
+All2890maintained sources<=500/external Rust tests, no exemptions or newly
+skipped tests. Four committed mechanical children preserve every body/token/
+AST/literal/assertion/guard/focus and exact versioned goldens. Evidence
+/tmp/yoctui-demo-full-hygiene-v292.log. This completes full baseline correctness,
+not final release-quality/docs/native optimized/reboot/CI/publication. Existing
+DIM raster/current fixture provenance/performance prose maintenance next.
 Private detail projection module preserves exact original tokens/styles/labels/
 bounds and re-exports existing names/visibility; parent398/details118 lines.
 No input/focus/geometry/theme change. Full UI377/strictUIClippy/fmt/UI/version/

@@ -63,6 +63,9 @@ with only existing live ignores. Palette remains before full hygiene verificatio
 Palette child DONE v292 with exact projection tokens preserved, full UI377 and
 strict affected gates PASS. Source/library gate PASS2890sources<=500/all external
 Rust tests/no exemptions. Full hygiene parent still verifies the full workspace.
+Hygiene parent DONE on exact product05fd97cf/v292: full2048Rust/61bridge/strict
+workspace/source/fmt/roadmap PASS,9existing live/manual ignores unchanged. Full
+release quality/docs/native/optimized/reboot/CI/publication remain separate.
 Selected-source init DONE v271 with real provider/firmware .config evidence;
 DEMO-PLATFORM-CONFIG-001 fixes separately observed kernel config starvation
 within existing bounded scans before contract fixtures; no quota increase.

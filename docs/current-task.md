@@ -1,27 +1,31 @@
 # Current Task
 
-**ID:** DEMO-LAYOUT-HYGIENE-001
-**Title:** Restore existing source size and external test module hygiene
+**ID:** DEMO-DOC-FIXTURE-MAINTENANCE-001
+**Title:** Maintain faithful disabled screenshot styles and current fixture provenance before release quality
 **Status:** IN_PROGRESS
 
-All four coherent children CLI289/model290/bridge291/UI292 DONE. Original
-runtime/test body tokens/ASTs preserved, exact34 goldens maintained only product
-identity, no semantics/focus/layout/policy or test/limit weakening. Full source/
-library gate PASS2890sources<=500 (largest500), all Rust tests in test folders.
-Parent now runs full Rust workspace/all features/no fail-fast, bridge tests,
-strict all-target/all-feature Clippy, fmt/roadmap. Existing ignored live tests
-remain explicit, not newly skipped. Diagnose any remaining failure before fixing,
-split a genuine unrelated defect before code; never broad DONE from child gates.
-Then faithful DIM/fixture/provenance maintenance, full release quality/docs and
-actual native reboot-ready optimized OpenBMC/QEMU/GDB/CI/publication. Preserve
-sources/images/symbols/user captures/unrelated processes, two compile workers.
+Dependency full hygiene parent DONE on product05fd97cf/v292:2048Rust/61bridge/
+strict workspace/source/fmt/roadmap PASS,9existing live/manual ignores unchanged.
+Existing full-quality documentation failures: native raster rejects DIM used
+by disabled controls, concept/README manifest anchors and hashes still describe
+obsolete menu/header/hint fixtures, performance prose lacks required truthful
+nonmutating parallelism statement. Add tested faithful DIM projection preserving
+unknown/SLOW_BLINK rejection; inspect other actual styles before assumptions.
+Refresh current pinned renderer fixture images/hashes/anchors using maintained
+scripts, preserve historical live_evidence/original captures and honest fixture
+versus live provenance. Do not mask identity, ignore style errors or relabel
+historical live evidence as current. Final README/live screenshots/operator/
+source-bound flamegraph refresh remains separate after full quality.
+Bump if maintained script behavior changes, retain source-size boundary/external
+tests, run full relevant raster/doc/UI gates. Then final full release quality,
+docs and actual native reboot-ready optimized OpenBMC/QEMU/GDB/CI/publication.
+Do not delete sources/images/symbols/user captures; two compile workers.
 
 ```bash
-python3 scripts/check-library-layout.py
+python3 -m unittest scripts/test_raster_styles.py scripts/test_performance_documentation.py
+./scripts/check-docs.sh
+cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
-cargo test --workspace --all-features --no-fail-fast
-python3 -m pytest bridge/tests
-cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
 
