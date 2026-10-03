@@ -185,6 +185,15 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             {
                 return begin_image_artifact_inventory(app);
             }
+            // Discovery is daemon-owned; opening these screens is client-local.
+            if matches!(
+                app.screen,
+                Screen::Sdk | Screen::Testing | Screen::Security | Screen::Qa
+            ) && (app.daemon.instance_id.is_some()
+                || app.workspace_compatibility.authority().is_some())
+            {
+                return None;
+            }
             if app.screen == Screen::Sdk
                 && matches!(app.sdk_tool_capability, SdkToolCapability::NotInspected)
             {

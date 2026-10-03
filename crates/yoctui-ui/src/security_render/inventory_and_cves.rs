@@ -15,7 +15,7 @@ pub(crate) fn security_scope_text(scope: Option<&SecurityScope>) -> String {
 pub(crate) fn security_capability_summary(capability: &SecurityCapability) -> String {
     match capability {
         SecurityCapability::NotInspected => {
-            "not inspected; entering Security requests inspection".into()
+            "not inspected; verify daemon capabilities in Compatibility".into()
         }
         SecurityCapability::Inspecting => "inspection in progress".into(),
         SecurityCapability::Failed(message) => format!("inspection failed: {message}"),

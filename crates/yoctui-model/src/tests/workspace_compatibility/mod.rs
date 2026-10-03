@@ -88,3 +88,5 @@ mod compatibility_dynamic_model_snapshot_change_revalidates_dialog_and_effect;
 mod compatibility_dynamic_model_invalidation_closes_environment_dialog_but_keeps_local_one;
 
 mod compatibility_dynamic_model_unavailable_effect_is_not_emitted_or_partially_applied;
+
+mod native_navigation;

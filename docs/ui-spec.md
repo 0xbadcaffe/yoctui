@@ -32,7 +32,9 @@ available independently of automatic environment probing. An installed daemon
 context owns those probes; merely opening a screen must not emit a client probe
 or cause authority rollback to undo the screen/focus/menu/palette transition.
 Unknown/not-inspected tool state remains honest and operations stay gated by
-the exact daemon capability snapshot. Explicit client probe requests remain
+the exact daemon capability snapshot. Uninspected Security guidance points to
+Compatibility, rather than promising that entering the screen runs a probe.
+Explicit client probe requests remain
 denied; daemon identity before capability discovery also counts as native
 context. Other authorized inventory acquisition and non-daemon reducer behavior
 are unchanged. Maintenance's ClientLocal inspection must still run normally;

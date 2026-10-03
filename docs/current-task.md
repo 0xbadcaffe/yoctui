@@ -4,6 +4,17 @@
 **Title:** Keep native read-only screen navigation independent of daemon-owned probes
 **Status:** IN_PROGRESS
 
+Implementation v303: two native-context navigation guards, no authority bypass
+or capability synthesis. Seven model regressions (including explicit denials,
+maintenance/legacy negative controls, menus, palettes and authority-only context),
+one responsive TestBackend regression and one CLI guarded-boundary regression
+pass. Before-code regressions reproduce two rollback failures while three
+negative controls pass. Full2093Rust/zero failures/nine unchanged ignores31
+targets/67bridge/strictworkspaceClippy/fmt/source2906/UI/version/roadmap PASS.
+All34goldens only302->303 identity, other cells/styles exact;29 deterministic
+rasters rebuilt/verified. Optimized source-bound install/native proof pending;
+do not mark DONE or certify full parent/docs/CI/reboot/publication yet.
+
 Native302 reproduction: Navigator or palette Open Testing advertises Ready,
 but automatic InspectTestCapability is correctly denied as daemon-owned and
 the authority rollback restores the old screen/palette. SDK, Security and QA
