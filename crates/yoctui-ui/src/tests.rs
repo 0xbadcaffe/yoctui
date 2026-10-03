@@ -65,6 +65,7 @@ mod demo_dependency_verdict;
 mod demo_environment_controls;
 mod demo_error_recovery_hints;
 mod demo_sdk_rail;
+mod demo_terminal_exit;
 mod golden_support;
 use golden_support::*;
 

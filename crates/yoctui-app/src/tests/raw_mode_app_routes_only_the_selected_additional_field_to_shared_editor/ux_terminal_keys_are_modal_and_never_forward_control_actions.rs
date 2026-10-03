@@ -95,3 +95,69 @@ fn ux_terminal_keys_are_modal_and_never_forward_control_actions() {
         Some(Action::TerminalCancelMode)
     );
 }
+
+#[test]
+fn terminal_exit_restores_quit_without_removing_modal_focus_traps() {
+    use yoctui_model::{ClientDaemonLifecycle as Life, TerminalWorkbenchMode as Mode};
+    let mut app = yoctui_model::App::new(8, 1_000);
+    app.screen = Screen::TerminalSessions;
+    app.focus = FocusTarget::Workspace;
+    app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+    app.terminal.client_id = Some([3; 16]);
+    app.daemon
+        .pty_sessions
+        .push(yoctui_model::ClientDaemonPtySummary {
+            id: 1,
+            name: "shell".into(),
+            lifecycle: Life::Running,
+            viewers: 1,
+        });
+    app.daemon
+        .pty_details
+        .push(yoctui_model::ClientDaemonPtyDetails {
+            id: 1,
+            kind: yoctui_model::ClientDaemonPtyKind::BuildShell,
+            cwd: "/build".into(),
+            columns: 80,
+            rows: 24,
+            writer: Some([3; 16]),
+            writer_epoch: 1,
+            exit_code: None,
+            restartable: true,
+        });
+    assert!(terminal_owns_input(&app));
+    assert_eq!(focus_action_for_app(&app, Input::Char('q')), None);
+    for lifecycle in [
+        Life::Disconnected,
+        Life::Connecting,
+        Life::Stopping,
+        Life::Exited,
+        Life::Failed,
+        Life::Lost,
+    ] {
+        app.daemon.pty_sessions[0].lifecycle = lifecycle;
+        app.terminal.mode = Mode::Live;
+        assert!(!terminal_owns_input(&app), "{lifecycle:?}");
+        assert_eq!(
+            focus_action_for_app(&app, Input::Char('q')),
+            Some(Action::Quit)
+        );
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Char('v')),
+            Some(Action::TerminalEnterCopyMode)
+        );
+        for mode in [
+            Mode::Copy,
+            Mode::Search,
+            Mode::Rename,
+            Mode::PasteReview,
+            Mode::KillConfirmation,
+            Mode::Help,
+        ] {
+            app.terminal.mode = mode;
+            assert!(terminal_owns_input(&app));
+            assert_eq!(focus_action_for_app(&app, Input::Char('q')), None);
+            assert!(!app.selected_terminal_is_writer());
+        }
+    }
+}

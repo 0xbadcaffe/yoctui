@@ -27,8 +27,12 @@ Status: **Authoritative product and interaction contract**
 
 ### M114 OpenBMC demo release polish (no new features)
 
-Terminal write authority requires a current live owned session, not merely a
-retained writer ID. Exited/lost session history remains viewable without
+Terminal write authority requires a current replica, a `Running` session and
+this client's writer ID, not merely a retained writer ID. Connecting/stopping,
+exited/failed/lost or disconnected sessions are read-only; their inspector and
+access line must not offer an active lease or misidentify a historical owner as
+another live client. Stale replicas advertise reconnect, never writer access.
+Exited/lost session history remains viewable without
 forwarding ordinary keys, paste or resize to a dead process, or advertising an
 active writer lease. Existing Quit/global routes regain normal application
 behavior when no live writer owns input. Ordinary live terminal panes, including

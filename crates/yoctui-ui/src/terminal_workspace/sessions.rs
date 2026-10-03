@@ -100,9 +100,12 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
     let selected = app.selected_terminal_session();
     let screen = app.selected_terminal_screen();
     let details = app.selected_terminal_details();
-    let access = selected.map_or("unavailable", |_| {
+    let access = selected.map_or("unavailable", |session| {
         if app.daemon.status != yoctui_model::ClientReplicaStatus::Current {
             return "RETAINED READ-ONLY · reconnect for control";
+        }
+        if session.lifecycle != yoctui_model::ClientDaemonLifecycle::Running {
+            return "READ-ONLY · no active writer";
         }
         if app.selected_terminal_is_writer() {
             "WRITER"

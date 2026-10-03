@@ -4,6 +4,22 @@
 **Title:** Stop treating terminated PTY sessions as writable terminals
 **Status:** IN_PROGRESS
 
+Implementation v296: model writer authority now additionally requires the
+selected session lifecycle Running. UI access/inspector project non-running
+sessions as read-only history/no active writer and stale replicas as retained
+read-only; historical writer IDs/epochs remain unchanged. New pure/reducer/app/
+TestBackend/fake socket regressions cover non-running lifecycle, owner identity,
+paste-review exit race, ordinary Quit/focus traps, history and no resize frame.
+Pre-fix lifecycle regression fails Disconnected; post-fix model terminal and
+app55/UI26/CLI36 focused tests PASS (one existing manual CLI ignore unchanged).
+Full bumped workspace2054Rust/zero failures/nine unchanged live/manual ignores
+in31targets, strict full workspace Clippy,67bridge/fmt/source2895/UI/version/
+roadmap and29 pinned rasters PASS. All34 goldens differ only295->296 header
+identity; symbols/styles otherwise byte-exact. Source-bound optimized install
+and native ordinary q acceptance remain pending; no DONE or final CI/publication
+claim yet. Removed only27 validated unused prior test executables (649MB of
+rebuildable cache), preserving current outputs/source/images/debug symbols.
+
 Atomic child split from actual native GDB cleanup before implementation.
 Dependency DEMO-NATIVE-BRIDGE-IMPORT-001 DONE: source62716abc/v295 optimized
 installed917a9788, healthy native daemon2340904/instance20921e3a1f994603dabf6b9043dda64f;

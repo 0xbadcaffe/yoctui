@@ -1,4 +1,16 @@
 M114 current: DEMO-TERMINAL-EXIT-WRITER-001 IN_PROGRESS, split before code.
+v296 correction implemented: selected current Running session plus matching
+owner required for keyboard/paste/resize authority. Non-running UI roles/hints
+show read-only history/no active writer; stale roles request reconnect, retained
+IDs/epochs/history unchanged. New pure/reducer/app/TestBackend/fake wire tests
+cover lifecycle/paste exit race/Quit/focus traps/no resize request. Pre-fix test
+fails as expected; focused model/app55/UI26/CLI36 PASS, one existing manual
+CLI ignore unchanged. Full bumped workspace2054Rust/zero failures/nine existing
+live/manual ignores31targets and strict full Clippy/67bridge/fmt/source2895/UI/
+version/roadmap/29rasters PASS; all34 goldens only header295->296. Optimized
+install/native ordinary q acceptance pending, task not DONE; no final readiness/
+CI/publication claim. Only27 superseded own test executables/649MB rebuildable
+cache cleared after ownership/live-user checks; current outputs/data preserved.
 Bridge import DONE source62716abc/v295 optimized native install917a9788;
 plain native Kernel/provider/.config(105069bytes)/clean source view PASS,
 client53077 exit0, original config/flash/symbol hashes unchanged. New enabled

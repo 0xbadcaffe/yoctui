@@ -119,7 +119,11 @@ pub(crate) fn terminal_session_inspector_text(app: &App) -> String {
         );
     };
     let details = app.selected_terminal_details();
-    let role = if app.selected_terminal_is_writer() {
+    let role = if app.daemon.status != yoctui_model::ClientReplicaStatus::Current {
+        "Retained read-only (reconnect for control)"
+    } else if session.lifecycle != yoctui_model::ClientDaemonLifecycle::Running {
+        "Read-only history (no active writer)"
+    } else if app.selected_terminal_is_writer() {
         "Writer (keyboard/paste/resize enabled)"
     } else if details.is_some_and(|details| details.writer.is_some()) {
         "Read-only viewer (another client owns writer)"

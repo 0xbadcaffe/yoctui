@@ -36,6 +36,9 @@ impl App {
 
     pub fn selected_terminal_is_writer(&self) -> bool {
         self.daemon.status == ClientReplicaStatus::Current
+            && self
+                .selected_terminal_session()
+                .is_some_and(|session| session.lifecycle == ClientDaemonLifecycle::Running)
             && self.selected_terminal_details().is_some_and(|details| {
                 self.terminal.client_id.is_some() && details.writer == self.terminal.client_id
             })
