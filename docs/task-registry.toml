@@ -259,18 +259,18 @@ notes = "DONE v288: exact positive BuildOptions selected target, rootfs owning r
 id = "DEMO-CLI-HYGIENE-001"
 milestone = "M114"
 title = "Externalize CLI regression modules and split oversized dialog startup routing"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3534
 required = true
 depends_on = ["DEMO-INTEGRATION-001"]
 verify = ["cargo test -p yoctui --all-features --no-fail-fast","cargo clippy -p yoctui --all-targets --all-features -- -D warnings","Manual: all six CLI checker findings removed without altering tests or runtime behavior; other crate findings remain for their children","cargo fmt --all --check","./scripts/verify-roadmap.sh"]
-notes = "Relevant image_artifact_view/source_git/workspace_editor/qemu_debug runtime staging inline tests; main startup daemon config delegation and oversized interactive runtime build_dialogs. Mechanically move identical test bodies into tests folders, preserve module identity/literal contents/assertions; extract existing BuildOptions/BuildTarget handler and daemon config resolution without changing routing order/input ownership/precedence/side effects. Bump, exact version-only golden identity maintenance, docs/status/registry and coherent commit."
+notes = "DONE v289: four external adapter test files retain exact lexical token/literal/assertion bodies and original module names; BuildOptions/BuildTarget handler body tokens unchanged and delegated only after preceding routes decline. Daemon config helper preserves original CLI/environment/config precedence. main499/build_dialogs473/new handler90 lines and all six CLI checker findings removed; other crate findings remain for their children, no exemptions. Full CLI381PASS/5existingignored and all integration targets6/1/7/2/1/6/7/1/1 PASS including timing2.90s, strictCLIClippy/fmt/UI/version/roadmap and UI377 PASS. All34 goldens checked against prior source with only288->289 exact identity maintenance. Log cli-hygiene-v289 under/tmp. No behavioral/layout/key change or full release/native claim."
 
 [[task]]
 id = "DEMO-MODEL-HYGIENE-001"
 milestone = "M114"
 title = "Split oversized model catalog reducers and external model regression modules"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3535
 required = true
 depends_on = ["DEMO-CLI-HYGIENE-001"]

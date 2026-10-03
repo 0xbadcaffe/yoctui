@@ -51,6 +51,9 @@ needed by check-docs before full quality. Final README/live-gallery/operator/
 flamegraph refresh stays after full verification; historical live evidence is
 never relabeled as current. Polish planning parent DONE after committed288
 integration and all selected dependency evidence, not final demo acceptance.
+CLI child DONE v289: preserved external test/dialog body tokens, main499 and
+dialog473lines; all CLI381/integration/UI377/strict affected gates pass. Remaining
+model/bridge/palette findings are still open; no global source gate exemption.
 Selected-source init DONE v271 with real provider/firmware .config evidence;
 DEMO-PLATFORM-CONFIG-001 fixes separately observed kernel config starvation
 within existing bounded scans before contract fixtures; no quota increase.

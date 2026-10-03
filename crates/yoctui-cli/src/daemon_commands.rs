@@ -1,5 +1,16 @@
 //! Daemon commands.
 use super::*;
+
+pub(crate) async fn configured_daemon_cli(cli: &Cli, command: DaemonCliCommand) -> Result<()> {
+    let configured = read_file_config(config_path(cli).as_deref())?;
+    let build_dir = cli
+        .build_dir
+        .clone()
+        .or_else(|| env::var_os("YOCTUI_BUILD_DIR").map(PathBuf::from))
+        .or(configured.build_dir);
+    daemon_cli(command, build_dir).await
+}
+
 #[cfg(unix)]
 mod environment_profile;
 #[cfg(unix)]

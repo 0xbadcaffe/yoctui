@@ -2,6 +2,7 @@
 use super::*;
 
 mod build_dialogs;
+mod build_options_dialogs;
 mod command_dialogs;
 mod dependency_workspace;
 mod devtool_status_operation;

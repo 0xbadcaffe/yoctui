@@ -230,9 +230,7 @@ mod pty_attach;
 mod pty_workflow_tests;
 
 mod render_scheduler;
-
 mod source_git;
-
 mod telemetry_scheduler;
 
 use global_search::{
@@ -261,13 +259,7 @@ async fn main() -> Result<()> {
         return result;
     }
     if let Some(Command::Daemon { command }) = &cli.command {
-        let configured = read_file_config(config_path(&cli).as_deref())?;
-        let build_dir = cli
-            .build_dir
-            .clone()
-            .or_else(|| env::var_os("YOCTUI_BUILD_DIR").map(PathBuf::from))
-            .or(configured.build_dir);
-        return daemon_cli(command.clone(), build_dir).await;
+        return configured_daemon_cli(&cli, command.clone()).await;
     }
     if matches!(&cli.command, Some(Command::Sessions)) {
         return daemon_sessions();

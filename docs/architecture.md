@@ -1051,6 +1051,14 @@ Owns:
 - bounded text/binary preview loading
 - validated atomic writes for confirmed local configuration effects
 
+The CLI delegates existing BuildOptions/BuildTarget dialog handling to a private
+runtime module only after the earlier devtool/config dialog routes decline input.
+It returns the same typed `KeyRouteOutcome` and existing guarded effects; no
+reordering or new operation is introduced. Daemon startup configuration resolution
+is a helper in daemon_commands, preserving CLI/environment/config precedence.
+CLI adapter unit tests live in external tests folders with their original module
+identities and private parent access, not inline production-source test bodies.
+
 The model owns the cached layer tree by stable paths, expansion state,
 selection, Git/file metadata, preview classification, and Inspector mode.
 The app focus router reserves `Right` for opening or expanding the Layers

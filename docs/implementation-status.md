@@ -1,4 +1,14 @@
-M114 current: DEMO-CLI-HYGIENE-001 IN_PROGRESS; polish planning parent DONE.
+M114 current: DEMO-MODEL-HYGIENE-001 IN_PROGRESS; CLI hygiene DONE v289.
+Four external adapter test files preserve exact lexical tokens/literals/assertions
+and original test module identities; extracted build dialog body tokens unchanged,
+delegated only after earlier routes decline. Daemon config helper preserves exact
+CLI/environment/config precedence. main499/build_dialogs473/new handler90 lines;
+all six CLI source-layout findings removed, other children remain/no exemptions.
+Full CLI381PASS/5existingignored and all integration targets6/1/7/2/1/6/7/1/1
+PASS, timing2.90seconds, strictCLIClippy/fmt/UI/version/roadmap/UI377 PASS.
+All34 goldens reviewed against prior source: only288->289 identity differs.
+Log /tmp/yoctui-demo-cli-hygiene-v289.log. No runtime/layout/key change; full
+source-layout/workspace/release/native/reboot/CI/publication remain pending.
 After committed integration926cbc0a/v288, all seven selected direct polish
 dependencies are DONE with source-bound measured and focused evidence reviewed.
 No final release/native/reboot/CI/publication claim. Split source hygiene before

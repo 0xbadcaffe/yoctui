@@ -1,27 +1,29 @@
 # Current Task
 
-**ID:** DEMO-CLI-HYGIENE-001
-**Title:** Externalize CLI regression modules and split oversized dialog startup routing
+**ID:** DEMO-MODEL-HYGIENE-001
+**Title:** Split oversized model catalog reducers and external model regression modules
 **Status:** IN_PROGRESS
 
-Dependency integration926cbc0a/v288 DONE. Polish planning parent selected
-dependencies/evidence all DONE; no full release/native/reboot/CI/pub claim.
-Mechanically externalize identical inline tests from image_artifact_view,
-source_git, workspace_editor and qemu_debug/runtime/staging into tests folders
-without altering literals/assertions/module test names. Split existing oversized
-BuildOptions/BuildTarget routing and daemon startup config resolution into
-cohesive private helpers; preserve priority, trapped input, exact config precedence
-and side effects. No behavior/key/layout change, exemption or raised500line limit.
-Bump product; maintain exact golden identity version-only and full UI checks.
-Then model/bridge/palette children, full hygiene parent, tested faithful DIM/
-fixture/provenance maintenance, full release quality and actual native reboot-
-ready optimized OpenBMC/QEMU/GDB/CI/publication. Preserve sources/images/symbols,
-user captures and unrelated clients; only two compile workers.
+Dependency CLI hygiene DONE v289: exact test/dialog body tokens preserved,
+all six CLI findings removed/main499/dialog473; CLI381+all integrations/UI377/
+strict affected/fmt/UI/version/roadmap PASS. No behavior change.
+Mechanically split oversized compatibility workspace action catalog and
+open_selected_package_recipe/reset_pane_subfocus reducer chunks into cohesive
+private helpers, move hardware tests into an actual tests folder without
+namespace changes, and split525line kernel debug tests while preserving shared
+fixtures/test names. Preserve branch order, every guard/effect/focus transition,
+literal/assertion contents, private visibility and default unreachable paths.
+No500line exemptions, hidden tests or runtime/UI change. Bump, exact version-only
+golden identity maintenance, full model/app/UI and strict affected verification.
+Then bridge/palette children and full hygiene parent; faithful DIM/provenance
+maintenance, full release quality and actual native reboot-ready optimized
+OpenBMC/QEMU/GDB/CI/publication. Preserve source/images/symbols/user captures.
 
 ```bash
-cargo test -p yoctui --all-features --no-fail-fast
-cargo clippy -p yoctui --all-targets --all-features -- -D warnings
-# Manual: all six CLI source-layout findings removed; other children remain.
+cargo test -p yoctui-model --all-features
+cargo test -p yoctui-app --all-features
+cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings
+# Manual: six model layout findings removed with exact behavior/assertions.
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```
