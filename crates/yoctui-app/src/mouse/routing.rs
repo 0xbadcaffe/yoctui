@@ -105,7 +105,7 @@ pub fn mouse_action_for_app(
             && mouse.row < region.area.bottom().saturating_sub(1)
         {
             let row = usize::from(mouse.row - region.area.y - 1);
-            let selection = if terminal_width == 160 && app.screen == Screen::Tasks {
+            let selection = if region.area.width == 26 && app.screen == Screen::Tasks {
                 literal_navigator_selection_at_row(app, row)
             } else {
                 let visible_rows = usize::from(region.area.height.saturating_sub(2));

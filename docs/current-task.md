@@ -4,6 +4,18 @@
 **Title:** Match Tasks Navigator mouse routing to its rendered geometry
 **Status:** IN_PROGRESS
 
+Implementation304: actual-area routing condition and pure model typed destination
+lookup replace legacy numeric positions. Before-code two app mapping/reducer
+and one actual rendered-row TestBackend regression fail as reproduced. Final
+four new regressions pass, including typed lookup and distinct Images/QEMU-Wic.
+Full2097Rust/zero failures/nine unchanged ignores31targets/67bridge/strict full
+workspace Clippy/fmt/source2909/UI/version/roadmap PASS. All34goldens only303->304
+version; other cells/styles exact;29 deterministic rasters rebuilt/verified.
+Optimized build/install/native Tasks click proof pending; task remains IN_PROGRESS.
+61 obsolete unused compiled outputs1138487853B safely cleared after owner/link/
+live-use checks, installed/native303 and retained top-level release preserved.
+Build with two jobs in disk AAiva6, monitor root~1.1GiB free; no RAM cache rebuild.
+
 Parent audit paused for a native303 reproduction: grouped Tasks Navigator at
 160x50 renders its current pane width, but hit testing unconditionally selects
 the legacy literal-tree map whenever total terminal width is160. Devtool and

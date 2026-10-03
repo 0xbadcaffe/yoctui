@@ -1,5 +1,13 @@
 # Yoctui UI Specification
 
+Tasks Navigator mouse activation follows its rendered area, not total terminal
+columns. The existing26-cell literal project tree uses literal rows; other
+widths use the grouped Navigator's visible rows and viewport, including compact
+and narrow layouts. Literal destinations resolve through the current typed
+Navigator order; Images and QEMU/Wic retain distinct contextual destinations.
+Selecting and activating a row preserves existing focus/modal rules and does
+not start a build or terminal job. No layout, destination or shortcut is added.
+
 Daemon attachment does not wait for compatibility discovery or the initial recipe inventory. The retained
 daemon logs report metadata loading, completion or failure. Recipe/layer content
 arrives as a typed workspace update without requiring reattachment. A build

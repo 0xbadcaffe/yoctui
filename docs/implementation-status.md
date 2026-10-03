@@ -1,4 +1,12 @@
 M114 current: DEMO-TASKS-NAVIGATOR-MOUSE-001 IN_PROGRESS; parent audit paused.
+Implementation304 actual-area hit map plus model typed destination lookup;
+two app/one model/one TestBackend regressions pass. Before-code two app and
+actual rendered Devtool-click regressions fail. Full2097Rust/zero failures/nine
+unchanged ignores31targets/67bridge/strict workspace Clippy/fmt/source2909/UI/
+version/roadmap PASS;34goldens only303->304 identity/all other cells/styles exact,
+29rasters rebuilt/verified. Optimized install/native proof pending, not DONE.
+61 obsolete compiled outputs1138487853B removed after owner/link/live-use checks;
+installed/native303/top-level release and originals preserved, caches rebuildable.
 Native303 Tasks160x50 two-click Devtool/QEMU remains Tasks; Dashboard->Devtool
 works. Mouse uses old literal map based on total160 columns, whereas renderer
 selects literal only for26-cell Navigator area. Split shared actual-area correction

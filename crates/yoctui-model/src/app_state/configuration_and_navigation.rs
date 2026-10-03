@@ -43,6 +43,12 @@ impl App {
             .copied()
             .unwrap_or(Screen::Dashboard)
     }
+    /// Resolve an existing typed destination without duplicating Navigator indices.
+    pub fn navigator_selection_for_destination(destination: WorkspaceDestination) -> Option<usize> {
+        NAVIGATOR_COMPATIBILITY_DESTINATIONS
+            .iter()
+            .position(|candidate| *candidate == destination)
+    }
     pub fn navigator_compatibility_destination(&self) -> WorkspaceDestination {
         NAVIGATOR_COMPATIBILITY_DESTINATIONS
             .get(self.navigator_selection)

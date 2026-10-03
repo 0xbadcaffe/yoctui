@@ -2,29 +2,43 @@ pub(crate) fn literal_navigator_selection_at_row(
     app: &yoctui_model::App,
     row: usize,
 ) -> Option<usize> {
+    use yoctui_model::WorkspaceDestination as Destination;
+
     let layer_rows = app.workspace.layers.len().clamp(1, 7);
     let recipe_rows = app.workspace.recipes.len().clamp(1, 3);
     let image_rows = app.available_images.len().clamp(1, 2);
     let layers_end = 1 + layer_rows;
     if row < layers_end {
-        return Some(1);
+        return App::navigator_selection_for_destination(Destination::Layers);
     }
     let recipes_start = layers_end;
     let recipes_end = recipes_start + 1 + recipe_rows;
     if row < recipes_end {
-        return Some(2);
+        return App::navigator_selection_for_destination(Destination::Recipes);
     }
     let images_start = recipes_end;
     let images_end = images_start + 1 + image_rows;
     if row < images_end {
-        return Some(4);
+        return App::navigator_selection_for_destination(Destination::Images);
     }
     let tasks_start = images_end;
     if row == tasks_start {
-        return Some(6);
+        return App::navigator_selection_for_destination(Destination::Tasks);
     }
-    const TASK_DESTINATIONS: [usize; 8] = [6, 11, 13, 14, 15, 5, 12, 16];
-    TASK_DESTINATIONS.get(row - tasks_start - 1).copied()
+    const TASK_DESTINATIONS: [Destination; 8] = [
+        Destination::Tasks,
+        Destination::Testing,
+        Destination::Qa,
+        Destination::Devtool,
+        Destination::QemuWic,
+        Destination::Sdk,
+        Destination::Security,
+        Destination::Maintenance,
+    ];
+    TASK_DESTINATIONS
+        .get(row - tasks_start - 1)
+        .copied()
+        .and_then(App::navigator_selection_for_destination)
 }
 
 /// Shared concept-menu bounds for rendering and mouse hit testing.

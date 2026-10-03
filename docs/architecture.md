@@ -1,5 +1,15 @@
 # Yoctui Architecture
 
+## M114 Tasks Navigator mouse geometry
+
+App mouse routing selects the literal Tasks tree only when the shared actual
+Navigator area is26 cells, matching the renderer condition. Grouped rows use
+the model's existing viewport/group/selection methods. Literal row destinations
+resolve through the model's pure current typed destination-index lookup instead
+of copied numeric positions; distinct Images/QEMU-Wic authority identities are
+preserved. UI remains a consumer of typed model state, with no process parsing,
+backend mutation, protocol change or new user workflow.
+
 ## M114 native navigation/probe boundary
 
 The pure navigation reducers must not automatically emit daemon-owned capability
