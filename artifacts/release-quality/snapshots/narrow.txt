@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.294 • Git: unavailable • T:not selectedD:✓ Connected/Local • 00:00│
 │Daemon health: ✓ Connected/Local · BitBake: – Disconnected                    │
-│Workspace: /tmp/yoctui-snapshot-81h_738h/build  |  Build: none  |  Task: 0 / …│
+│Workspace: /tmp/yoctui-snapshot-ur75_rul/build  |  Build: none  |  Task: 0 / …│
 └──────────────────────────────────────────────────────────────────────────────┘
 Panes: [Navigator]  Tab/Shift+Tab
 ┌Navigator · 2/31 ↓────────────────────────────────────────────────────────────┐

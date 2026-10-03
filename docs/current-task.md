@@ -1,35 +1,35 @@
 # Current Task
 
-**ID:** DEMO-FULL-VERIFY-001
-**Title:** Pass full Rust Python and release quality checks for demo code
+**ID:** DEMO-DOCS-001
+**Title:** Refresh README real screenshots measured flamegraph report and operator runbook
 **Status:** IN_PROGRESS
 
-Committed prerequisites include v294 hermetic real PTY harness child:
-13 pure helper tests; unchanged startup8s/quit3s/snapshot-dismiss0.5s/task2s
-bounds; actual configured Cargo binary; isolated no-graphics PTY; fragmented
-CPR from composed cursor and bounded frame draining; honest initialized offline
-daemon fixture with unset-target title; clean0 exit/restoration/resize recovery.
-Full release-quality/README/docs/UI377/fmt/source2891/UI/version/roadmap PASS.
-Two fixture synchronized startup samples0.377700/0.394362s with0 exits, not
-optimized/native proof or comparable to old setup-escape samples with1 exits.
-Tracked generated snapshots are offline temporary profile evidence, not live
-OpenBMC; original live evidence/source/images/symbols preserved. No new UI behavior.
+Full verification parent DONE on committed399ce139/v294:2048Rust/0failures/
+9existing live/manual ignores across31 targets; bridge61; strict workspace
+all-target/all-feature Clippy/fmt; full real desktop release-quality13helper+
+PTY/keymap/resize/daemon snapshots/perf/README/utility/embedded2; exact current
+Cargo binary docs/doctor/headless/29pinned rasters/roadmap/source2891 PASS.
+Logs /tmp/yoctui-demo-final-*-v294.log. No new skips/weakened gates. This is
+local full quality, not native optimized/reboot/hosted CI/publication.
 
-Now run full workspace2048Rust/61bridge/strictworkspace Clippy plus release/
-docs/roadmap on the committed current source/binary, not earlier293 certificate.
-Do not newly ignore tests or weaken gates. Remaining final docs/source-bound
-flamegraph/native durable tools/profile/user service/cold restart/coordinated
-actual reboot/optimized real all-screen boot/GDB/CI/publication remain pending.
-Hosted new-stable atomic API deprecation is a separate later CI correction.
-Two compile workers; preserve user captures and unrelated daemon/client jobs.
+Refresh README/operator/performance evidence from actual current optimized
+OpenBMC source and report exact workload/flags/binary hashes and limitations.
+Historical v64 generic flamegraph remains archival; final report must be latest.
+Screenshots must be genuine and clearly separate fixture/live/native evidence.
+Resolve ordering before implementation: current docs task precedes native
+persistence/installation but user final acceptance requires plain native demo
+and reboot-ready prerequisites, and final screenshot/flamegraph/runbook should
+describe the accepted native setup rather than duplicate interim container work.
+Reconcile these dependency/proof boundaries in one governance commit before
+implementation; do not claim unavailable native readiness or simulate evidence.
+Native service final binary and actual coordinated post-reboot proof are
+distinct from cold restart. No uncoordinated laptop reboot or privilege bypass.
 
 ```bash
-cargo fmt --all --check
-cargo test --workspace --all-features --no-fail-fast
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
-./scripts/verify-release-quality.sh
+./scripts/test-flamegraph.sh
+python3 scripts/test_performance_documentation.py
 ./scripts/check-docs.sh
+./scripts/test-readme-quickstart.sh
 ./scripts/verify-roadmap.sh
 ```
 

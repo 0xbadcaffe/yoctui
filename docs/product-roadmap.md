@@ -2,6 +2,13 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+Full verification DONE exact399ce139/v294:2048Rust/61bridge/strictworkspace
+Clippy/fmt/full desktop release-quality/all docs/current Cargo binary/source/
+roadmap PASS;9existing ignores unchanged. Final docs/native reboot readiness/
+optimized all-screen live rehearsal/hosted CI/publication remain pending.
+Final docs proof ordering is being reconciled with native acceptance before
+implementation, rather than certifying interim container evidence as final.
+
 PTY harness child DONE v294: real desktop startup/keymap/resize+recovery/daemon
 snapshots/synchronized visible frame/clean exit+restoration gates pass;13 pure
 positive/negative helper tests, actual Cargo target and private environment,

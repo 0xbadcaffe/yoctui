@@ -1,4 +1,14 @@
-M114 current: DEMO-FULL-VERIFY-001 IN_PROGRESS; PTY harness child DONE v294.
+M114 current: DEMO-DOCS-001 IN_PROGRESS; full verification parent DONE v294.
+Exact committed399ce139 full Rust2048/0failures/9existing ignores31targets,
+bridge61, strictworkspace alltargets/allfeaturesClippy/fmt/full desktop release
+quality13 helper+all realPTY/keymap/resize/daemon snapshots/perf clean0 exits/
+restoration/README/utility/embedded2, docs current Cargo binary+help/doctor/
+headless/29pinned rasters/source2891/UI/roadmap PASS. Logs final-*-v294 under
+/tmp. No new skips/bounds weakening/identity masking; old exit1/forced-kill
+acceptance tightened. This completes local full quality, not native/reboot/
+hosted CI/registry release. Final docs must describe accepted native setup;
+existing docs-before-native/install ordering needs governance reconciliation
+before implementation to avoid pretending container-only evidence is final.
 13 external helper regressions/private env/actual Cargo target/fail-closed binary/
 honest initialized executable offline profile/nonbuildable fixture/actual composed
 CPR including fragments/unknown rejection/frame draining/title not readiness/

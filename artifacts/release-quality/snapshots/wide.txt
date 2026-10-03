@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.294 • Git: unavailable • Project: build • T:not selected                                     D:✓ Connected/Local • BB:– Disconnected • Local 00:00│
 │Daemon health: ✓ Connected/Local · BitBake: – Disconnected                                                                                                    │
-│Workspace: /tmp/yoctui-snapshot-qz6yg1em/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                           │
+│Workspace: /tmp/yoctui-snapshot-y0bfuf8o/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                           │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator───────────────┐┌Tasks: not selected · All──────────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
 │▾ Layers                ││Overall  build not started · 0%                                                        ││No task selected.                          │
@@ -40,8 +40,8 @@
 │                        ││                                                                                       │┌System Status──────────────────────────────┐
 │                        │└───────────────────────────────────────────────────────────────────────────────────────┘│✓ Daemon Connected · Local · version unava…│
 │                        │┌Resources──────────────────────────────────────────────────────────────────────────────┐│– BitBake Disconnected · vunavailable · Jo…│
-│                        ││CPU --                       RAM 54%                      FS 66%                       ││! Compat Degraded g1 · A0 L12 U105 ?21 · P…│
-│L: --  R: --  P:--      ││unavailable                  ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫ ││✓ Build FS 66% · 3.4/10.0 GiB free · Works…│
+│                        ││CPU --                       RAM 61%                      FS 76%                       ││! Compat Degraded g1 · A0 L12 U105 ?21 · P…│
+│L: --  R: --  P:--      ││unavailable                  ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫ ││! Build FS 76% · 2.3/10.0 GiB free · Works…│
 └────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Tab Focus   ↑/↓ select   h/l groups   Enter open   Ctrl+B prefix   F3 History   F4 Dashboard   F5 Logs   F6 Layers   F7 Recipes   F1 Help   F12 Menu   q Quit │

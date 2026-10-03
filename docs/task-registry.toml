@@ -336,18 +336,18 @@ notes = "DONE final product05fd97cf/v292 with four committed verified mechanical
 id = "DEMO-FULL-VERIFY-001"
 milestone = "M114"
 title = "Pass full Rust Python and release quality checks for demo code"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3502
 required = true
 depends_on = ["DEMO-POLISH-001", "DEMO-LAYOUT-HYGIENE-001", "DEMO-DOC-FIXTURE-MAINTENANCE-001", "DEMO-RELEASE-PTY-HARNESS-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features --no-fail-fast", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-release-quality.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "New user instruction explicitly revokes full-suite deferral. Relevant full test graph/release scripts; record exact pass/failure and fix independently, never skip/weaken failures to claim PASS. Full product completion still includes unrelated external board/instrumentation/current-Poky blockers and must not be relabeled. Source/binary-bound quality evidence required."
+notes = "DONE exact committed399ce139/v294: full workspace all-features/no-fail-fast2048Rust/0failures/9existing live/manual ignores across31targets, bridge61, strictworkspace alltargets/allfeaturesClippy/fmt, complete desktop release-quality13 helper+realPTY/keymap/40x12 warning+wide recovery/3 realIPC offline daemon snapshots/perf clean0 exits/restoration/README/utility/embedded2, docs current Cargo binary+CLIhelp/doctor/headless/29pinned rasters, source2891<=500/external tests/UI/roadmap PASS. Logs /tmp/yoctui-demo-final-*-v294.log. No added ignores, old forced-kill/exit1 acceptance strengthened, no identity/style masking or relaxed bounds. Required final docs/native optimized/reboot/hosted exact CI/packaging/publication remain pending; unrelated board/instrumentation/current-Poky blockers unchanged, no broad product-completion claim."
 
 [[task]]
 id = "DEMO-DOCS-001"
 milestone = "M114"
 title = "Refresh README real screenshots measured flamegraph report and operator runbook"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3503
 required = true
 depends_on = ["DEMO-FULL-VERIFY-001"]

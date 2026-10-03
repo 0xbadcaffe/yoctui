@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.294 • Git: unavailable • Project…D:✓ Connected/Local • BB:– Disconnected • Local 00:00│
 │Daemon health: ✓ Connected/Local · BitBake: – Disconnected                                        │
-│Workspace: /tmp/yoctui-snapshot-_ibyevmr/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--…│
+│Workspace: /tmp/yoctui-snapshot-lu7i0a7o/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--…│
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator · 2/31 ↓──┐┌Build Overview──────────────────────────────────────────────────────────────┐
 │▾ OVERVIEW          ││Overall  build not started · 0%                                             │
@@ -9,7 +9,7 @@
 │  ▱ Insights        ││Exit code: none  Status: Idle  Target: none  Backend: bridge                │
 │▾ CONTENT           ││Parse progress: not parsing  Tasks: 0/— (active: 0)  Warnings: 0  Errors: 0 │
 │    Layers          ││Machine: unknown  Distro: unknown  Release: unknown                         │
-│    Recipes         ││Host CPU: unavailable  Build disk free: 3.4 GiB  Environment: ready         │
+│    Recipes         ││Host CPU: unavailable  Build disk free: 2.3 GiB  Environment: ready         │
 │    Packages        ││Sstate reuse: unavailable — summary unavailable, stale, or no sstate request│
 │    Images          ││                                                                            │
 │  ▱ Hardware        ││                                                                            │
@@ -22,8 +22,8 @@
 │  ▱ Errors          ││Favorite: none [f]                                                          │
 │    Configuration   │└────────────────────────────────────────────────────────────────────────────┘
 │    Dependencies    │┌Resources───────────────────────────────────────────────────────────────────┐
-│▾ VALIDATE          ││CPU --                   RAM 54%                   FS 66%                   │
-│    Testing         ││unavailable              ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫ │
+│▾ VALIDATE          ││CPU --                   RAM 61%                   FS 76%                   │
+│    Testing         ││unavailable              ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫ │
 └────────────────────┘└────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
 │h/l groups   Enter open   Ctrl+B prefix   ? Help   Ctrl+P Menu   q Quit                           │
