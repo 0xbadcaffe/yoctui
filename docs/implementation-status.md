@@ -1,4 +1,4 @@
-M114 current: DEMO-RUNQUEUE-COMPLETION-001 IN_PROGRESS (2026-10-04 bug override).
+M114 bug override complete: DEMO-RUNQUEUE-COMPLETION-001 DONE (2026-10-04).
 Real job16 exit0 and retained do_build queue-only record reproduce Lost row.
 Native noexec task fires runQueueTaskCompleted, omitted by the bridge mask and
 normalizer. Scoped correction consumes real terminal events, not blanket build
@@ -10,7 +10,15 @@ mapping only; authoritative PN cache/unknown-identity statistics fallback retain
 Python28/18subtests, Rust5, version-bound production rendering16 tests PASS;
 strict affectedClippy/fmt/source2927/UI/roadmap/version PASS.34goldens identity-only,
 29derived rasters regenerated/verified; no README prose or presentation changes.
-Optimized release/commit/push delivery pending; native running daemon preserved.
+Sourceb08d4375 committed/pushed; optimized build6m28/install1.86s, installed and
+release SHA5d07ef88197366c718db132129ce0bde2cf3739e1f29918c9c980588c7c5621a.
+Read-only actual upstream event-object checks and isolated bundled-bridge doctor
+PASS; no new live image build/full suite. Native2787224/instance9a3437 remains
+running309/oldSHA0cefb0ca; job16 Exited0/job15 Lost unchanged. Installed309 backup
+retained; idle daemon restart required for new bridge, not performed here.
+Receipt artifacts/release-quality/runqueue-completion-0.1.310.json.
+DEMO-INSTALL-LIVE-001 remains deferred IN_PROGRESS handoff; no broad queue resume,
+README prose/operator-guide/CI/reboot/publication changes or acceptance claim.
 
 Historical M114 publication-only request DONE; deferred handoff DEMO-INSTALL-LIVE-001.
 All seven public0.1.309 crates uploaded from clean5284a3f2, locked dry-run and

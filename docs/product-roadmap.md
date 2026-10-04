@@ -2,14 +2,20 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
-2026-10-04 user bug override: DEMO-RUNQUEUE-COMPLETION-001 is current.
+2026-10-04 user bug override: DEMO-RUNQUEUE-COMPLETION-001 DONE.
 Actual native job16 succeeded/exit0, but its image do_build was queued without
 a terminal task record. BitBake noexec completion uses runQueueTaskCompleted;
 the bridge omitted that subscription/normalization, and normal build-end
 cleanup marked the unobserved row Lost. Fix the boundary with focused native
 event/fake-adapter/reducer/TestBackend duplicate/failure/missing-identity tests.
-Bump version, commit/push and build optimized release. Explicitly no full test
-suite, unrelated README/CI/demo queue, image rebuild or fabricated history.
+Sourceb08d4375/v310 committed/pushed; Python28/18subtests, Rust5, rendering16,
+strict affectedClippy/fmt/source/UI/roadmap/version and29raster checks PASS.
+Optimized build6m28/install1.86s, installed/release SHA5d07ef88; isolated bundled
+bridge doctor and read-only actual upstream event checks PASS. Native daemon
+2787224 still309/unchanged: idle restart activates new bridge, no retroactive
+completion fabricated. Receipt artifacts/release-quality/runqueue-completion-0.1.310.json.
+Explicitly no full suite, unrelated README/CI/demo queue, new image build or
+publication. Deferred DEMO-INSTALL-LIVE-001 handoff only, not resumed this turn.
 
 2026-10-03 immediate user override: publish existing v0.1.309 only, then provide
 manual commands and explain existing automation. DEMO-PUBLISH-001 DONE;

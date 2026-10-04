@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "task": "DEMO-RUNQUEUE-COMPLETION-001",
+  "recorded_utc": "2026-10-04T03:05:16Z",
+  "version": "0.1.310",
+  "source_commit": "b08d4375eb8c8d7ed1474580a4a4f5f181264f38",
+  "source_pushed_to": "origin/master",
+  "diagnosis": {
+    "environment": "Native OpenBMC Romulus",
+    "successful_job": 16,
+    "successful_job_exit_code": 0,
+    "task": "obmc-phosphor-image:do_build",
+    "observed_before_fix": "TaskQueued followed by successful BuildCompleted, without TaskCompleted; reducer correctly archives unobserved outcome as Lost.",
+    "upstream_behavior": "do_build[noexec]=1 -> runQueueTaskStarted(noexec=True) -> runQueueTaskCompleted; no worker TaskSucceeded.",
+    "cause": "Bridge event mask and normalizer omitted authoritative runqueue completion.",
+    "historical_lost_job_15": "Unmodified; not relabeled from a different successful build."
+  },
+  "fix": {
+    "subscriptions": [
+      "bb.runqueue.runQueueTaskCompleted",
+      "bb.runqueue.sceneQueueTaskCompleted"
+    ],
+    "wire_record": "Existing typed task_completed",
+    "identity": "Existing authoritative getRecipes PN/file cache; no filename guessing.",
+    "unknown_identity": "Valid aggregate task_stats only; no fabricated per-task completion.",
+    "duplicates": "Existing reducer and snapshot progress idempotence preserved; first observed timing retained.",
+    "other_unobserved_tasks": "Continue to become Lost even if aggregate build succeeds."
+  },
+  "verification": {
+    "python": {
+      "tests": 28,
+      "subtests": 18,
+      "failed": 0,
+      "files": [
+        "bridge/tests/test_runqueue_completion.py",
+        "bridge/tests/test_workspace_inventory.py",
+        "bridge/tests/test_metadata_events.py"
+      ]
+    },
+    "rust_runqueue_completion": {
+      "model": 3,
+      "protocol": 1,
+      "ui": 1,
+      "failed": 0,
+      "locked": true
+    },
+    "production_rendering": {
+      "selected_tests": 16,
+      "failed": 0,
+      "final_run_used_golden_update": false
+    },
+    "full_suite": "SKIPPED by explicit user request",
+    "strict_clippy": "PASS: affected model/protocol/UI/bitbake, all-targets/all-features, -D warnings",
+    "format": "PASS",
+    "source_layout": "PASS: 2927 sources",
+    "ui_spec": "PASS",
+    "roadmap": "PASS: 999 tasks",
+    "version_policy": "PASS: 0.1.309 -> 0.1.310 before implementation commit",
+    "version_fixtures": "34 goldens verified identity-only; 6 concept and 23 README rasters regenerated and checked; no README prose or presentation modification.",
+    "upstream_event_objects": "PASS: read-only construction/normalization of actual OpenBMC BitBake normal/setscene completion classes; not a live image build.",
+    "bundled_bridge": "PASS: strings confirm new subscriptions/comment; private doctor bounded handshake/shutdown, expected Unavailable authority.",
+    "new_live_image_build": "NOT RUN; current daemon intentionally not restarted."
+  },
+  "release": {
+    "build_command": "CARGO_TARGET_DIR=/home/bspguy-dev/.cache/yoctui-demo-cargo.AAiva6 CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 RUSTFLAGS='-C force-frame-pointers=yes' cargo build --release --locked -p yoctui --bin yoctui -j 2",
+    "build_duration": "6m28s",
+    "install_command": "Same target/jobs/incremental/RUSTFLAGS; cargo install --path crates/yoctui-cli --force --locked --bin yoctui -j 2",
+    "install_duration_seconds": 1.86,
+    "binary": "/home/bspguy-dev/.cache/yoctui-demo-cargo.AAiva6/release/yoctui",
+    "installed_binary": "/home/bspguy-dev/.cargo/bin/yoctui",
+    "installed_and_release_sha256": "5d07ef88197366c718db132129ce0bde2cf3739e1f29918c9c980588c7c5621a",
+    "version_output": "yoctui 0.1.310",
+    "old_binary_backup": "/home/bspguy-dev/.local/state/yoctui-installs/before-0.1.310.bJlnVI/yoctui",
+    "old_binary_sha256": "0cefb0ca76c346aa2dbceae3e27f0cf37cd497db9a7253dfc47e3ed300bc6420",
+    "crates_io_publication": "NOT RUN; 0.1.309 publication is a separate completed task."
+  },
+  "preserved_daemon": {
+    "pid": 2787224,
+    "instance": "9a3437c9922626cc0804ebd0f662e614",
+    "socket": "/run/user/1000/yoctui/daemon.sock",
+    "status": "running",
+    "executable_version": "0.1.309",
+    "executable_sha256": "0cefb0ca76c346aa2dbceae3e27f0cf37cd497db9a7253dfc47e3ed300bc6420",
+    "job_16": "Exited, exit_code=0",
+    "job_15": "Lost, exit_code=null",
+    "restart": "NOT PERFORMED; activate fixed bridge after coordinated idle restart.",
+    "retained_row": "No retroactive per-task completion fabricated."
+  },
+  "scope": {
+    "user_sessions": "Not terminated",
+    "image_rebuild": "Not performed",
+    "deferred": "Broader demo screens/README/operator guide/CI/reboot queue not resumed or certified."
+  },
+  "logs": [
+    {
+      "path": "/tmp/yoctui-runqueue-before-v310.log",
+      "sha256": "b5636bf67cddc001cf47f26479fe1651458bfb909af8b700ed7273002f7f2967",
+      "result": "Expected pre-fix regression failure"
+    },
+    {
+      "path": "/tmp/yoctui-runqueue-python-v310.log",
+      "sha256": "121f6ecf44b9d59ff8a0be6449d82443f848668bf0998bdee89c200ca00c73c4",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-runqueue-rust-locked-v310.log",
+      "sha256": "6339e7e20ddd02c9733d26aa789f72a538966c4447ee5bfc6d20aa27e7583c43",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-runqueue-version-fixtures-final-v310.log",
+      "sha256": "7035387e16e96525464a00599a5a60d03878a164b8d0d3aaa54a65626d6fc189",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-runqueue-clippy-v310.log",
+      "sha256": "bc4aff23e49b32dd10bca26df05879619c9ce3228eafd972304b120d711e0f23",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-runqueue-upstream-events-v310.log",
+      "sha256": "d58e10baa1cf042c557cd4ebbfa6cd1198d167447b8129a1faea649438d4fa78",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-runqueue-release-v310.log",
+      "sha256": "768f4663666c7fdd1e4d0766c459ed9e7043e56c95d23c679512fd411816bb91",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-runqueue-install-v310.log",
+      "sha256": "fe8895474cc4015cc2cce70d385c20c1006eb42bc0dd175fc4e9b00eefb06b73",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-runqueue-doctor-v310.log",
+      "sha256": "e2e1f4bd5cf72b61cb11306266ce557146413174da9ce90b5c9d9b7c4a1b91e1",
+      "result": "PASS"
+    }
+  ]
+}

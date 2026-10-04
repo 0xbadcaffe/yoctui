@@ -1,32 +1,37 @@
 # Current Task
 
-**ID:** DEMO-RUNQUEUE-COMPLETION-001
-**Title:** Complete no-execution tasks from authoritative BitBake runqueue events
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
 **Status:** IN_PROGRESS
 
-2026-10-04 user asks to fix the successful image's Lost do_build row and
-explicitly forbids the full suite. Native job16 exit0; retained queue-only
-do_build observation and upstream noexec/runQueueTaskCompleted behavior prove
-the bridge's missing subscription/normalization. Add runqueue/setscene terminal
-events using authoritative recipe identity and existing typed completion;
-preserve valid aggregate statistics for unresolved identities without inventing
-success. Cover queue-only noexec, ordinary duplicate completion, true failures,
-unknown identity and bounded/responsive task rendering. No blanket relabeling
-of unfinished tasks or old lost job15. Do not rebuild the OpenBMC image.
+Deferred handoff only: the 2026-10-04 scoped bug request is complete. Do not
+resume the broad demo/README/operator-guide/CI/reboot queue in this bug turn.
+The user explicitly forbids the full suite. Current native daemon2787224 remains
+running309; idle coordinated restart and subsequent real build acceptance are
+not performed here. Existing retained Lost rows are not fabricated as successes.
+No image rebuild, publication or user session termination performed.
 
-Standing workflow: bump version, commit/push, build optimized release binary.
-Verification is focused only; no workspace/full bridge suite. Keep unrelated
-demo/README/operator guide/CI/reboot/publication tasks deferred this turn.
-Do not terminate the current daemon or active user sessions to install a fix.
+## Completed runqueue completion correction
 
-Implementation verified at0.1.310: bridge subscribes/normalizes both normal and
-setscene runqueue completion, preserving authoritative cached PN identity and
-aggregate-only unresolved fallback. Before-code regressions reproduced the bug;
-focused Python28/18subtests and Rust5 pass. Separate version-bound production
-rendering16 tests pass without update mode;34goldens changed only309->310 identity
-and29derived rasters regenerated/checked. Strict affected-crate all-target/
-all-feature Clippy, fmt,2927-source layout, UI/roadmap/version checks PASS.
-No full suite run. Optimized source-bound binary/commit/push delivery pending.
+DEMO-RUNQUEUE-COMPLETION-001 DONE, sourceb08d4375/v0.1.310 committed/pushed.
+The bridge subscribes/normalizes normal/setscene runqueue completion into the
+existing typed record. Actual cached PN identity/aggregate-only unknown fallback
+retained; ordinary worker duplicates count once and failed/unobserved tasks
+remain Failed/Lost. Real prior job16 exit0/do_build queue-only and upstream
+noexec event path reproduced the missing completion; historical job15 stays Lost.
+Before-code regressions fail as expected. Python28/18subtests, Rust5 and separate
+version-bound production-rendering16 tests PASS. Strict affectedClippy, fmt,
+2927-source layout, UI/roadmap/version checks PASS.34goldens identity-only,
+29derived rasters verified. Read-only actual upstream normal/setscene event
+objects normalize correctly; this is not a new live build claim.
+Optimized source-bound build6m28/install1.86s; installed/release SHA256
+5d07ef88197366c718db132129ce0bde2cf3739e1f29918c9c980588c7c5621a.
+Isolated bundled-bridge doctor handshake/shutdown PASS, private authority
+Unavailable as expected. Old installed309 backup retained; running native309
+process SHA0cefb0ca remains unchanged. Receipt:
+artifacts/release-quality/runqueue-completion-0.1.310.json.
+
+Focused bug verification (completed, not authorization to run the full suite):
 
 ```bash
 python3 -m pytest bridge/tests/test_runqueue_completion.py bridge/tests/test_workspace_inventory.py bridge/tests/test_metadata_events.py
@@ -44,6 +49,11 @@ cargo fmt --all --check
 python3 scripts/check-version-bump.py
 cargo build --release --locked -p yoctui --bin yoctui -j 2
 ```
+
+Deferred parent verification requires a future scoped resume/coordinated idle
+restart: plain native attach and all-screen/OpenBMC/QEMU-GDB rehearsal with the
+then-current installed daemon, plus separate docs/CI/actual-reboot tasks.
+Do not infer that installation or the isolated doctor completes that parent.
 
 ## Historical completed publication-only handoff
 
