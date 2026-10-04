@@ -1,5 +1,44 @@
 # Yoctui UI Specification
 
+### M116 clipboard, debug defaults, completed progress and GitUI fixes
+
+Ctrl+V reads the host system clipboard into the currently focused text-entry
+surface, including Kernel debugging fields, ordinary form/editor fields and
+search input. Terminal-provided bracketed paste uses the same typed insertion
+route with its original paste-source provenance. Text is bounded; multiline
+editor paste stays literal, single-line fields reject control/newline injection,
+and pasted text never confirms, submits, launches or changes focus. Missing,
+failed or timed-out clipboard tools report an actionable notification without
+changing the existing draft. Native PTY keys retain ownership: Ctrl+V in a live
+terminal remains native; terminal bracketed paste retains writer/review safeguards.
+Dialogs, destructive reviews, pending work and non-text fields remain trapped.
+
+Kernel debug forms seed editable fields from existing artifacts of the selected
+image/machine/build directory via bounded, read-only, generation-correlated
+discovery. Prefer actual deployed image qemuboot/kernel/rootfs and matching
+uncompressed vmlinux/debug artifacts; choose Romulus flash mode only when its
+actual qemuboot/flash prerequisites agree. Never borrow another build's symbols,
+guess missing paths or claim symbol/image compatibility from a filename alone.
+Missing or ambiguous values remain empty with an explicit explanation; defaults
+never overwrite user edits or a replaced/cancelled form. Launch still revalidates
+all prerequisites and requires exact-argv review and confirmation.
+
+Successful terminal build authority renders a stable completed summary even
+when task totals were unavailable or zero; no ongoing activity marker or
+`progress unknown` is shown for a finished build. Distinguish authoritative zero
+tasks from unavailable counts, and never manufacture task counts or mark lost,
+failed or unobserved tasks successful. Running/failed/cancelled progress retains
+its existing truthful meaning and bounded retained counters.
+
+Embedded GitUI opens Terminal Sessions with Workspace focus and the newly
+selected session, retaining editors without trapping native GitUI input. Writer
+acquisition remains explicit via the existing `o`/prefix control; navigator and
+menus remain accessible. Like menuconfig, the selected GitUI native terminal
+uses the full available workspace beside Navigator, without passive Inspector
+or help rail consuming its pane, and its PTY resize matches the visible content.
+Keys then reach only the selected writer-owned session; viewer mode, splits,
+other native sessions, literal prefix, exit and destructive review guards remain.
+
 ### Hardware text files in the built-in Vim-style editor
 
 Hardware Projects and the document library admit bounded, readable regular text

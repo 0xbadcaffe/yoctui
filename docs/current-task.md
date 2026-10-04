@@ -1,8 +1,24 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Deferred native OpenBMC demo installation and live acceptance
+**ID:** UI-CLIPBOARD-PASTE-001
+**Title:** Enable bounded host clipboard paste in focused text entry
 **Status:** IN_PROGRESS
+
+2026-10-04 user override: implement four scoped fixes as atomic commits, then
+optimized installation. Current paste task depends on completed Hardware editor;
+relevant files: CLI clipboard/input/paste adapters, app text-entry routing and
+model Kernel debug insertion guards plus focused reducer/input/process/UI tests.
+Definition of done: Ctrl+V and bracketed paste work in Kernel debugging and
+ordinary focused text entry, bounded and failure-safe; no confirmation, launch,
+focus escape, native PTY-key interception or writer/dirty-buffer regression.
+Verification: focused `clipboard`/`paste`/`kernel_debug` model/app/UI/CLI tests,
+affected strict Clippy, fmt, source/UI/roadmap/version checks and version fixture
+tests. Full suite remains skipped. After completion select
+KERNEL-DEBUG-DEFAULTS-001, BUILD-COMPLETED-PROGRESS-001,
+GITUI-NATIVE-WORKSPACE-001, UI-POLISH-RELEASE-001 in that order. Do not resume the
+unrelated broad queue, restart daemon, terminate sessions, build images or publish.
+
+## Deferred historical demo handoff
 
 Deferred handoff only: the scoped Hardware request is complete; the broader
 demo/README/operator-guide/CI/reboot queue is not resumed in this turn. Full suite

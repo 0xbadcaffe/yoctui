@@ -1,3 +1,9 @@
+M116 current: UI-CLIPBOARD-PASTE-001 IN_PROGRESS (2026-10-04 user override).
+Scoped atomic queue: clipboard Ctrl+V/text paste, selected-build kernel debug
+defaults, completed-build progress, embedded GitUI focus/full native pane, then
+version-bumped source-bound optimized delivery. Focused tests only; unrelated
+demo/CI/reboot queue remains deferred and existing sessions/daemon preserved.
+
 M115 complete: HARDWARE-TEXT-VIEW-001 DONE (2026-10-04 user override).
 Hardware Projects/library readable arbitrary-extension/extensionless text now
 reuse the built-in Vim-style source editor with syntax highlighting, editing and

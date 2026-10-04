@@ -1,5 +1,15 @@
 # Yoctui Product Roadmap
 
+## M116 — scoped demo input and presentation bugs
+
+2026-10-04 user override pauses unrelated demo/CI queue. Four atomic fixes:
+UI-CLIPBOARD-PASTE-001, KERNEL-DEBUG-DEFAULTS-001,
+BUILD-COMPLETED-PROGRESS-001 and GITUI-NATIVE-WORKSPACE-001, followed by
+UI-POLISH-RELEASE-001 optimized source-bound installation/receipt. Each code
+fix receives focused regressions and a coherent version-bumped commit; the final
+optimized release delivers the batch. No full suite, image rebuild, daemon
+restart, user-session termination, publication or presentation change.
+
 ## M115 — Hardware arbitrary text viewing and editing
 
 2026-10-04 user override: HARDWARE-TEXT-VIEW-001 DONE. Admit readable

@@ -1,5 +1,17 @@
 # Yoctui Architecture
 
+## M116 scoped input, discovery, lifecycle and native-terminal corrections
+
+CLI owns bounded asynchronous clipboard process I/O and filesystem artifact
+discovery, never the UI renderer. App maps clipboard/bracketed paste to typed
+text insertion; model enforces limits, pending/dialog ownership and stale results.
+Selected build/image/machine authority is the only source of debug default
+candidates; final debugger preparation remains the existing guarded adapter.
+Completed build rendering consumes typed lifecycle/counters without interpreting
+logs or synthesizing per-task success. GitUI launch owns typed selection/focus;
+native terminal layout and resize share the same typed selected-session decision,
+preserving daemon writer epochs and existing process ownership boundaries.
+
 ## Hardware arbitrary-text viewing and editing boundary
 
 CLI Hardware filesystem adapters perform a bounded regular-file text probe for

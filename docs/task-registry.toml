@@ -3,6 +3,61 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "UI-CLIPBOARD-PASTE-001"
+milestone = "M116"
+title = "Enable bounded host clipboard paste in focused text entry"
+status = "IN_PROGRESS"
+priority = 3590
+required = true
+depends_on = ["HARDWARE-TEXT-VIEW-001"]
+verify = ["cargo test --locked -p yoctui-model -p yoctui-app -p yoctui-ui clipboard", "cargo test --locked -p yoctui --bin yoctui clipboard", "cargo test --locked -p yoctui-model -p yoctui-app -p yoctui-ui paste", "cargo test --locked -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui kernel_debug", "cargo fmt --all --check", "cargo clippy --locked -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-library-layout.py", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh", "python3 scripts/check-version-bump.py"]
+notes = "Files: CLI clipboard/input/paste adapters, app routing, model insertion guards, focused fake-process/reducer/input/TestBackend tests. Done: host Ctrl+V and bracketed paste use focused typed entry, bounded/failure-safe; no pending/review/modal escape, implicit submit, native PTY Ctrl+V interception or writer regression. Update UI/architecture/status/task docs; coherent version-bumped commit. Full suite deferred."
+
+[[task]]
+id = "KERNEL-DEBUG-DEFAULTS-001"
+milestone = "M116"
+title = "Seed kernel debug fields from selected build artifacts"
+status = "NOT_STARTED"
+priority = 3589
+required = true
+depends_on = ["UI-CLIPBOARD-PASTE-001"]
+verify = ["cargo test --locked -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui kernel_debug", "cargo test --locked -p yoctui --bin yoctui qemu_debug", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "python3 scripts/check-version-bump.py"]
+notes = "Files: typed debug state/effects, CLI read-only artifact worker, source/build identity, UI fields and fake-filesystem/stale-result tests. Done: exact current build/machine/image candidates seed untouched fields, including flash/direct choice and real matching debug candidates; missing/ambiguous stays explicit, edits/cancellation/replaced builds protected, final review/validation unchanged. Add read-only actual OpenBMC discovery evidence, no guest launch/build. Update specifications/status and coherent version-bumped commit."
+
+[[task]]
+id = "BUILD-COMPLETED-PROGRESS-001"
+milestone = "M116"
+title = "Render terminal build completion without indeterminate activity"
+status = "NOT_STARTED"
+priority = 3588
+required = true
+depends_on = ["KERNEL-DEBUG-DEFAULTS-001"]
+verify = ["cargo test --locked -p yoctui-model -p yoctui-ui completed_progress", "cargo test --locked -p yoctui-model -p yoctui-ui runqueue_completion", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "python3 scripts/check-version-bump.py"]
+notes = "Files: pure typed progress projection and Dashboard/Tasks rendering, reducer/TestBackend lifecycle regressions. Done: success with unknown/zero totals is stable complete, zero vs absent remains truthful, no fabricated task totals/outcomes, running/failure/cancellation and retained snapshot counters preserved. Read-only current daemon reproduction permitted, no build/relabel. Specs/status and coherent version-bumped commit."
+
+[[task]]
+id = "GITUI-NATIVE-WORKSPACE-001"
+milestone = "M116"
+title = "Focus and size embedded GitUI as a native workspace"
+status = "NOT_STARTED"
+priority = 3587
+required = true
+depends_on = ["BUILD-COMPLETED-PROGRESS-001"]
+verify = ["cargo test --locked -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui gitui", "cargo test --locked -p yoctui --bin yoctui terminal_viewport", "cargo test --locked -p yoctui-ui menuconfig", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "python3 scripts/check-version-bump.py"]
+notes = "Files: typed GitUI launch/focus/session state, shared native terminal pane and viewport sizing, app input, focused normal/editor/detached/read-only/split/narrow/fake-PTY tests. Done: new embedded GitUI owns selected Workspace, passive Inspector/help rail absent, writer resize matches pane and native keys work after explicit control; no automatic writer takeover, other sessions/editor/kill-review regressions. Read-only/isolated native executable smoke only, preserve user sessions. Specs/status and coherent version-bumped commit."
+
+[[task]]
+id = "UI-POLISH-RELEASE-001"
+milestone = "M116"
+title = "Deliver verified optimized scoped UI fixes"
+status = "NOT_STARTED"
+priority = 3586
+required = true
+depends_on = ["UI-CLIPBOARD-PASTE-001", "KERNEL-DEBUG-DEFAULTS-001", "BUILD-COMPLETED-PROGRESS-001", "GITUI-NATIVE-WORKSPACE-001"]
+verify = ["cargo fmt --all --check", "cargo clippy --locked -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-library-layout.py", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "cargo build --release --locked -p yoctui --bin yoctui -j 2", "Manual: installed binary matches source-bound optimized version/hash; isolated bundled-bridge doctor; running daemon/sessions unchanged"]
+notes = "Finish source push and two-job optimized build/install, keep recoverable previous binary backup, record actual focused counts/Clippy/fixture/native read-only smoke evidence and limitations. No full suite, image rebuild, daemon/session termination, publication or presentation changes. Commit/push receipt and defer parent demo queue."
+
+[[task]]
 id = "HARDWARE-TEXT-VIEW-001"
 milestone = "M115"
 title = "View and edit arbitrary-extension and extensionless Hardware text with highlighting"
