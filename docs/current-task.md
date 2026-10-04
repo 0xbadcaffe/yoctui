@@ -1,8 +1,13 @@
 # Current Task
 
-**ID:** CI-RELEASE-TOOLCHAIN-001
-**Title:** Pin release CI to validated Rust1.97 while upstream macro lint regresses
+**ID:** CI-BRIDGE-DISCOVERY-001
+**Title:** Discover bridge unittest modules with their package-qualified imports
 **Status:** IN_PROGRESS
+
+Hosted37220285999 strictClippy/fullRust/terminal/stress/CLI/docs and all other
+normal jobs PASS; bridge unittest discovery failed on package-relative imports.
+Correct its top-level argument, check collection and focused runqueue cases,
+retain separate lint/mypy/pytest coverage; rerun actual hosted CI before upload.
 
 Fixture startup and1.5 handshake corrected;13 harness regressions PASS including
 private inherited environment, version mismatch and full daemon identity guards.

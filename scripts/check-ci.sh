@@ -36,6 +36,7 @@ required_workflow = (
     'with: { components: "rustfmt, clippy" }',
     "python3 -m unittest scripts/test_version_bump.py",
     "python3 scripts/check-version-bump.py",
+    "python3 -m unittest discover -s bridge/tests -t .",
     "compatibility-fast:",
     "./scripts/test-release-compatibility.sh",
     "compatibility-live:",

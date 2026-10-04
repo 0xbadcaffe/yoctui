@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "CI-BRIDGE-DISCOVERY-001"
+milestone = "M118"
+title = "Discover bridge unittest modules with their package-qualified imports"
+status = "IN_PROGRESS"
+priority = 3617
+required = true
+depends_on = ["CI-VERSION-DIRTY-DOCS-001"]
+verify = ["./scripts/check-ci.sh", "python3 -m unittest bridge.tests.test_runqueue_completion", "Manual: unittest discovery collects every bridge case with repository top-level; hosted unittest/lint/mypy/coverage gates pass"]
+notes = "Hosted CI reached bridge checks but old discover bridge/tests imports modules as top-level names and breaks .support. Use -s bridge/tests -t .; retain unittest plus separate pytest coverage and lint gates."
+
+[[task]]
 id = "CI-FLOOD-ENV-001"
 milestone = "M118"
 title = "Use current startup and daemon protocol in the isolated event-flood fixture"

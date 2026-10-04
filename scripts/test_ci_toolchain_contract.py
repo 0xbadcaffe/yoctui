@@ -35,6 +35,11 @@ class ToolchainContractTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "strict workspace Clippy"):
             self.run_contract(workflow)
 
+    def test_bridge_discovery_requires_package_top_level(self):
+        workflow = WORKFLOW.read_text().replace("discover -s bridge/tests -t .", "discover bridge/tests")
+        with self.assertRaisesRegex(SystemExit, "workflow lacks"):
+            self.run_contract(workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
