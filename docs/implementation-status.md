@@ -1,22 +1,18 @@
-M118 IN_PROGRESS: scoped user request repairs registry README URLs and GitHub
-Fixture current startup/protocol implemented;13 harness tests PASS, full fresh
-performance gate pending. Host daemon and prior user sessions are not touched;
-all generated fixture runtime/state/config directories remain isolated.
-Historical source reconstruction:5 mutation/isolation tests PASS, original
-manifest/patch/measurements unchanged. Fresh flood now exposes a conflicting
-fixture-only explicit build environment; separate child registered before repair.
-IPC module correction implemented:6 positive/negative source checks PASS,
-including empty connection module rejection; CI contract PASS. Local full fast
-performance gate hit unchanged0.5% idle bound at0.900% on the laptop; hosted
-and direct backpressure verification are pending, with no bound relaxed.
-Version-scope child DONE:7 real-Git/parser checks PASS; product changes still
-require bumps, docs/CI retain315, unrelated untracked captures no longer mask
-committed product changes. Coherence checks always remain enabled.
-README URL child DONE: absolute raw image/repository document URLs, preserved
-23 screenshot hashes, registry-link/header/gallery/anchor/Flamegraph/Bash and
-compatibility structure checks PASS. Version315 unchanged.
-CI before publishing0.1.315. Atomic tasks are registered; no publication or CI
-success claimed yet. No presentation, runtime, daemon/session or image changes.
+M118 publication IN_PROGRESS: all scoped CI children DONE. Hosted
+https://github.com/0xbadcaffe/yoctui/actions/runs/37221565007 PASS on2e925a7c:
+full test, compatibility-fast, performance-fast and release-quality green.
+Full Rust/terminal/stress/CLI/docs and73 bridge cases PASS; coverage79.96%.
+Scheduled/live jobs skipped, not certified. Strict Clippy preserved with pinned
+validated Rust1.97; bridge static checks follow all11 ordered shared fragments
+and12 exact method bindings. AST-identical format proof committed, no functional
+315 change. Local36 policy/IPC/historical/flood/toolchain regressions,5 static
+projection tests, README/gallery/23-raster, full fast performance, source layout,
+fmt/roadmap and final extracted all-feature public graph/default CLI/bridge PASS.
+All25 README image URLs HTTP200; images/doc links absolute, pixels unchanged.
+Prior full seven-crate Cargo dry-run PASS. Next normal authenticated publication
+and independent seven index/upload/download checksum/source verification.
+No publication claimed yet; daemon, installed binary, sessions, captures and
+presentation unchanged. Unrelated demo queue remains deferred.
 
 M117 README-QUICKSTART-NAV-001 DONE: reviewed install/build/use instructions,
 top links to every main section and shorter reference-linked walkthroughs.

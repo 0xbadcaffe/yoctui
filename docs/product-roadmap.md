@@ -2,11 +2,14 @@
 
 ## M118 — registry-safe README, CI repair and publication315
 
-User override activates README URLs, tracked-product version checks and
-module-aware IPC contracts, followed by actual hosted CI and verified public
-publication of existing0.1.315. Product source and screenshot pixels remain
-unchanged. Runtime changes still require version bumps; documentation/CI-only
-changes do not. Existing demo/reboot/board work remains deferred.
+Registry-safe README and all CI repair children DONE. Hosted run37221565007
+passes all four normal jobs, including full Rust suite and73 bridge cases at
+79.96% coverage. Strict Clippy/toolchain, full shared-namespace static checks,
+fresh flood limits and exact historical source reconstruction remain enforced.
+Screenshot pixels and functional Python ASTs unchanged; version315 retained.
+Seven-crate package graph verification and full Cargo dry-run PASS.
+Publication remains IN_PROGRESS until independent registry/archive verification.
+Existing demo/reboot/board work remains deferred; no daemon/session changes.
 
 ## M117 — concise README installation and navigation
 

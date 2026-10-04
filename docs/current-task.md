@@ -1,69 +1,33 @@
 # Current Task
 
-**ID:** CI-BRIDGE-PYTHON-GATES-001
-**Title:** Statically check shared bridge namespace and apply AST-identical formatting
+**ID:** RELEASE-PUBLISH-315-001
+**Title:** Publish and verify public crate graph version 0.1.315
 **Status:** IN_PROGRESS
 
-Local pinned Ruff/mypy expose shared-globals fragment false positives, wildcard
-test imports and formatting drift. Check every loader fragment in execution
-order as one namespace, plus actual loader/test files. Explicit test imports and
-AST-identical formatting only; preserve every test assertion and functional
-Python AST. Add projection/mutation/format-policy regressions and retain strict
-lint, actual-file formatter and hosted75% coverage gate. No315 functional edit.
+M118 CI prerequisites DONE: hosted run37221565007 on source2e925a7c PASS
+for test, compatibility-fast, performance-fast and release-quality. Full Rust,
+terminal/stress/CLI/docs, bridge discovery/lint/format/types and73 bridge tests
+passed, coverage79.96%. Scheduled/live jobs skipped, not claimed as exercised.
+Local36 policy/IPC/historical/flood/toolchain regressions, static projection5,
+README links/screenshots, fast performance and extracted package graph PASS.
+All25 image URLs HTTP200; original screenshot pixels unchanged.
+Python formatting preserves every production AST and existing test assertion;
+proof artifacts/release-quality/ci-python-0.1.315.json. No functional315 change.
 
-Hosted37220285999 strictClippy/fullRust/terminal/stress/CLI/docs and all other
-normal jobs PASS; bridge unittest discovery failed on package-relative imports.
-Correct its top-level argument, check collection and focused runqueue cases,
-retain separate lint/mypy/pytest coverage; rerun actual hosted CI before upload.
+Publish seven public crates from clean committed source with Cargo's normal
+verification; private e2e/shell packages remain publish=false. Verify all exact
+315 sparse-index entries, yanked=false, uploaded/downloaded SHA256 and source
+identity. Record publication receipt before marking DONE. Version stays0.1.315.
+No daemon restart, installation, user session, image build or presentation edits.
 
-Fixture startup and1.5 handshake corrected;13 harness regressions PASS including
-private inherited environment, version mismatch and full daemon identity guards.
-Full fresh performance gate is running. Next pin all hosted release jobs to
-validated1.97.0 and keep strict Clippy unchanged; verify CI contract and hosted run.
+Verification:
+./scripts/verify-cratesio-package.sh
+cargo publish --locked --workspace --dry-run -j 2
+cargo publish --locked --workspace -j 2
+Manual: independent registry/archive/README/source checks and hosted CI receipt.
 
-After inherited startup succeeded, its obsolete1.3 handshake was rejected by the
-current1.5 daemon. Update the fixture-only declared version, test against Rust
-wire constants and reject a mismatched hello; preserve production negotiation.
-
-Historical reconstruction and5 mutation/isolation checks PASS; original evidence
-bytes preserved. Fresh flood reached a separate fixture startup problem: its
-YOCTUI_BUILD_DIR override falsely requests an explicit setup profile. Remove only
-that override, retaining the private inherited shell/bridge path and all limits.
-Verify10 existing harness tests plus new environment regression, actual current
-backpressure and full fast gate; no runtime/daemon/session modifications.
-
-Additional docs-mask regression PASS; product changes cannot be hidden by dirty
-documentation. Historical IPC task reconstructs recorded revision plus patch,
-preserving old evidence bytes; verify mutation tests, actual backpressure/fast
-gate and hosted CI. Rust1.99 macro lint false-positive requires separate pinned
-validated1.97 release-toolchain child; public runtime remains315 unchanged.
-
-Version scope DONE: seven tests including isolated real-Git clean/dirty product
-and docs cases, untracked captures/new source, valid bumps, downgrades and
-coherence failures PASS. Product bump requirement remains; version315 unchanged.
-Current commands: python3 -m unittest scripts/test_ipc_source_contracts.py;
-./scripts/verify-performance-ci-fast.sh; ./scripts/check-ci.sh.
-
-README URLs DONE: every image uses raw GitHub and documentation uses absolute
-GitHub URLs; local navigation stays anchored. All23 source/raster hashes unchanged.
-README/header/gallery/Flamegraph/anchors/Bash/compatibility checks PASS.
-Current verification: python3 -m unittest scripts/test_version_bump.py;
-python3 scripts/check-version-bump.py; ./scripts/verify-roadmap.sh.
-
-2026-10-04 user override: fix crates.io README links, repair GitHub CI and publish
-the existing0.1.315 public crate graph. M118 atomic queue supersedes the deferred
-demo handoff below. No product version bump, presentation changes, live image
-build, daemon restart or user-session termination. CI may run its complete
-existing gates remotely; local verification is scoped plus packaging.
-First verify README/header/gallery/anchors, all23 unchanged raster hashes and
-compatibility structure. Then repair tracked-change version policy and split IPC
-source checks, verify actual hosted CI, and publish clean315 with registry proof.
-Commands: ./scripts/test-readme-quickstart.sh;
-python3 scripts/render-readme-screenshots.py --check;
-./scripts/verify-compatibility.sh --structure-only; ./scripts/verify-roadmap.sh.
-
-Deferred handoff only: the scoped README request is complete. Do not resume
-unrelated demo/CI/reboot/publication work in this documentation turn.
+After this scoped request completes, preserve the deferred demo handoff below;
+do not resume unrelated demo work.
 
 ## Completed README installation and navigation review
 
