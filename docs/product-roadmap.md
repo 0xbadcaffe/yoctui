@@ -11,7 +11,9 @@ optimized release delivers the batch. No full suite, image rebuild, daemon
 restart, user-session termination, publication or presentation change.
 Paste child DONE in sourcev312: bounded typed host/bracketed paste, Kernel hint,
 focused clipboard/ordinary paste/Kernel/Hardware/rendering regressions and strict
-affected checks PASS; defaults child now current. Optimized batch delivery pending.
+affected checks PASS; defaults DONE/v313 with real read-only OpenBMC discovery,
+edit/stale-result guards and focused verification. Completed-progress child now
+current. Optimized batch delivery pending.
 
 ## M115 — Hardware arbitrary text viewing and editing
 

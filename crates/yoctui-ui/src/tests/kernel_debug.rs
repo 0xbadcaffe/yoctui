@@ -39,6 +39,35 @@ fn clipboard_paste_kernel_hint_is_visible_and_narrow_render_is_safe() {
 }
 
 #[test]
+fn kernel_debug_defaults_status_shows_discovery_missing_files_and_narrow_safety() {
+    use yoctui_model::{KernelDebugDefaultContext, KernelDebugOperation};
+    let mut app = app();
+    app.dialogs
+        .push_back(Dialog::KernelDebug(KernelDebugDialog {
+            draft: KernelDebugDraft::new(KernelDebugTool::QemuGdb),
+            selection: 0,
+            guide_scroll: 0,
+            error: None,
+        }));
+    app.kernel_debug.pending = Some(KernelDebugOperation::DiscoverDefaults {
+        context: KernelDebugDefaultContext {
+            build_dir: "/build".into(),
+            machine: "romulus".into(),
+            image: None,
+        },
+        tool: KernelDebugTool::QemuGdb,
+    });
+    assert!(rendered_text(&app, 160, 50).contains("Finding selected build defaults"));
+    app.kernel_debug.pending = None;
+    app.kernel_debug.defaults_note =
+        Some("Missing/ambiguous: symbols; no other build searched".into());
+    assert!(rendered_text(&app, 160, 50).contains("Missing/ambiguous: symbols"));
+    for (w, h) in [(80, 24), (20, 5), (1, 1)] {
+        let _ = rendered_text(&app, w, h);
+    }
+}
+
+#[test]
 fn kernel_debug_flash_mode_and_review_show_private_boot_without_kernel_argument() {
     let mut app = app();
     let tools = app.kernel_debug.tools.as_mut().unwrap();

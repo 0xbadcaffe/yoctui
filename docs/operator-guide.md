@@ -1,5 +1,13 @@
 # Yoctui Operator Guide
 
+Kernel → Debugging → QEMU → GDB or remote GDB now fills defaults from the
+selected initialized build and machine. Discovery reads existing files only;
+you can edit or paste while it runs, and your edits are preserved. Missing or
+ambiguous paths stay empty. A successful image build does not guarantee matching
+debug symbols exist: select its uncompressed `vmlinux`, never one from a different
+build. Enter still validates files and opens the exact launch review; it does
+not start QEMU or GDB until you confirm that review.
+
 This guide covers daily use after a Yocto environment has been initialized and
 Yoctui has opened its build directory. Follow the guarded setup commands in the
 [README](../README.md) first. BitBake, its configured metadata, and adapter

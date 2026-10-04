@@ -41,7 +41,9 @@ fn action(app: &App, input: Input) -> Option<A> {
         if input == Input::Esc {
             return Some(A::Cancel);
         }
-        if app.kernel_debug.pending.is_some() {
+        if !app.kernel_debug.fields_editable()
+            || (app.kernel_debug.pending.is_some() && input == Input::Enter)
+        {
             return None;
         }
         if app.kernel_debug.instrumentation_preview.is_some() {

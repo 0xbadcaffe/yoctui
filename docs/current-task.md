@@ -1,29 +1,29 @@
 # Current Task
 
-**ID:** KERNEL-DEBUG-DEFAULTS-001
-**Title:** Seed kernel debug fields from selected build artifacts
+**ID:** BUILD-COMPLETED-PROGRESS-001
+**Title:** Render terminal build completion without indeterminate activity
 **Status:** IN_PROGRESS
 
-2026-10-04 user override: implement four scoped fixes as atomic commits, then
-optimized installation. Paste child DONE in v312; current defaults task depends
-on that completed child. Relevant files: typed Kernel debugging request/state,
-CLI bounded read-only artifact discovery/worker, UI defaults status and focused
-fake-filesystem/reducer/stale-result tests. Done: selected build/machine/image
-defaults seed untouched fields and correct supported boot mode; missing/ambiguous
-values stay explicit, user edits/cancel/replaced environments protected, final
-review/revalidation unchanged. Commands: focused `kernel_debug` across affected
-crates, CLI `qemu_debug`, clipboard regression, strict affected Clippy, fmt,
-source/UI/roadmap/version and version fixture tests; read-only actual OpenBMC
-discovery smoke. No guest launch, image build, full suite or unrelated queue.
-After completion select BUILD-COMPLETED-PROGRESS-001,
-GITUI-NATIVE-WORKSPACE-001, UI-POLISH-RELEASE-001 in that order. Do not resume the
-unrelated broad queue, restart daemon, terminate sessions, build images or publish.
+2026-10-04 user override: clipboard DONE/v312, debug defaults DONE/v313.
+Current progress child depends on the completed defaults child. Relevant files:
+pure typed lifecycle projection, shared Dashboard/Tasks build summary and focused
+reducer/TestBackend tests. Done: successful completion with missing/zero totals
+shows stable completed text, distinguishing absent and zero without invented
+counts or per-task success; running/failure/cancellation counters unchanged.
+Commands: focused completed_progress/progress/runqueue_completion/model/UI,
+strict affected Clippy, fmt/source/UI/roadmap/version and production fixtures.
+Read-only native job17 Exited0/progressNone reproduced; no image build/relabel.
+After this child select GITUI-NATIVE-WORKSPACE-001, then UI-POLISH-RELEASE-001.
+No full suite, unrelated queue, daemon restart, session termination or publication.
 
-Completed paste child: CLI/app/model/UI3/6/3/1 clipboard checks, ordinary
-paste/Kernel/Hardware regressions, production rendering16, strict affectedClippy,
-fmt/source2935/UI/roadmap/version PASS;34identity-only goldens/29rasters verified.
-Host xclip exists; fake-process checks do not read the user's desktop clipboard.
-Final batch optimized install is pending, not claimed delivered by this commit.
+Defaults v313 verified: Kernel CLI/app/model/UI11/8/19/9, QEMU helper11,
+clipboard3/7/3/1, production16 and targeted defaults4/1/2/1 checks PASS.
+Strict affected all-target/all-feature Clippy, fmt/source2939/UI/roadmap/version
+PASS;34identity-only goldens/29rasters verified. Read-only actual native and
+retained OpenBMC discovery PASS: current6.18.54 has boot/flash/config but missing
+symbols; older6.18.49 finds matching ABI-named split DWARF package/boot/.debug.
+No symbols borrowed across builds; final launch still needs review/revalidation.
+Optimized batch install/push pending; installed311 and running309 unchanged.
 
 ## Deferred historical demo handoff
 

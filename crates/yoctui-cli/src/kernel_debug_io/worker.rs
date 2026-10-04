@@ -33,6 +33,9 @@ impl KernelDebugIo {
             tokio::task::spawn_blocking(move || {
                 let result = match request.operation {
                     KernelDebugOperation::Inspect => discover().map(KernelDebugResult::Tools),
+                    KernelDebugOperation::DiscoverDefaults { context, tool } => {
+                        defaults::discover_for_tool(&context, tool).map(KernelDebugResult::Defaults)
+                    }
                     KernelDebugOperation::InspectInstrumentation { draft } => {
                         crate::kernel_instrumentation::inspect(&draft)
                             .map(KernelDebugResult::InstrumentationPrepared)

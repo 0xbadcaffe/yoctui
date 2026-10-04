@@ -2,6 +2,50 @@ use super::*;
 use yoctui_model::{KernelDebugDialog, KernelDebugDraft, KernelDebugTool};
 
 #[test]
+fn kernel_debug_defaults_allow_typed_edits_and_clipboard_but_not_early_review() {
+    let mut app = App::new(32, 4096);
+    app.onboarding.open = false;
+    app.screen = Screen::Kernel;
+    app.dialogs
+        .push_front(Dialog::KernelDebug(KernelDebugDialog {
+            draft: KernelDebugDraft::new(KernelDebugTool::QemuGdb),
+            selection: 5,
+            guide_scroll: 0,
+            error: None,
+        }));
+    app.kernel_debug.pending = Some(yoctui_model::KernelDebugOperation::DiscoverDefaults {
+        context: yoctui_model::KernelDebugDefaultContext {
+            build_dir: "/build".into(),
+            machine: "romulus".into(),
+            image: None,
+        },
+        tool: KernelDebugTool::QemuGdb,
+    });
+    assert_eq!(
+        kernel_debug_action(&app, Input::Tab),
+        Some(Action::KernelDebug(A::Field(1)))
+    );
+    assert_eq!(
+        kernel_debug_action(&app, Input::CtrlU),
+        Some(Action::KernelDebug(A::Clear))
+    );
+    assert!(
+        crate::text_paste_actions(
+            &app,
+            "/build/vmlinux".into(),
+            yoctui_model::TextAreaPasteSource::Clipboard
+        )
+        .unwrap()
+        .is_some()
+    );
+    assert_eq!(kernel_debug_action(&app, Input::Enter), None);
+    assert_eq!(
+        kernel_debug_action(&app, Input::Esc),
+        Some(Action::KernelDebug(A::Cancel))
+    );
+}
+
+#[test]
 fn kernel_debug_flash_boot_mode_accepts_combinations_not_free_text() {
     let mut app = App::new(32, 4096);
     app.onboarding.open = false;

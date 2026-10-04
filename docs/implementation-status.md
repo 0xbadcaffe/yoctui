@@ -1,4 +1,13 @@
-M116 current: KERNEL-DEBUG-DEFAULTS-001 IN_PROGRESS (2026-10-04 user override).
+M116 current: BUILD-COMPLETED-PROGRESS-001 IN_PROGRESS (2026-10-04 user override).
+KERNEL-DEBUG-DEFAULTS-001 DONE in v313: selected initialized build/machine/image,
+bounded read-only artifact discovery, contained deploy aliases, ABI-named split
+DWARF symbols, flash prerequisites/memory and untouched-field seeding. Edits,
+cancel/reopen/changed contexts and final launch review protected. Kernel checks
+CLI/app/model/UI11/8/19/9, QEMU11, clipboard3/7/3/1, production16 and targeted
+defaults4/1/2/1 PASS; strict affectedClippy/fmt/source2939/UI/roadmap/version PASS.
+34identity-only goldens/29rasters verified. Actual read-only native6.18.54 lacks
+matching symbols (explicit); retained6.18.49 finds boot/.debug ABI symbols.
+No guest launch, cross-build fallback, daemon change or full-suite claim.
 Scoped atomic queue: clipboard Ctrl+V/text paste, selected-build kernel debug
 defaults, completed-build progress, embedded GitUI focus/full native pane, then
 version-bumped source-bound optimized delivery. Focused tests only; unrelated

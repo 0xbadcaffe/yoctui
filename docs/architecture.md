@@ -12,6 +12,15 @@ logs or synthesizing per-task success. GitUI launch owns typed selection/focus;
 native terminal layout and resize share the same typed selected-session decision,
 preserving daemon writer epochs and existing process ownership boundaries.
 
+Kernel defaults use a client-local typed DiscoverDefaults request/result. The
+worker inspects only bounded deploy/shared-kernel/debug-package locations, reads
+bounded qemuboot/ABI metadata, resolves contained regular-file aliases, and checks
+symbol ELF/DWARF presence. Model compares generation and captured build/machine/
+image/form identity, then applies only fields without recorded user edits. The
+renderer displays typed discovery notes; it never inspects files. Existing
+preflight/review still decides whether a session can launch. No daemon wire or
+BitBake mutation is introduced.
+
 ## Hardware arbitrary-text viewing and editing boundary
 
 CLI Hardware filesystem adapters perform a bounded regular-file text probe for

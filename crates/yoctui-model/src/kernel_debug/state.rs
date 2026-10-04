@@ -2,7 +2,9 @@ use super::*;
 use crate::{
     App, Dialog, Effect, FocusTarget, Screen, TerminalLaunchDestination, TerminalLaunchDialog,
 };
+mod defaults;
 mod instrumentation;
+pub use defaults::{KernelDebugDefaultContext, KernelDebugDefaults};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KernelDebugDialog {
@@ -25,6 +27,8 @@ pub struct KernelDebugState {
     pub serial_preview: Option<KgdbSerialPreview>,
     pub instrumentation_preview: Option<crate::KernelInstrumentationPreview>,
     pub preview_scroll: u16,
+    pub defaults_note: Option<String>,
+    pub default_edits: Vec<KernelDebugField>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,6 +46,10 @@ impl KernelDebugState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum KernelDebugOperation {
     Inspect,
+    DiscoverDefaults {
+        context: KernelDebugDefaultContext,
+        tool: KernelDebugTool,
+    },
     InspectInstrumentation {
         draft: crate::KernelInstrumentationDraft,
     },
@@ -63,6 +71,7 @@ pub struct KernelDebugRequest {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum KernelDebugResult {
     Tools(KernelDebugTools),
+    Defaults(KernelDebugDefaults),
     InstrumentationPrepared(crate::KernelInstrumentationPreview),
     InstrumentationExported(std::path::PathBuf),
     Prepared(TerminalLaunchRequest),
@@ -101,6 +110,10 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
             return None;
         }
         let pending = app.kernel_debug.pending.take()?;
+        if let KernelDebugOperation::DiscoverDefaults { context, tool } = pending {
+            defaults::finished(app, context, tool, result);
+            return None;
+        }
         if matches!(
             pending,
             KernelDebugOperation::InspectInstrumentation { .. }
@@ -217,6 +230,7 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
                 Some(
                     KernelDebugOperation::Prepare { .. }
                         | KernelDebugOperation::InspectInstrumentation { .. }
+                        | KernelDebugOperation::DiscoverDefaults { .. }
                 )
             ) {
                 app.kernel_debug.pending = None;
@@ -235,7 +249,9 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
         {
             return instrumentation::input(app, action);
         }
-        if app.kernel_debug.pending.is_some() {
+        if !app.kernel_debug.fields_editable()
+            || (app.kernel_debug.pending.is_some() && matches!(action, A::Review))
+        {
             return None;
         }
         if matches!(action, A::Review) {
@@ -263,6 +279,18 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
                     tools,
                 },
             );
+        }
+        let field = match app.active_dialog() {
+            Some(Dialog::KernelDebug(d)) => d.draft.fields().get(d.selection).copied(),
+            _ => None,
+        };
+        if matches!(
+            action,
+            A::Insert(_) | A::Backspace | A::Clear | A::ChangeScope
+        ) && let Some(field) = field
+            && !app.kernel_debug.default_edits.contains(&field)
+        {
+            app.kernel_debug.default_edits.push(field);
         }
         let Some(Dialog::KernelDebug(dialog)) = app.active_dialog_mut() else {
             return None;
@@ -343,6 +371,8 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
             app.kernel_debug.selection = index.min(KernelDebugTool::ALL.len() - 1)
         }
         A::OpenSelected => {
+            app.kernel_debug.defaults_note = None;
+            app.kernel_debug.default_edits.clear();
             app.kernel_debug.prepared = None;
             app.kernel_debug.qemu_preview = None;
             app.kernel_debug.serial_preview = None;
@@ -362,10 +392,7 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
                     .unwrap_or_default();
             }
             if draft.tool == KernelDebugTool::QemuGdb {
-                draft.qemu.build_dir = app
-                    .workspace
-                    .build_dir
-                    .as_ref()
+                draft.qemu.build_dir = defaults::selected_build(app)
                     .map(|path| path.display().to_string())
                     .unwrap_or_default();
                 let initialized = app
@@ -394,6 +421,20 @@ pub(crate) fn reduce(app: &mut App, action: KernelDebugAction) -> Option<Effect>
                 }),
             );
             crate::synchronize_focus(app);
+            let tool = app.kernel_debug.tool();
+            if matches!(
+                tool,
+                KernelDebugTool::QemuGdb | KernelDebugTool::GdbRemote | KernelDebugTool::KgdbSerial
+            ) {
+                if let Some(context) = defaults::context(app) {
+                    return begin(
+                        app,
+                        KernelDebugOperation::DiscoverDefaults { context, tool },
+                    );
+                }
+                app.kernel_debug.defaults_note =
+                    Some("Defaults unavailable: select an initialized build and machine".into());
+            }
         }
         _ => {}
     }

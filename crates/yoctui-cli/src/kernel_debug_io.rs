@@ -1,6 +1,7 @@
 //! Local tool presence discovery and non-mutating launch preparation.
 use std::{collections::BTreeMap, path::Path};
 use yoctui_model::{KernelDebugDraft, KernelDebugTool, KernelDebugTools, TerminalLaunchRequest};
+mod defaults;
 mod worker;
 pub(crate) use worker::KernelDebugIo;
 

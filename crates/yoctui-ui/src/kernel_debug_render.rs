@@ -162,8 +162,10 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
                     Some(KernelDebugOperation::Prepare { .. })
                 ) {
                     "Validating executable and files…"
+                } else if matches!(app.kernel_debug.pending, Some(KernelDebugOperation::DiscoverDefaults { .. })) {
+                    "Finding selected build defaults… edits are preserved; review after discovery."
                 } else {
-                    "Attach/breakpoints can PAUSE execution; tracing adds overhead/sensitive data."
+                    app.kernel_debug.defaults_note.as_deref().unwrap_or("Attach/breakpoints can PAUSE execution; tracing adds overhead/sensitive data.")
                 },
             );
             frame.render_widget(

@@ -23,6 +23,14 @@ Missing or ambiguous values remain empty with an explicit explanation; defaults
 never overwrite user edits or a replaced/cancelled form. Launch still revalidates
 all prerequisites and requires exact-argv review and confirmation.
 
+Defaults discovery permits field navigation, typing, clearing and paste while
+pending; review waits for its result. A cleared field counts as an intentional
+edit. The status line reports discovery or missing/ambiguous files. Resolve
+deploy aliases only to regular files inside the same selected build. Exact
+image qemuboot aliases select the current deployed timestamp; multiple unresolved
+timestamps remain ambiguous. Kernel ABI metadata narrows retained debug-package
+symbols; a newer build with no matching symbols must not use an older build.
+
 Successful terminal build authority renders a stable completed summary even
 when task totals were unavailable or zero; no ongoing activity marker or
 `progress unknown` is shown for a finished build. Distinguish authoritative zero

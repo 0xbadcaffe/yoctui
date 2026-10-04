@@ -71,7 +71,7 @@ fn target(app: &App) -> Option<Target> {
     }
     match app.active_dialog() {
         Some(Dialog::KernelDebug(dialog))
-            if app.kernel_debug.pending.is_none()
+            if app.kernel_debug.fields_editable()
                 && (dialog.draft.tool.program().is_some()
                     || dialog.draft.tool.configuration_prep()) =>
         {
