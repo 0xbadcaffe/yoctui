@@ -1,8 +1,14 @@
-M116 current: UI-CLIPBOARD-PASTE-001 IN_PROGRESS (2026-10-04 user override).
+M116 current: KERNEL-DEBUG-DEFAULTS-001 IN_PROGRESS (2026-10-04 user override).
 Scoped atomic queue: clipboard Ctrl+V/text paste, selected-build kernel debug
 defaults, completed-build progress, embedded GitUI focus/full native pane, then
 version-bumped source-bound optimized delivery. Focused tests only; unrelated
 demo/CI/reboot queue remains deferred and existing sessions/daemon preserved.
+UI-CLIPBOARD-PASTE-001 DONE in v312: host clipboard read and common typed paste;
+CLI/app/model/UI3/6/3/1 plus paste/Kernel/Hardware and rendering16 regressions
+PASS. Strict affectedClippy/fmt/source2935/UI/roadmap/version PASS;34identity-only
+goldens/29rasters verified. Native PTY Ctrl+V stays native, clipboard failures
+leave drafts intact; no user's clipboard read during fake-process tests. Final
+batch optimized source-bound installation/push remains pending.
 
 M115 complete: HARDWARE-TEXT-VIEW-001 DONE (2026-10-04 user override).
 Hardware Projects/library readable arbitrary-extension/extensionless text now

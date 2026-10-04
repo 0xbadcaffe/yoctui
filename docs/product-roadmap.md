@@ -9,6 +9,9 @@ UI-POLISH-RELEASE-001 optimized source-bound installation/receipt. Each code
 fix receives focused regressions and a coherent version-bumped commit; the final
 optimized release delivers the batch. No full suite, image rebuild, daemon
 restart, user-session termination, publication or presentation change.
+Paste child DONE in sourcev312: bounded typed host/bracketed paste, Kernel hint,
+focused clipboard/ordinary paste/Kernel/Hardware/rendering regressions and strict
+affected checks PASS; defaults child now current. Optimized batch delivery pending.
 
 ## M115 — Hardware arbitrary text viewing and editing
 

@@ -1,22 +1,29 @@
 # Current Task
 
-**ID:** UI-CLIPBOARD-PASTE-001
-**Title:** Enable bounded host clipboard paste in focused text entry
+**ID:** KERNEL-DEBUG-DEFAULTS-001
+**Title:** Seed kernel debug fields from selected build artifacts
 **Status:** IN_PROGRESS
 
 2026-10-04 user override: implement four scoped fixes as atomic commits, then
-optimized installation. Current paste task depends on completed Hardware editor;
-relevant files: CLI clipboard/input/paste adapters, app text-entry routing and
-model Kernel debug insertion guards plus focused reducer/input/process/UI tests.
-Definition of done: Ctrl+V and bracketed paste work in Kernel debugging and
-ordinary focused text entry, bounded and failure-safe; no confirmation, launch,
-focus escape, native PTY-key interception or writer/dirty-buffer regression.
-Verification: focused `clipboard`/`paste`/`kernel_debug` model/app/UI/CLI tests,
-affected strict Clippy, fmt, source/UI/roadmap/version checks and version fixture
-tests. Full suite remains skipped. After completion select
-KERNEL-DEBUG-DEFAULTS-001, BUILD-COMPLETED-PROGRESS-001,
+optimized installation. Paste child DONE in v312; current defaults task depends
+on that completed child. Relevant files: typed Kernel debugging request/state,
+CLI bounded read-only artifact discovery/worker, UI defaults status and focused
+fake-filesystem/reducer/stale-result tests. Done: selected build/machine/image
+defaults seed untouched fields and correct supported boot mode; missing/ambiguous
+values stay explicit, user edits/cancel/replaced environments protected, final
+review/revalidation unchanged. Commands: focused `kernel_debug` across affected
+crates, CLI `qemu_debug`, clipboard regression, strict affected Clippy, fmt,
+source/UI/roadmap/version and version fixture tests; read-only actual OpenBMC
+discovery smoke. No guest launch, image build, full suite or unrelated queue.
+After completion select BUILD-COMPLETED-PROGRESS-001,
 GITUI-NATIVE-WORKSPACE-001, UI-POLISH-RELEASE-001 in that order. Do not resume the
 unrelated broad queue, restart daemon, terminate sessions, build images or publish.
+
+Completed paste child: CLI/app/model/UI3/6/3/1 clipboard checks, ordinary
+paste/Kernel/Hardware regressions, production rendering16, strict affectedClippy,
+fmt/source2935/UI/roadmap/version PASS;34identity-only goldens/29rasters verified.
+Host xclip exists; fake-process checks do not read the user's desktop clipboard.
+Final batch optimized install is pending, not claimed delivered by this commit.
 
 ## Deferred historical demo handoff
 

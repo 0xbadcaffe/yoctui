@@ -8,6 +8,14 @@ treated as proof that an operation or artifact exists.
 
 ## View and edit Hardware text files
 
+In focused editable fields, Ctrl+V reads the desktop clipboard using wl-paste,
+xclip or xsel; terminal-provided paste also works. Enter Insert mode first in
+Vim-style editors. Single-line fields reject newline/control injection; editor
+pastes retain line breaks. Missing clipboard tools report an error without
+changing the draft. Native terminal Ctrl+V retains the child application's
+meaning; use your terminal emulator's paste shortcut there, then the existing
+Yoctui writer/paste-review controls when required.
+
 Hardware library and project folders support readable UTF-8 text files of any
 extension, including README, Makefile and extensionless scripts. Enter opens
 text in the built-in Vim-style editor. On a graphical document, `e` opens its

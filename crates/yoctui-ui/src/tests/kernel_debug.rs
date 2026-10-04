@@ -22,6 +22,23 @@ fn app() -> App {
 }
 
 #[test]
+fn clipboard_paste_kernel_hint_is_visible_and_narrow_render_is_safe() {
+    let mut app = app();
+    app.dialogs
+        .push_back(Dialog::KernelDebug(KernelDebugDialog {
+            draft: KernelDebugDraft::new(KernelDebugTool::QemuGdb),
+            selection: 0,
+            guide_scroll: 0,
+            error: None,
+        }));
+    let text = rendered_text(&app, 160, 50);
+    assert!(text.contains("Ctrl+V paste"), "{text}");
+    for (width, height) in [(80, 24), (20, 5), (1, 1)] {
+        let _ = rendered_text(&app, width, height);
+    }
+}
+
+#[test]
 fn kernel_debug_flash_mode_and_review_show_private_boot_without_kernel_argument() {
     let mut app = app();
     let tools = app.kernel_debug.tools.as_mut().unwrap();

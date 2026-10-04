@@ -173,7 +173,7 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
                 rows[2],
             );
             frame.render_widget(Paragraph::new(status).wrap(Wrap { trim: false }), rows[3]);
-            frame.render_widget(Paragraph::new("Tab/↑/↓ field · ←/→/Space scope/boot mode · type · Ctrl+U clear · PgUp/Dn guide\nEnter review exact launch · Esc cancel without spawning").wrap(Wrap { trim: false }), rows[4]);
+            frame.render_widget(Paragraph::new("Tab/↑/↓ field · ←/→/Space scope/boot mode · Ctrl+V paste · Ctrl+U clear\nEnter review exact launch · Esc cancel · PgUp/Dn guide").wrap(Wrap { trim: false }), rows[4]);
         }
         return true;
     }

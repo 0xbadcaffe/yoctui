@@ -1,4 +1,5 @@
 use super::*;
+mod clipboard;
 mod modifier_shortcuts;
 mod rootfs_browser;
 mod startup_screen;

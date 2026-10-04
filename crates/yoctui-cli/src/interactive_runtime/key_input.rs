@@ -35,6 +35,18 @@ impl InteractiveRuntime {
         let Some(mut input) = input_from_key(k) else {
             return Ok(true);
         };
+        if input == Input::CtrlV && yoctui_app::text_paste_active(&runtime.app) {
+            match crate::clipboard::read_system_clipboard().await {
+                Ok(text) => {
+                    runtime.insert_text_paste(text, yoctui_model::TextAreaPasteSource::Clipboard)?
+                }
+                Err(error) => {
+                    runtime.app.notification = Some(format!("Could not paste clipboard: {error}"))
+                }
+            }
+            runtime.render_scheduler.invalidate(RenderCause::State);
+            return Ok(true);
+        }
         if yoctui_app::hardware_project_owns_input(&runtime.app, input) {
             if let Some(action) = yoctui_app::hardware_workspace_action(&runtime.app, input)
                 && let Some(effect) = compatibility_workspace_action(&mut runtime.app, action)

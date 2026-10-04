@@ -426,6 +426,7 @@ mod path_validation;
 use path_validation::*;
 mod qa_effects;
 use qa_effects::*;
+mod clipboard;
 mod kernel_debug_io;
 mod terminal_launcher;
 use terminal_launcher::*;

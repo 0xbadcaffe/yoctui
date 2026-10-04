@@ -92,38 +92,9 @@ pub(crate) fn notification_input_action(
     }
 }
 
+#[cfg(test)]
 pub(crate) fn active_popup_accepts_paste(app: &yoctui_model::App) -> bool {
-    match app.active_dialog() {
-        Some(
-            Dialog::BuildEnvironmentEditor(editor)
-            | Dialog::BuildEnvironmentCloneEditor(editor)
-            | Dialog::BbmaskEdit(editor)
-            | Dialog::SdkPublishTomlEditor(editor)
-            | Dialog::SdkNativeTomlEditor(editor),
-        ) => editor.editing,
-        Some(Dialog::ConfigEdit { editor, .. } | Dialog::BuildTarget { editor, .. }) => {
-            editor.editing
-        }
-        Some(
-            Dialog::WicCreateTomlEditor { editor, .. }
-            | Dialog::TestLaunchTomlEditor { editor, .. }
-            | Dialog::TestResultImportTomlEditor { editor, .. }
-            | Dialog::TestComparisonTomlEditor { editor, .. }
-            | Dialog::TestJunitTomlEditor { editor, .. },
-        ) => editor.editing,
-        Some(Dialog::Security(yoctui_model::SecurityDialog::Import { editor, .. }))
-        | Some(Dialog::Qa(yoctui_model::QaDialog::Import { editor, .. })) => editor.editing,
-        Some(Dialog::Maintenance(dialog)) => match dialog.as_ref() {
-            yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. }
-            | yoctui_model::MaintenanceDialog::CleanupToml { editor, .. }
-            | yoctui_model::MaintenanceDialog::PrServiceToml { editor, .. }
-            | yoctui_model::MaintenanceDialog::LockedCacheToml { editor, .. }
-            | yoctui_model::MaintenanceDialog::BuildHistoryToml { editor, .. }
-            | yoctui_model::MaintenanceDialog::GitArchiveToml { editor, .. } => editor.editing,
-            _ => false,
-        },
-        _ => false,
-    }
+    yoctui_app::popup_accepts_text_paste(app)
 }
 
 pub(crate) fn terminal_event_requires_full_redraw(event: &Event) -> bool {

@@ -6,18 +6,18 @@ status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 id = "UI-CLIPBOARD-PASTE-001"
 milestone = "M116"
 title = "Enable bounded host clipboard paste in focused text entry"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3590
 required = true
 depends_on = ["HARDWARE-TEXT-VIEW-001"]
 verify = ["cargo test --locked -p yoctui-model -p yoctui-app -p yoctui-ui clipboard", "cargo test --locked -p yoctui --bin yoctui clipboard", "cargo test --locked -p yoctui-model -p yoctui-app -p yoctui-ui paste", "cargo test --locked -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui kernel_debug", "cargo fmt --all --check", "cargo clippy --locked -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui --all-targets --all-features -- -D warnings", "python3 scripts/check-library-layout.py", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh", "python3 scripts/check-version-bump.py"]
-notes = "Files: CLI clipboard/input/paste adapters, app routing, model insertion guards, focused fake-process/reducer/input/TestBackend tests. Done: host Ctrl+V and bracketed paste use focused typed entry, bounded/failure-safe; no pending/review/modal escape, implicit submit, native PTY Ctrl+V interception or writer regression. Update UI/architecture/status/task docs; coherent version-bumped commit. Full suite deferred."
+notes = "DONE in sourcev312: bounded asynchronous wl-paste/xclip/xsel host reads with kill-on-timeout, UTF-8/256KiB limits; common typed clipboard/bracketed insertion for Kernel fields, popup/source/raw editors, selected QEMU/Wic fields, environment/Hardware names and searches. Single-line control/newline/4096-byte rejection and multiline source provenance retained. Modal/pending/nontext/native PTY-key/writer guards preserved, failures leave drafts intact. Clipboard CLI/app/model/UI3/6/3/1 PASS; selected paste/kernel-debug/Hardware and production16 regressions PASS, strict affected all-target/all-featureClippy/fmt/source2935/UI/roadmap/version PASS.34identity-only goldens and29derived rasters verified. Host xclip exists; fake-process reads tested without inspecting user's clipboard. Relevant operator guidance and Kernel Ctrl+V hint updated. Commit completes this atomic child; final batch optimized installation/push remains UI-POLISH-RELEASE-001. No full suite/live image/restart/session termination/publication."
 
 [[task]]
 id = "KERNEL-DEBUG-DEFAULTS-001"
 milestone = "M116"
 title = "Seed kernel debug fields from selected build artifacts"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3589
 required = true
 depends_on = ["UI-CLIPBOARD-PASTE-001"]
