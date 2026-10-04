@@ -8,10 +8,12 @@ source-editor size limit and project containment when loading. Unknown extension
 are candidates, not proof of readable content. Existing graphical kind dispatch,
 proprietary schematic fallbacks, persistence and daemon wire types are unchanged.
 The generation-correlated Hardware result opens the existing typed RecipeEditor
-surface in explicit read-only mode only while its owning Hardware view remains
-current. Model/app both exclude mutating, external-editor and recipe-build actions;
-normal editable sources retain their existing behavior. UI reuses existing source
-highlighting and Vim-style cursor/search state, with truthful read-only hints.
+surface with typed Hardware-library/project context only while its owning view
+remains current. Original complete text is retained for revision/conflict checks;
+guarded atomic saves preserve permissions and revalidate project containment.
+Model/app exclude recipe-build actions for Hardware context; normal editable
+recipes retain their existing behavior. UI reuses existing source highlighting
+and Vim-style editing/cursor/search state, with truthful edit/save hints.
 Filename/shebang language selection is pure model logic, not UI filesystem I/O.
 
 ## Runqueue terminal task correction

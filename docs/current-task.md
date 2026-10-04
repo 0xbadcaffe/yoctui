@@ -9,10 +9,13 @@ the document library. Pause unrelated demo/CI/docs queue. Dependencies
 HARDWARE-PROJECT-UI-001 and DEMO-RUNQUEUE-COMPLETION-001 are DONE. CLI filesystem
 adapters classify bounded readable regular files by content, revalidate on load,
 and retain project containment/no-symlink/no-special-file safeguards. Reuse the
-built-in typed source editor in read-only mode, recognized syntax including
+built-in typed source editor with editing/guarded saves, recognized syntax including
 extensionless shebangs, Vim-style navigation/search/copy and close-to-selection.
 Preserve graphical viewers and normal editable recipe/source behavior. Add
-positive/binary/size/path/stale-result/read-only/reducer/input/TestBackend checks.
+positive/binary/size/path/conflicting-save/stale-result/reducer/input/TestBackend checks.
+User clarification: editing is required. Preserve original complete text and
+permissions, reject unsafe project saves and disable recipe-build actions for
+typed Hardware editor context without restricting ordinary recipe editing.
 Standing workflow: bump, commit/push, source-bound optimized build/install with
 two jobs. Full suite remains deferred; do not restart the user's current daemon
 or terminate sessions. No image build, publication or presentation changes.

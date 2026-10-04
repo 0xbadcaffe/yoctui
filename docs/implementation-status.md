@@ -1,7 +1,8 @@
 M115 current: HARDWARE-TEXT-VIEW-001 IN_PROGRESS (2026-10-04 user override).
 Hardware Projects/library readable arbitrary-extension/extensionless text will
-reuse the built-in Vim-style source viewer with explicit read-only controls and
-syntax highlighting. Content/size/containment/stale-result guards and existing
+reuse the built-in Vim-style source editor with syntax highlighting, editing and
+guarded atomic saves per the user's clarification. Original text/permissions,
+conflict/size/containment/stale-result guards and existing
 graphical/editable workflows retained. Focused tests, version bump, commit/push,
 optimized delivery required; no full suite or unrelated demo/CI queue resume.
 

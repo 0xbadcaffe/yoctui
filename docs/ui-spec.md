@@ -1,6 +1,6 @@
 # Yoctui UI Specification
 
-### Hardware text files in the built-in Vim-style viewer
+### Hardware text files in the built-in Vim-style editor
 
 Hardware Projects and the document library admit bounded, readable regular text
 files regardless of extension, including extensionless README/Makefile/scripts.
@@ -10,14 +10,20 @@ Stored only in projects and are excluded from the library add browser. Loading
 revalidates content, size and project containment; changed/missing/oversized files
 report an explicit error, not a partial or silently truncated successful view.
 
-Enter opens text in the existing built-in Vim-style source viewer in read-only
-mode, with syntax highlighting enabled for the recognized language. Filename
+Enter opens text in the existing built-in Vim-style source editor, with editing
+and syntax highlighting enabled for the recognized language. Filename
 language rules and an extensionless script's supported interpreter shebang select
 syntax; unknown text remains readable plain text. The existing 1 MiB source-editor
 limit applies. Arrows/h/j/k/l, paging and Home/End navigate; / or Ctrl+F searches,
-n/Alt+n selects matches, selection/copy remain available, and Esc/q closes back
-to the same Hardware list/project selection. The viewer traps input; insert,
-delete, paste, save, external editing, GitUI and recipe-build actions are disabled.
+n/Alt+n selects matches, selection/copy remain available, and normal Vim-style
+insert/visual/edit/undo/redo/paste controls apply. Ctrl+S saves atomically, preserving
+file permissions and rejecting external changes or unsafe replacement paths.
+Esc returns to normal/file-list mode; Esc/q from the file list closes back to the
+same Hardware selection. Unsaved changes retain the existing save-before-close
+guard. Project saves revalidate registered-root containment and non-symlink paths.
+The editor traps input; Hardware text is not a recipe target, so recipe-build
+actions are disabled. The original complete text, including final newlines, is
+the editing baseline; merely opening a file does not normalize or rewrite it.
 No daemon/build environment or new capital-letter shortcut is required. Existing
 editable recipe/source workflows and PDF/image/schematic viewers are unchanged.
 
@@ -487,7 +493,7 @@ goes to the parent, then the project list. `n` creates a named subfolder in the
 current directory. `a` opens a trapped import browser listing all regular files
 and directories; Enter navigates/copies the selected file into the current
 project folder, Esc cancels. Files of any type may be stored; readable text of any
-extension or no extension uses the built-in read-only Vim-style viewer. Existing
+extension or no extension uses the built-in Vim-style editor with guarded saves. Existing
 PDF, KiCad, Altium and Xpedition schematic previews remain available. Other files
 remain listed with Stored only, never launched or executed. Imports are bounded
 to 256 MiB and never overwrite existing names. Symlinks/special files and paths

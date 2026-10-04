@@ -4,8 +4,9 @@
 
 2026-10-04 user override: HARDWARE-TEXT-VIEW-001 IN_PROGRESS. Admit readable
 regular text of any extension or no extension into Hardware library/projects;
-use the existing built-in Vim-style source surface with syntax highlighting and
-read-only navigation/search/copy. Filesystem content/size/containment safeguards,
+use the existing built-in Vim-style source surface with syntax highlighting,
+editing and guarded atomic saves. Preserve permissions/full original content and
+reject conflicting saves or unsafe paths. Filesystem content/size/containment safeguards,
 stale-result ownership and existing graphical/normal-editing workflows must hold.
 Focused verification only; bump/commit/push/optimized delivery. Broader demo/CI/
 README/operator-guide/reboot/publication work remains deferred.
