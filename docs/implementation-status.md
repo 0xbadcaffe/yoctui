@@ -1,3 +1,13 @@
+M117 README-QUICKSTART-NAV-001 DONE: reviewed install/build/use instructions,
+top links to every main section and shorter reference-linked walkthroughs.
+Optimized Cargo two-job install/build/PATH, published vs source versions, daemon
+workspace/restart boundaries and current Hardware/GDB/GitUI guidance corrected.
+README words4626->3770 (18.5% shorter). Original screenshot markup/assets unchanged;
+README/header/gallery/Flamegraph, local links/anchors/Bash examples,23-raster,
+fmt/source2945/roadmap1006/diff checks PASS. Documentation-only; version315,
+installed binary, daemon/sessions and user captures unchanged. No full suite,
+publication or broader demo/CI/reboot work; deferred parent handoff retained.
+
 M116 complete: all four scoped fixes and UI-POLISH-RELEASE-001 DONE.
 Sourcefa5dfc0b/v315 and preceding atomic commits pushed to origin/master.
 Final integrated178 overlapping selected test executions, GitUI scopes65,

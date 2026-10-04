@@ -14,10 +14,17 @@ from urllib.parse import parse_qs, urlsplit
 import hashlib
 import re
 import struct
+import subprocess
 import tomllib
 
 readme = Path("README.md").read_text(encoding="utf-8")
-assert re.findall(r"^# (.+)$", readme, re.M) == ["Yoctui"], "README title must not contain a version"
+def prose_headings(markdown, level="#{1,6}"):
+    prose = re.sub(r"^```[^\n]*\n.*?^```[ \t]*$", "", markdown, flags=re.M | re.S)
+    return re.findall(rf"^{level} (.+)$", prose, re.M)
+
+assert prose_headings("# Title\n```bash\n# shell comment\n```\n", "#") == ["Title"]
+assert prose_headings("# Title\n# Duplicate\n", "#") == ["Title", "Duplicate"]
+assert prose_headings(readme, "#") == ["Yoctui"], "README title must not contain a version"
 assert "Current source version:" not in readme, "Display the version in the crates.io badge only"
 header = readme.split("<!-- /yoctui-header -->", 1)[0]
 assert "<!-- yoctui-header -->" in header, "Missing branded README header"
@@ -74,6 +81,56 @@ width, height = struct.unpack(">II", png[16:24])
 assert 2 <= width / height <= 3.5, "Header must stay compact and wide"
 assert len(png) <= 2 * 1024 * 1024, "Header should remain under 2 MiB"
 print("README header checks passed")
+
+# Every main section must be reachable before readers scroll into the guide.
+contents_start = "<!-- yoctui-contents -->"
+contents_end = "<!-- /yoctui-contents -->"
+assert readme.count(contents_start) == readme.count(contents_end) == 1
+contents = readme.split(contents_start, 1)[1].split(contents_end, 1)[0]
+assert readme.index(contents_end) < readme.index("\n## Install\n")
+assert readme.index(contents_end) < readme.index('href="docs/media/screenshots/07-idle-dashboard.png"')
+
+def heading_slug(title):
+    return re.sub(r"[^\w -]", "", title.lower()).replace(" ", "-")
+
+main_sections = prose_headings(readme, "##")
+section_links = re.findall(r"\[[^\]]+\]\(#([^)]+)\)", contents)
+assert len(section_links) == len(set(section_links)), "Duplicate contents link"
+assert {heading_slug(title) for title in main_sections} <= set(section_links), "Link every main README section at the beginning"
+assert "build-from-source" in section_links, "Expose optimized source build instructions"
+
+# Validate all README-local Markdown targets, not just the branded header.
+for target in re.findall(r"!?\[[^\]]+\]\(([^)\s]+)\)", readme):
+    parsed = urlsplit(target)
+    if parsed.scheme or parsed.netloc:
+        continue
+    destination = Path(parsed.path or "README.md")
+    assert destination.is_file(), f"Missing README link target: {target}"
+    if parsed.fragment:
+        headings = re.findall(r"^#{1,6} (.+)$", destination.read_text(), re.M)
+        assert parsed.fragment in {heading_slug(title) for title in headings}, f"Missing README link anchor: {target}"
+
+# Syntax-check examples only: never install, start a daemon, or submit a build.
+examples = re.findall(r"^```bash\n(.*?)^```", readme, re.M | re.S)
+assert examples, "Missing Bash installation/quickstart examples"
+for example in examples:
+    syntax = subprocess.run(["bash", "-n"], input=example, text=True, capture_output=True)
+    assert syntax.returncode == 0, syntax.stderr
+for command in (
+    "cargo install yoctui --locked -j 2",
+    "cargo build --release --locked -p yoctui --bin yoctui -j 2",
+    "cargo install --locked --path crates/yoctui-cli --force --bin yoctui -j 2",
+    'export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"',
+):
+    assert command in readme, f"Missing verified installation/build instruction: {command}"
+assert "may lag the source repository" in readme
+assert "do not change BitBake/make parallelism" in readme
+assert "boot/.debug" in readme, "Distinguish debugger symbols from stripped boot images"
+assert "Readable text of any extension" in readme, "Document arbitrary-suffix Hardware text viewing"
+assert "only TXT, PDF" not in readme, "Do not retain obsolete Hardware text limits"
+assert "cargo build --locked -p yoctui\n" not in readme, "Interactive source build must use release mode"
+print("README section navigation, local links and Bash example checks passed")
+
 gallery_manifest = Path("docs/media/screenshots/manifest.toml")
 assert gallery_manifest.is_file(), "Missing README screenshot provenance"
 gallery = tomllib.loads(gallery_manifest.read_text(encoding="utf-8"))

@@ -4,6 +4,39 @@
 **Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
 **Status:** IN_PROGRESS
 
+Deferred handoff only: the scoped README request is complete. Do not resume
+unrelated demo/CI/reboot/publication work in this documentation turn.
+
+## Completed README installation and navigation review
+
+README-QUICKSTART-NAV-001 DONE (2026-10-04): every main section linked before
+the first screenshot; install/source-build/PATH/initialized-environment guidance
+checked against Cargo manifests, installed315 CLI help and operator/keymap
+references. Optimized two-job examples distinguish Cargo from BitBake parallelism,
+published vs source releases, daemon workspace checks and safe restart boundaries.
+Long walkthroughs replaced by validated reference links; current Hardware arbitrary
+text editing, GDB symbols and GitUI writer/focus guidance corrected. README words
+4626 -> 3770 (18.5% shorter); all screenshot markup/assets/provenance unchanged.
+Focused README contract checks every main anchor/local link and Bash syntax
+without executing installations, builds, daemon or service commands. Screenshot
+23-raster check, fmt, source2945, Bash syntax, roadmap1006 and diff check PASS.
+No full suite, version bump, binary install, daemon/session changes, publication,
+presentation edits or broader demo acceptance. Runtime remains0.1.315.
+
+Completed documentation verification:
+
+```bash
+./scripts/test-readme-quickstart.sh
+bash -n scripts/test-readme-quickstart.sh
+python3 scripts/render-readme-screenshots.py --check
+python3 scripts/check-library-layout.py
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
+git diff --check
+```
+
+## Deferred demo handoff
+
 Deferred handoff only: the user's four scoped M116 bugs are complete and
 delivered. Do not resume the broader demo/CI/README/reboot queue in this turn.
 Full suite remains forbidden; no daemon restart, image build, session termination,

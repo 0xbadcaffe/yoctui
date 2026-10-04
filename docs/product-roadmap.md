@@ -1,5 +1,13 @@
 # Yoctui Product Roadmap
 
+## M117 — concise README installation and navigation
+
+README-QUICKSTART-NAV-001 DONE: reviewed install/build/use instructions, linked
+every main section at the beginning, and shortened repeated walkthroughs with
+validated references. Words4626->3770 (18.5% shorter); approved screenshot markup,
+assets and provenance unchanged. README/link/Bash/23-raster/fmt/source/roadmap
+checks PASS. Documentation-only, version315 unchanged; demo/CI stays deferred.
+
 ## M116 — scoped demo input and presentation bugs
 
 2026-10-04 user override pauses unrelated demo/CI queue. Four atomic fixes:

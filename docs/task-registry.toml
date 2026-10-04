@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "README-QUICKSTART-NAV-001"
+milestone = "M117"
+title = "Shorten README and verify installation build and section navigation"
+status = "DONE"
+priority = 3600
+required = true
+depends_on = ["UI-POLISH-RELEASE-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "bash -n scripts/test-readme-quickstart.sh", "python3 scripts/render-readme-screenshots.py --check", "python3 scripts/check-library-layout.py", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "git diff --check", "Manual: compare install/build/daemon instructions with Cargo manifests, installed CLI help and operator/keymap references; every main section linked at the beginning; screenshot blocks/assets unchanged"]
+notes = "DONE: README instructions reviewed against manifests, installed315 CLI help, Cargo install documentation and operator/keymap references. Every main section and source build linked before first screenshot; release-mode two-job build/install/PATH, published-vs-source, initialized environment/daemon workspace/restart boundaries clear. Current Hardware/GDB/GitUI instructions corrected; repeated walkthroughs use validated reference links. Words4626->3770 (18.5% shorter). Documentation contract covers all section/local links and Bash example syntax without executing install/build/daemon commands; shell-comment vs heading regression retained. README/gallery/Flamegraph contract,23deterministic rasters,fmt/source2945/roadmap1006/diff checks PASS; original gallery/dashboard markup and screenshot assets byte-identical. Documentation-only commit; version315/installed binary unchanged. No full suite, daemon/session mutation, publication, presentation or broader demo/CI acceptance; parent returns to deferred handoff."
+
+[[task]]
 id = "UI-CLIPBOARD-PASTE-001"
 milestone = "M116"
 title = "Enable bounded host clipboard paste in focused text entry"
