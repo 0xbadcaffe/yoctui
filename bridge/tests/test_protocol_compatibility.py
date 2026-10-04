@@ -1,6 +1,16 @@
 """BridgeProtocolCompatibilityTests regression coverage."""
 
-from .support import *  # noqa: F403
+from .support import (
+    BRIDGE,
+    Path,
+    json,
+    os,
+    run_bridge,
+    subprocess,
+    sys,
+    tempfile,
+    unittest,
+)
 
 
 class BridgeProtocolCompatibilityTests(unittest.TestCase):  # noqa: F405

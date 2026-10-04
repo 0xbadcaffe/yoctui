@@ -9,6 +9,16 @@ Floating stable1.99 hit the upstream
 no blanket warning suppression or product-source workaround is introduced.
 Compiler upgrades require a separate validated CI update.
 
+The production bridge loads eleven ordered fragments into shared globals.
+Ruff checks their complete ordered source projection, the real loader and every
+test module; mypy additionally represents the exact runtime-bound functions as
+class methods, retaining their signatures/bodies and existing narrow native-bb
+import directives. Neither projection runs the bridge or omits a fragment.
+Mutation tests reject omitted fragments, unsupported bindings and undefined
+names. The formatter still checks the actual files, and pytest retains75%
+subprocess coverage. Python formatting may retain a release version only when
+its runtime AST is identical; function/literal changes still require a bump.
+
 Evidence validation jobs fetch full Git history so retained source commits can
 be checked for ancestry. The documentation/test job uses Ubuntu 26.04 with
 Cairo 1.18.4, PyCairo 1.27.0 and the manifest-pinned DejaVu fonts; both screenshot

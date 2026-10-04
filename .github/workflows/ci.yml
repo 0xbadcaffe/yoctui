@@ -54,9 +54,10 @@ jobs:
       - run: ./scripts/test-cli.sh
       - run: ./scripts/check-docs.sh
       - run: python3 -m unittest discover -s bridge/tests -t .
-      - run: ruff check crates/yoctui-bitbake/bridge bridge/tests
+      - run: python3 -m unittest scripts/test_bridge_static_checks.py
+      - run: python3 scripts/check-bridge-python.py --lint
       - run: ruff format --check crates/yoctui-bitbake/bridge bridge/tests
-      - run: mypy crates/yoctui-bitbake/bridge bridge/tests
+      - run: python3 scripts/check-bridge-python.py --types
       - run: pytest bridge/tests --cov=crates/yoctui-bitbake/bridge --cov-report=term-missing --cov-fail-under=75
   release-quality:
     if: github.event_name == 'push' || github.event_name == 'pull_request'

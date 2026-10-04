@@ -110,7 +110,13 @@ def normalize_event(event, task_identities_by_pid=None):
         location = event_value(event, "_mountpoint", "mountpoint", default="unknown")
         location = location[:4096] if isinstance(location, str) else "unknown"
         free = normalized_nonnegative_integer(event_value(event, "_free", "free"))
-        unit = "inodes" if resource == "inode" else "bytes" if resource == "disk" else "units"
+        unit = (
+            "inodes"
+            if resource == "inode"
+            else "bytes"
+            if resource == "disk"
+            else "units"
+        )
         return {
             "type": "log",
             "level": "error",

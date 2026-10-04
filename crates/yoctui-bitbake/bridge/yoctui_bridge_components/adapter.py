@@ -401,7 +401,11 @@ class BitBakeAdapter:
                     # A soft STOPTASKS drain may report zero task failures.
                     # The managed operation still failed; do not fabricate
                     # task failures or a successful 100-percent completion.
-                    event = {"type": "build_completed", "success": False, "exit_code": 1}
+                    event = {
+                        "type": "build_completed",
+                        "success": False,
+                        "exit_code": 1,
+                    }
                 self.build_active = False
                 self.task_identities_by_pid.clear()
                 self.native_event_iterator = None

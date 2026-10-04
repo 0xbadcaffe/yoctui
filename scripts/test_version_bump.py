@@ -30,6 +30,7 @@ class VersionBumpPolicyTests(unittest.TestCase):
         self.write("Cargo.toml", '[workspace]\n[workspace.package]\nversion = "0.1.1"\n')
         self.write("scripts/verify-cratesio-package.sh", 'version="0.1.1"\n')
         self.write("fuzz/Cargo.toml", "[dependencies]\n")
+        self.write("crates/example/bridge/bridge.py", "def bridge():\n    return 1\n")
         self.write("crates/example/src/lib.rs", "fn original() {}\n")
         self.write("README.md", "# original documentation\n")
         self.commit()
@@ -80,6 +81,16 @@ class VersionBumpPolicyTests(unittest.TestCase):
 
     def test_new_untracked_product_file_requires_bump(self) -> None:
         self.write("crates/example/src/added.rs", "fn added() {}\n")
+        self.check(failure=True)
+
+    def test_python_format_only_passes_but_changed_or_invalid_runtime_fails(self) -> None:
+        self.write("crates/example/bridge/bridge.py", "# format only\ndef bridge( ):\n  return 1\n")
+        self.check()
+        self.commit()
+        self.check()
+        self.write("crates/example/bridge/bridge.py", "def bridge():\n    return 2\n")
+        self.check(failure=True)
+        self.write("crates/example/bridge/bridge.py", "invalid python ?\n")
         self.check(failure=True)
 
     def test_valid_product_bump_passes_and_downgrade_fails(self) -> None:

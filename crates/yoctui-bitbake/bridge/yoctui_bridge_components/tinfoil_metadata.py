@@ -14,9 +14,7 @@ def _tinfoil_get_variable(self, name, recipe):
     return {
         "recipe": recipe,
         "value": None if value is None else str(value),
-        "unexpanded_value": None
-        if unexpanded_value is None
-        else str(unexpanded_value),
+        "unexpanded_value": None if unexpanded_value is None else str(unexpanded_value),
         "provenance": next(
             (
                 f"{operation['file']}:{operation['line']}"
@@ -31,6 +29,7 @@ def _tinfoil_get_variable(self, name, recipe):
         "active_overrides": active_overrides,
     }
 
+
 def _tinfoil_get_rootfs_sources(self, recipe):
     """Return only BitBake-expanded paths for one exact image recipe."""
     self._ensure_recipes()
@@ -42,6 +41,7 @@ def _tinfoil_get_rootfs_sources(self, recipe):
         for name in ("IMAGE_MANIFEST", "PKGDATA_DIR", "IMAGE_ROOTFS")
     }
 
+
 def _tinfoil_get_dependencies(self, recipe):
     self._ensure_recipes()
     datastore = self.tinfoil.parse_recipe(recipe)
@@ -51,11 +51,10 @@ def _tinfoil_get_dependencies(self, recipe):
     ).split()
     return {"build": build, "runtime": runtime}
 
+
 def _tinfoil_get_dependency_graph(self, recipe):
     if self.active:
-        raise RuntimeError(
-            "dependency graphs are unavailable during an active build"
-        )
+        raise RuntimeError("dependency graphs are unavailable during an active build")
     self._ensure_recipes()
     event_mask = [
         "bb.event.DepTreeGenerated",
@@ -90,11 +89,10 @@ def _tinfoil_get_dependency_graph(self, recipe):
                         "BitBake completed dependency generation without a graph"
                     )
                 return dependency_graph_from_deptree(recipe, graph_data)
-        raise RuntimeError(
-            "BitBake dependency generation timed out after 120 seconds"
-        )
+        raise RuntimeError("BitBake dependency generation timed out after 120 seconds")
     finally:
         self.tinfoil.set_event_mask(self.EVENT_MASK)
+
 
 def _tinfoil_preferred_recipe_file(self, recipe):
     if recipe in self.recipe_files:
@@ -103,11 +101,7 @@ def _tinfoil_preferred_recipe_file(self, recipe):
         best = self.tinfoil.run_command("findBestProvider", recipe) or ()
     except Exception:
         best = ()
-    if (
-        isinstance(best, (list, tuple))
-        and len(best) > 3
-        and isinstance(best[3], str)
-    ):
+    if isinstance(best, (list, tuple)) and len(best) > 3 and isinstance(best[3], str):
         return best[3]
     providers = self.tinfoil.run_command("findProviders", "") or ()
     preferred = (
@@ -132,11 +126,13 @@ def _tinfoil_preferred_recipe_file(self, recipe):
                 return candidates[0]
     raise RuntimeError(f"no provider file is available for {recipe}")
 
+
 def _tinfoil_get_recipe_sources(self, recipe):
     self._ensure_recipes()
     recipe_file = self._preferred_recipe_file(recipe)
     appends = self.tinfoil.get_file_appends(recipe_file) or []
     return [recipe_file, *appends]
+
 
 def _tinfoil_get_recipe_metadata(self, recipe):
     self._ensure_recipes()
@@ -175,6 +171,7 @@ def _tinfoil_get_recipe_metadata(self, recipe):
         "packages": packages,
         "history": None,
     }
+
 
 TinfoilConnection.get_variable = _tinfoil_get_variable
 TinfoilConnection.get_rootfs_sources = _tinfoil_get_rootfs_sources

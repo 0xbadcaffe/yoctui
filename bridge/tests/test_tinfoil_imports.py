@@ -55,15 +55,20 @@ class TinfoilImportTests(unittest.TestCase):
 
     def test_existing_vendor_parent_is_not_duplicated(self):
         with tempfile.TemporaryDirectory() as directory:
-            package = self.package(directory, """import bb, os, sys
+            package = self.package(
+                directory,
+                """import bb, os, sys
 assert sys.path.count(os.path.dirname(bb.__file__)) == 1
-from pysh.pyshtables import VALUE""")
+from pysh.pyshtables import VALUE""",
+            )
             vendor = package / "pysh"
             vendor.mkdir()
             (vendor / "__init__.py").write_text("")
             (vendor / "pyshtables.py").write_text('VALUE = "romulus"\n')
-            result = run_bridge(QUERY, environment={
-                "PYTHONPATH": os.pathsep.join((directory, str(package)))})
+            result = run_bridge(
+                QUERY,
+                environment={"PYTHONPATH": os.pathsep.join((directory, str(package)))},
+            )
         self.assertEqual(result.returncode, 0, result.stderr.decode())
         message = json.loads(result.stdout)["message"]
         self.assertEqual(message["type"], "variable")

@@ -22,6 +22,7 @@ def _tinfoil_start_build(self, targets, task, force=False):
             self.force_active = False
         raise
 
+
 def _tinfoil_cancel_build(self):
     if not self.active:
         raise RuntimeError("no BitBake build is active")
@@ -32,6 +33,7 @@ def _tinfoil_cancel_build(self):
     # Tinfoil/server operation and does not signal or kill an arbitrary
     # host process.
     self.tinfoil.run_command("stateForceShutdown", handle_events=False)
+
 
 def _tinfoil_drain_events(self):
     events = []
@@ -80,6 +82,7 @@ def _tinfoil_drain_events(self):
         self.force_active = False
     return events
 
+
 def _tinfoil_shutdown(self):
     if self.tinfoil is not None:
         if self.force_active:
@@ -88,6 +91,7 @@ def _tinfoil_shutdown(self):
         self.tinfoil.shutdown()
         self.tinfoil = None
     self.active = False
+
 
 def _tinfoil_terminate_server(self):
     """Terminate through the process-server interface used by bitbake -m."""
@@ -103,6 +107,7 @@ def _tinfoil_terminate_server(self):
     self.tinfoil.server_connection = None
     self.tinfoil = None
     self.active = False
+
 
 TinfoilConnection.start_build = _tinfoil_start_build
 TinfoilConnection.cancel_build = _tinfoil_cancel_build

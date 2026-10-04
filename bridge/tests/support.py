@@ -16,6 +16,24 @@ BRIDGE = Path(__file__).parents[2] / "crates/yoctui-bitbake/bridge/yoctui_bridge
 MAX_LINE_BYTES = 1024 * 1024
 MAX_NATIVE_EVENTS_PER_POLL = 64
 
+# Explicit shared test exports, including standard-library fixture helpers.
+__all__ = [
+    "BRIDGE",
+    "MAX_LINE_BYTES",
+    "MAX_NATIVE_EVENTS_PER_POLL",
+    "run_bridge",
+    "json",
+    "importlib",
+    "os",
+    "subprocess",
+    "sys",
+    "tempfile",
+    "unittest",
+    "SimpleNamespace",
+    "patch",
+    "Path",
+]
+
 
 def run_bridge(
     *lines: bytes, environment: dict[str, str] | None = None

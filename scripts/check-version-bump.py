@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import re
+import ast
 import subprocess
 import sys
 import tomllib
@@ -43,6 +44,24 @@ def product_path(path: str) -> bool:
         path.startswith("crates/")
         and (path.endswith("/Cargo.toml") or "/src/" in path or "/bridge/" in path)
     )
+
+
+def product_changed(paths: list[str], revision: str) -> bool:
+    for path in paths:
+        if not product_path(path):
+            continue
+        if path.endswith(".py"):
+            previous = subprocess.run(
+                ["git", "show", f"{revision}:{path}"], cwd=ROOT,
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            )
+            try:
+                if previous.returncode == 0 and ast.dump(ast.parse(previous.stdout)) == ast.dump(ast.parse((ROOT / path).read_bytes())):
+                    continue  # Formatting/comments only; runtime AST identical.
+            except (OSError, SyntaxError, UnicodeError):
+                pass
+        return True
+    return False
 
 
 def baseline_cargo_toml() -> tuple[str, bytes, list[str]] | None:
@@ -101,9 +120,9 @@ def main() -> None:
     if baseline is not None:
         revision, baseline_text, changed = baseline
         previous, previous_tuple = parse_version(baseline_text, f"{revision}:Cargo.toml")
-        product_changed = any(product_path(path) for path in changed)
+        changed_product = product_changed(changed, revision)
         if current_tuple < previous_tuple or (
-            product_changed and not version_increased(current_tuple, previous_tuple)
+            changed_product and not version_increased(current_tuple, previous_tuple)
         ):
             fail(f"workspace version {current} must be greater than {revision} version {previous}")
         transition = f"{previous} -> {current}"

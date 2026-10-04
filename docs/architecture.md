@@ -21,6 +21,14 @@ when only documentation is dirty. New untracked product
 files count, but unrelated untracked artifacts never mask a committed change.
 Isolated real-Git regression repositories cover these decisions.
 
+Python formatting/comments that preserve the complete runtime AST are not a
+product change. The policy compares actual source ASTs against the selected Git
+baseline; new/invalid/changed Python and all other product changes still require
+a numeric bump. This permits mechanical release315 formatting without altering
+the user's requested version or weakening behavior/lint/coverage checks.
+Bridge static tooling follows the actual loader order and exact bound-method
+bodies; runtime files/logic are not replaced with generated code.
+
 ## M116 scoped input, discovery, lifecycle and native-terminal corrections
 
 CLI owns bounded asynchronous clipboard process I/O and filesystem artifact

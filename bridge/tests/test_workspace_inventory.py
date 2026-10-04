@@ -1,6 +1,15 @@
 """BridgeWorkspaceInventoryTests regression coverage."""
 
-from .support import *  # noqa: F403
+from .support import (
+    BRIDGE,
+    Path,
+    SimpleNamespace,
+    importlib,
+    json,
+    patch,
+    run_bridge,
+    unittest,
+)
 
 
 class BridgeWorkspaceInventoryTests(unittest.TestCase):  # noqa: F405
@@ -22,7 +31,9 @@ class BridgeWorkspaceInventoryTests(unittest.TestCase):  # noqa: F405
         self.assertEqual(variables["BB_FETCH_PREMIRRORONLY"], "0")
         self.assertEqual(variables["DL_DIR"], "/cache/downloads")
         values.clear()
-        self.assertEqual(connection.inspect_workspace()["variables"]["BB_NO_NETWORK"], "0")
+        self.assertEqual(
+            connection.inspect_workspace()["variables"]["BB_NO_NETWORK"], "0"
+        )
 
     def test_task_identity_uses_initialized_metadata_for_native_git_and_pn_overrides(
         self,

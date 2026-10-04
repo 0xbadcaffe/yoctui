@@ -1,10 +1,18 @@
 """BridgeMetadataEventTests regression coverage."""
 
-from .support import *  # noqa: F403
+from .support import (
+    BRIDGE,
+    MAX_LINE_BYTES,
+    Path,
+    importlib,
+    json,
+    run_bridge,
+    tempfile,
+    unittest,
+)
 
 
 class BridgeMetadataEventTests(unittest.TestCase):  # noqa: F405
-
     def test_dependencies_without_a_server_capability_are_not_guessed(self) -> None:
         result = run_bridge(
             b'{"protocol_version":1,"sequence":1,"message":{"type":"get_dependencies","recipe":"busybox"}}'
@@ -269,7 +277,13 @@ server = Server()
 
         normalized = bridge.normalize_event(
             LogRecord(),
-            {42: ("obmc-phosphor-image", "do_image_complete", "/tmp/log.do_image_complete.42")},
+            {
+                42: (
+                    "obmc-phosphor-image",
+                    "do_image_complete",
+                    "/tmp/log.do_image_complete.42",
+                )
+            },
         )
         self.assertEqual(normalized["level"], "error")
         self.assertEqual(normalized["recipe"], "obmc-phosphor-image")
