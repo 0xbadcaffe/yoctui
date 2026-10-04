@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "CI-BRIDGE-PYTHON-GATES-001"
+milestone = "M118"
+title = "Statically check shared bridge namespace and apply AST-identical formatting"
+status = "IN_PROGRESS"
+priority = 3618
+required = true
+depends_on = ["CI-VERSION-DIRTY-DOCS-001"]
+verify = ["python3 -m unittest scripts/test_bridge_static_checks.py", "python3 scripts/check-bridge-python.py --lint", "python3 scripts/check-bridge-python.py --types", "ruff format --check crates/yoctui-bitbake/bridge bridge/tests", "Manual: Python AST identity before/after formatting, complete loader coverage, unchanged assertions and no rule suppression; hosted bridge unittest/lint/type/coverage gates pass"]
+notes = "Runtime loader executes ordered fragments in shared globals; standalone lint reports false undefined names. Check composed namespace plus loader and explicit test imports, without skipping fragments or suppressing undefined-name rules. Permit only AST-identical Python formatting under existing315 user release requirement."
+
+[[task]]
 id = "CI-BRIDGE-DISCOVERY-001"
 milestone = "M118"
 title = "Discover bridge unittest modules with their package-qualified imports"

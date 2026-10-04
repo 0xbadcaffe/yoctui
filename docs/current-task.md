@@ -1,8 +1,15 @@
 # Current Task
 
-**ID:** CI-BRIDGE-DISCOVERY-001
-**Title:** Discover bridge unittest modules with their package-qualified imports
+**ID:** CI-BRIDGE-PYTHON-GATES-001
+**Title:** Statically check shared bridge namespace and apply AST-identical formatting
 **Status:** IN_PROGRESS
+
+Local pinned Ruff/mypy expose shared-globals fragment false positives, wildcard
+test imports and formatting drift. Check every loader fragment in execution
+order as one namespace, plus actual loader/test files. Explicit test imports and
+AST-identical formatting only; preserve every test assertion and functional
+Python AST. Add projection/mutation/format-policy regressions and retain strict
+lint, actual-file formatter and hosted75% coverage gate. No315 functional edit.
 
 Hosted37220285999 strictClippy/fullRust/terminal/stress/CLI/docs and all other
 normal jobs PASS; bridge unittest discovery failed on package-relative imports.
