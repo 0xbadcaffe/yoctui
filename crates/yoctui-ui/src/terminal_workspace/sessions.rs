@@ -39,7 +39,7 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         return;
     }
 
-    let prefix_help_height = if app.selected_terminal_is_menuconfig() {
+    let prefix_help_height = if app.selected_terminal_uses_native_workspace() {
         0
     } else if area.height >= 30 {
         3
@@ -75,7 +75,7 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
             ]
         })
         .collect::<Vec<_>>();
-    let terminal_edge_border = if app.selected_terminal_is_menuconfig() {
+    let terminal_edge_border = if app.selected_terminal_uses_native_workspace() {
         Borders::RIGHT
     } else {
         Borders::NONE

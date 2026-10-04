@@ -52,6 +52,17 @@ uses the full available workspace beside Navigator, without passive Inspector
 or help rail consuming its pane, and its PTY resize matches the visible content.
 Keys then reach only the selected writer-owned session; viewer mode, splits,
 other native sessions, literal prefix, exit and destructive review guards remain.
+Clicking an actual terminal pane moves keyboard focus to Workspace; clicking
+Navigator retains Navigator focus. Selecting a pane is not writer acquisition.
+Existing daemons report managed GitUI as Utility, so the model recognizes the
+reserved Yoctui launch labels `GitUI · source`, `GitUI · editor <context>` and
+`GitUI · devtool <context>` as layout-only hints, including retained sessions.
+Renaming to an unrelated label removes that hint; it never proves which program
+is running or grants input/resize permissions. Other Utility sessions retain
+their ordinary layout. No daemon restart or new wire kind is required.
+Writer-owned live GitUI receives function keys natively too; Yoctui controls
+remain available through Ctrl+B prefix commands. Viewers keep ordinary global
+function-key navigation, and modal reviews still trap all input.
 
 ### Hardware text files in the built-in Vim-style editor
 

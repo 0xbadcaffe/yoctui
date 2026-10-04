@@ -13,6 +13,16 @@ pub(crate) fn direct_menu_shortcut_action(
     if replayed || app.command_palette_open {
         return None;
     }
+    if app.screen == Screen::TerminalSessions
+        && app.selected_terminal_is_gitui()
+        && yoctui_app::terminal_owns_input(app)
+        && app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
+        && app.active_dialog().is_none()
+        && !app.menu.is_open()
+        && !app.onboarding.open
+    {
+        return None;
+    }
     if app.platform_menuconfig_visible() {
         return None;
     }

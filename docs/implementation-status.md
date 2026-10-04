@@ -1,4 +1,12 @@
-M116 current: GITUI-NATIVE-WORKSPACE-001 IN_PROGRESS (2026-10-04 user override).
+M116 current: UI-POLISH-RELEASE-001 IN_PROGRESS (2026-10-04 user override).
+GITUI-NATIVE-WORKSPACE-001 DONE/v315: pane-click Workspace focus, shared native
+layout/resize/mouse hint for managed legacy Utility labels, full width/no help
+rail and native writer function keys. Other utilities, splits, editor retention,
+manual writer/kill/menuconfig guards preserved; no daemon wire change.
+GitUI CLI/app/model/UI5/3/9/4, menuconfig16/5/6/2, kill1/2/6/1,
+viewportCLI1/UI3, isolated real installedGitUI1 and production16 PASS.
+Strict affectedClippy/fmt/source2945/UI/roadmap/version PASS;34identity-only
+goldens/29rasters verified. Final optimized source-bound build/install pending.
 BUILD-COMPLETED-PROGRESS-001 DONE/v314: pure successful completion projection and
 shared Dashboard/Tasks stable summary for missing/zero totals. Existing known
 completion counters, per-task Lost/failure semantics and live progress unchanged.

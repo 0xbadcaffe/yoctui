@@ -255,7 +255,7 @@ pub(crate) fn terminal_session_mouse_action(
     if !shell.contains(mouse) {
         return None;
     }
-    let footer = if !app.selected_terminal_is_menuconfig() && shell.height >= 30 {
+    let footer = if !app.selected_terminal_uses_native_workspace() && shell.height >= 30 {
         3
     } else {
         0

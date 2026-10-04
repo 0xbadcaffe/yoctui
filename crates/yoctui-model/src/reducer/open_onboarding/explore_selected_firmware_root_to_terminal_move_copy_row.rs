@@ -227,7 +227,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.select_terminal_session(delta);
         }
         Action::SelectPtyPane { pane, index } => {
-            app.select_terminal_pane(pane, index);
+            if app.select_terminal_pane(pane, index) {
+                app.focus = FocusTarget::Workspace;
+                app.focus_return = None;
+            }
         }
         Action::TerminalTakeControl => {
             if app.daemon.status != ClientReplicaStatus::Current {

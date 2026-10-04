@@ -1,5 +1,6 @@
 use super::*;
 mod clipboard;
+mod gitui_native_workspace;
 mod modifier_shortcuts;
 mod rootfs_browser;
 mod startup_screen;

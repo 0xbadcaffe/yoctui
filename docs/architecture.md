@@ -24,6 +24,12 @@ BuildState exposes a pure CompletedBuildProgress projection only for successful
 Completed lifecycle with missing/zero totals. Shared summary rendering consumes
 that typed outcome before its indeterminate fallback. Gauge/counter reducers and
 per-task state are unchanged; terminal success never synthesizes task success.
+The model's native-workspace predicate consumes typed PTY kind plus Yoctui's
+reserved managed GitUI launch labels (legacy kind Utility). This is a layout
+hint, not executable detection or new authorization. App renderer/resize/mouse
+geometry share it; widgets do not parse terminal output. Pane-click selection
+sets Workspace focus without taking a writer lease. Existing wire types and
+writer epochs remain unchanged, including retained old-daemon GitUI sessions.
 
 ## Hardware arbitrary-text viewing and editing boundary
 

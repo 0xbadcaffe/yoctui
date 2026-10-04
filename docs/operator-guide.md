@@ -12,6 +12,13 @@ A successful build with no reported task total shows `completed successfully`
 and `total unavailable`; an authoritative zero shows `no tasks required`.
 This is the build outcome, not proof that a retained Lost task succeeded.
 
+Managed GitUI opens in the full native workspace beside Navigator. Click its
+pane to focus it, then press `o` or `Ctrl+B o` to request writer control. Once
+granted, keys (including function keys) reach GitUI. `Ctrl+B` prefix commands
+remain Yoctui controls; `Ctrl+B e` restores a retained editor. Viewers cannot
+send input or resize another writer's session. Old managed GitUI sessions work
+without restarting the daemon; unrelated/renamed utilities keep ordinary layout.
+
 This guide covers daily use after a Yocto environment has been initialized and
 Yoctui has opened its build directory. Follow the guarded setup commands in the
 [README](../README.md) first. BitBake, its configured metadata, and adapter

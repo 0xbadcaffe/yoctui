@@ -1,6 +1,7 @@
 //! Shared fixtures and regression modules.
 
 use super::*;
+mod gitui_native_workspace;
 mod rootfs_browser;
 mod terminal_kill_safety;
 

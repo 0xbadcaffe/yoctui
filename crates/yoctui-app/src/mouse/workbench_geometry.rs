@@ -72,7 +72,7 @@ pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -
         22
     };
     if matches!(app.screen, Screen::Layers | Screen::Recipes)
-        || (app.screen == Screen::TerminalSessions && app.selected_terminal_is_menuconfig())
+        || (app.screen == Screen::TerminalSessions && app.selected_terminal_uses_native_workspace())
     {
         return [navigator, width.saturating_sub(navigator), 0];
     }
@@ -140,7 +140,7 @@ pub fn terminal_workspace_dimensions(
     } else {
         return None;
     };
-    let prefix_help = if !app.selected_terminal_is_menuconfig() && workspace_height >= 30 {
+    let prefix_help = if !app.selected_terminal_uses_native_workspace() && workspace_height >= 30 {
         3
     } else {
         0

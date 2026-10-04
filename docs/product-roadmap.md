@@ -14,7 +14,8 @@ focused clipboard/ordinary paste/Kernel/Hardware/rendering regressions and stric
 affected checks PASS; defaults DONE/v313 with real read-only OpenBMC discovery,
 edit/stale-result guards and focused verification. Completed-progress child now
 DONE/v314 with honest completed summaries and focused verification. GitUI child
-now current. Optimized batch delivery pending.
+DONE/v315: full native layout, pane-click focus and protected native keys,
+including isolated real GitUI verification. Optimized batch delivery now current.
 
 ## M115 — Hardware arbitrary text viewing and editing
 

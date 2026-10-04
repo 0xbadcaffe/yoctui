@@ -1,29 +1,31 @@
 # Current Task
 
-**ID:** GITUI-NATIVE-WORKSPACE-001
-**Title:** Focus and size embedded GitUI as a native workspace
+**ID:** UI-POLISH-RELEASE-001
+**Title:** Deliver verified optimized scoped UI fixes
 **Status:** IN_PROGRESS
 
-2026-10-04 user override: paste DONE/v312, defaults DONE/v313, progress DONE/v314.
-GitUI depends on completed progress. Relevant files: native layout hint from
-typed session metadata, shared renderer/app geometry, pane-click focus and
-native input/resize tests. Done: full workspace without passive Inspector/help;
-pane clicks focus Workspace so manual writer acquisition/native keys work.
-Preserve other terminals, splits, retained editors, detached/offline routes,
-writer guards, menuconfig and kill review. Existing protocol reports managed
-GitUI as Utility; layout hints must not imply executable/writer authority.
-Verify focused gitui/terminal_viewport/menuconfig, fake-PTY and isolated real
-GitUI input/resize/exit, strict affectedClippy, fmt/source/UI/roadmap/version
-and production fixtures. No user-session changes. Next UI-POLISH-RELEASE-001;
-no unrelated queue or full suite.
+2026-10-04 scoped user bugs: paste DONE/v312, defaults DONE/v313, completed
+progress DONE/v314, GitUI DONE/v315. All release-child dependencies DONE.
+Relevant files: source-bound release receipt and registry/status handoff only.
+Done: final focused regressions/gates, source push, optimized two-job build and
+installation with previous311 backup, installed/release hash equality and
+isolated bundled-bridge doctor; current daemon/session/capture identities remain
+untouched. No full suite, image build, daemon restart, user-session termination,
+publication, presentation or unrelated queue. Commands: focused clipboard,
+kernel_debug, completed_progress, hardware, paste, devtool_editor, runqueue and
+terminal_pane regressions; strict affected all-target/all-feature Clippy; fmt/
+source/UI/roadmap and production/raster checks. Build/install with existing
+CARGO_TARGET_DIR, two jobs, no incremental, RUSTFLAGS force-frame-pointers=yes.
+Final handoff returns deferred DEMO-INSTALL-LIVE-001 without resuming it.
 
-Progress v314 verified: completed_progress model/UI2/2, runqueue3/1,
-progress15/18 and production16 PASS (overlapping scopes); strict affectedClippy,
-fmt/source2941/UI/roadmap/version PASS;34identity-only goldens/29rasters verified.
-Actual job17 Exited0/progressNone confirms absent totals read-only. Only pure
-completion projection/shared summary changed; existing known-total completion
-counters, Lost rows and running/failure/cancel behavior unchanged.
-Optimized batch install/push pending; installed311/running309 untouched.
+GitUI v315 verified: CLI/app/model/UI5/3/9/4, menuconfig16/5/6/2,
+kill1/2/6/1, viewportCLI1/UI3 and isolated real installed GitUI1 PASS.
+Production16 and strict affectedClippy/fmt/source2945/UI/roadmap/version PASS;
+34identity-only goldens/29rasters verified. Pane clicks now focus Workspace,
+managed legacy Utility labels get full native layout and writer keys remain
+native including function keys. Explicit writer lease, retained editor, splits,
+ordinary utility geometry and modal guards preserved; no wire/daemon change.
+Installed311/native309 remain unchanged until final source-bound install.
 
 Defaults v313 verified: Kernel CLI/app/model/UI11/8/19/9, QEMU helper11,
 clipboard3/7/3/1, production16 and targeted defaults4/1/2/1 checks PASS.

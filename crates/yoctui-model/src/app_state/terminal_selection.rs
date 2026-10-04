@@ -67,6 +67,21 @@ impl App {
             .is_some_and(|details| details.kind == ClientDaemonPtyKind::Menuconfig)
     }
 
+    /// Layout hint only: legacy daemons expose managed GitUI as Utility.
+    /// Reserved launch labels never grant writer or executable authority.
+    pub fn selected_terminal_is_gitui(&self) -> bool {
+        self.selected_terminal_details().is_some_and(|details| details.kind == ClientDaemonPtyKind::Utility)
+            && self.selected_terminal_session().is_some_and(|session| {
+                session.name == "GitUI · source"
+                    || ["GitUI · editor ", "GitUI · devtool "].iter().any(|prefix|
+                        session.name.strip_prefix(prefix).is_some_and(|suffix| !suffix.is_empty()))
+            })
+    }
+
+    pub fn selected_terminal_uses_native_workspace(&self) -> bool {
+        self.selected_terminal_is_menuconfig() || self.selected_terminal_is_gitui()
+    }
+
     pub fn begin_platform_menuconfig(&mut self, screen: Screen, name: String) {
         let terminal = match screen {
             Screen::Kernel => &mut self.kernel.menuconfig_terminal,
