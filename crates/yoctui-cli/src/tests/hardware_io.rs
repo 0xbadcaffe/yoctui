@@ -22,7 +22,7 @@ fn hardware_browser_returns_only_supported_regular_non_symlink_entries() {
             .iter()
             .map(|entry| entry.name.as_str())
             .collect::<Vec<_>>(),
-        vec!["subdir", "board.kicad_sch"]
+        vec!["subdir", "board.kicad_sch", "notes.txt"]
     );
     let _ = fs::remove_dir_all(root);
 }

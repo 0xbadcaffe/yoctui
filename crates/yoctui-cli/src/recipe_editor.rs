@@ -3,8 +3,32 @@ use super::*;
 mod gitui;
 pub(crate) use gitui::EditorGitUiIo;
 
+pub(crate) fn read_source_editor_file(
+    editor: &yoctui_model::RecipeEditor,
+    path: &Path,
+) -> Result<String> {
+    if editor.context != yoctui_model::SourceEditorContext::Recipe {
+        hardware_io::text::validate_editor_path(editor.context, &editor.root, path)?;
+        return hardware_io::text::source_editor_content(path);
+    }
+    Ok(fs::read_to_string(path)?)
+}
+
 pub(crate) async fn load_recipe_editor_file(app: &mut App, path: PathBuf) {
-    let result = tokio::task::spawn_blocking(move || fs::read_to_string(path)).await;
+    let context = app.active_dialog().and_then(|dialog| match dialog {
+        Dialog::RecipeEditor(editor) => Some((editor.context, editor.root.clone())),
+        _ => None,
+    });
+    let result = tokio::task::spawn_blocking(move || -> Result<String> {
+        if let Some((context, root)) = context
+            && context != yoctui_model::SourceEditorContext::Recipe
+        {
+            hardware_io::text::validate_editor_path(context, &root, &path)?;
+            return hardware_io::text::source_editor_content(&path);
+        }
+        Ok(fs::read_to_string(path)?)
+    })
+    .await;
     match result {
         Ok(Ok(content)) => {
             let _ = update(app, Action::LoadRecipeEditorContent(content));
@@ -87,7 +111,21 @@ pub(crate) async fn save_recipe_editor_file(
     content: String,
     expected: TextAreaRevision,
 ) {
+    let context = app
+        .active_dialog()
+        .and_then(|dialog| match dialog {
+            Dialog::RecipeEditor(editor) => Some(editor.context),
+            _ => None,
+        })
+        .unwrap_or_default();
     let result = tokio::task::spawn_blocking(move || {
+        if context != yoctui_model::SourceEditorContext::Recipe {
+            hardware_io::text::validate_editor_path(context, &root, &path)?;
+            anyhow::ensure!(
+                yoctui_model::hardware_source_is_text(&content),
+                "Hardware binary/control data cannot be saved as text."
+            );
+        }
         write_recipe_editor_file_atomically(&root, &path, &content, expected)
     })
     .await;

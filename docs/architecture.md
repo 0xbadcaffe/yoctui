@@ -1,6 +1,6 @@
 # Yoctui Architecture
 
-## Hardware arbitrary-text viewing boundary
+## Hardware arbitrary-text viewing and editing boundary
 
 CLI Hardware filesystem adapters perform a bounded regular-file text probe for
 browser/project rows, and fully revalidate UTF-8/binary controls, the existing
@@ -15,6 +15,8 @@ Model/app exclude recipe-build actions for Hardware context; normal editable
 recipes retain their existing behavior. UI reuses existing source highlighting
 and Vim-style editing/cursor/search state, with truthful edit/save hints.
 Filename/shebang language selection is pure model logic, not UI filesystem I/O.
+Returning from an explicitly selected external Vim also revalidates Hardware
+paths/content/size; its typed result never offers recipe-build actions.
 
 ## Runqueue terminal task correction
 

@@ -19,6 +19,7 @@ fn editor_save_build_navigation_and_search_hints_survive_every_supported_layout_
                 root: "/workspace/busybox".into(),
                 files: vec!["main.c".into()],
                 file_inventory_truncated: false,
+                context: Default::default(),
                 selection: 0,
                 focus,
                 language: SourceLanguage::C,

@@ -41,7 +41,7 @@ pub(super) fn reduce(app: &mut App, action: HardwareProjectAction) -> Option<Eff
                         name: project.name.clone(),
                         relative: state.relative.join(&entry.name),
                     });
-                } else if let Some(kind) = HardwareDocumentKind::project_kind(&entry.path) {
+                } else if let Some(kind) = entry.kind {
                     state.error = None;
                     let root = project.root.clone();
                     let document = HardwareDocument {
@@ -51,7 +51,10 @@ pub(super) fn reduce(app: &mut App, action: HardwareProjectAction) -> Option<Eff
                     };
                     return viewer::open(app, document, Some(root));
                 } else {
-                    state.error = Some("Stored only: project viewing supports TXT, PDF, KiCad, Altium and Xpedition schematics.".into());
+                    state.error = Some(
+                        "Stored only: this file is not readable text or a supported PDF/schematic."
+                            .into(),
+                    );
                 }
             } else {
                 let project = state.catalog.get(state.selection)?;

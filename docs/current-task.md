@@ -1,7 +1,7 @@
 # Current Task
 
 **ID:** HARDWARE-TEXT-VIEW-001
-**Title:** View arbitrary-extension and extensionless Hardware text with highlighted Vim-style controls
+**Title:** View and edit arbitrary-extension and extensionless Hardware text with highlighting
 **Status:** IN_PROGRESS
 
 2026-10-04 user override: implement Hardware text viewing in both Projects and
@@ -19,6 +19,17 @@ typed Hardware editor context without restricting ordinary recipe editing.
 Standing workflow: bump, commit/push, source-bound optimized build/install with
 two jobs. Full suite remains deferred; do not restart the user's current daemon
 or terminate sessions. No image build, publication or presentation changes.
+
+Implementation v0.1.311 is verified; source commit and optimized delivery remain
+in progress. Hardware CLI/app/model/UI 19/6/14/7, ordinary Devtool editor 19,
+atomic-save/workspace/runqueue/editor-hint regressions 2/1/4/2 and production
+rendering 16 tests PASS (90 selected tests total). Strict affected all-target,
+all-feature Clippy, formatting, 2931-source layout, UI/roadmap/version policy
+PASS. The 34 version goldens differ only by 310 -> 311 identity; 29 derived
+rasters are regenerated and verified. Real isolated project-worker/filesystem
+save coverage preserves 0750 mode/complete content and rejects external conflicts,
+outside-root writes, symlinks, binaries, special files and oversized content.
+These are focused filesystem/UI checks, not a live Yocto image build or full suite.
 
 ```bash
 cargo test --locked -p yoctui-model hardware

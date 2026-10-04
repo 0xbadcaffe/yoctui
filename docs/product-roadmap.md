@@ -1,6 +1,6 @@
 # Yoctui Product Roadmap
 
-## M115 — Hardware arbitrary text viewing
+## M115 — Hardware arbitrary text viewing and editing
 
 2026-10-04 user override: HARDWARE-TEXT-VIEW-001 IN_PROGRESS. Admit readable
 regular text of any extension or no extension into Hardware library/projects;

@@ -192,7 +192,7 @@ pub use recipe_types::{
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Layer, Recipe,
     RecipeBuildStatus, RecipeEditor, RecipeEditorFocus, RecipeIdentity, RecipeMetadata,
     RecipePatchPicker, RecipeTaskLogChoice, RecipeTaskLogPicker, RecipeTaskPicker,
-    RecipeWorkspaceStatus, SignatureTaskPicker, SourceLanguage,
+    RecipeWorkspaceStatus, SignatureTaskPicker, SourceEditorContext, SourceLanguage,
 };
 
 mod editor_types;

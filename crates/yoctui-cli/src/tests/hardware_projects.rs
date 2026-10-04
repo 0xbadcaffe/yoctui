@@ -17,7 +17,7 @@ fn hardware_project_preview_revalidates_registration_and_format_on_disk() {
     fs::write(&txt, "notes").unwrap();
     assert!(validate_preview_in_store(&root, &created.root, &txt).is_ok());
     let binary = created.root.join("firmware.bin");
-    fs::write(&binary, "stored only").unwrap();
+    fs::write(&binary, [0, 1, 2, 255]).unwrap();
     assert!(validate_preview_in_store(&root, &created.root, &binary).is_err());
     let foreign = temporary.join("foreign.txt");
     fs::write(&foreign, "outside").unwrap();
@@ -296,6 +296,7 @@ fn hardware_project_import_browser_lists_any_regular_file_and_view_policy_is_res
     ] {
         fs::write(temporary.join(name), "test").unwrap();
     }
+    fs::write(temporary.join("data.bin"), [0, 255]).unwrap();
     let HardwareProjectResult::ImportBrowser { entries, .. } = execute(
         &temporary,
         HardwareProjectOperation::ImportBrowse {

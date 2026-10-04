@@ -119,7 +119,7 @@ pub(super) fn render(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(Paragraph::new(vec![
         Line::styled(state.error.as_deref().unwrap_or("Viewing: TXT, PDF, KiCad, Altium/Xpedition schematics; other files are stored only."), Style::default().fg(if state.error.is_some() { palette.error } else { palette.secondary_foreground })),
-        Line::from("↑/↓ select  Enter open  Backspace parent  n new project/folder  a import  s bring-up  r refresh  p library"),
+        Line::from("↑/↓ select  Enter open  e edit text  Backspace parent  n new project/folder  a import  s bring-up  r refresh  p library"),
     ]).wrap(Wrap { trim: false }), rows[2]);
     if let Some((directory, entries, selection)) = &state.import_browser {
         let popup = bounded_dialog_rect(area, 100, 22);

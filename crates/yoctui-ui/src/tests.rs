@@ -28,6 +28,7 @@ mod dtc_decompile;
 mod global_search_selection_moves_within_pages;
 mod hardware;
 mod hardware_projects;
+mod hardware_text;
 mod header_status;
 mod inspector_shell_names_modes_and_orders_typed_sections;
 mod kernel_debug;

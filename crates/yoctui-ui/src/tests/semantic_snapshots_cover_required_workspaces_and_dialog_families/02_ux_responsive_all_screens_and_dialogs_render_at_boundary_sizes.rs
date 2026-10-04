@@ -178,6 +178,7 @@ fn dialog_families_render_on_narrow_supported_terminals() {
                 root: "/workspace/busybox".into(),
                 files: vec!["main.c".into()],
                 file_inventory_truncated: false,
+                context: Default::default(),
                 selection: 0,
                 focus: yoctui_model::RecipeEditorFocus::Files,
                 language: yoctui_model::SourceLanguage::C,

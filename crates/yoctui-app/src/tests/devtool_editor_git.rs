@@ -6,6 +6,7 @@ fn editor(focus: yoctui_model::RecipeEditorFocus) -> yoctui_model::RecipeEditor 
         root: "/workspace/busybox".into(),
         files: vec!["main.c".into()],
         file_inventory_truncated: false,
+        context: Default::default(),
         selection: 0,
         focus,
         language: yoctui_model::SourceLanguage::C,

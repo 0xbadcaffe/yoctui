@@ -19,7 +19,7 @@ use yoctui_model::{
 };
 mod projects;
 mod schematics;
-mod text;
+pub(crate) mod text;
 use text::{bounded_lines, readable_pdf_lines};
 
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
@@ -47,9 +47,9 @@ pub(crate) fn browse_directory(directory: &Path) -> Result<(PathBuf, Vec<Hardwar
         let path = child.path();
         let is_directory = metadata.is_dir();
         let kind = (!is_directory)
-            .then(|| HardwareDocumentKind::library_kind(&path))
+            .then(|| text::file_kind(&path, false))
             .flatten();
-        if !is_directory && kind.is_none() {
+        if !is_directory && (!metadata.is_file() || kind.is_none()) {
             continue;
         }
         entries.push(HardwareBrowserEntry {
@@ -72,15 +72,11 @@ async fn load_document(
     validate_source(&request.document.path, request.document.kind)?;
     match request.document.kind {
         HardwareDocumentKind::Text => {
-            let text = bounded_source_text(&request.document.path)?;
-            Ok((
-                1,
-                HardwarePreview::Text {
-                    lines: text.clone(),
-                    limitation: None,
-                },
-                text,
-            ))
+            let path = request.document.path;
+            let source =
+                tokio::task::spawn_blocking(move || text::source_editor_content(&path)).await??;
+            let searchable = bounded_lines(&source);
+            Ok((1, HardwarePreview::Source(source), searchable))
         }
         HardwareDocumentKind::Altium | HardwareDocumentKind::Expedition => {
             schematics::load_export(&request.document.path, request.page).await
@@ -101,7 +97,7 @@ fn validate_source(path: &Path, kind: HardwareDocumentKind) -> Result<()> {
     if metadata.file_type().is_symlink() || !metadata.is_file() {
         bail!("Hardware document must be a regular non-symlink file.");
     }
-    if HardwareDocumentKind::from_path(path) != Some(kind) {
+    if kind != HardwareDocumentKind::Text && HardwareDocumentKind::from_path(path) != Some(kind) {
         bail!("Hardware document extension changed or is unsupported.");
     }
     Ok(())
@@ -375,3 +371,7 @@ mod tests;
 #[cfg(test)]
 #[path = "tests/hardware_project_previews.rs"]
 mod project_preview_tests;
+
+#[cfg(test)]
+#[path = "tests/hardware_text.rs"]
+mod text_tests;

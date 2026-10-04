@@ -106,11 +106,19 @@ impl InteractiveRuntime {
                 Some(Effect::OpenInEditor(path)) => {
                     open_in_editor(&runtime.guard, &mut runtime.app, path.clone(), Some("vim"))
                         .await;
-                    if let Ok(content) = fs::read_to_string(path) {
-                        let _ = compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::LoadRecipeEditorExternalContent(content),
-                        );
+                    if let Some(editor) = editor {
+                        match crate::recipe_editor::read_source_editor_file(&editor, &path) {
+                            Ok(content) => {
+                                let _ = compatibility_workspace_action(
+                                    &mut runtime.app,
+                                    Action::LoadRecipeEditorExternalContent(content),
+                                );
+                            }
+                            Err(error) => {
+                                runtime.app.notification =
+                                    Some(format!("Could not reload source file: {error}"));
+                            }
+                        }
                     }
                 }
                 Some(Effect::Start(request)) => {

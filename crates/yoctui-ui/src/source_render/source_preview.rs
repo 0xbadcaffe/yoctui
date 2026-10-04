@@ -10,7 +10,7 @@ pub(crate) fn source_preview(content: &str, file_name: &str, app: &App) -> Text<
     if !bitbake_source && !markdown {
         return generic_source_preview(
             content,
-            yoctui_model::SourceLanguage::from_path(Path::new(file_name)),
+            yoctui_model::SourceLanguage::from_source(Path::new(file_name), content),
             app,
         );
     }

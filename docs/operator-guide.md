@@ -6,6 +6,22 @@ Yoctui has opened its build directory. Follow the guarded setup commands in the
 events remain authoritative; a visible row, filename, or log message is never
 treated as proof that an operation or artifact exists.
 
+## View and edit Hardware text files
+
+Hardware library and project folders support readable UTF-8 text files of any
+extension, including README, Makefile and extensionless scripts. Enter opens
+text in the built-in Vim-style editor. On a graphical document, `e` opens its
+readable source as text; Enter keeps the normal PDF/image/schematic viewer.
+Binary and special files cannot be edited as text. The source-editor limit is
+1 MiB, with an explicit error for larger files.
+
+Syntax highlighting follows the filename or a supported script shebang. Use
+`i` to insert, Esc for normal mode, arrows or `h/j/k/l` to navigate, Ctrl+F or
+`/` for file search, and Ctrl+S to save. Tab returns to the file list; Esc or
+`q` there closes back to Hardware. Save unsaved edits before closing. Saves
+preserve permissions and refuse conflicting disk changes, symlinks and paths
+outside the selected project. Hardware text is not a BitBake build target.
+
 ## View Hardware PDFs
 
 PDF pages need a terminal with SIXEL graphics enabled. Start Yoctui normally

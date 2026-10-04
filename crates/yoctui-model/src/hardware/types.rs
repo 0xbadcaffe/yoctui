@@ -8,6 +8,11 @@ pub const MAX_HARDWARE_RASTER_PIXELS: usize =
     MAX_HARDWARE_RASTER_EDGE as usize * MAX_HARDWARE_RASTER_EDGE as usize;
 pub const MAX_HARDWARE_QUERY_CHARS: usize = 256;
 
+pub fn hardware_source_is_text(text: &str) -> bool {
+    text.chars()
+        .all(|character| !character.is_control() || matches!(character, '\n' | '\r' | '\t'))
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum HardwareCategory {
@@ -74,7 +79,7 @@ impl HardwareDocumentKind {
 
     pub const fn label(self) -> &'static str {
         match self {
-            Self::Text => "TXT",
+            Self::Text => "Text",
             Self::Altium => "Altium schematic",
             Self::Expedition => "Xpedition schematic",
             Self::Pdf => "PDF",
@@ -85,12 +90,18 @@ impl HardwareDocumentKind {
     }
 
     pub fn project_kind(path: &Path) -> Option<Self> {
-        Self::from_path(path).filter(|kind| !matches!(kind, Self::Svg | Self::Raster))
+        match Self::from_path(path) {
+            Some(Self::Raster) => None,
+            Some(Self::Svg) | None => Some(Self::Text),
+            kind => kind,
+        }
     }
 
     pub fn library_kind(path: &Path) -> Option<Self> {
-        Self::from_path(path)
-            .filter(|kind| !matches!(kind, Self::Text | Self::Altium | Self::Expedition))
+        match Self::from_path(path) {
+            Some(Self::Altium | Self::Expedition) | None => Some(Self::Text),
+            kind => kind,
+        }
     }
 }
 
@@ -106,7 +117,9 @@ impl HardwareDocument {
         if !self.path.is_absolute() {
             return Err("Hardware document paths must be absolute.".into());
         }
-        if HardwareDocumentKind::from_path(&self.path) != Some(self.kind) {
+        if self.kind != HardwareDocumentKind::Text
+            && HardwareDocumentKind::from_path(&self.path) != Some(self.kind)
+        {
             return Err("Hardware document extension does not match its stored kind.".into());
         }
         Ok(())
@@ -187,6 +200,7 @@ impl HardwareRaster {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HardwarePreview {
+    Source(String),
     Text {
         lines: Vec<String>,
         limitation: Option<String>,
@@ -331,6 +345,7 @@ pub enum HardwareAction {
     ConfirmAdd,
     CancelBrowser,
     OpenSelected,
+    EditSelected,
     Reload,
     PreviewLoaded {
         generation: u64,

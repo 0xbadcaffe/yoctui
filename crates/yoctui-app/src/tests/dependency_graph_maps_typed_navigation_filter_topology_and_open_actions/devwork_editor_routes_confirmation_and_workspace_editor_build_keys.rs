@@ -7,6 +7,7 @@ fn devwork_editor_routes_confirmation_and_workspace_editor_build_keys() {
         root: "/workspace/busybox".into(),
         files: vec!["main.c".into()],
         file_inventory_truncated: false,
+        context: Default::default(),
         selection: 0,
         focus: yoctui_model::RecipeEditorFocus::Files,
         language: yoctui_model::SourceLanguage::C,

@@ -5,6 +5,14 @@ guarded atomic saves per the user's clarification. Original text/permissions,
 conflict/size/containment/stale-result guards and existing
 graphical/editable workflows retained. Focused tests, version bump, commit/push,
 optimized delivery required; no full suite or unrelated demo/CI queue resume.
+Implementation v0.1.311 verified: Hardware CLI/app/model/UI 19/6/14/7,
+Devtool editor19, atomic/workspace/runqueue/hints2/1/4/2, production rendering16
+(90 selected tests); strict affectedClippy/fmt/source2931/UI/roadmap/version PASS.
+34goldens identity-only and29derived rasters verified. Isolated real project
+worker/save integration retains full text/0750 mode, checks conflicts and unsafe
+paths; external Vim reload is bounded and never offers a Hardware recipe build.
+Source commit/push and optimized installation still pending. No full-suite,
+live-image, daemon restart, publication or broad demo acceptance claim.
 
 M114 bug override complete: DEMO-RUNQUEUE-COMPLETION-001 DONE (2026-10-04).
 Real job16 exit0 and retained do_build queue-only record reproduce Lost row.

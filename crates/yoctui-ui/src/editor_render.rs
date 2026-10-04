@@ -97,7 +97,8 @@ pub(crate) fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect) {
-    let integrated = area.width >= 150 && area.height >= 50;
+    let hardware = editor.context != yoctui_model::SourceEditorContext::Recipe;
+    let integrated = !hardware && area.width >= 150 && area.height >= 50;
     let [header, footer] = yoctui_app::workbench_chrome_heights(app, area.width, area.height);
     let navigator = yoctui_app::workbench_pane_widths(app, area.width, area.height)[0];
     let popup = if integrated {
@@ -120,7 +121,11 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     clear_popup(frame, app, popup);
     let mut outer = dialog_block(
         app,
-        format!("Recipe editor: {}", editor.recipe),
+        format!(
+            "{} editor: {}",
+            if hardware { "Source" } else { "Recipe" },
+            editor.recipe
+        ),
         DialogTone::Standard,
     );
     if app.menu.is_open() {
@@ -393,7 +398,12 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
                     editor.document.search_state().query
                 )
             } else {
-                "Structural diagnostics only; BitBake/compiler output remains authoritative".into()
+                if hardware {
+                    "File editing · Ctrl+S saves safely; external changes require reload".into()
+                } else {
+                    "Structural diagnostics only; BitBake/compiler output remains authoritative"
+                        .into()
+                }
             }));
             lines
         })
@@ -408,7 +418,11 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     );
     frame.render_widget(
         Paragraph::new(vec![
-            Line::from(if file_focus {
+            Line::from(if hardware && file_focus {
+                "Ctrl+S save · Enter edit · Esc/q close"
+            } else if hardware {
+                "Ctrl+S save · i insert · Esc normal/files · Tab files"
+            } else if file_focus {
                 "Ctrl+S save · Ctrl+B build recipe · Enter edit · Esc close"
             } else {
                 "Ctrl+S save · Ctrl+B build recipe · Tab files"

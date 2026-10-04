@@ -24,6 +24,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     root,
                     files,
                     file_inventory_truncated,
+                    context: SourceEditorContext::Recipe,
                     selection: 0,
                     focus: RecipeEditorFocus::Files,
                     language,
@@ -78,12 +79,24 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::LoadRecipeEditorExternalContent(content) => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+                let hardware = editor.context != SourceEditorContext::Recipe;
+                if hardware
+                    && (content.len() > TEXTAREA_MAX_BYTES || !hardware_source_is_text(&content))
+                {
+                    app.notification = Some(
+                        "Hardware source reload requires UTF-8 text within the 1 MiB editor limit."
+                            .into(),
+                    );
+                    return None;
+                }
                 editor.document.accept_external_edit(content);
                 editor.refresh_language_and_validation();
-                app.notification = Some(
+                app.notification = Some(if hardware {
+                    "External editor returned; review the source file changes.".into()
+                } else {
                     "External editor returned; review the diff, then Ctrl+B builds this recipe."
-                        .into(),
-                );
+                        .into()
+                });
             }
         }
         Action::FocusRecipeEditor(focus) => {
@@ -195,12 +208,21 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 editor.document.accept_external_text(content);
                 editor.document.set_mode(TextAreaMode::Normal);
                 editor.refresh_language_and_validation();
-                app.notification = Some("Recipe file saved. Press Esc to return to Yoctui.".into());
+                app.notification = Some(
+                    if editor.context == SourceEditorContext::Recipe {
+                        "Recipe file saved. Press Esc to return to Yoctui."
+                    } else {
+                        "Hardware source file saved. Press Esc to return to Yoctui."
+                    }
+                    .into(),
+                );
             }
         }
         Action::BeginRecipeEditorBuild => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog().cloned() {
-                if editor.is_dirty() {
+                if editor.context != SourceEditorContext::Recipe {
+                    app.notification = Some("Hardware files are not recipe build targets.".into());
+                } else if editor.is_dirty() {
                     app.notification =
                         Some("Save workspace changes before starting the recipe build.".into());
                 } else {

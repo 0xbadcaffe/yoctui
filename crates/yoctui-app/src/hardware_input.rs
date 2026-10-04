@@ -28,6 +28,13 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
         };
     }
     if let Some(viewer) = state.viewer.as_ref() {
+        if matches!(
+            viewer.preview,
+            Some(yoctui_model::HardwarePreview::Source(_))
+        ) && matches!(input, Input::Enter | Input::Char('e'))
+        {
+            return hardware(HardwareAction::Reload);
+        }
         if viewer.searching {
             return match input {
                 Input::Esc | Input::Enter => hardware(HardwareAction::FinishSearch),
@@ -38,6 +45,7 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
         }
         return match input {
             Input::Esc | Input::Backspace => hardware(HardwareAction::CloseViewer),
+            Input::Char('e') => hardware(HardwareAction::EditSelected),
             Input::PageUp | Input::Char('[') => hardware(HardwareAction::ChangePage { delta: -1 }),
             Input::PageDown | Input::Char(']') => hardware(HardwareAction::ChangePage { delta: 1 }),
             Input::Home => hardware(HardwareAction::FirstPage),
@@ -72,6 +80,13 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
         };
     }
     if state.projects.visible {
+        if input == Input::Char('e')
+            && state.projects.form.is_none()
+            && state.projects.import_browser.is_none()
+            && !state.projects.loading
+        {
+            return hardware(HardwareAction::EditSelected);
+        }
         return projects::action(app, input);
     }
     if let Some(browser) = state.browser.as_ref() {
@@ -103,6 +118,7 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
         };
     }
     match input {
+        Input::Char('e') => hardware(HardwareAction::EditSelected),
         Input::Char('p') => hardware(HardwareAction::Project(
             yoctui_model::HardwareProjectAction::Toggle,
         )),

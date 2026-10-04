@@ -163,6 +163,7 @@ pub struct RecipeEditor {
     pub root: PathBuf,
     pub files: Vec<PathBuf>,
     pub file_inventory_truncated: bool,
+    pub context: SourceEditorContext,
     pub selection: usize,
     pub focus: RecipeEditorFocus,
     pub language: SourceLanguage,
@@ -176,6 +177,14 @@ pub enum RecipeEditorFocus {
     #[default]
     Files,
     Document,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SourceEditorContext {
+    #[default]
+    Recipe,
+    HardwareLibrary,
+    HardwareProject,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -199,6 +208,26 @@ pub enum SourceLanguage {
 }
 
 impl SourceLanguage {
+    pub fn from_source(path: &Path, text: &str) -> Self {
+        let language = Self::from_path(path);
+        if language != Self::PlainText {
+            return language;
+        }
+        let Some(shebang) = text.lines().next().and_then(|line| line.strip_prefix("#!")) else {
+            return language;
+        };
+        for token in shebang.split_whitespace() {
+            match token.rsplit('/').next().unwrap_or(token) {
+                "python" | "python2" | "python3" => return Self::Python,
+                "sh" | "bash" | "dash" | "zsh" | "fish" => return Self::Shell,
+                "node" | "nodejs" => return Self::JavaScript,
+                "env" | "-S" => continue,
+                _ => break,
+            }
+        }
+        language
+    }
+
     pub fn from_path(path: &Path) -> Self {
         let name = path
             .file_name()

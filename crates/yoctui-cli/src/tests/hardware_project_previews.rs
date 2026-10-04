@@ -8,7 +8,7 @@ async fn hardware_project_background_worker_installs_typed_browse_results() {
         NEXT_TEMPORARY.fetch_add(1, Ordering::Relaxed)
     ));
     fs::create_dir(&root).unwrap();
-    fs::write(root.join("artifact.bin"), "stored only").unwrap();
+    fs::write(root.join("artifact.bin"), [0, 1, 2, 255]).unwrap();
     let mut app = App::new(32, 4096);
     let mut io = HardwareIo::default();
     let effect = yoctui_model::update(
@@ -47,7 +47,7 @@ async fn hardware_project_txt_is_searchable_and_binary_schematic_has_an_honest_l
     ));
     fs::create_dir(&root).unwrap();
     let txt = root.join("notes.txt");
-    fs::write(&txt, "Bootloader complete\nKernel testing\x1b\n").unwrap();
+    fs::write(&txt, "Bootloader complete\nKernel testing\n").unwrap();
     let request = HardwareLoadRequest {
         generation: 1,
         document: yoctui_model::HardwareDocument {
@@ -61,10 +61,7 @@ async fn hardware_project_txt_is_searchable_and_binary_schematic_has_an_honest_l
     assert_eq!(searchable, vec!["Bootloader complete", "Kernel testing"]);
     assert!(matches!(
         preview,
-        HardwarePreview::Text {
-            limitation: None,
-            ..
-        }
+        HardwarePreview::Source(ref content) if content == "Bootloader complete\nKernel testing\n"
     ));
     let schematic = root.join("board.SchDoc");
     fs::write(&schematic, [0xd0, 0xcf, 0x11, 0xe0]).unwrap();

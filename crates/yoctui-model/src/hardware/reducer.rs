@@ -4,9 +4,41 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
     if let HardwareAction::Project(action) = action {
         return projects::reduce_hardware_project(app, action);
     }
-    if matches!(action, HardwareAction::OpenSelected) {
-        let document = app.hardware.selected_document()?.clone();
-        return viewer::open(app, document, None);
+    if matches!(
+        action,
+        HardwareAction::OpenSelected | HardwareAction::EditSelected
+    ) {
+        let edit = matches!(action, HardwareAction::EditSelected);
+        let (mut document, root) = if edit && let Some(viewer) = &app.hardware.viewer {
+            (
+                viewer.document.clone(),
+                app.hardware.project_view_root.clone(),
+            )
+        } else if edit && app.hardware.projects.visible {
+            let project = app.hardware.projects.project.as_ref()?;
+            let entry = app
+                .hardware
+                .projects
+                .entries
+                .get(app.hardware.projects.selection)?;
+            if entry.is_directory {
+                return None;
+            }
+            (
+                HardwareDocument {
+                    path: entry.path.clone(),
+                    category: HardwareCategory::Other,
+                    kind: HardwareDocumentKind::Text,
+                },
+                Some(project.root.clone()),
+            )
+        } else {
+            (app.hardware.selected_document()?.clone(), None)
+        };
+        if edit {
+            document.kind = HardwareDocumentKind::Text;
+        }
+        return viewer::open(app, document, root);
     }
     let state = &mut app.hardware;
     match action {
@@ -171,7 +203,9 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
             )));
         }
         HardwareAction::CancelBrowser => state.browser = None,
-        HardwareAction::OpenSelected => unreachable!("viewer creation routed above"),
+        HardwareAction::OpenSelected | HardwareAction::EditSelected => {
+            unreachable!("viewer creation routed above")
+        }
         HardwareAction::Reload => {
             let viewer = state.viewer.as_mut()?;
             viewer.generation = next_generation(&mut viewer.generation);
@@ -189,6 +223,16 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
         } => {
             let viewer = state.viewer.as_mut()?;
             if viewer.generation != generation {
+                return None;
+            }
+            if let HardwarePreview::Source(content) = &preview
+                && (viewer.document.kind != HardwareDocumentKind::Text
+                    || content.len() > TEXTAREA_MAX_BYTES
+                    || !hardware_source_is_text(content))
+            {
+                viewer.loading = false;
+                viewer.error =
+                    Some("Hardware source is binary or exceeds the 1 MiB editor limit.".into());
                 return None;
             }
             if let HardwarePreview::Raster(raster) = &preview
@@ -211,6 +255,7 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
             viewer.error = None;
             viewer.rebuild_matches();
             state.missing_paths.remove(&viewer.document.path);
+            viewer::edit_loaded_source(app);
         }
         HardwareAction::PreviewFailed {
             generation,

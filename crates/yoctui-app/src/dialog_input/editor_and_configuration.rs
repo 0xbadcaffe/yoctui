@@ -1,6 +1,14 @@
 pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> Option<Action> {
     use yoctui_model::{RecipeEditorFocus as Focus, TextAreaMode};
 
+    if editor.context != yoctui_model::SourceEditorContext::Recipe && key == Input::CtrlB {
+        return None;
+    }
+    if editor.context != yoctui_model::SourceEditorContext::Recipe
+        && !editor.searching && editor.document.mode() != TextAreaMode::Insert
+        && key == Input::Char('/') {
+        return Some(Action::BeginRecipeEditorSearch);
+    }
     match key {
         Input::Alt('f') | Input::CtrlShiftF => {
             return Some(Action::OpenRecipeEditorWorkspaceSearch);

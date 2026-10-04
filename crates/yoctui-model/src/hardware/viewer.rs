@@ -44,3 +44,52 @@ pub(super) fn load_effect(state: &HardwareState, request: HardwareLoadRequest) -
         None => HardwareEffect::Load(request),
     })
 }
+
+pub(super) fn edit_loaded_source(app: &mut App) {
+    if app.screen != Screen::Hardware
+        || app.active_dialog().is_some()
+        || app.menu.is_open()
+        || app.command_palette_open
+        || app.hardware.browser.is_some()
+        || app.hardware.projects.form.is_some()
+        || app.hardware.projects.import_browser.is_some()
+    {
+        return;
+    }
+    let Some(viewer) = app.hardware.viewer.as_ref() else {
+        return;
+    };
+    let Some(HardwarePreview::Source(content)) = viewer.preview.as_ref() else {
+        return;
+    };
+    let path = &viewer.document.path;
+    let Some(parent) = path.parent() else {
+        return;
+    };
+    let (root, context) = app.hardware.project_view_root.as_ref().map_or_else(
+        || (parent.to_path_buf(), SourceEditorContext::HardwareLibrary),
+        |root| (root.clone(), SourceEditorContext::HardwareProject),
+    );
+    let Ok(relative) = path.strip_prefix(&root) else {
+        return;
+    };
+    let mut editor = RecipeEditor {
+        recipe: format!("Hardware: {}", viewer.document.name()),
+        root: root.clone(),
+        files: vec![relative.to_path_buf()],
+        file_inventory_truncated: false,
+        context,
+        selection: 0,
+        focus: RecipeEditorFocus::Document,
+        language: SourceLanguage::from_source(path, content),
+        document: TextAreaState::new(content.clone()),
+        searching: false,
+        pending_search_position: None,
+    };
+    editor.refresh_language_and_validation();
+    editor.document.select_position(0, 0, false);
+    app.hardware.viewer = None;
+    app.hardware.project_view_root = None;
+    open_dialog(app, Dialog::RecipeEditor(editor));
+    synchronize_focus(app);
+}

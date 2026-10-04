@@ -88,7 +88,9 @@ fn hardware_project_navigation_restricts_previews_and_preserves_the_library() {
     assert!(reopened.generation > request.generation);
     let _ = update(&mut app, Action::Hardware(HardwareAction::CloseViewer));
     app.hardware.projects.entries[0].path = "/data/board/data.bin".into();
-    // Even a misleading backend row kind cannot authorize another format.
+    // The filesystem adapter reports binary content as Stored only; readable
+    // .bin files are now text candidates and must be revalidated on load.
+    app.hardware.projects.entries[0].kind = None;
     assert!(send(&mut app, HardwareProjectAction::Open).is_none());
     assert!(
         app.hardware
@@ -143,7 +145,7 @@ fn hardware_project_name_progress_and_preview_policy_are_bounded() {
     );
     assert_eq!(
         HardwareDocumentKind::library_kind(Path::new("notes.txt")),
-        None
+        Some(HardwareDocumentKind::Text)
     );
 }
 

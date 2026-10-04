@@ -24,6 +24,11 @@ guard. Project saves revalidate registered-root containment and non-symlink path
 The editor traps input; Hardware text is not a recipe target, so recipe-build
 actions are disabled. The original complete text, including final newlines, is
 the editing baseline; merely opening a file does not normalize or rewrite it.
+Hardware reuses the existing two-pane files/document editor and validation/diff
+footer, with no recipe-build Inspector or recipe-build hint.
+`e` on a Hardware file or graphical preview explicitly opens its readable source
+as text, regardless of suffix; binary contents fail visibly rather than being
+decoded or executed. Enter retains each graphical document's default viewer.
 No daemon/build environment or new capital-letter shortcut is required. Existing
 editable recipe/source workflows and PDF/image/schematic viewers are unchanged.
 
@@ -544,8 +549,8 @@ The library stores canonical absolute paths and categories in the private
 client session file. An add or remove is persisted atomically when it succeeds,
 and the complete valid library is restored after application restart and host
 reboot. Missing documents remain listed with a visible Missing state so the
-operator may repair the mount/path or remove the entry; Yoctui never copies or
-modifies the source document.
+operator may repair the mount/path or remove the entry. Adding or viewing never
+copies or modifies source documents; explicit text-editor saves are operator-authored changes.
 
 Enter opens the selected document inside Yoctui. While a document is open, the
 Navigator remains visible beside the largest available document workspace and

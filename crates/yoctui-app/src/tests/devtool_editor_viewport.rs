@@ -9,6 +9,7 @@ fn devtool_editor_viewport_routes_complete_tree_navigation_and_vim_insert_mode()
             .map(|index| format!("file-{index}.rs").into())
             .collect(),
         file_inventory_truncated: false,
+        context: Default::default(),
         selection: 12,
         focus: yoctui_model::RecipeEditorFocus::Files,
         language: yoctui_model::SourceLanguage::Rust,

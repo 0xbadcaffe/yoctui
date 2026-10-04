@@ -75,6 +75,11 @@ pub(super) fn validate_preview(root: &Path, path: &Path) -> Result<()> {
     validate_preview_in_store(&store, root, path)
 }
 
+pub(super) fn validate_editor_directory(root: &Path) -> Result<()> {
+    directory(root)?;
+    Ok(())
+}
+
 fn validate_preview_in_store(store: &Path, root: &Path, path: &Path) -> Result<()> {
     let root = directory(root)?;
     anyhow::ensure!(
@@ -92,7 +97,7 @@ fn validate_preview_in_store(store: &Path, root: &Path, path: &Path) -> Result<(
         "preview file escapes project root"
     );
     anyhow::ensure!(
-        HardwareDocumentKind::project_kind(path).is_some(),
+        text::file_kind(path, true).is_some() || text::source_editor_content(path).is_ok(),
         "file is stored only; preview format is not supported"
     );
     regular_file(path)?;
@@ -225,7 +230,11 @@ fn entries(path: &Path, project: bool) -> Result<Vec<HardwareProjectEntry>> {
             path: child.path(),
             is_directory: metadata.is_dir(),
             size: metadata.len(),
-            kind: HardwareDocumentKind::project_kind(&child.path()),
+            kind: if metadata.is_file() {
+                text::file_kind(&child.path(), true)
+            } else {
+                None
+            },
         });
     }
     entries.sort_by_key(|entry| (!entry.is_directory, entry.name.to_lowercase()));

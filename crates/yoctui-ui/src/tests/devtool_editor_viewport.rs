@@ -64,6 +64,7 @@ fn devtool_editor_viewport_marks_a_limited_inventory_and_known_extensions() {
         root: "/workspace/demo".into(),
         files: vec!["src/main.rs".into(), "config/settings.toml".into()],
         file_inventory_truncated: true,
+        context: Default::default(),
         selection: 0,
         focus: yoctui_model::RecipeEditorFocus::Files,
         language: yoctui_model::SourceLanguage::Rust,

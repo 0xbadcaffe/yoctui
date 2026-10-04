@@ -115,7 +115,7 @@ fn render_library(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(
         Paragraph::new(vec![
             Line::from(detail),
-            Line::from("←/→ category  ↑/↓ select  Enter view  a add  d remove  r reload  p Projects  F12 menu"),
+            Line::from("←/→ category  ↑/↓ select  Enter view  e edit text  a add  d remove  r reload  p Projects  F12 menu"),
         ])
         .style(Style::default().fg(palette.secondary_foreground)),
         rows[2],
@@ -274,6 +274,13 @@ fn render_viewer(
         render_text_preview(frame, app, rows[1], viewer, &viewer.searchable_text, None);
     } else if let Some(preview) = viewer.preview.as_ref() {
         match preview {
+            yoctui_model::HardwarePreview::Source(content) => {
+                frame.render_widget(
+                    Paragraph::new(source_preview(content, &viewer.document.name(), app))
+                        .scroll((viewer.pan_y.min(u16::MAX as usize) as u16, 0)),
+                    rows[1],
+                );
+            }
             yoctui_model::HardwarePreview::Text { lines, limitation } => {
                 render_text_preview(frame, app, rows[1], viewer, lines, limitation.as_deref())
             }
@@ -313,7 +320,7 @@ fn render_viewer(
         )
     };
     frame.render_widget(Paragraph::new(vec![
-        Line::from("Esc/Backspace library  Tab Navigator  PgUp/PgDn or wheel page  +/- zoom  0 fit  arrows/hjkl pan  / search  n/Alt+n match  v view  r reload"),
+        Line::from("Esc/Backspace library  e edit text  Tab Navigator  PgUp/PgDn or wheel page  +/- zoom  0 fit  arrows/hjkl pan  / search  n/Alt+n match  v view  r reload"),
         Line::styled(search, Style::default().fg(palette.accent)),
     ]), rows[2]);
 }

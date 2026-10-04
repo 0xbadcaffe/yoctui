@@ -264,7 +264,7 @@ impl RecipeEditor {
             .files
             .get(self.selection)
             .map_or(SourceLanguage::PlainText, |path| {
-                SourceLanguage::from_path(path)
+                SourceLanguage::from_source(path, &self.document.text)
             });
         self.document.set_validation(source_structural_validation(
             self.language,

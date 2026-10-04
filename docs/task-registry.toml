@@ -5,7 +5,7 @@ status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 [[task]]
 id = "HARDWARE-TEXT-VIEW-001"
 milestone = "M115"
-title = "View arbitrary-extension and extensionless Hardware text with highlighted Vim-style controls"
+title = "View and edit arbitrary-extension and extensionless Hardware text with highlighting"
 status = "IN_PROGRESS"
 priority = 3580
 required = true
