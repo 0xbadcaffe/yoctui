@@ -1,8 +1,20 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
+**ID:** RELEASE-README-URLS-001
+**Title:** Make README images and documentation links registry-safe
 **Status:** IN_PROGRESS
+
+2026-10-04 user override: fix crates.io README links, repair GitHub CI and publish
+the existing0.1.315 public crate graph. M118 atomic queue supersedes the deferred
+demo handoff below. No product version bump, presentation changes, live image
+build, daemon restart or user-session termination. CI may run its complete
+existing gates remotely; local verification is scoped plus packaging.
+First verify README/header/gallery/anchors, all23 unchanged raster hashes and
+compatibility structure. Then repair tracked-change version policy and split IPC
+source checks, verify actual hosted CI, and publish clean315 with registry proof.
+Commands: ./scripts/test-readme-quickstart.sh;
+python3 scripts/render-readme-screenshots.py --check;
+./scripts/verify-compatibility.sh --structure-only; ./scripts/verify-roadmap.sh.
 
 Deferred handoff only: the scoped README request is complete. Do not resume
 unrelated demo/CI/reboot/publication work in this documentation turn.

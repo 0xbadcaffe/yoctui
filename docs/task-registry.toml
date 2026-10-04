@@ -3,6 +3,50 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "RELEASE-README-URLS-001"
+milestone = "M118"
+title = "Make README images and documentation links registry-safe"
+status = "IN_PROGRESS"
+priority = 3610
+required = true
+depends_on = []
+verify = ["./scripts/test-readme-quickstart.sh","python3 scripts/render-readme-screenshots.py --check"]
+notes = "Use absolute raw GitHub image URLs and absolute repository file links; preserve screenshot pixels and strengthen local/registry link checks."
+
+[[task]]
+id = "CI-VERSION-SCOPE-001"
+milestone = "M118"
+title = "Check version bumps for product changes rather than documentation-only commits"
+status = "NOT_STARTED"
+priority = 3609
+required = true
+depends_on = ["RELEASE-README-URLS-001"]
+verify = ["python3 -m unittest scripts/test_version_bump.py","python3 scripts/check-version-bump.py"]
+notes = "Always check internal version coherence; use tracked diff and require bumps for product changes, ignoring untracked user artifacts. Cover clean, dirty, docs-only, runtime changes and downgrades."
+
+[[task]]
+id = "CI-IPC-MODULES-001"
+milestone = "M118"
+title = "Follow split transport modules in IPC source checks"
+status = "NOT_STARTED"
+priority = 3608
+required = true
+depends_on = ["CI-VERSION-SCOPE-001"]
+verify = ["python3 -m unittest scripts/test_ipc_source_contracts.py","./scripts/verify-performance-ci-fast.sh"]
+notes = "Read actual transport module tree while retaining bounded ingress, slow-client isolation and negative mutation checks."
+
+[[task]]
+id = "RELEASE-PUBLISH-315-001"
+milestone = "M118"
+title = "Publish and verify public crate graph version 0.1.315"
+status = "NOT_STARTED"
+priority = 3607
+required = true
+depends_on = ["CI-IPC-MODULES-001"]
+verify = ["./scripts/verify-cratesio-package.sh","cargo publish --locked --dry-run --workspace","Manual: clean source, authenticated batch publication and independent public registry version/archive checksum verification"]
+notes = "Publish only seven public crates, keep private packages unpublished, version remains0.1.315. Actual hosted CI verification required before publication. No user daemon/session or presentation changes."
+
+[[task]]
 id = "README-QUICKSTART-NAV-001"
 milestone = "M117"
 title = "Shorten README and verify installation build and section navigation"

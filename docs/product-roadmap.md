@@ -1,5 +1,13 @@
 # Yoctui Product Roadmap
 
+## M118 — registry-safe README, CI repair and publication315
+
+User override activates README URLs, tracked-product version checks and
+module-aware IPC contracts, followed by actual hosted CI and verified public
+publication of existing0.1.315. Product source and screenshot pixels remain
+unchanged. Runtime changes still require version bumps; documentation/CI-only
+changes do not. Existing demo/reboot/board work remains deferred.
+
 ## M117 — concise README installation and navigation
 
 README-QUICKSTART-NAV-001 DONE: reviewed install/build/use instructions, linked

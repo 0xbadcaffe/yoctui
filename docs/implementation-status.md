@@ -1,3 +1,7 @@
+M118 IN_PROGRESS: scoped user request repairs registry README URLs and GitHub
+CI before publishing0.1.315. Atomic tasks are registered; no publication or CI
+success claimed yet. No presentation, runtime, daemon/session or image changes.
+
 M117 README-QUICKSTART-NAV-001 DONE: reviewed install/build/use instructions,
 top links to every main section and shorter reference-linked walkthroughs.
 Optimized Cargo two-job install/build/PATH, published vs source versions, daemon
