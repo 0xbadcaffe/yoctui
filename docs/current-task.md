@@ -1,8 +1,14 @@
 # Current Task
 
-**ID:** CI-IPC-MODULES-001
-**Title:** Follow split transport modules in IPC source checks
+**ID:** CI-HISTORICAL-IPC-001
+**Title:** Verify retained IPC source hashes against their original revision and recorded patch
 **Status:** IN_PROGRESS
+
+Additional docs-mask regression PASS; product changes cannot be hidden by dirty
+documentation. Historical IPC task reconstructs recorded revision plus patch,
+preserving old evidence bytes; verify mutation tests, actual backpressure/fast
+gate and hosted CI. Rust1.99 macro lint false-positive requires separate pinned
+validated1.97 release-toolchain child; public runtime remains315 unchanged.
 
 Version scope DONE: seven tests including isolated real-Git clean/dirty product
 and docs cases, untracked captures/new source, valid bumps, downgrades and

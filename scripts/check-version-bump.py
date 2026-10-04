@@ -53,7 +53,7 @@ def baseline_cargo_toml() -> tuple[str, bytes, list[str]] | None:
         path for path in run_git("ls-files", "--others", "--exclude-standard").splitlines()
         if product_path(path)
     ]
-    revision = "HEAD" if changed else "HEAD^"
+    revision = "HEAD" if any(product_path(path) for path in changed) else "HEAD^"
     probe = subprocess.run(
         ["git", "show", f"{revision}:Cargo.toml"],
         cwd=ROOT,
@@ -63,7 +63,7 @@ def baseline_cargo_toml() -> tuple[str, bytes, list[str]] | None:
     if probe.returncode:
         return None
     if revision == "HEAD^":
-        changed = run_git("diff", "--name-only", revision, "HEAD").splitlines()
+        changed += run_git("diff", "--name-only", revision, "HEAD").splitlines()
     return revision, probe.stdout, changed
 
 

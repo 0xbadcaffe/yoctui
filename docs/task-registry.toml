@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "CI-VERSION-DIRTY-DOCS-001"
+milestone = "M118"
+title = "Prevent dirty documentation from masking a committed product bump failure"
+status = "DONE"
+priority = 3615
+required = true
+depends_on = ["CI-VERSION-SCOPE-001"]
+verify = ["python3 -m unittest scripts/test_version_bump.py", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Additional local regression review: docs-only working edits must still validate the last committed product change against HEAD parent. No runtime/version change."
+
+[[task]]
 id = "RELEASE-README-URLS-001"
 milestone = "M118"
 title = "Make README images and documentation links registry-safe"
@@ -42,7 +53,29 @@ title = "Publish and verify public crate graph version 0.1.315"
 status = "NOT_STARTED"
 priority = 3607
 required = true
-depends_on = ["CI-IPC-MODULES-001"]
+depends_on = ["CI-IPC-MODULES-001", "CI-VERSION-DIRTY-DOCS-001", "CI-RELEASE-TOOLCHAIN-001", "CI-HISTORICAL-IPC-001"]
+
+[[task]]
+id = "CI-RELEASE-TOOLCHAIN-001"
+milestone = "M118"
+title = "Pin release CI to validated Rust1.97 while upstream macro lint regresses"
+status = "NOT_STARTED"
+priority = 3614
+required = true
+depends_on = ["CI-VERSION-DIRTY-DOCS-001"]
+verify = ["./scripts/check-ci.sh", "Manual: all hosted CI jobs use Rust1.97.0; strict Clippy and full existing gates pass"]
+notes = "Hosted stable1.99 triggers upstream Clippy17529 double_must_use macro false positive; no runtime edit or blanket lint suppression. Deterministic release toolchain matches validated package compiler."
+
+[[task]]
+id = "CI-HISTORICAL-IPC-001"
+milestone = "M118"
+title = "Verify retained IPC source hashes against their original revision and recorded patch"
+status = "IN_PROGRESS"
+priority = 3613
+required = true
+depends_on = ["CI-VERSION-DIRTY-DOCS-001"]
+verify = ["python3 -m unittest scripts/test_ipc_historical_sources.py", "./scripts/verify-ipc-continuity.sh --backpressure", "./scripts/verify-performance-ci-fast.sh"]
+notes = "Preserve historical manifests, source patches, hashes and observations unchanged. Reconstruct exact recorded sources in isolated temporary Git tree; reject patch/source/hash mutations. Continue separate fresh production-path gate."
 verify = ["./scripts/verify-cratesio-package.sh","cargo publish --locked --dry-run --workspace","Manual: clean source, authenticated batch publication and independent public registry version/archive checksum verification"]
 notes = "Publish only seven public crates, keep private packages unpublished, version remains0.1.315. Actual hosted CI verification required before publication. No user daemon/session or presentation changes."
 

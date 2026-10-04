@@ -10,8 +10,9 @@ slow-client isolation requirements remain mandatory.
 Version coherence is always checked, including internal dependencies and the
 package verifier. Product source/bridge/manifests/lockfile changes require a
 numeric increase; version downgrades always fail. Documentation and CI-only
-commits may retain the product version. Tracked working-tree changes compare
-against HEAD; clean commits compare against HEAD's parent. New untracked product
+commits may retain the product version. Product working-tree changes compare
+against HEAD; otherwise the last commit compares against HEAD's parent, including
+when only documentation is dirty. New untracked product
 files count, but unrelated untracked artifacts never mask a committed change.
 Isolated real-Git regression repositories cover these decisions.
 
