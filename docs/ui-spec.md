@@ -1,5 +1,26 @@
 # Yoctui UI Specification
 
+### Hardware text files in the built-in Vim-style viewer
+
+Hardware Projects and the document library admit bounded, readable regular text
+files regardless of extension, including extensionless README/Makefile/scripts.
+The filesystem adapter detects readable text rather than guessing from a suffix;
+binary/special/symlink files are never opened as text. Unknown binary files remain
+Stored only in projects and are excluded from the library add browser. Loading
+revalidates content, size and project containment; changed/missing/oversized files
+report an explicit error, not a partial or silently truncated successful view.
+
+Enter opens text in the existing built-in Vim-style source viewer in read-only
+mode, with syntax highlighting enabled for the recognized language. Filename
+language rules and an extensionless script's supported interpreter shebang select
+syntax; unknown text remains readable plain text. The existing 1 MiB source-editor
+limit applies. Arrows/h/j/k/l, paging and Home/End navigate; / or Ctrl+F searches,
+n/Alt+n selects matches, selection/copy remain available, and Esc/q closes back
+to the same Hardware list/project selection. The viewer traps input; insert,
+delete, paste, save, external editing, GitUI and recipe-build actions are disabled.
+No daemon/build environment or new capital-letter shortcut is required. Existing
+editable recipe/source workflows and PDF/image/schematic viewers are unchanged.
+
 BitBake no-execution tasks such as an image's aggregate `do_build` render
 `Succeeded` when an authoritative runqueue completion is received, even when
 there was no worker TaskStarted/TaskSucceeded pair. Duplicate worker/runqueue
@@ -465,8 +486,9 @@ Inside a project, Enter opens a directory or views a supported file; Backspace
 goes to the parent, then the project list. `n` creates a named subfolder in the
 current directory. `a` opens a trapped import browser listing all regular files
 and directories; Enter navigates/copies the selected file into the current
-project folder, Esc cancels. Files of any type may be stored, but project viewing
-is restricted to TXT, PDF, KiCad, Altium and Xpedition schematics. Other files
+project folder, Esc cancels. Files of any type may be stored; readable text of any
+extension or no extension uses the built-in read-only Vim-style viewer. Existing
+PDF, KiCad, Altium and Xpedition schematic previews remain available. Other files
 remain listed with Stored only, never launched or executed. Imports are bounded
 to 256 MiB and never overwrite existing names. Symlinks/special files and paths
 outside the selected project are refused; internal manifest files are hidden.
@@ -485,7 +507,7 @@ of BitBake completion, and saved in the project's private manifest. Invalid
 names, permissions, collisions and persistence failures stay visible; failed
 saves never claim completion. Narrow terminals degrade without panic.
 
-TXT previews are bounded/searchable text. PDF and KiCad viewing reuse the
+Text previews use the bounded/searchable highlighted source viewer. PDF and KiCad viewing reuse the
 existing embedded viewer. Altium/Xpedition source files are preserved; a sibling
 same-stem PDF export supplies graphical viewing where a native converter is
 unavailable, with an explicit limitation instead of pretending to render a
@@ -502,7 +524,8 @@ explains how to add a document.
 
 `a` or the Hardware contextual action opens a trapped local file browser. The
 browser starts at the last browsed directory (or the user's home directory),
-shows directories plus supported documents, permits parent traversal, and
+shows directories plus supported graphical documents and readable text files,
+permits parent traversal, and
 requires the operator to choose one of Board, SoC, Memory, Peripherals,
 Sensors, or Other before adding the selected regular file. Supported documents
 are PDF, KiCad schematic (`.kicad_sch` and legacy `.sch`), SVG, and common

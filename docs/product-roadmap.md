@@ -1,5 +1,15 @@
 # Yoctui Product Roadmap
 
+## M115 — Hardware arbitrary text viewing
+
+2026-10-04 user override: HARDWARE-TEXT-VIEW-001 IN_PROGRESS. Admit readable
+regular text of any extension or no extension into Hardware library/projects;
+use the existing built-in Vim-style source surface with syntax highlighting and
+read-only navigation/search/copy. Filesystem content/size/containment safeguards,
+stale-result ownership and existing graphical/normal-editing workflows must hold.
+Focused verification only; bump/commit/push/optimized delivery. Broader demo/CI/
+README/operator-guide/reboot/publication work remains deferred.
+
 ## M114 — OpenBMC presentation/demo release polish
 
 2026-10-04 user bug override: DEMO-RUNQUEUE-COMPLETION-001 DONE.

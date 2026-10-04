@@ -1,3 +1,10 @@
+M115 current: HARDWARE-TEXT-VIEW-001 IN_PROGRESS (2026-10-04 user override).
+Hardware Projects/library readable arbitrary-extension/extensionless text will
+reuse the built-in Vim-style source viewer with explicit read-only controls and
+syntax highlighting. Content/size/containment/stale-result guards and existing
+graphical/editable workflows retained. Focused tests, version bump, commit/push,
+optimized delivery required; no full suite or unrelated demo/CI queue resume.
+
 M114 bug override complete: DEMO-RUNQUEUE-COMPLETION-001 DONE (2026-10-04).
 Real job16 exit0 and retained do_build queue-only record reproduce Lost row.
 Native noexec task fires runQueueTaskCompleted, omitted by the bridge mask and

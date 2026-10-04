@@ -1,8 +1,38 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
+**ID:** HARDWARE-TEXT-VIEW-001
+**Title:** View arbitrary-extension and extensionless Hardware text with highlighted Vim-style controls
 **Status:** IN_PROGRESS
+
+2026-10-04 user override: implement Hardware text viewing in both Projects and
+the document library. Pause unrelated demo/CI/docs queue. Dependencies
+HARDWARE-PROJECT-UI-001 and DEMO-RUNQUEUE-COMPLETION-001 are DONE. CLI filesystem
+adapters classify bounded readable regular files by content, revalidate on load,
+and retain project containment/no-symlink/no-special-file safeguards. Reuse the
+built-in typed source editor in read-only mode, recognized syntax including
+extensionless shebangs, Vim-style navigation/search/copy and close-to-selection.
+Preserve graphical viewers and normal editable recipe/source behavior. Add
+positive/binary/size/path/stale-result/read-only/reducer/input/TestBackend checks.
+Standing workflow: bump, commit/push, source-bound optimized build/install with
+two jobs. Full suite remains deferred; do not restart the user's current daemon
+or terminate sessions. No image build, publication or presentation changes.
+
+```bash
+cargo test --locked -p yoctui-model hardware
+cargo test --locked -p yoctui-app hardware
+cargo test --locked -p yoctui-ui hardware
+cargo test --locked -p yoctui --bin yoctui hardware
+cargo test --locked -p yoctui-model -p yoctui-app -p yoctui-ui devtool_editor
+cargo fmt --all --check
+cargo clippy --locked -p yoctui-model -p yoctui-app -p yoctui-ui -p yoctui --all-targets --all-features -- -D warnings
+python3 scripts/check-library-layout.py
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+python3 scripts/check-version-bump.py
+cargo build --release --locked -p yoctui --bin yoctui -j 2
+```
+
+## Deferred prior demo handoff
 
 Deferred handoff only: the 2026-10-04 scoped bug request is complete. Do not
 resume the broad demo/README/operator-guide/CI/reboot queue in this bug turn.

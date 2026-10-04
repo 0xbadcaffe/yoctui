@@ -1,5 +1,19 @@
 # Yoctui Architecture
 
+## Hardware arbitrary-text viewing boundary
+
+CLI Hardware filesystem adapters perform a bounded regular-file text probe for
+browser/project rows, and fully revalidate UTF-8/binary controls, the existing
+source-editor size limit and project containment when loading. Unknown extensions
+are candidates, not proof of readable content. Existing graphical kind dispatch,
+proprietary schematic fallbacks, persistence and daemon wire types are unchanged.
+The generation-correlated Hardware result opens the existing typed RecipeEditor
+surface in explicit read-only mode only while its owning Hardware view remains
+current. Model/app both exclude mutating, external-editor and recipe-build actions;
+normal editable sources retain their existing behavior. UI reuses existing source
+highlighting and Vim-style cursor/search state, with truthful read-only hints.
+Filename/shebang language selection is pure model logic, not UI filesystem I/O.
+
 ## Runqueue terminal task correction
 
 The Python Tinfoil boundary subscribes to runQueueTaskCompleted and
@@ -5012,7 +5026,7 @@ private, bounded, atomically replaced; directory navigation validates containmen
 and refuses symlinks. Import stages a bounded copy privately and exclusively
 publishes the completed file without overwrites, never shell commands. Any file
 may be stored, but model and backend
-both enforce the restricted project preview kinds. Existing library/session and
+both enforce graphical preview kinds or validated bounded text. Existing library/session and
 daemon protocol semantics are unchanged. Manual progress never derives from
 BitBake state. No project deletion or overwrite operation is introduced.
 The backend revalidates the registered project root and preview path before
