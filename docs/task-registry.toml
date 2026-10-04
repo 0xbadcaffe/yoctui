@@ -5,7 +5,7 @@ status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 [[task]]
 id = "CI-FLOOD-ENV-001"
 milestone = "M118"
-title = "Use the fixture's inherited build environment without conflicting explicit profile"
+title = "Use current startup and daemon protocol in the isolated event-flood fixture"
 status = "IN_PROGRESS"
 priority = 3616
 required = true
@@ -72,7 +72,7 @@ notes = "Publish only seven public crates, keep private packages unpublished, ve
 id = "CI-RELEASE-TOOLCHAIN-001"
 milestone = "M118"
 title = "Pin release CI to validated Rust1.97 while upstream macro lint regresses"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3614
 required = true
 depends_on = ["CI-VERSION-DIRTY-DOCS-001"]

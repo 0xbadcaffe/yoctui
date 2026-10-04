@@ -18,6 +18,7 @@ import time
 
 
 SCHEMA = "yoctui.performance.event-flood-observation.v1"
+DAEMON_PROTOCOL_VERSION = {"major": 1, "minor": 5}
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "scripts/fixtures/bitbake-event-flood-bridge.py"
 CRITICAL_NAMES = {
@@ -111,8 +112,8 @@ class ProtocolClient:
         self.send(
             {
                 "type": "hello",
-                "minimum_version": {"major": 1, "minor": 3},
-                "maximum_version": {"major": 1, "minor": 3},
+                "minimum_version": DAEMON_PROTOCOL_VERSION.copy(),
+                "maximum_version": DAEMON_PROTOCOL_VERSION.copy(),
                 "client_id": self.client_id,
                 "client_name": "event-flood-harness",
                 "capabilities": [
@@ -127,6 +128,8 @@ class ProtocolClient:
         hello = self.receive(5)
         if hello is None or hello.get("type") != "hello":
             raise RuntimeError(f"unexpected daemon hello: {hello}")
+        if hello.get("selected_version") != DAEMON_PROTOCOL_VERSION:
+            raise RuntimeError("unexpected negotiated daemon protocol version")
         self.daemon_instance_id = checked_instance(hello.get("daemon_instance_id"))
         self.send(
             {

@@ -1,8 +1,17 @@
 # Current Task
 
-**ID:** CI-FLOOD-ENV-001
-**Title:** Use the fixture's inherited build environment without conflicting explicit profile
+**ID:** CI-RELEASE-TOOLCHAIN-001
+**Title:** Pin release CI to validated Rust1.97 while upstream macro lint regresses
 **Status:** IN_PROGRESS
+
+Fixture startup and1.5 handshake corrected;13 harness regressions PASS including
+private inherited environment, version mismatch and full daemon identity guards.
+Full fresh performance gate is running. Next pin all hosted release jobs to
+validated1.97.0 and keep strict Clippy unchanged; verify CI contract and hosted run.
+
+After inherited startup succeeded, its obsolete1.3 handshake was rejected by the
+current1.5 daemon. Update the fixture-only declared version, test against Rust
+wire constants and reject a mismatched hello; preserve production negotiation.
 
 Historical reconstruction and5 mutation/isolation checks PASS; original evidence
 bytes preserved. Fresh flood reached a separate fixture startup problem: its

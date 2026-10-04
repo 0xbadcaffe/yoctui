@@ -1,4 +1,7 @@
 M118 IN_PROGRESS: scoped user request repairs registry README URLs and GitHub
+Fixture current startup/protocol implemented;13 harness tests PASS, full fresh
+performance gate pending. Host daemon and prior user sessions are not touched;
+all generated fixture runtime/state/config directories remain isolated.
 Historical source reconstruction:5 mutation/isolation tests PASS, original
 manifest/patch/measurements unchanged. Fresh flood now exposes a conflicting
 fixture-only explicit build environment; separate child registered before repair.

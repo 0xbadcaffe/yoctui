@@ -9,10 +9,12 @@ def start_daemon(
     build, binary_dir = write_fake_environment(root)
     report = root / "generator.json"
     environment = os.environ.copy()
+    # This fixture represents an already initialized shell. An explicit
+    # YOCTUI_BUILD_DIR asks the CLI to locate a real setup profile instead.
+    environment.pop("YOCTUI_BUILD_DIR", None)
     environment.update(
         {
             "BUILDDIR": str(build),
-            "YOCTUI_BUILD_DIR": str(build),
             "XDG_RUNTIME_DIR": str(runtime),
             "XDG_STATE_HOME": str(state),
             "XDG_CONFIG_HOME": str(config),

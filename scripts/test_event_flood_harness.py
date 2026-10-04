@@ -6,6 +6,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -86,6 +87,42 @@ class BridgeSession:
 
 
 class EventFloodReadinessTests(unittest.TestCase):
+    def test_fixture_handshake_matches_current_wire_constants(self):
+        source = (ROOT / "crates/yoctui-protocol/src/daemon.rs").read_text()
+        current = {name.lower(): int(re.search(rf"PROTOCOL_{name}: u16 = (\d+);", source).group(1)) for name in ("MAJOR", "MINOR")}
+        client = object.__new__(HARNESS.ProtocolClient)
+        client.client_id = self.instance.copy()
+        client.send = Mock()
+        client.receive = Mock(side_effect=[{"type": "hello", "selected_version": current, "daemon_instance_id": self.instance}, {"type": "attached", "snapshot": self.snapshot()}])
+        client.attach()
+        hello = client.send.call_args_list[0].args[0]
+        self.assertEqual(hello["minimum_version"], current)
+        self.assertEqual(hello["maximum_version"], current)
+
+    def test_fixture_rejects_a_mismatched_negotiated_version(self):
+        client = object.__new__(HARNESS.ProtocolClient)
+        client.client_id = self.instance.copy()
+        client.send = Mock()
+        client.receive = Mock(return_value={"type": "hello", "selected_version": {"major": 1, "minor": 3}, "daemon_instance_id": self.instance})
+        with self.assertRaisesRegex(RuntimeError, "negotiated daemon protocol"):
+            client.attach()
+
+    def test_fixture_uses_private_inherited_environment_not_explicit_host_profile(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            child = Mock()
+            child.poll.return_value = 1
+            child.communicate.return_value = ("", "fixture ended")
+            with patch.dict(os.environ, {"YOCTUI_BUILD_DIR": "/host/build", "BUILDDIR": "/host/other"}), patch.object(HARNESS.subprocess, "Popen", return_value=child) as spawn:
+                with self.assertRaisesRegex(RuntimeError, "daemon startup failed"):
+                    HARNESS.start_daemon(Path("/fixture/yoctui"), root, 4000, 1.0)
+            environment = spawn.call_args.kwargs["env"]
+            self.assertNotIn("YOCTUI_BUILD_DIR", environment)
+            self.assertEqual(environment["BUILDDIR"], str(root / "build"))
+            self.assertEqual(environment["YOCTUI_BRIDGE_PATH"], str(FIXTURE))
+            for key, folder in (("XDG_CONFIG_HOME", "config"), ("XDG_STATE_HOME", "state"), ("XDG_RUNTIME_DIR", "runtime")):
+                self.assertEqual(environment[key], str(root / folder))
+
     instance = list(range(16))
     build_dir = Path("/fixture/build")
 
@@ -247,7 +284,7 @@ class EventFloodReadinessTests(unittest.TestCase):
         wrong["daemon_instance_id"][-1] = 99
         client.receive = Mock(
             side_effect=[
-                {"type": "hello", "daemon_instance_id": self.instance},
+                {"type": "hello", "selected_version": HARNESS.DAEMON_PROTOCOL_VERSION, "daemon_instance_id": self.instance},
                 {"type": "attached", "snapshot": wrong},
             ]
         )
