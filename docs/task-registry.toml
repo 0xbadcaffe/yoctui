@@ -83,12 +83,12 @@ notes = "Read actual transport module tree while retaining bounded ingress, slow
 id = "RELEASE-PUBLISH-315-001"
 milestone = "M118"
 title = "Publish and verify public crate graph version 0.1.315"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3607
 required = true
 depends_on = ["CI-IPC-MODULES-001", "CI-VERSION-DIRTY-DOCS-001", "CI-RELEASE-TOOLCHAIN-001", "CI-HISTORICAL-IPC-001", "CI-FLOOD-ENV-001", "CI-BRIDGE-DISCOVERY-001", "CI-BRIDGE-PYTHON-GATES-001"]
 verify = ["./scripts/verify-cratesio-package.sh","cargo publish --locked --dry-run --workspace","Manual: clean source, authenticated batch publication and independent public registry version/archive checksum verification"]
-notes = "Publish only seven public crates, keep private packages unpublished, version remains0.1.315. Actual hosted CI verification required before publication. No user daemon/session or presentation changes."
+notes = "DONE: hosted37221565007 all four normal jobs PASS; normal authenticated Cargo verification/upload from clean3205c277 completed for all seven315 crates. Exact index checksums equal uploaded and independent downloaded archives, yanked=false and clean source VCS identity. Actual rendered README25raw image URLs verified. Receipt artifacts/release-quality/cratesio/0.1.315.json. Private packages, daemon/sessions, installed binary, user captures and presentation preserved; broader demo deferred."
 
 [[task]]
 id = "CI-RELEASE-TOOLCHAIN-001"

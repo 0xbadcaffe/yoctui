@@ -1,0 +1,126 @@
+{
+  "schema": "yoctui.release.receipt.v1",
+  "version": "0.1.315",
+  "verified_utc": "2026-10-04T17:55:42.599889+00:00",
+  "publication": "DONE",
+  "registry": "crates.io",
+  "published_source_commit": "3205c2770db922024701bc832bd7471b58787cfc",
+  "validated_ci_source_commit": "2e925a7c52afa14e163cff47865aaf2fe5ec29d3",
+  "ci_run": "https://github.com/0xbadcaffe/yoctui/actions/runs/37221565007",
+  "ci_result": "success: all four normal jobs; scheduled/live jobs skipped",
+  "cargo_version": "1.97.0",
+  "publish_command": "cargo publish --workspace --locked -j 2 --target-dir target/cratesio-package",
+  "publish_environment": {
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "dry_run_exit_status": 0,
+  "publish_exit_status": 0,
+  "package_verifier_exit_status": 0,
+  "publish_log_sha256": "2efb12f022ae8afcf38dc365e7ffa8bf1db7d36d5b1d119a88a2eb80b2ffffa8",
+  "registry_verification": "Seven exact sparse-index entries yanked=false; uploaded and independently downloaded SHA256 equal index; every archive identifies clean published source. CLI README byte-identical to source, every image HTTPS, all25 raw GitHub image URLs present in actual crates.io rendered README.",
+  "production_python_ast_proof": "artifacts/release-quality/ci-python-0.1.315.json",
+  "preserved": "No daemon restart, binary reinstall, session change, image build or presentation changes. Four original untracked captures preserved.",
+  "crates": [
+    {
+      "name": "yoctui-utils",
+      "vers": "0.1.315",
+      "cksum": "c46f68209a1787423daa402426ed0a0bec9e26cec2cfba9958c910216de54cd7",
+      "yanked": false,
+      "archive_bytes": 20066,
+      "uploaded_and_downloaded_sha256_match": true,
+      "vcs": {
+        "git": {
+          "sha1": "3205c2770db922024701bc832bd7471b58787cfc"
+        },
+        "path_in_vcs": "crates/yoctui-utils"
+      }
+    },
+    {
+      "name": "yoctui-model",
+      "vers": "0.1.315",
+      "cksum": "fc0153159edebd14fe7f223aa7db4928a0342c48a107b3b8cc1063039efdf76f",
+      "yanked": false,
+      "archive_bytes": 664252,
+      "uploaded_and_downloaded_sha256_match": true,
+      "vcs": {
+        "git": {
+          "sha1": "3205c2770db922024701bc832bd7471b58787cfc"
+        },
+        "path_in_vcs": "crates/yoctui-model"
+      }
+    },
+    {
+      "name": "yoctui-protocol",
+      "vers": "0.1.315",
+      "cksum": "0dd8d7642a7876a212a9d042d5717cf063ad13ed8f03af60869f4157967d7b53",
+      "yanked": false,
+      "archive_bytes": 80512,
+      "uploaded_and_downloaded_sha256_match": true,
+      "vcs": {
+        "git": {
+          "sha1": "3205c2770db922024701bc832bd7471b58787cfc"
+        },
+        "path_in_vcs": "crates/yoctui-protocol"
+      }
+    },
+    {
+      "name": "yoctui-bitbake",
+      "vers": "0.1.315",
+      "cksum": "5f62b5c965e1a42599c1a5300e1074186ec68dfe4a117821b1685b6de5b5bd5f",
+      "yanked": false,
+      "archive_bytes": 346891,
+      "uploaded_and_downloaded_sha256_match": true,
+      "vcs": {
+        "git": {
+          "sha1": "3205c2770db922024701bc832bd7471b58787cfc"
+        },
+        "path_in_vcs": "crates/yoctui-bitbake"
+      }
+    },
+    {
+      "name": "yoctui-app",
+      "vers": "0.1.315",
+      "cksum": "45f44d127997bd9588b9f1cf5e3472c1c82283c1697082d842c9b7c7b1cccd2a",
+      "yanked": false,
+      "archive_bytes": 173712,
+      "uploaded_and_downloaded_sha256_match": true,
+      "vcs": {
+        "git": {
+          "sha1": "3205c2770db922024701bc832bd7471b58787cfc"
+        },
+        "path_in_vcs": "crates/yoctui-app"
+      }
+    },
+    {
+      "name": "yoctui-ui",
+      "vers": "0.1.315",
+      "cksum": "184f20bb9e7b5779dee138c84d020abe4d374cd337a937d19a35c414f8c883ac",
+      "yanked": false,
+      "archive_bytes": 467705,
+      "uploaded_and_downloaded_sha256_match": true,
+      "vcs": {
+        "git": {
+          "sha1": "3205c2770db922024701bc832bd7471b58787cfc"
+        },
+        "path_in_vcs": "crates/yoctui-ui"
+      }
+    },
+    {
+      "name": "yoctui",
+      "vers": "0.1.315",
+      "cksum": "570c15b136579c19b67be40b2b1c6e6ddf8fc1822a15aacfc3be203d8334bb59",
+      "yanked": false,
+      "archive_bytes": 453000,
+      "uploaded_and_downloaded_sha256_match": true,
+      "vcs": {
+        "git": {
+          "sha1": "3205c2770db922024701bc832bd7471b58787cfc"
+        },
+        "path_in_vcs": "crates/yoctui-cli"
+      }
+    }
+  ]
+}

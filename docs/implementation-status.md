@@ -1,18 +1,21 @@
-M118 publication IN_PROGRESS: all scoped CI children DONE. Hosted
-https://github.com/0xbadcaffe/yoctui/actions/runs/37221565007 PASS on2e925a7c:
-full test, compatibility-fast, performance-fast and release-quality green.
-Full Rust/terminal/stress/CLI/docs and73 bridge cases PASS; coverage79.96%.
-Scheduled/live jobs skipped, not certified. Strict Clippy preserved with pinned
-validated Rust1.97; bridge static checks follow all11 ordered shared fragments
-and12 exact method bindings. AST-identical format proof committed, no functional
-315 change. Local36 policy/IPC/historical/flood/toolchain regressions,5 static
-projection tests, README/gallery/23-raster, full fast performance, source layout,
-fmt/roadmap and final extracted all-feature public graph/default CLI/bridge PASS.
-All25 README image URLs HTTP200; images/doc links absolute, pixels unchanged.
-Prior full seven-crate Cargo dry-run PASS. Next normal authenticated publication
-and independent seven index/upload/download checksum/source verification.
-No publication claimed yet; daemon, installed binary, sessions, captures and
-presentation unchanged. Unrelated demo queue remains deferred.
+M118 DONE: README registry URLs repaired, GitHub CI fixed and all seven
+public crates0.1.315 published from clean3205c277 with normal Cargo verification.
+Exact sparse-index checksums match uploaded AND independently downloaded
+archives; yanked=false and clean VCS identity for every crate. Actual crates.io
+rendered README exposes all25 raw screenshot URLs; screenshot pixels unchanged.
+Receipt artifacts/release-quality/cratesio/0.1.315.json.
+Hosted37221565007 on2e925a7c: all four normal jobs PASS, full Rust suite,
+terminal/stress/CLI/docs and73 bridge tests at79.96% coverage. Scheduled/live
+jobs skipped, not claimed. Strict Clippy pinned to validated Rust1.97; shared
+namespace checks cover11 loader fragments and12 exact method bindings.
+AST-identical formatting proof artifacts/release-quality/ci-python-0.1.315.json.
+Local36 policy/IPC/history/flood/toolchain regressions and5 static projection
+tests PASS; full fresh performance gate retains every original bound. Historical
+evidence reconstructed from exact original revision/patch, original bytes intact.
+Extracted all-feature public graph/default CLI/bridge verification, full dry-run,
+version/fmt/source/README/gallery/23-raster/roadmap checks PASS.
+No daemon restart, install, session termination, image/presentation modification.
+Private packages and four original captures preserved; broader demo queue deferred.
 
 M117 README-QUICKSTART-NAV-001 DONE: reviewed install/build/use instructions,
 top links to every main section and shorter reference-linked walkthroughs.

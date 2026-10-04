@@ -1,33 +1,27 @@
 # Current Task
 
-**ID:** RELEASE-PUBLISH-315-001
-**Title:** Publish and verify public crate graph version 0.1.315
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Deferred broader demo handoff; scoped crates.io and CI request complete
 **Status:** IN_PROGRESS
 
-M118 CI prerequisites DONE: hosted run37221565007 on source2e925a7c PASS
-for test, compatibility-fast, performance-fast and release-quality. Full Rust,
-terminal/stress/CLI/docs, bridge discovery/lint/format/types and73 bridge tests
-passed, coverage79.96%. Scheduled/live jobs skipped, not claimed as exercised.
-Local36 policy/IPC/historical/flood/toolchain regressions, static projection5,
-README links/screenshots, fast performance and extracted package graph PASS.
-All25 image URLs HTTP200; original screenshot pixels unchanged.
-Python formatting preserves every production AST and existing test assertion;
-proof artifacts/release-quality/ci-python-0.1.315.json. No functional315 change.
+Deferred only: do not resume unrelated demo work in this scoped release turn.
+M118 complete: registry-safe README, all atomic CI repairs and authenticated
+publication of all seven public crates0.1.315 verified. Source3205c277; every
+index checksum matches actual upload and independent download, yanked=false,
+clean VCS identity. Actual crates.io rendered README contains all25 absolute
+raw screenshot URLs. Private e2e/shell remain unpublished.
 
-Publish seven public crates from clean committed source with Cargo's normal
-verification; private e2e/shell packages remain publish=false. Verify all exact
-315 sparse-index entries, yanked=false, uploaded/downloaded SHA256 and source
-identity. Record publication receipt before marking DONE. Version stays0.1.315.
-No daemon restart, installation, user session, image build or presentation edits.
-
-Verification:
-./scripts/verify-cratesio-package.sh
-cargo publish --locked --workspace --dry-run -j 2
-cargo publish --locked --workspace -j 2
-Manual: independent registry/archive/README/source checks and hosted CI receipt.
-
-After this scoped request completes, preserve the deferred demo handoff below;
-do not resume unrelated demo work.
+Hosted run37221565007 on2e925a7c passes all four normal jobs, full Rust suite,
+terminal/stress/CLI/docs and73 bridge tests at79.96% coverage. Scheduled/live
+jobs skipped, not certified. Publication used normal Cargo package verification
+with two jobs; extracted all-feature graph/default CLI/bridge and prior full
+dry-run PASS. Publication source differs from green CI source only in governance.
+Receipt: artifacts/release-quality/cratesio/0.1.315.json.
+Production Python AST proof: artifacts/release-quality/ci-python-0.1.315.json.
+README screenshot pixels unchanged; no functional315 source change.
+No daemon restart, installed binary change, session termination, image build,
+presentation changes or broad demo/reboot certification. Four user captures
+remain untouched. Parent demo queue is deferred until user resumes it.
 
 ## Completed README installation and navigation review
 

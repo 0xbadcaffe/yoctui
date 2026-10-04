@@ -2,14 +2,16 @@
 
 ## M118 — registry-safe README, CI repair and publication315
 
-Registry-safe README and all CI repair children DONE. Hosted run37221565007
-passes all four normal jobs, including full Rust suite and73 bridge cases at
-79.96% coverage. Strict Clippy/toolchain, full shared-namespace static checks,
-fresh flood limits and exact historical source reconstruction remain enforced.
-Screenshot pixels and functional Python ASTs unchanged; version315 retained.
-Seven-crate package graph verification and full Cargo dry-run PASS.
-Publication remains IN_PROGRESS until independent registry/archive verification.
-Existing demo/reboot/board work remains deferred; no daemon/session changes.
+DONE: all scoped atomic tasks implemented and verified. All seven public
+crates0.1.315 published from clean3205c277; independent index/upload/download
+checksums and VCS identity verified. Actual crates.io rendered README contains
+all25 corrected raw screenshot URLs. Receipt:
+artifacts/release-quality/cratesio/0.1.315.json.
+Hosted37221565007 passes all four normal jobs, including full Rust suite and73
+bridge cases at79.96% coverage; scheduled/live jobs skipped. Strict Clippy,
+full shared-namespace static checks, fresh flood limits and original historical
+source reconstruction enforced. Screenshot pixels and functional Python ASTs
+unchanged. Demo/reboot/board queue deferred; no daemon/session modifications.
 
 ## M117 — concise README installation and navigation
 
