@@ -1,5 +1,5 @@
-M115 current: HARDWARE-TEXT-VIEW-001 IN_PROGRESS (2026-10-04 user override).
-Hardware Projects/library readable arbitrary-extension/extensionless text will
+M115 complete: HARDWARE-TEXT-VIEW-001 DONE (2026-10-04 user override).
+Hardware Projects/library readable arbitrary-extension/extensionless text now
 reuse the built-in Vim-style source editor with syntax highlighting, editing and
 guarded atomic saves per the user's clarification. Original text/permissions,
 conflict/size/containment/stale-result guards and existing
@@ -11,8 +11,15 @@ Devtool editor19, atomic/workspace/runqueue/hints2/1/4/2, production rendering16
 34goldens identity-only and29derived rasters verified. Isolated real project
 worker/save integration retains full text/0750 mode, checks conflicts and unsafe
 paths; external Vim reload is bounded and never offers a Hardware recipe build.
-Source commit/push and optimized installation still pending. No full-suite,
-live-image, daemon restart, publication or broad demo acceptance claim.
+Source45c130e1 committed/pushed. Source-bound optimized build6m28/install1.44s;
+installed/release SHA d429a30bbbaa5e1d45d6b3c9c67301a814aa86a70b3e2df0ba18bf5adb4e7c58.
+Private doctor bundled-bridge handshake/shutdown PASS, private authority
+Unavailable expected. Installed310 backup retained. Native daemon2787224
+running309/unchanged SHA0cefb0ca, existing sessions/four user captures untouched.
+Relevant Hardware operator instructions updated. Receipt
+artifacts/release-quality/hardware-text-0.1.311.json. Deferred parent handoff only:
+DEMO-INSTALL-LIVE-001 IN_PROGRESS, not resumed. No full-suite, live-image, daemon
+restart, publication, presentation or broad demo acceptance claim.
 
 M114 bug override complete: DEMO-RUNQUEUE-COMPLETION-001 DONE (2026-10-04).
 Real job16 exit0 and retained do_build queue-only record reproduce Lost row.

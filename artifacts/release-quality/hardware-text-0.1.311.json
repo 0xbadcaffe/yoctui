@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "task": "HARDWARE-TEXT-VIEW-001",
+  "version": "0.1.311",
+  "source_commit": "45c130e159c30f323bde5b933685d61d9f34e8c0",
+  "source_pushed_to": "origin/master",
+  "behavior": {
+    "scope": "Hardware Projects and document library",
+    "extensions": "Readable regular UTF-8 text of any suffix or no suffix; full content revalidated, never suffix-only acceptance.",
+    "editor": "Existing built-in Vim-style editor with insert/edit/search/copy/undo/redo and guarded Ctrl+S atomic saves.",
+    "language": "Existing recognized filename rules plus supported extensionless interpreter shebangs; unknown text remains plain text.",
+    "source_limit_bytes": 1048576,
+    "original_text": "Retained in full, including CRLF/final newlines; no rewriting on view.",
+    "saves": "Permissions retained; conflicting disk edits, project escape, symlinks, binaries and unsafe source replacement rejected.",
+    "context": "Typed Hardware library/project context excludes recipe-build actions and recipe-build hints.",
+    "graphical_viewers": "Enter retains existing defaults; e explicitly opens readable source without executing or decoding binary content.",
+    "async_ownership": "Generation-correlated result opens only current Hardware ownership without intervening dialogs/forms.",
+    "external_vim": "Explicit existing workflow; returning Hardware content revalidates paths/content/size with no recipe-build prompt."
+  },
+  "verification": {
+    "selected_rust_tests": 90,
+    "hardware": {
+      "cli": 19,
+      "app": 6,
+      "model": 14,
+      "ui": 7
+    },
+    "ordinary_editor_tests": 19,
+    "atomic_save_regressions": 2,
+    "workspace_editor_regressions": 1,
+    "runqueue_completion_regressions": 4,
+    "editor_hint_regressions": 2,
+    "production_rendering_tests": 16,
+    "failures": 0,
+    "final_golden_test_update": false,
+    "full_suite": "SKIPPED per user instruction",
+    "strict_clippy": "PASS: affected model/app/UI/CLI all-targets/all-features -D warnings",
+    "format": "PASS",
+    "source_layout": "PASS: 2931 sources <=500 lines",
+    "ui_spec": "PASS",
+    "roadmap": "PASS: 1000 tasks",
+    "version_policy": "PASS: 0.1.310 -> 0.1.311 before implementation commit",
+    "fixtures": "34 goldens mechanically verified identity-only; 6 concept and 23 README rasters regenerated and checked.",
+    "filesystem_integration": "Real isolated XDG project worker, complete load/edit/save round trip, 0750 permissions and conflict/containment/symlink guards; library SVG readable-source CRLF edit/save; binary/UTF-8/control/size/missing/FIFO rejection.",
+    "live_image_build": "NOT RUN; filesystem integration is not live Yocto build proof.",
+    "bundled_bridge": "PASS: isolated doctor bounded protocol handshake/shutdown; private authority Unavailable as expected, not a live daemon validation."
+  },
+  "release": {
+    "build_command": "CARGO_TARGET_DIR=/home/bspguy-dev/.cache/yoctui-demo-cargo.AAiva6 CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 RUSTFLAGS='-C force-frame-pointers=yes' cargo build --release --locked -p yoctui --bin yoctui -j 2",
+    "install_command": "Same target/jobs/incremental/RUSTFLAGS; cargo install --path crates/yoctui-cli --force --locked --bin yoctui -j 2",
+    "binary": "/home/bspguy-dev/.cache/yoctui-demo-cargo.AAiva6/release/yoctui",
+    "installed_binary": "/home/bspguy-dev/.cargo/bin/yoctui",
+    "old_binary_backup": "/home/bspguy-dev/.local/state/yoctui-installs/before-0.1.311.OfQgy1/yoctui",
+    "old_binary_sha256": "5d07ef88197366c718db132129ce0bde2cf3739e1f29918c9c980588c7c5621a",
+    "crates_io_publication": "NOT RUN",
+    "build_duration": "6m28s",
+    "install_duration_seconds": 1.44,
+    "installed_and_release_sha256": "d429a30bbbaa5e1d45d6b3c9c67301a814aa86a70b3e2df0ba18bf5adb4e7c58",
+    "version_output": "yoctui 0.1.311"
+  },
+  "preserved_daemon": {
+    "pid": 2787224,
+    "instance": "9a3437c9922626cc0804ebd0f662e614",
+    "executable_version": "0.1.309",
+    "executable_sha256": "0cefb0ca76c346aa2dbceae3e27f0cf37cd497db9a7253dfc47e3ed300bc6420",
+    "restart": "NOT PERFORMED; Hardware editor is client-local with unchanged daemon wire types.",
+    "status": "Running before and after installation; executable hash unchanged."
+  },
+  "scope": {
+    "user_sessions": "Not terminated",
+    "untracked_user_captures": "Four retry-active-dashboard captures remain untracked, byte-identical and uncommitted.",
+    "deferred": "Broader demo/README/operator-guide/CI/reboot queue not resumed or certified. Relevant Hardware operator instructions updated only."
+  },
+  "logs": [
+    {
+      "path": "/tmp/yoctui-hardware-text-final-locked-v311.log",
+      "sha256": "89e826e09830148dce1b0d76dccb287128a9c3a188695995ac57856528cf5fc3",
+      "result": "PASS",
+      "tests": 46
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-editor-regression-v311.log",
+      "sha256": "6819743170cf98df484dc4535a33f841b00f98cbab932bd10380f286b84336b8",
+      "result": "PASS",
+      "tests": 19
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-atomic-regression-v311.log",
+      "sha256": "0ca7e8e1be9b4cf53e1dfd762ddbf6b7b50e00cc07756991d041efc4145dcc22",
+      "result": "PASS",
+      "tests": 2
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-workspace-regression-v311.log",
+      "sha256": "247a4b57c10a738b6bb7ed9d675bf2ca1f33072ed3dba450a9056ebf78e5f7fe",
+      "result": "PASS",
+      "tests": 1
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-runqueue-regression-v311.log",
+      "sha256": "790804e23393d2638785ff8a277fc9528ed66996c9ff3555648449abebb8c5bf",
+      "result": "PASS",
+      "tests": 4
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-hints-regression-v311.log",
+      "sha256": "9ad08875f46eeb87ae90a99ba8145eb62f4915522a5424532b96df35a5823cc3",
+      "result": "PASS",
+      "tests": 2
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-rendering-final-v311.log",
+      "sha256": "0ab3a33f5d930561a34c59a40393854ad86092f0d07f38112c1480e3683154ae",
+      "result": "PASS",
+      "tests": 16
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-clippy-final-v311.log",
+      "sha256": "cd82b81c9fec399078a67fdb86548fbc92b681de2db8d1946a11ea42b491164e",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-release-v311.log",
+      "sha256": "46ef1ea6a0b4d5dc5f014ba0ac33480712532cf9da3891ac5aa030d488f6b428",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-install-v311.log",
+      "sha256": "7fca0bd41879d166c511c779d11566772e893d402c248dcd2dcb5e31e7129fd0",
+      "result": "PASS"
+    },
+    {
+      "path": "/tmp/yoctui-hardware-text-doctor-v311.log",
+      "sha256": "9e4947ed7e0adc27271490ae331ec5db75a2f9cd6fefe56c9feecb6abffa01de",
+      "result": "PASS"
+    }
+  ],
+  "recorded_utc": "2026-10-04 04:07:00 UTC"
+}

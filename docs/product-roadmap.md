@@ -2,7 +2,7 @@
 
 ## M115 — Hardware arbitrary text viewing and editing
 
-2026-10-04 user override: HARDWARE-TEXT-VIEW-001 IN_PROGRESS. Admit readable
+2026-10-04 user override: HARDWARE-TEXT-VIEW-001 DONE. Admit readable
 regular text of any extension or no extension into Hardware library/projects;
 use the existing built-in Vim-style source surface with syntax highlighting,
 editing and guarded atomic saves. Preserve permissions/full original content and
@@ -10,6 +10,12 @@ reject conflicting saves or unsafe paths. Filesystem content/size/containment sa
 stale-result ownership and existing graphical/normal-editing workflows must hold.
 Focused verification only; bump/commit/push/optimized delivery. Broader demo/CI/
 README/operator-guide/reboot/publication work remains deferred.
+Source45c130e1/v0.1.311 committed/pushed;90 selected tests, strict affectedClippy,
+fmt/source/UI/roadmap/version and34identity-only goldens/29rasters PASS.
+Source-bound optimized build6m28/install1.44s, installed/release SHA d429a30b;
+isolated bundled-bridge doctor PASS, not a live image acceptance claim. Existing
+daemon/sessions unchanged; receipt artifacts/release-quality/hardware-text-0.1.311.json.
+Only relevant Hardware operator instructions updated; no broad queue resume.
 
 ## M114 — OpenBMC presentation/demo release polish
 

@@ -1,27 +1,24 @@
 # Current Task
 
-**ID:** HARDWARE-TEXT-VIEW-001
-**Title:** View and edit arbitrary-extension and extensionless Hardware text with highlighting
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Deferred native OpenBMC demo installation and live acceptance
 **Status:** IN_PROGRESS
 
-2026-10-04 user override: implement Hardware text viewing in both Projects and
-the document library. Pause unrelated demo/CI/docs queue. Dependencies
-HARDWARE-PROJECT-UI-001 and DEMO-RUNQUEUE-COMPLETION-001 are DONE. CLI filesystem
-adapters classify bounded readable regular files by content, revalidate on load,
-and retain project containment/no-symlink/no-special-file safeguards. Reuse the
-built-in typed source editor with editing/guarded saves, recognized syntax including
-extensionless shebangs, Vim-style navigation/search/copy and close-to-selection.
-Preserve graphical viewers and normal editable recipe/source behavior. Add
-positive/binary/size/path/conflicting-save/stale-result/reducer/input/TestBackend checks.
-User clarification: editing is required. Preserve original complete text and
-permissions, reject unsafe project saves and disable recipe-build actions for
-typed Hardware editor context without restricting ordinary recipe editing.
-Standing workflow: bump, commit/push, source-bound optimized build/install with
-two jobs. Full suite remains deferred; do not restart the user's current daemon
-or terminate sessions. No image build, publication or presentation changes.
+Deferred handoff only: the scoped Hardware request is complete; the broader
+demo/README/operator-guide/CI/reboot queue is not resumed in this turn. Full suite
+remains deferred by user instruction. No daemon restart, session termination,
+image build, publication or presentation changes performed.
 
-Implementation v0.1.311 is verified; source commit and optimized delivery remain
-in progress. Hardware CLI/app/model/UI 19/6/14/7, ordinary Devtool editor 19,
+## Completed Hardware text viewing and editing
+
+HARDWARE-TEXT-VIEW-001 DONE, source45c130e1/v0.1.311 committed/pushed.
+Hardware Projects/library readable text of any suffix or no suffix opens in the
+existing editable Vim-style source editor. Recognized filenames/shebangs select
+highlighting; unknown syntax remains plain text. Enter retains graphical defaults;
+e explicitly edits their readable source. Complete original text, guarded atomic
+saves, permissions, project containment, stale loads and no-recipe-build typed
+Hardware context verified; normal recipe editing preserved.
+Hardware CLI/app/model/UI 19/6/14/7, ordinary Devtool editor 19,
 atomic-save/workspace/runqueue/editor-hint regressions 2/1/4/2 and production
 rendering 16 tests PASS (90 selected tests total). Strict affected all-target,
 all-feature Clippy, formatting, 2931-source layout, UI/roadmap/version policy
@@ -30,6 +27,16 @@ rasters are regenerated and verified. Real isolated project-worker/filesystem
 save coverage preserves 0750 mode/complete content and rejects external conflicts,
 outside-root writes, symlinks, binaries, special files and oversized content.
 These are focused filesystem/UI checks, not a live Yocto image build or full suite.
+Optimized source-bound build6m28/install1.44s; installed/release SHA256
+d429a30bbbaa5e1d45d6b3c9c67301a814aa86a70b3e2df0ba18bf5adb4e7c58.
+Private bundled-bridge doctor handshake/shutdown PASS (private authority
+Unavailable as expected). Installed310 backup retained at
+/home/bspguy-dev/.local/state/yoctui-installs/before-0.1.311.OfQgy1/yoctui.
+Native daemon2787224 remains running309/unchanged SHA0cefb0ca; Hardware requires
+only a client relaunch, not a daemon wire change. Four user captures untouched.
+Receipt: artifacts/release-quality/hardware-text-0.1.311.json.
+
+Completed Hardware checks (not authorization to resume the parent/full suite):
 
 ```bash
 cargo test --locked -p yoctui-model hardware
