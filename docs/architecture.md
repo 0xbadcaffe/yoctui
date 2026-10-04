@@ -2,6 +2,11 @@
 
 ## Release and CI version scope
 
+IPC source contracts read the production daemon_ipc root plus its split modules;
+negative tests mutate the actual connection implementation, not the former
+unsplit root. Existing ingress capacities, nonblocking writes, timeouts and
+slow-client isolation requirements remain mandatory.
+
 Version coherence is always checked, including internal dependencies and the
 package verifier. Product source/bridge/manifests/lockfile changes require a
 numeric increase; version downgrades always fail. Documentation and CI-only

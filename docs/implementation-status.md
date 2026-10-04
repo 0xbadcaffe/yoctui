@@ -1,4 +1,8 @@
 M118 IN_PROGRESS: scoped user request repairs registry README URLs and GitHub
+IPC module correction implemented:6 positive/negative source checks PASS,
+including empty connection module rejection; CI contract PASS. Local full fast
+performance gate hit unchanged0.5% idle bound at0.900% on the laptop; hosted
+and direct backpressure verification are pending, with no bound relaxed.
 Version-scope child DONE:7 real-Git/parser checks PASS; product changes still
 require bumps, docs/CI retain315, unrelated untracked captures no longer mask
 committed product changes. Coherence checks always remain enabled.

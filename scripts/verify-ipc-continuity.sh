@@ -160,7 +160,12 @@ supervisor += "".join(
     path.read_text(encoding="utf-8")
     for path in sorted(supervisor_root.with_suffix("").rglob("*.rs"))
 )
-transport = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
+transport_root = Path("crates/yoctui-protocol/src/daemon_ipc.rs")
+transport = transport_root.read_text(encoding="utf-8")
+transport += "".join(
+    path.read_text(encoding="utf-8")
+    for path in sorted(transport_root.with_suffix("").rglob("*.rs"))
+)
 daemon = Path("crates/yoctui-cli/src/daemon_server.rs").read_text(encoding="utf-8")
 daemon += Path("crates/yoctui-cli/src/daemon_scheduling.rs").read_text(encoding="utf-8")
 daemon += Path("crates/yoctui-cli/src/daemon_server/client_requests.rs").read_text(encoding="utf-8")

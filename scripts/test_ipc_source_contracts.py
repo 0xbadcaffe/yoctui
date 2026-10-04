@@ -14,6 +14,7 @@ SUPERVISOR_INGRESS = "crates/yoctui-cli/src/daemon_bitbake/ingress.rs"
 SUPERVISOR_LIFECYCLE = "crates/yoctui-cli/src/daemon_bitbake/lifecycle.rs"
 SUPERVISOR_NOTIFICATION = "crates/yoctui-cli/src/daemon_bitbake/notification.rs"
 TRANSPORT = "crates/yoctui-protocol/src/daemon_ipc.rs"
+TRANSPORT_CONNECTION = "crates/yoctui-protocol/src/daemon_ipc/connection.rs"
 DAEMON = "crates/yoctui-cli/src/daemon_server.rs"
 SCHEDULING = "crates/yoctui-cli/src/daemon_scheduling.rs"
 CLIENT_REQUESTS = "crates/yoctui-cli/src/daemon_server/client_requests.rs"
@@ -43,6 +44,10 @@ class IpcSourceContractTests(unittest.TestCase):
                 CLIENT_REQUESTS,
             )
         }
+        cls.sources.update({
+            str(path.relative_to(ROOT)): path.read_text()
+            for path in (ROOT / TRANSPORT).with_suffix("").rglob("*.rs")
+        })
 
     def run_checker(self, **replacements: str) -> str:
         sources = self.sources | replacements
@@ -97,18 +102,23 @@ class IpcSourceContractTests(unittest.TestCase):
 
     def test_transport_and_slow_client_requirements_remain_enforced(self) -> None:
         for name, token, diagnostic in (
-            (TRANSPORT, "pub fn is_readable", "bounded daemon transport"),
-            (TRANSPORT, "pub fn flush_event_frame", "bounded daemon transport"),
-            (TRANSPORT, "libc::MSG_DONTWAIT", "bounded daemon transport"),
-            (TRANSPORT, "Duration::from_secs(5)", "bounded daemon transport"),
+            (TRANSPORT_CONNECTION, "pub fn is_readable", "bounded daemon transport"),
+            (TRANSPORT_CONNECTION, "pub fn flush_event_frame", "bounded daemon transport"),
+            (TRANSPORT_CONNECTION, "libc::MSG_DONTWAIT", "bounded daemon transport"),
+            (TRANSPORT_CONNECTION, "Duration::from_secs(5)", "bounded daemon transport"),
             (DAEMON, "event_write_pending()", "slow-client isolation"),
             (CLIENT_REQUESTS, "connection.is_readable()?", "slow-client isolation"),
             (DAEMON, "slow_client_disconnects", "slow-client isolation"),
         ):
             with self.subTest(name=name):
+                self.assertIn(token, self.sources[name])
                 mutated = self.sources[name].replace(token, "removed_contract")
                 with self.assertRaisesRegex(SystemExit, diagnostic):
                     self.run_checker(**{name: mutated})
+
+    def test_missing_transport_module_content_is_not_silently_skipped(self) -> None:
+        with self.assertRaisesRegex(SystemExit, "bounded daemon transport"):
+            self.run_checker(**{TRANSPORT_CONNECTION: ""})
 
 
 if __name__ == "__main__":
