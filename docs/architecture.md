@@ -1,5 +1,16 @@
 # Yoctui Architecture
 
+## Runqueue terminal task correction
+
+The Python Tinfoil boundary subscribes to runQueueTaskCompleted and
+sceneQueueTaskCompleted as well as existing queue/worker events. Native recipe
+identities still come from the initialized BitBake recipe cache, not filenames.
+Known identities normalize to the existing typed task_completed record;
+unresolved identities expose only valid copied aggregate statistics or no
+record. The existing Rust/protocol/model completion deduplication handles the
+ordinary worker-success plus runqueue-success pair. No new wire types or
+UI parsing; global build completion cannot synthesize per-task success.
+
 ## M114 terminal destructive review identity
 
 Pure client-local TerminalWorkbenchState holds a typed kill-review target:

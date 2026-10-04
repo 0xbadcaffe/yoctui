@@ -2,6 +2,15 @@
 
 ## M114 — OpenBMC presentation/demo release polish
 
+2026-10-04 user bug override: DEMO-RUNQUEUE-COMPLETION-001 is current.
+Actual native job16 succeeded/exit0, but its image do_build was queued without
+a terminal task record. BitBake noexec completion uses runQueueTaskCompleted;
+the bridge omitted that subscription/normalization, and normal build-end
+cleanup marked the unobserved row Lost. Fix the boundary with focused native
+event/fake-adapter/reducer/TestBackend duplicate/failure/missing-identity tests.
+Bump version, commit/push and build optimized release. Explicitly no full test
+suite, unrelated README/CI/demo queue, image rebuild or fabricated history.
+
 2026-10-03 immediate user override: publish existing v0.1.309 only, then provide
 manual commands and explain existing automation. DEMO-PUBLISH-001 DONE;
 DEMO-PUBLISH-HELP-CONTRACT-001 DONE: actual help accepted, 14 independent

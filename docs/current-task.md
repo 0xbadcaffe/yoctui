@@ -1,13 +1,37 @@
 # Current Task
 
-**ID:** DEMO-INSTALL-LIVE-001
-**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
+**ID:** DEMO-RUNQUEUE-COMPLETION-001
+**Title:** Complete no-execution tasks from authoritative BitBake runqueue events
 **Status:** IN_PROGRESS
 
-Publication-only user request completed; this pre-existing demo task is the
-deferred queue handoff, not authorization to resume it in this turn. Do not
-refresh README/operator guide, repair CI, restart daemon or reboot until work
-is resumed under user direction. No broader demo-readiness claim.
+2026-10-04 user asks to fix the successful image's Lost do_build row and
+explicitly forbids the full suite. Native job16 exit0; retained queue-only
+do_build observation and upstream noexec/runQueueTaskCompleted behavior prove
+the bridge's missing subscription/normalization. Add runqueue/setscene terminal
+events using authoritative recipe identity and existing typed completion;
+preserve valid aggregate statistics for unresolved identities without inventing
+success. Cover queue-only noexec, ordinary duplicate completion, true failures,
+unknown identity and bounded/responsive task rendering. No blanket relabeling
+of unfinished tasks or old lost job15. Do not rebuild the OpenBMC image.
+
+Standing workflow: bump version, commit/push, build optimized release binary.
+Verification is focused only; no workspace/full bridge suite. Keep unrelated
+demo/README/operator guide/CI/reboot/publication tasks deferred this turn.
+Do not terminate the current daemon or active user sessions to install a fix.
+
+```bash
+python3 -m pytest bridge/tests/test_runqueue_completion.py bridge/tests/test_workspace_inventory.py bridge/tests/test_metadata_events.py
+cargo test -p yoctui-model runqueue_completion
+cargo test -p yoctui-protocol runqueue_completion
+cargo test -p yoctui-ui runqueue_completion
+cargo fmt --all --check
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+python3 scripts/check-version-bump.py
+cargo build --release --locked -p yoctui --bin yoctui -j 2
+```
+
+## Historical completed publication-only handoff
 
 DEMO-PUBLISH-001 DONE: all seven public crates published as0.1.309 by Cargo1.97
 from clean5284a3f2, with unchanged feed7995 public application source. Full

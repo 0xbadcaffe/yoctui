@@ -1,4 +1,12 @@
-M114 publication-only request DONE; deferred handoff DEMO-INSTALL-LIVE-001.
+M114 current: DEMO-RUNQUEUE-COMPLETION-001 IN_PROGRESS (2026-10-04 bug override).
+Real job16 exit0 and retained do_build queue-only record reproduce Lost row.
+Native noexec task fires runQueueTaskCompleted, omitted by the bridge mask and
+normalizer. Scoped correction consumes real terminal events, not blanket build
+success; retain failure/unknown identities/duplicate safety and old job15 Lost.
+Focused checks/version/commit/push/optimized binary required; no full suite or
+image rebuild. Broader native/demo/README/CI/reboot work remains deferred.
+
+Historical M114 publication-only request DONE; deferred handoff DEMO-INSTALL-LIVE-001.
 All seven public0.1.309 crates uploaded from clean5284a3f2, locked dry-run and
 publish exit0; public source/Cargo lock/README/operator guide/CI match feed7995.
 Each exact not-yanked index entry checksum matches uploaded and independently

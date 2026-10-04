@@ -1,5 +1,14 @@
 # Yoctui UI Specification
 
+BitBake no-execution tasks such as an image's aggregate `do_build` render
+`Succeeded` when an authoritative runqueue completion is received, even when
+there was no worker TaskStarted/TaskSucceeded pair. Duplicate worker/runqueue
+completion observations produce one terminal task/count, not duplicated rows.
+Missing task identity never invents a recipe or success; failed and genuinely
+unfinished/lost tasks and historical lost jobs retain their existing meanings.
+Overall build success alone does not make every unfinished row successful.
+No new layout, shortcut or dialog is introduced by this correction.
+
 Existing running-terminal kill review enters Terminal Sessions with Workspace
 focus and traps all keyboard/mouse input. Only Enter confirms and Esc cancels;
 ordinary text, paste, prefix, navigation and PTY mouse/input are not forwarded.

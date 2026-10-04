@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "DEMO-RUNQUEUE-COMPLETION-001"
+milestone = "M114"
+title = "Complete no-execution tasks from authoritative BitBake runqueue events"
+status = "IN_PROGRESS"
+priority = 3576
+required = true
+depends_on = ["DEMO-TERMINAL-KILL-SAFETY-001"]
+verify = ["python3 -m pytest bridge/tests/test_runqueue_completion.py bridge/tests/test_workspace_inventory.py bridge/tests/test_metadata_events.py", "cargo test -p yoctui-model runqueue_completion", "cargo test -p yoctui-protocol runqueue_completion", "cargo test -p yoctui-ui runqueue_completion", "cargo fmt --all --check", "./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh", "python3 scripts/check-version-bump.py", "cargo build --release --locked -p yoctui --bin yoctui -j 2"]
+notes = "2026-10-04 explicit fix/no-full-suite override. Real native job16 succeeded/exit0 but do_build queued-only becomes Lost; upstream noexec uses runQueueTaskCompleted omitted from bridge mask/normalizer. Relevant crates/yoctui-bitbake/bridge/yoctui_bridge_components/{tinfoil_workspace,events}.py and focused external Python/model/protocol/UI tests. Add normal/setscene runqueue completion subscriptions and existing typed task_completed mapping through authoritative recipe cache; missing identities never guessed, ordinary duplicate completions remain idempotent and failures/loss/history preserved. Definition of done: focused positive/failure/fake-native/duplicate/reducer/responsive TestBackend checks pass, docs match, coherent version bump and commit/push, source-bound optimized release built. No full workspace/full bridge suite, new feature, OpenBMC image rebuild, arbitrary daemon/session termination or immutable0.1.309 republication."
+
+[[task]]
 id = "DEMO-PROFILE-001"
 milestone = "M114"
 title = "Profile current workbench and real OpenBMC demo paths before polishing"
