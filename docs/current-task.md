@@ -1,20 +1,29 @@
 # Current Task
 
-**ID:** BUILD-COMPLETED-PROGRESS-001
-**Title:** Render terminal build completion without indeterminate activity
+**ID:** GITUI-NATIVE-WORKSPACE-001
+**Title:** Focus and size embedded GitUI as a native workspace
 **Status:** IN_PROGRESS
 
-2026-10-04 user override: clipboard DONE/v312, debug defaults DONE/v313.
-Current progress child depends on the completed defaults child. Relevant files:
-pure typed lifecycle projection, shared Dashboard/Tasks build summary and focused
-reducer/TestBackend tests. Done: successful completion with missing/zero totals
-shows stable completed text, distinguishing absent and zero without invented
-counts or per-task success; running/failure/cancellation counters unchanged.
-Commands: focused completed_progress/progress/runqueue_completion/model/UI,
-strict affected Clippy, fmt/source/UI/roadmap/version and production fixtures.
-Read-only native job17 Exited0/progressNone reproduced; no image build/relabel.
-After this child select GITUI-NATIVE-WORKSPACE-001, then UI-POLISH-RELEASE-001.
-No full suite, unrelated queue, daemon restart, session termination or publication.
+2026-10-04 user override: paste DONE/v312, defaults DONE/v313, progress DONE/v314.
+GitUI depends on completed progress. Relevant files: native layout hint from
+typed session metadata, shared renderer/app geometry, pane-click focus and
+native input/resize tests. Done: full workspace without passive Inspector/help;
+pane clicks focus Workspace so manual writer acquisition/native keys work.
+Preserve other terminals, splits, retained editors, detached/offline routes,
+writer guards, menuconfig and kill review. Existing protocol reports managed
+GitUI as Utility; layout hints must not imply executable/writer authority.
+Verify focused gitui/terminal_viewport/menuconfig, fake-PTY and isolated real
+GitUI input/resize/exit, strict affectedClippy, fmt/source/UI/roadmap/version
+and production fixtures. No user-session changes. Next UI-POLISH-RELEASE-001;
+no unrelated queue or full suite.
+
+Progress v314 verified: completed_progress model/UI2/2, runqueue3/1,
+progress15/18 and production16 PASS (overlapping scopes); strict affectedClippy,
+fmt/source2941/UI/roadmap/version PASS;34identity-only goldens/29rasters verified.
+Actual job17 Exited0/progressNone confirms absent totals read-only. Only pure
+completion projection/shared summary changed; existing known-total completion
+counters, Lost rows and running/failure/cancel behavior unchanged.
+Optimized batch install/push pending; installed311/running309 untouched.
 
 Defaults v313 verified: Kernel CLI/app/model/UI11/8/19/9, QEMU helper11,
 clipboard3/7/3/1, production16 and targeted defaults4/1/2/1 checks PASS.

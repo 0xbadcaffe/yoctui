@@ -1,4 +1,10 @@
-M116 current: BUILD-COMPLETED-PROGRESS-001 IN_PROGRESS (2026-10-04 user override).
+M116 current: GITUI-NATIVE-WORKSPACE-001 IN_PROGRESS (2026-10-04 user override).
+BUILD-COMPLETED-PROGRESS-001 DONE/v314: pure successful completion projection and
+shared Dashboard/Tasks stable summary for missing/zero totals. Existing known
+completion counters, per-task Lost/failure semantics and live progress unchanged.
+completed_progress model/UI2/2, runqueue3/1, progress15/18 and rendering16 PASS;
+strict affectedClippy/fmt/source2941/UI/roadmap/version PASS.34identity-only
+goldens/29rasters verified. Actual job17 Exited0/progressNone reproduced read-only.
 KERNEL-DEBUG-DEFAULTS-001 DONE in v313: selected initialized build/machine/image,
 bounded read-only artifact discovery, contained deploy aliases, ABI-named split
 DWARF symbols, flash prerequisites/memory and untouched-field seeding. Edits,

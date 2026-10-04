@@ -20,6 +20,10 @@ image/form identity, then applies only fields without recorded user edits. The
 renderer displays typed discovery notes; it never inspects files. Existing
 preflight/review still decides whether a session can launch. No daemon wire or
 BitBake mutation is introduced.
+BuildState exposes a pure CompletedBuildProgress projection only for successful
+Completed lifecycle with missing/zero totals. Shared summary rendering consumes
+that typed outcome before its indeterminate fallback. Gauge/counter reducers and
+per-task state are unchanged; terminal success never synthesizes task success.
 
 ## Hardware arbitrary-text viewing and editing boundary
 

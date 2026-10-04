@@ -8,6 +8,10 @@ debug symbols exist: select its uncompressed `vmlinux`, never one from a differe
 build. Enter still validates files and opens the exact launch review; it does
 not start QEMU or GDB until you confirm that review.
 
+A successful build with no reported task total shows `completed successfully`
+and `total unavailable`; an authoritative zero shows `no tasks required`.
+This is the build outcome, not proof that a retained Lost task succeeded.
+
 This guide covers daily use after a Yocto environment has been initialized and
 Yoctui has opened its build directory. Follow the guarded setup commands in the
 [README](../README.md) first. BitBake, its configured metadata, and adapter

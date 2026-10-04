@@ -16,6 +16,30 @@ pub struct BuildState {
     pub exit_code: Option<i32>,
 }
 
+/// Successful build outcome is independent of whether task counts were observed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompletedBuildProgress {
+    UnknownTotal { observed: usize },
+    ZeroTotal { observed: usize },
+}
+
+impl BuildState {
+    pub fn completed_progress(&self) -> Option<CompletedBuildProgress> {
+        if self.status != BuildStatus::Completed || self.exit_code.is_some_and(|code| code != 0) {
+            return None;
+        }
+        match self.total {
+            None => Some(CompletedBuildProgress::UnknownTotal {
+                observed: self.completed,
+            }),
+            Some(0) => Some(CompletedBuildProgress::ZeroTotal {
+                observed: self.completed,
+            }),
+            Some(_) => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BuildSummary {
     pub completed: usize,

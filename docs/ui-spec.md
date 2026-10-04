@@ -37,6 +37,12 @@ when task totals were unavailable or zero; no ongoing activity marker or
 tasks from unavailable counts, and never manufacture task counts or mark lost,
 failed or unobserved tasks successful. Running/failed/cancelled progress retains
 its existing truthful meaning and bounded retained counters.
+The shared Dashboard/Tasks summary says `completed successfully` for successful
+completion with no usable total. Unavailable totals show the observed count and
+`total unavailable`; authoritative zero with zero observed says `no tasks
+required · reported total 0`. Nonzero observations against a reported zero remain
+visible as observations, never silently discarded. Known nonzero gauges retain
+their exact authoritative counters and percentages.
 
 Embedded GitUI opens Terminal Sessions with Workspace focus and the newly
 selected session, retaining editors without trapping native GitUI input. Writer

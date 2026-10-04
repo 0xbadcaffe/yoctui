@@ -18,7 +18,19 @@ pub(crate) fn render_build_summary(frame: &mut Frame, app: &App, area: Rect, now
         Layout::vertical([Constraint::Length(1)]).split(area)
     };
     let palette = ThemePalette::for_app(app);
-    if let Some(fraction) = progress.build.fraction {
+    if let Some(completed) = app.build.completed_progress() {
+        use yoctui_model::CompletedBuildProgress as C;
+        let detail = match completed {
+            C::UnknownTotal { observed } => format!("{observed} observed · total unavailable"),
+            C::ZeroTotal { observed: 0 } => "no tasks required · reported total 0".into(),
+            C::ZeroTotal { observed } => format!("{observed} observed · reported total 0"),
+        };
+        frame.render_widget(
+            Paragraph::new(format!("Overall  completed successfully · {detail}"))
+                .style(build_status_style(app)),
+            rows[0],
+        );
+    } else if let Some(fraction) = progress.build.fraction {
         let percent = fraction.percent();
         let total = fraction.total;
         let label = format!(

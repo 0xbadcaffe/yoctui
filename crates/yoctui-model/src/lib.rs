@@ -207,8 +207,8 @@ pub use background_jobs::{
     BackgroundJob, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BackgroundJobStatus, BackgroundJobs, BuildRecord,
-    BuildState, BuildSummary, JobHistoryRowRef, JobSummary, MAX_SIGNATURE_DIFFERENCES,
-    MAX_SIGNATURE_RECORDS,
+    BuildState, BuildSummary, CompletedBuildProgress, JobHistoryRowRef, JobSummary,
+    MAX_SIGNATURE_DIFFERENCES, MAX_SIGNATURE_RECORDS,
 };
 
 mod dependency_graph;
