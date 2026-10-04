@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.0
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: python3 -m pip install pytest
@@ -40,7 +40,7 @@ jobs:
         with: { fetch-depth: 0 }
       - name: Trust the mounted checkout in the test container
         run: git config --system --add safe.directory "$GITHUB_WORKSPACE"
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.0
         with: { components: "rustfmt, clippy" }
       - run: python3 -m pip install ruff==0.15.22 mypy==2.3.0 pytest==9.1.1 pytest-cov==7.1.0 pycairo==1.27.0
       - run: python3 -m unittest scripts/test_version_bump.py
@@ -65,7 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.0
       - name: Build release binary
         run: cargo build --locked -p yoctui
       - name: Run PTY/keymap/flow/snapshot/performance gates
@@ -93,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.0
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - name: Build deterministic performance fixture binary
@@ -117,7 +117,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.0
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - name: Build release performance binary
@@ -154,7 +154,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.0
       - name: Build release performance binary
         run: cargo build --release --locked -p yoctui --all-features
       - name: Capture fresh real-Poky saturation evidence
@@ -195,7 +195,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.97.0
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - name: Install Yocto host prerequisites

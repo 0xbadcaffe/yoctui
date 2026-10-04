@@ -5,6 +5,7 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
 bash -n scripts/test-release-compatibility.sh scripts/test-compatibility-matrix.sh
+python3 -m unittest scripts/test_ci_toolchain_contract.py
 
 python3 <<'PY'
 from pathlib import Path
@@ -51,6 +52,14 @@ required_workflow = (
 for value in required_workflow:
     if value not in workflow:
         raise SystemExit(f"CI contract: workflow lacks {value!r}")
+
+# Reproducible release gates use the same validated compiler as packaging.
+# Keep -D warnings; do not suppress the upstream1.99 async_trait macro lint.
+toolchain_steps = workflow.split("- uses: dtolnay/rust-toolchain@")[1:]
+if len(toolchain_steps) != 7 or any(not step.startswith("1.97.0\n") for step in toolchain_steps):
+    raise SystemExit("CI contract: every release job must use validated Rust1.97.0")
+if "cargo clippy --workspace --all-targets --all-features -- -D warnings" not in workflow:
+    raise SystemExit("CI contract: strict workspace Clippy is mandatory")
 
 # Every job validating retained evidence needs the recorded source ancestors.
 checkouts = workflow.split("- uses: actions/checkout@v4\n")[1:]

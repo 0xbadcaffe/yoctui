@@ -2,6 +2,13 @@
 
 ## Hosted CI environment
 
+Release jobs pin Rust1.97.0, matching the compiler used to validate/package
+0.1.315. Strict all-target/all-feature Clippy retains `-D warnings`.
+Floating stable1.99 hit the upstream
+[async_trait macro false-positive](https://github.com/rust-lang/rust-clippy/issues/17529);
+no blanket warning suppression or product-source workaround is introduced.
+Compiler upgrades require a separate validated CI update.
+
 Evidence validation jobs fetch full Git history so retained source commits can
 be checked for ancestry. The documentation/test job uses Ubuntu 26.04 with
 Cairo 1.18.4, PyCairo 1.27.0 and the manifest-pinned DejaVu fonts; both screenshot
