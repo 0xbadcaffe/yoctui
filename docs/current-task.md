@@ -1,8 +1,14 @@
 # Current Task
 
-**ID:** CI-VERSION-SCOPE-001
-**Title:** Check version bumps for product changes rather than documentation-only commits
+**ID:** CI-IPC-MODULES-001
+**Title:** Follow split transport modules in IPC source checks
 **Status:** IN_PROGRESS
+
+Version scope DONE: seven tests including isolated real-Git clean/dirty product
+and docs cases, untracked captures/new source, valid bumps, downgrades and
+coherence failures PASS. Product bump requirement remains; version315 unchanged.
+Current commands: python3 -m unittest scripts/test_ipc_source_contracts.py;
+./scripts/verify-performance-ci-fast.sh; ./scripts/check-ci.sh.
 
 README URLs DONE: every image uses raw GitHub and documentation uses absolute
 GitHub URLs; local navigation stays anchored. All23 source/raster hashes unchanged.

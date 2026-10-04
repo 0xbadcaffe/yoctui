@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require one coherent Yoctui workspace version and a bump per commit."""
+"""Require coherent versions and bumps for product changes, not CI/docs."""
 
 from __future__ import annotations
 
@@ -38,15 +38,33 @@ def version_increased(current: tuple[int, int, int], previous: tuple[int, int, i
     return current > previous
 
 
-def baseline_cargo_toml() -> tuple[str, bytes] | None:
-    revision = "HEAD" if run_git("status", "--porcelain") else "HEAD^"
+def product_path(path: str) -> bool:
+    return path in {"Cargo.toml", "Cargo.lock", "fuzz/Cargo.toml"} or (
+        path.startswith("crates/")
+        and (path.endswith("/Cargo.toml") or "/src/" in path or "/bridge/" in path)
+    )
+
+
+def baseline_cargo_toml() -> tuple[str, bytes, list[str]] | None:
+    changed = run_git("diff", "--name-only", "HEAD").splitlines()
+    # New product files count, but unrelated untracked captures must not hide
+    # the last committed product change by forcing a comparison against HEAD.
+    changed += [
+        path for path in run_git("ls-files", "--others", "--exclude-standard").splitlines()
+        if product_path(path)
+    ]
+    revision = "HEAD" if changed else "HEAD^"
     probe = subprocess.run(
         ["git", "show", f"{revision}:Cargo.toml"],
         cwd=ROOT,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
     )
-    return None if probe.returncode else (revision, probe.stdout)
+    if probe.returncode:
+        return None
+    if revision == "HEAD^":
+        changed = run_git("diff", "--name-only", revision, "HEAD").splitlines()
+    return revision, probe.stdout, changed
 
 
 def dependency_tables(value: object):
@@ -81,9 +99,12 @@ def main() -> None:
     current, current_tuple = parse_version((ROOT / "Cargo.toml").read_bytes(), "Cargo.toml")
     baseline = baseline_cargo_toml()
     if baseline is not None:
-        revision, baseline_text = baseline
+        revision, baseline_text, changed = baseline
         previous, previous_tuple = parse_version(baseline_text, f"{revision}:Cargo.toml")
-        if not version_increased(current_tuple, previous_tuple):
+        product_changed = any(product_path(path) for path in changed)
+        if current_tuple < previous_tuple or (
+            product_changed and not version_increased(current_tuple, previous_tuple)
+        ):
             fail(f"workspace version {current} must be greater than {revision} version {previous}")
         transition = f"{previous} -> {current}"
     else:

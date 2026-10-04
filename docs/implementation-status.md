@@ -1,4 +1,7 @@
 M118 IN_PROGRESS: scoped user request repairs registry README URLs and GitHub
+Version-scope child DONE:7 real-Git/parser checks PASS; product changes still
+require bumps, docs/CI retain315, unrelated untracked captures no longer mask
+committed product changes. Coherence checks always remain enabled.
 README URL child DONE: absolute raw image/repository document URLs, preserved
 23 screenshot hashes, registry-link/header/gallery/anchor/Flamegraph/Bash and
 compatibility structure checks PASS. Version315 unchanged.

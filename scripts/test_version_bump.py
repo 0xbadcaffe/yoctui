@@ -6,6 +6,9 @@ import contextlib
 import importlib.util
 import io
 import unittest
+import subprocess
+import tempfile
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -17,6 +20,85 @@ SPEC.loader.exec_module(POLICY)
 
 
 class VersionBumpPolicyTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.root = Path(self.directory.name)
+        self.git("init", "-q")
+        self.git("config", "user.name", "Policy Test")
+        self.git("config", "user.email", "policy@example.invalid")
+        self.write("Cargo.toml", '[workspace]\n[workspace.package]\nversion = "0.1.1"\n')
+        self.write("scripts/verify-cratesio-package.sh", 'version="0.1.1"\n')
+        self.write("fuzz/Cargo.toml", "[dependencies]\n")
+        self.write("crates/example/src/lib.rs", "fn original() {}\n")
+        self.commit()
+        self.patcher = patch.object(POLICY, "ROOT", self.root)
+        self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+
+    def git(self, *args: str) -> None:
+        subprocess.run(["git", *args], cwd=self.root, check=True, capture_output=True)
+
+    def write(self, name: str, content: str) -> None:
+        path = self.root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+
+    def commit(self) -> None:
+        self.git("add", ".")
+        self.git("commit", "-qm", "fixture")
+
+    def check(self, failure: bool = False) -> None:
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            if failure:
+                with self.assertRaises(SystemExit):
+                    POLICY.main()
+            else:
+                POLICY.main()
+
+    def test_clean_and_dirty_documentation_or_ci_changes_keep_version(self) -> None:
+        self.write("README.md", "# documentation\n")
+        self.check()
+        self.commit()
+        self.check()
+        self.write("README.md", "# updated documentation\n")
+        self.check()
+        self.write(".github/workflows/ci.yml", "name: CI\n")
+        self.commit()
+        self.check()
+
+    def test_product_change_requires_bump_clean_dirty_and_with_untracked_capture(self) -> None:
+        self.write("crates/example/src/lib.rs", "fn changed() {}\n")
+        self.check(failure=True)
+        self.commit()
+        self.check(failure=True)
+        self.write("artifacts/unrelated.txt", "user capture\n")
+        self.check(failure=True)
+
+    def test_new_untracked_product_file_requires_bump(self) -> None:
+        self.write("crates/example/src/added.rs", "fn added() {}\n")
+        self.check(failure=True)
+
+    def test_valid_product_bump_passes_and_downgrade_fails(self) -> None:
+        self.write("crates/example/src/lib.rs", "fn changed() {}\n")
+        self.write("Cargo.toml", '[workspace]\n[workspace.package]\nversion = "0.1.2"\n')
+        self.write("scripts/verify-cratesio-package.sh", 'version="0.1.2"\n')
+        self.check()
+        self.commit()
+        self.check()
+        self.write("Cargo.toml", '[workspace]\n[workspace.package]\nversion = "0.1.1"\n')
+        self.write("scripts/verify-cratesio-package.sh", 'version="0.1.1"\n')
+        self.check(failure=True)
+
+    def test_nonproduct_commit_still_checks_internal_dependency_coherence(self) -> None:
+        self.write("README.md", "# documentation\n")
+        self.commit()
+        self.write("crates/example/Cargo.toml", '[dependencies]\nyoctui-utils = { version = "0.1.0", path = "../yoctui-utils" }\n')
+        self.commit()
+        self.write("README.md", "# new documentation\n")
+        self.commit()
+        self.check(failure=True)
+
     def test_semantic_versions_compare_numerically(self) -> None:
         self.assertTrue(POLICY.version_increased((0, 2, 0), (0, 1, 99)))
         self.assertTrue(POLICY.version_increased((1, 0, 0), (0, 99, 99)))
