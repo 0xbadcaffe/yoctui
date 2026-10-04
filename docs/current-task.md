@@ -1,8 +1,15 @@
 # Current Task
 
-**ID:** CI-HISTORICAL-IPC-001
-**Title:** Verify retained IPC source hashes against their original revision and recorded patch
+**ID:** CI-FLOOD-ENV-001
+**Title:** Use the fixture's inherited build environment without conflicting explicit profile
 **Status:** IN_PROGRESS
+
+Historical reconstruction and5 mutation/isolation checks PASS; original evidence
+bytes preserved. Fresh flood reached a separate fixture startup problem: its
+YOCTUI_BUILD_DIR override falsely requests an explicit setup profile. Remove only
+that override, retaining the private inherited shell/bridge path and all limits.
+Verify10 existing harness tests plus new environment regression, actual current
+backpressure and full fast gate; no runtime/daemon/session modifications.
 
 Additional docs-mask regression PASS; product changes cannot be hidden by dirty
 documentation. Historical IPC task reconstructs recorded revision plus patch,

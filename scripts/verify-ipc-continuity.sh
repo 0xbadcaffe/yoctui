@@ -13,6 +13,8 @@ import hashlib
 import json
 import subprocess
 
+from scripts.verify_ipc_historical_sources import verify_sources
+
 manifest = json.loads(Path("artifacts/performance/ipc-gate/manifest.json").read_text(encoding="utf-8"))
 if manifest.get("schema") != "yoctui.performance.ipc-continuity-gate.v1":
     raise SystemExit("IPC continuity gate manifest schema is missing or unsupported")
@@ -21,9 +23,7 @@ subprocess.run(
     ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
     check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
 )
-for source, digest in manifest.get("sources", {}).items():
-    if hashlib.sha256(Path(source).read_bytes()).hexdigest() != digest:
-        raise SystemExit(f"IPC continuity source digest mismatch: {source}")
+verify_sources(manifest)
 flood_path = Path(manifest["event_flood_artifact"])
 if hashlib.sha256(flood_path.read_bytes()).hexdigest() != manifest["event_flood_sha256"]:
     raise SystemExit("IPC continuity flood evidence digest mismatch")

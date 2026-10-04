@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "CI-FLOOD-ENV-001"
+milestone = "M118"
+title = "Use the fixture's inherited build environment without conflicting explicit profile"
+status = "IN_PROGRESS"
+priority = 3616
+required = true
+depends_on = ["CI-VERSION-DIRTY-DOCS-001"]
+verify = ["python3 -m unittest scripts/test_event_flood_harness.py", "./scripts/verify-ipc-continuity.sh --backpressure", "./scripts/verify-performance-ci-fast.sh"]
+notes = "Fresh flood failed because YOCTUI_BUILD_DIR made the inherited fake shell explicit and triggered oe-init discovery. Keep isolated BUILDDIR/bridge/runtime/state/config; remove conflicting explicit override. No production bypass or real build."
+
+[[task]]
 id = "CI-VERSION-DIRTY-DOCS-001"
 milestone = "M118"
 title = "Prevent dirty documentation from masking a committed product bump failure"

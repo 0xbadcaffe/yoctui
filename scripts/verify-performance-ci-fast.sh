@@ -17,6 +17,7 @@ cargo test -q -p yoctui-protocol daemon_journal_updates_high_rate_job_progress_w
 
 # Exercise every available CPU and the bounded production IPC path.
 ./scripts/verify-saturation-responsiveness.sh --harness
+python3 -m unittest scripts/test_ipc_historical_sources.py
 ./scripts/verify-ipc-continuity.sh --backpressure
 python3 -m unittest scripts/test_build_performance_regression_record.py
 

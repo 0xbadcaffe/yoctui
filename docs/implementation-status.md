@@ -1,4 +1,7 @@
 M118 IN_PROGRESS: scoped user request repairs registry README URLs and GitHub
+Historical source reconstruction:5 mutation/isolation tests PASS, original
+manifest/patch/measurements unchanged. Fresh flood now exposes a conflicting
+fixture-only explicit build environment; separate child registered before repair.
 IPC module correction implemented:6 positive/negative source checks PASS,
 including empty connection module rejection; CI contract PASS. Local full fast
 performance gate hit unchanged0.5% idle bound at0.900% on the laptop; hosted
