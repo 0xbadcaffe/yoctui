@@ -15,7 +15,11 @@ affected checks PASS; defaults DONE/v313 with real read-only OpenBMC discovery,
 edit/stale-result guards and focused verification. Completed-progress child now
 DONE/v314 with honest completed summaries and focused verification. GitUI child
 DONE/v315: full native layout, pane-click focus and protected native keys,
-including isolated real GitUI verification. Optimized batch delivery now current.
+including isolated real GitUI verification. Optimized batch delivery DONE:
+sourcefa5dfc0b pushed, installed315/source-bound SHA b63a1d1b, two-job build6m52,
+install1.63s, private doctor PASS and existing daemon/all41 sessions untouched.
+Focused regressions/gates/fixtures PASS; no full suite or broader demo acceptance.
+Receipt artifacts/release-quality/ui-polish-0.1.315.json; parent deferred only.
 
 ## M115 — Hardware arbitrary text viewing and editing
 

@@ -1,31 +1,34 @@
 # Current Task
 
-**ID:** UI-POLISH-RELEASE-001
-**Title:** Deliver verified optimized scoped UI fixes
+**ID:** DEMO-INSTALL-LIVE-001
+**Title:** Install optimized release and rehearse all OpenBMC demo screens and sessions
 **Status:** IN_PROGRESS
 
-2026-10-04 scoped user bugs: paste DONE/v312, defaults DONE/v313, completed
-progress DONE/v314, GitUI DONE/v315. All release-child dependencies DONE.
-Relevant files: source-bound release receipt and registry/status handoff only.
-Done: final focused regressions/gates, source push, optimized two-job build and
-installation with previous311 backup, installed/release hash equality and
-isolated bundled-bridge doctor; current daemon/session/capture identities remain
-untouched. No full suite, image build, daemon restart, user-session termination,
-publication, presentation or unrelated queue. Commands: focused clipboard,
-kernel_debug, completed_progress, hardware, paste, devtool_editor, runqueue and
-terminal_pane regressions; strict affected all-target/all-feature Clippy; fmt/
-source/UI/roadmap and production/raster checks. Build/install with existing
-CARGO_TARGET_DIR, two jobs, no incremental, RUSTFLAGS force-frame-pointers=yes.
-Final handoff returns deferred DEMO-INSTALL-LIVE-001 without resuming it.
+Deferred handoff only: the user's four scoped M116 bugs are complete and
+delivered. Do not resume the broader demo/CI/README/reboot queue in this turn.
+Full suite remains forbidden; no daemon restart, image build, session termination,
+publication or presentation changes performed. No broad demo acceptance claim.
 
-GitUI v315 verified: CLI/app/model/UI5/3/9/4, menuconfig16/5/6/2,
-kill1/2/6/1, viewportCLI1/UI3 and isolated real installed GitUI1 PASS.
-Production16 and strict affectedClippy/fmt/source2945/UI/roadmap/version PASS;
-34identity-only goldens/29rasters verified. Pane clicks now focus Workspace,
-managed legacy Utility labels get full native layout and writer keys remain
-native including function keys. Explicit writer lease, retained editor, splits,
-ordinary utility geometry and modal guards preserved; no wire/daemon change.
-Installed311/native309 remain unchanged until final source-bound install.
+M116 release complete: UI-CLIPBOARD-PASTE-001/v312,
+KERNEL-DEBUG-DEFAULTS-001/v313, BUILD-COMPLETED-PROGRESS-001/v314,
+GITUI-NATIVE-WORKSPACE-001/v315 and UI-POLISH-RELEASE-001 DONE.
+Sources4e6bb767/7f468d5c/ac678cd8/fa5dfc0b pushed to origin/master.
+Current315 focused regression scopes178 overlapping test executions, separate
+GitUI/menuconfig/kill/viewport/realGitUI scopes65, production16, strict affected
+Clippy, fmt/source2945/UI/roadmap1005 and34identity-only goldens/29rasters PASS.
+Read-only native and retained OpenBMC defaults PASS; current6.18.54 is explicitly
+missing matching symbols, older6.18.49 uses its split DWARF ABI-named artifact.
+No cross-build fallback and final launch preflight/review unchanged.
+Optimized two-job build6m52/install1.63s; installed/release315 SHA256
+b63a1d1bd709ee78bdf9543353d4286bce9a598cf8453bf87c5ad50b9ea38d2f.
+Prior311 backup /home/bspguy-dev/.local/state/yoctui-installs/before-0.1.315.S0qgSI/yoctui
+retained. Private bundled-bridge doctor handshake/shutdown PASS (private authority
+Unavailable expected). Native daemon2787224 remains running309/SHA0cefb0ca with
+the same instance and all41 session identities/lifecycles unchanged, including
+running GitUI41/42. Oldjob15 Lost and successful job17/progressNone unchanged.
+Four user captures byte-identical/untracked. Client relaunch enables315; no wire
+change or daemon restart needed. Receipt:
+artifacts/release-quality/ui-polish-0.1.315.json.
 
 Defaults v313 verified: Kernel CLI/app/model/UI11/8/19/9, QEMU helper11,
 clipboard3/7/3/1, production16 and targeted defaults4/1/2/1 checks PASS.

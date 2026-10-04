@@ -1,4 +1,18 @@
-M116 current: UI-POLISH-RELEASE-001 IN_PROGRESS (2026-10-04 user override).
+M116 complete: all four scoped fixes and UI-POLISH-RELEASE-001 DONE.
+Sourcefa5dfc0b/v315 and preceding atomic commits pushed to origin/master.
+Final integrated178 overlapping selected test executions, GitUI scopes65,
+production16, strict affectedClippy/fmt/source2945/UI/roadmap1005 PASS.
+34identity-only goldens/29rasters verified. Optimized two-job build6m52/install1.63s;
+installed/release SHA b63a1d1bd709ee78bdf9543353d4286bce9a598cf8453bf87c5ad50b9ea38d2f.
+Prior311 backup retained; isolated bundled-bridge doctor PASS (private authority
+Unavailable expected). Native2787224 running309/hash0cefb0ca/instance unchanged;
+all41 sessions unchanged including activeGitUI41/42, oldjob15Lost/job17Exited0
+unchanged. Four user captures unchanged/untracked. No daemon wire/restart needed.
+Current6.18.54 debug symbols remain explicitly unavailable; retained6.18.49 split
+DWARF defaults found without cross-build fallback. No full suite, new live build,
+kernel session, publication, presentation or broader demo/CI/reboot certification.
+Receipt artifacts/release-quality/ui-polish-0.1.315.json; deferred parent handoff
+DEMO-INSTALL-LIVE-001 IN_PROGRESS only, not resumed in this scoped bug turn.
 GITUI-NATIVE-WORKSPACE-001 DONE/v315: pane-click Workspace focus, shared native
 layout/resize/mouse hint for managed legacy Utility labels, full width/no help
 rail and native writer function keys. Other utilities, splits, editor retention,
