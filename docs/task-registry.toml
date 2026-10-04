@@ -54,6 +54,8 @@ status = "NOT_STARTED"
 priority = 3607
 required = true
 depends_on = ["CI-IPC-MODULES-001", "CI-VERSION-DIRTY-DOCS-001", "CI-RELEASE-TOOLCHAIN-001", "CI-HISTORICAL-IPC-001"]
+verify = ["./scripts/verify-cratesio-package.sh","cargo publish --locked --dry-run --workspace","Manual: clean source, authenticated batch publication and independent public registry version/archive checksum verification"]
+notes = "Publish only seven public crates, keep private packages unpublished, version remains0.1.315. Actual hosted CI verification required before publication. No user daemon/session or presentation changes."
 
 [[task]]
 id = "CI-RELEASE-TOOLCHAIN-001"
@@ -76,8 +78,6 @@ required = true
 depends_on = ["CI-VERSION-DIRTY-DOCS-001"]
 verify = ["python3 -m unittest scripts/test_ipc_historical_sources.py", "./scripts/verify-ipc-continuity.sh --backpressure", "./scripts/verify-performance-ci-fast.sh"]
 notes = "Preserve historical manifests, source patches, hashes and observations unchanged. Reconstruct exact recorded sources in isolated temporary Git tree; reject patch/source/hash mutations. Continue separate fresh production-path gate."
-verify = ["./scripts/verify-cratesio-package.sh","cargo publish --locked --dry-run --workspace","Manual: clean source, authenticated batch publication and independent public registry version/archive checksum verification"]
-notes = "Publish only seven public crates, keep private packages unpublished, version remains0.1.315. Actual hosted CI verification required before publication. No user daemon/session or presentation changes."
 
 [[task]]
 id = "README-QUICKSTART-NAV-001"
