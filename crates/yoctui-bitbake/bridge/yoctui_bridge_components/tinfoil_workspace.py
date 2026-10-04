@@ -20,7 +20,9 @@ class TinfoilConnection:
         "bb.build.TaskFailedSilent",
         "bb.build.TaskProgress",
         "bb.runqueue.runQueueTaskStarted",
+        "bb.runqueue.runQueueTaskCompleted",
         "bb.runqueue.sceneQueueTaskStarted",
+        "bb.runqueue.sceneQueueTaskCompleted",
         "logging.LogRecord",
     ]
 

@@ -178,6 +178,18 @@ def normalize_event(event, task_identities_by_pid=None):
             "success": success,
             "exit_code": exit_code if isinstance(exit_code, int) else None,
         }
+    if normalized_kind in ("runqueuetaskcompleted", "scenequeuetaskcompleted"):
+        # noexec tasks have no worker TaskSucceeded event. Their runqueue
+        # completion is authoritative; never infer success from BuildCompleted.
+        if not all(isinstance(value, str) and value for value in (recipe, task)):
+            stats = normalized_task_stats(event)
+            return {"type": "task_stats", "stats": stats} if stats is not None else None
+        return {
+            "type": "task_completed",
+            "recipe": recipe,
+            "task": task,
+            "success": bool(event_value(event, "success", default=True)),
+        }
     if normalized_kind in (
         "tasksucceeded",
         "taskcompleted",

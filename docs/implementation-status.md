@@ -5,6 +5,12 @@ normalizer. Scoped correction consumes real terminal events, not blanket build
 success; retain failure/unknown identities/duplicate safety and old job15 Lost.
 Focused checks/version/commit/push/optimized binary required; no full suite or
 image rebuild. Broader native/demo/README/CI/reboot work remains deferred.
+Implementation0.1.310 now verified: two subscriptions/existing typed completion
+mapping only; authoritative PN cache/unknown-identity statistics fallback retained.
+Python28/18subtests, Rust5, version-bound production rendering16 tests PASS;
+strict affectedClippy/fmt/source2927/UI/roadmap/version PASS.34goldens identity-only,
+29derived rasters regenerated/verified; no README prose or presentation changes.
+Optimized release/commit/push delivery pending; native running daemon preserved.
 
 Historical M114 publication-only request DONE; deferred handoff DEMO-INSTALL-LIVE-001.
 All seven public0.1.309 crates uploaded from clean5284a3f2, locked dry-run and

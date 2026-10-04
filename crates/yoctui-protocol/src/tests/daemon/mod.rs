@@ -1,4 +1,5 @@
 use super::*;
+mod runqueue_completion;
 
 fn client_id(byte: u8) -> ClientId {
     ClientId([byte; 16])

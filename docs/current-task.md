@@ -19,11 +19,25 @@ Verification is focused only; no workspace/full bridge suite. Keep unrelated
 demo/README/operator guide/CI/reboot/publication tasks deferred this turn.
 Do not terminate the current daemon or active user sessions to install a fix.
 
+Implementation verified at0.1.310: bridge subscribes/normalizes both normal and
+setscene runqueue completion, preserving authoritative cached PN identity and
+aggregate-only unresolved fallback. Before-code regressions reproduced the bug;
+focused Python28/18subtests and Rust5 pass. Separate version-bound production
+rendering16 tests pass without update mode;34goldens changed only309->310 identity
+and29derived rasters regenerated/checked. Strict affected-crate all-target/
+all-feature Clippy, fmt,2927-source layout, UI/roadmap/version checks PASS.
+No full suite run. Optimized source-bound binary/commit/push delivery pending.
+
 ```bash
 python3 -m pytest bridge/tests/test_runqueue_completion.py bridge/tests/test_workspace_inventory.py bridge/tests/test_metadata_events.py
 cargo test -p yoctui-model runqueue_completion
 cargo test -p yoctui-protocol runqueue_completion
 cargo test -p yoctui-ui runqueue_completion
+cargo test --locked -p yoctui-ui concept_screen_contracts_render_through_production_renderer
+cargo clippy --locked -p yoctui-model -p yoctui-protocol -p yoctui-ui -p yoctui-bitbake --all-targets --all-features -- -D warnings
+python3 scripts/check-library-layout.py
+python3 scripts/render-m22-concept-screenshots.py --check
+python3 scripts/render-readme-screenshots.py --check
 cargo fmt --all --check
 ./scripts/verify-ui-spec.sh
 ./scripts/verify-roadmap.sh
