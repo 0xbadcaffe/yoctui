@@ -1,8 +1,14 @@
 # Current Task
 
-**ID:** RELEASE-README-URLS-001
-**Title:** Make README images and documentation links registry-safe
+**ID:** CI-VERSION-SCOPE-001
+**Title:** Check version bumps for product changes rather than documentation-only commits
 **Status:** IN_PROGRESS
+
+README URLs DONE: every image uses raw GitHub and documentation uses absolute
+GitHub URLs; local navigation stays anchored. All23 source/raster hashes unchanged.
+README/header/gallery/Flamegraph/anchors/Bash/compatibility checks PASS.
+Current verification: python3 -m unittest scripts/test_version_bump.py;
+python3 scripts/check-version-bump.py; ./scripts/verify-roadmap.sh.
 
 2026-10-04 user override: fix crates.io README links, repair GitHub CI and publish
 the existing0.1.315 public crate graph. M118 atomic queue supersedes the deferred

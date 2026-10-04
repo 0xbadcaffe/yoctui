@@ -4706,6 +4706,11 @@ the production fallback, preserving package navigation and selection.
 
 ## M57 README screenshot projection
 
+README images use direct absolute raw GitHub URLs, while documentation links use
+absolute GitHub file URLs. This avoids workspace-readme crate-relative registry
+rewrites. Validation retains local source/image hashes and checks both published
+URL form and local targets; no runtime rendering or image pixels change.
+
 README screenshots are a documentation projection of production rendering,
 not a second UI implementation. Typed `App` fixtures call `render_at` through
 Ratatui's `TestBackend`; reviewed cell/style buffers are the source artifacts.

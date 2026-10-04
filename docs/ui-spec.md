@@ -6576,6 +6576,12 @@ modes.
 
 ## 44. README production screenshot gallery
 
+Registry rendering uses absolute raw GitHub image URLs and absolute GitHub file
+links; same-document anchors remain local. Source images, provenance, order and
+alt text stay unchanged. The README contract validates published URL form, then
+maps only this repository's known URL prefixes to local files for hash/anchor
+checks. The latest gallery has23 screenshots, including D-Bus/systemd/udev.
+
 The front README presents twelve ordered current-renderer screenshots: active
 Tasks, Kernel and U-Boot device-tree workbenches, Kernel and U-Boot menuconfig,
 Rootfs package composition, Dashboard, Errors, recipe editing, and Terminal

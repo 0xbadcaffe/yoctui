@@ -1,22 +1,22 @@
 <!-- yoctui-header -->
 <p align="center">
-  <img src="docs/media/yoctui-header.png" width="1000" alt="Yoctui — terminal interface for Yocto and BitBake development.">
+  <img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/yoctui-header.png" width="1000" alt="Yoctui — terminal interface for Yocto and BitBake development.">
 </p>
 
 <p align="center">
   <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI workflow status"></a>
-  <a href="docs/testing.md#completion-gate"><img src="https://img.shields.io/badge/coverage-gates-orange?style=flat-square" alt="Coverage verification gates"></a>
-  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.118" alt="Latest published crates.io version"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/testing.md#completion-gate"><img src="https://img.shields.io/badge/coverage-gates-orange?style=flat-square" alt="Coverage verification gates"></a>
+  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.315" alt="Latest published crates.io version"></a>
   <a href="#install"><img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&amp;logo=rust" alt="Rust stable toolchain"></a>
   <br>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license"></a>
-  <a href="docs/operator-guide.md"><img src="https://img.shields.io/badge/docs-guide-blue?style=flat-square" alt="Operator documentation"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md"><img src="https://img.shields.io/badge/docs-guide-blue?style=flat-square" alt="Operator documentation"></a>
   <a href="#install"><img src="https://img.shields.io/badge/platform-Linux-purple?style=flat-square&amp;logo=linux&amp;logoColor=white" alt="Linux platform"></a>
   <a href="https://github.com/0xbadcaffe/yoctui/issues"><img src="https://img.shields.io/badge/community-GitHub-green?style=flat-square&amp;logo=github" alt="Questions and issues on GitHub"></a>
 </p>
 
 <p align="center">
-  <a href="docs/operator-guide.md">Docs</a> ·
+  <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md">Docs</a> ·
   <a href="#install">Install</a> ·
   <a href="#features">Features</a> ·
   <a href="#quickstart-poky-build-environment">Quickstart</a> ·
@@ -48,11 +48,11 @@ images, and manages development terminals.
 [Daemon and remote use](#daemon-and-remote-use) · [Settings and profiles](#settings-and-team-profiles) ·
 [Features](#features) · [Troubleshooting](#compatibility-and-troubleshooting) ·
 [Performance](#performance-evidence) · [Hardware bring-up](#hardware-projects-and-manual-bring-up) ·
-[Development and license](#development-and-license) · [Operator guide](docs/operator-guide.md)
+[Development and license](#development-and-license) · [Operator guide](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md)
 <!-- /yoctui-contents -->
 
 <p align="center">
-  <a href="docs/media/screenshots/07-idle-dashboard.png"><img src="docs/media/screenshots/07-idle-dashboard.png" alt="Yoctui dashboard with workspace status, recent builds and CPU, RAM and filesystem usage"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/07-idle-dashboard.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/07-idle-dashboard.png" alt="Yoctui dashboard with workspace status, recent builds and CPU, RAM and filesystem usage"></a>
 </p>
 
 The dashboard shows workspace status, recent jobs, build actions and host usage.
@@ -143,7 +143,7 @@ Source/Build/Script; `b` browses, `e` edits/pastes and `s` saves. Use an existin
 build directory and the correct setup script. `Alt+v` initializes/verifies;
 browsing and saving alone execute nothing. Persistent sessions still require
 the daemon started from an initialized shell.
-[Workspace setup details](docs/operator-guide.md#start-a-workspace-safely).
+[Workspace setup details](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md#start-a-workspace-safely).
 
 ## Navigation
 
@@ -170,7 +170,7 @@ and native terminal-program keys stay unchanged.
 
 The footer lists shortcuts for the current view. Dialogs and editors own
 their keys before global navigation. Terminal writers retain normal keys; use
-`Ctrl+B` for Yoctui terminal controls. See the [keymap](docs/keymap.md) for
+`Ctrl+B` for Yoctui terminal controls. See the [keymap](https://github.com/0xbadcaffe/yoctui/blob/master/docs/keymap.md) for
 terminal-prefix commands and custom bindings. `Ctrl+V` pastes into focused
 text fields/editors when `wl-paste`, `xclip` or `xsel` is available; native
 terminals keep their own paste/key behavior.
@@ -179,17 +179,17 @@ terminals keep their own paste/key behavior.
 
 Screens use fixture values rendered through Yoctui at `160x50`. GitUI panes
 replay native output from a demo repository. For live build captures and image
-checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
-[Recorded live capture](artifacts/release-quality/next-generation-ui/manifest.json),
-[Completed live build](docs/media/yoctui-live-completion.svg) and
-[Failed live build](docs/media/yoctui-live-failed-task.svg).
+checksums, see [Raster provenance](https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/manifest.toml),
+[Recorded live capture](https://github.com/0xbadcaffe/yoctui/blob/master/artifacts/release-quality/next-generation-ui/manifest.json),
+[Completed live build](https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/yoctui-live-completion.svg) and
+[Failed live build](https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/yoctui-live-failed-task.svg).
 
 ### Set up a workspace
 
 <table>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/13-cloning.png"><img src="docs/media/screenshots/13-cloning.png" alt="Fresh clone"></a><br><strong>Clone sources</strong> — Background cloning with a Braille <code>Cloning…</code> indicator.</td>
-    <td width="50%"><a href="docs/media/screenshots/18-offline-dashboard.png"><img src="docs/media/screenshots/18-offline-dashboard.png" alt="Offline Dashboard with saved builds and setup guidance"></a><br><strong>Offline dashboard</strong> — Configure paths, reconnect the daemon or open saved builds.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/13-cloning.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/13-cloning.png" alt="Fresh clone"></a><br><strong>Clone sources</strong> — Background cloning with a Braille <code>Cloning…</code> indicator.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/18-offline-dashboard.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/18-offline-dashboard.png" alt="Offline Dashboard with saved builds and setup guidance"></a><br><strong>Offline dashboard</strong> — Configure paths, reconnect the daemon or open saved builds.</td>
   </tr>
 </table>
 
@@ -197,12 +197,12 @@ checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
 
 <table>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/01-active-build-tasks.png"><img src="docs/media/screenshots/01-active-build-tasks.png" alt="Yoctui active BitBake tasks and correlated build logs"></a><br><strong>Tasks</strong> — Active BitBake tasks, build progress and task logs.</td>
-    <td width="50%"><a href="docs/media/screenshots/08-failed-build-errors.png"><img src="docs/media/screenshots/08-failed-build-errors.png" alt="Yoctui failed BitBake task errors and correlated logs"></a><br><strong>Errors</strong> — Failed tasks, diagnostics, source logs and recovery actions.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/01-active-build-tasks.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/01-active-build-tasks.png" alt="Yoctui active BitBake tasks and correlated build logs"></a><br><strong>Tasks</strong> — Active BitBake tasks, build progress and task logs.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/08-failed-build-errors.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/08-failed-build-errors.png" alt="Yoctui failed BitBake task errors and correlated logs"></a><br><strong>Errors</strong> — Failed tasks, diagnostics, source logs and recovery actions.</td>
   </tr>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/14-cancelling.png"><img src="docs/media/screenshots/14-cancelling.png" alt="Background cancellation"></a><br><strong>Cancel a build</strong> — Cancellation runs in the background; navigation stays available.</td>
-    <td width="50%"><a href="docs/media/screenshots/15-search-empty.png"><img src="docs/media/screenshots/15-search-empty.png" alt="Content search"></a><br><strong>Search build output</strong> — <code>/</code> opens an empty search of build files, generated rootfs and text image artifacts.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/14-cancelling.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/14-cancelling.png" alt="Background cancellation"></a><br><strong>Cancel a build</strong> — Cancellation runs in the background; navigation stays available.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/15-search-empty.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/15-search-empty.png" alt="Content search"></a><br><strong>Search build output</strong> — <code>/</code> opens an empty search of build files, generated rootfs and text image artifacts.</td>
   </tr>
 </table>
 
@@ -210,8 +210,8 @@ checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
 
 <table>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/19-saved-build-history.png"><img src="docs/media/screenshots/19-saved-build-history.png" alt="Saved build history without a daemon connection"></a><br><strong>Build history</strong> — Browse saved outcomes without a configured environment or daemon connection.</td>
-    <td width="50%"><a href="docs/media/screenshots/20-saved-build-logs.png"><img src="docs/media/screenshots/20-saved-build-logs.png" alt="Read-only saved build logs with provenance"></a><br><strong>Saved logs and tasks</strong> — Read retained build details and log excerpts; missing records and retention limits are shown.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/19-saved-build-history.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/19-saved-build-history.png" alt="Saved build history without a daemon connection"></a><br><strong>Build history</strong> — Browse saved outcomes without a configured environment or daemon connection.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/20-saved-build-logs.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/20-saved-build-logs.png" alt="Read-only saved build logs with provenance"></a><br><strong>Saved logs and tasks</strong> — Read retained build details and log excerpts; missing records and retention limits are shown.</td>
   </tr>
 </table>
 
@@ -219,12 +219,12 @@ checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
 
 <table>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/09-editor-application-menu.png"><img src="docs/media/screenshots/09-editor-application-menu.png" alt="Yoctui BitBake recipe editor and application action menu"></a><br><strong>Recipe editor and menus</strong> — Syntax highlighting, validation and context actions. Use arrows to navigate menus and Escape to return; unavailable actions show the reason.</td>
-    <td width="50%"><a href="docs/media/screenshots/10-terminal-sessions.png"><img src="docs/media/screenshots/10-terminal-sessions.png" alt="Yoctui split daemon-owned terminal sessions"></a><br><strong>Terminal sessions</strong> — Split build shells and devshells with writer control and scrollback.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/09-editor-application-menu.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/09-editor-application-menu.png" alt="Yoctui BitBake recipe editor and application action menu"></a><br><strong>Recipe editor and menus</strong> — Syntax highlighting, validation and context actions. Use arrows to navigate menus and Escape to return; unavailable actions show the reason.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/10-terminal-sessions.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/10-terminal-sessions.png" alt="Yoctui split daemon-owned terminal sessions"></a><br><strong>Terminal sessions</strong> — Split build shells and devshells with writer control and scrollback.</td>
   </tr>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/16-gitui-diff.png"><img src="docs/media/screenshots/16-gitui-diff.png" alt="Source Git and diffs"></a><br><strong>Git status and diffs</strong> — Repository status in the header; native GitUI for reviewing and staging changes.</td>
-    <td width="50%"><a href="docs/media/screenshots/17-gitui-commit.png"><img src="docs/media/screenshots/17-gitui-commit.png" alt="Commit messages"></a><br><strong>Commit changes</strong> — Enter commit messages in GitUI inside a Yoctui terminal.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/16-gitui-diff.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/16-gitui-diff.png" alt="Source Git and diffs"></a><br><strong>Git status and diffs</strong> — Repository status in the header; native GitUI for reviewing and staging changes.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/17-gitui-commit.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/17-gitui-commit.png" alt="Commit messages"></a><br><strong>Commit changes</strong> — Enter commit messages in GitUI inside a Yoctui terminal.</td>
   </tr>
 </table>
 
@@ -232,16 +232,16 @@ checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
 
 <table>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/02-kernel-device-tree.png"><img src="docs/media/screenshots/02-kernel-device-tree.png" alt="Yoctui Kernel device-tree inventory"></a><br><strong>Kernel device trees</strong> — DTS, DTSI and compiled DTB files for the selected provider.</td>
-    <td width="50%"><a href="docs/media/screenshots/03-uboot-device-tree.png"><img src="docs/media/screenshots/03-uboot-device-tree.png" alt="Yoctui U-Boot device-tree inventory"></a><br><strong>U-Boot device trees</strong> — Bootloader sources and generated device-tree artifacts.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/02-kernel-device-tree.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/02-kernel-device-tree.png" alt="Yoctui Kernel device-tree inventory"></a><br><strong>Kernel device trees</strong> — DTS, DTSI and compiled DTB files for the selected provider.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/03-uboot-device-tree.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/03-uboot-device-tree.png" alt="Yoctui U-Boot device-tree inventory"></a><br><strong>U-Boot device trees</strong> — Bootloader sources and generated device-tree artifacts.</td>
   </tr>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/04-kernel-menuconfig.png"><img src="docs/media/screenshots/04-kernel-menuconfig.png" alt="Linux kernel menuconfig inside a Yoctui terminal session"></a><br><strong>Kernel menuconfig</strong> — Native ncurses controls in a daemon-owned terminal.</td>
-    <td width="50%"><a href="docs/media/screenshots/05-uboot-menuconfig.png"><img src="docs/media/screenshots/05-uboot-menuconfig.png" alt="U-Boot menuconfig inside a Yoctui terminal session"></a><br><strong>U-Boot menuconfig</strong> — The selected provider’s ncurses interface in a reconnectable PTY.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/04-kernel-menuconfig.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/04-kernel-menuconfig.png" alt="Linux kernel menuconfig inside a Yoctui terminal session"></a><br><strong>Kernel menuconfig</strong> — Native ncurses controls in a daemon-owned terminal.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/05-uboot-menuconfig.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/05-uboot-menuconfig.png" alt="U-Boot menuconfig inside a Yoctui terminal session"></a><br><strong>U-Boot menuconfig</strong> — The selected provider’s ncurses interface in a reconnectable PTY.</td>
   </tr>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/11-device-tree-editor.png"><img src="docs/media/screenshots/11-device-tree-editor.png" alt="Yoctui Device Tree source editor with DTS syntax highlighting"></a><br><strong>Device Tree editor</strong> — Linux v6.6 <a href="https://github.com/torvalds/linux/blob/v6.6/arch/arm64/boot/dts/freescale/imx8mp-evk.dts">NXP i.MX8MP EVK DTS</a>, with highlighted directives, nodes, properties, values and comments.</td>
-    <td width="50%"><a href="docs/media/screenshots/12-device-tree-compile-options.png"><img src="docs/media/screenshots/12-device-tree-compile-options.png" alt="Yoctui dtc compile-options dialog for a kernel Device Tree source"></a><br><strong>Device Tree compiler</strong> — Set symbols, sorting, padding and reserve entries, then review the exact <code>dtc</code> command.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/11-device-tree-editor.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/11-device-tree-editor.png" alt="Yoctui Device Tree source editor with DTS syntax highlighting"></a><br><strong>Device Tree editor</strong> — Linux v6.6 <a href="https://github.com/torvalds/linux/blob/v6.6/arch/arm64/boot/dts/freescale/imx8mp-evk.dts">NXP i.MX8MP EVK DTS</a>, with highlighted directives, nodes, properties, values and comments.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/12-device-tree-compile-options.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/12-device-tree-compile-options.png" alt="Yoctui dtc compile-options dialog for a kernel Device Tree source"></a><br><strong>Device Tree compiler</strong> — Set symbols, sorting, padding and reserve entries, then review the exact <code>dtc</code> command.</td>
   </tr>
 </table>
 
@@ -249,12 +249,12 @@ checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
 
 <table>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/06-rootfs-composition.png"><img src="docs/media/screenshots/06-rootfs-composition.png" alt="Yoctui root filesystem package composition pie chart and exact size table"></a><br><strong>Rootfs composition</strong> — Braille package-size chart with matching table colors, exact byte totals and filesystem drill-down.</td>
-    <td width="50%"><a href="docs/media/screenshots/21-systemd-services.png"><img src="docs/media/screenshots/21-systemd-services.png" alt="Offline systemd Services view listing unit files, descriptions, BusName and enablement from IMAGE_ROOTFS"></a><br><strong>Offline systemd services</strong> — Inspect unit files, D-Bus names and enablement links in <code>IMAGE_ROOTFS</code>. These are installed files, not live service status.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/06-rootfs-composition.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/06-rootfs-composition.png" alt="Yoctui root filesystem package composition pie chart and exact size table"></a><br><strong>Rootfs composition</strong> — Braille package-size chart with matching table colors, exact byte totals and filesystem drill-down.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/21-systemd-services.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/21-systemd-services.png" alt="Offline systemd Services view listing unit files, descriptions, BusName and enablement from IMAGE_ROOTFS"></a><br><strong>Offline systemd services</strong> — Inspect unit files, D-Bus names and enablement links in <code>IMAGE_ROOTFS</code>. These are installed files, not live service status.</td>
   </tr>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/22-system-dbus.png"><img src="docs/media/screenshots/22-system-dbus.png" alt="Offline system D-Bus activation map with bus names, systemd units, users, executables and policy counts"></a><br><strong>System D-Bus</strong> — Inspect activation files, associated systemd units and policy files from the image.</td>
-    <td width="50%"><a href="docs/media/screenshots/23-udev-rules.png"><img src="docs/media/screenshots/23-udev-rules.png" alt="Offline udev rule files showing overrides, masks and selected rule content"></a><br><strong>udev rules</strong> — Check file precedence, overrides and masks, then read the selected rule. Rules are not executed.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/22-system-dbus.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/22-system-dbus.png" alt="Offline system D-Bus activation map with bus names, systemd units, users, executables and policy counts"></a><br><strong>System D-Bus</strong> — Inspect activation files, associated systemd units and policy files from the image.</td>
+    <td width="50%"><a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/23-udev-rules.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/23-udev-rules.png" alt="Offline udev rule files showing overrides, masks and selected rule content"></a><br><strong>udev rules</strong> — Check file precedence, overrides and masks, then read the selected rule. Rules are not executed.</td>
   </tr>
 </table>
 
@@ -269,7 +269,7 @@ checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
    separate from cancelling a daemon-owned build.
 
 Logs show output acquired by Yoctui, not every log file on the host.
-Retention is bounded. [Log controls and limits](docs/yocto-logs.md).
+Retention is bounded. [Log controls and limits](https://github.com/0xbadcaffe/yoctui/blob/master/docs/yocto-logs.md).
 
 ## Offline use and saved builds
 
@@ -284,7 +284,7 @@ Loading refreshes metadata, not the historical build, and does not change MACHIN
 Saved history contains bounded excerpts (32 builds, 8 MiB), not complete logs
 or proof that an interrupted process is still running. It lives under
 `$XDG_STATE_HOME/yoctui/build-history` (default `~/.local/state/yoctui/build-history`).
-[History and connection details](docs/operator-guide.md#understand-the-persistent-shell).
+[History and connection details](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md#understand-the-persistent-shell).
 
 ## Edit recipes and develop a patch
 
@@ -300,7 +300,7 @@ In Recipes, select a provider and use this reviewed patch workflow:
 
 Devshell/menuconfig can use embedded or supported detached terminals.
 The editor is Vim-style, not an LSP/VS Code replacement.
-[Editing, deploy and reset controls](docs/operator-guide.md#recipes-and-devtool).
+[Editing, deploy and reset controls](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md#recipes-and-devtool).
 
 ## Source Git status
 
@@ -323,7 +323,7 @@ and text artifacts. Enter opens a result; provenance identifies its file/image.
 Search skips symlinks, binary/oversized files and large caches, with at most
 500 hits. It is not an exhaustive disk index. Editors use `Ctrl+F` for the file
 and `Alt+f` for workspace search; native terminals keep their own keys.
-[Search scope and controls](docs/keymap.md#focus-and-collection-movement).
+[Search scope and controls](https://github.com/0xbadcaffe/yoctui/blob/master/docs/keymap.md#focus-and-collection-movement).
 
 ## Kernel, firmware and build analysis
 
@@ -341,12 +341,12 @@ and kernel support; **Host** mode means the Yoctui host, not the guest.
 
 Serial KGDB requires an already configured/halted board; setup guides do not
 automatically configure, flash, reset or halt hardware.
-[Kernel/debugging prerequisites and workflows](docs/platform-workbenches.md).
+[Kernel/debugging prerequisites and workflows](https://github.com/0xbadcaffe/yoctui/blob/master/docs/platform-workbenches.md).
 
 **Overview → Insights** offers timeline, rebuild, cache, size, provenance,
 dependency, supply-chain and disk views (`1`–`8`). Missing evidence is not estimated.
 Use Dependencies, Configuration and recipe signature history for deeper analysis.
-[Analysis controls](docs/operator-guide.md#dependency-package-and-signature-evidence).
+[Analysis controls](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md#dependency-package-and-signature-evidence).
 
 ## Inspect an image, its packages and rootfs
 
@@ -371,7 +371,7 @@ retained `IMAGE_ROOTFS`. Yoctui does not mount/extract ext4/Wic automatically;
 `rm_work` may remove the tree. The filesystem shows target permissions/owners,
 not host build-user ownership. Services/rules describe installed files, not live
 state, and are not executed. Make lasting changes in recipes/layers, not staged
-rootfs files. [Rootfs evidence and controls](docs/rootfs-composition.md).
+rootfs files. [Rootfs evidence and controls](https://github.com/0xbadcaffe/yoctui/blob/master/docs/rootfs-composition.md).
 
 ## Boot with QEMU or connect over SSH
 
@@ -399,7 +399,7 @@ takes writer control. `Alt+q` opens the advanced QEMU options.
 
 Press the prefix and its command separately. `!` opens an inherited shell
 outside the TUI; exit that shell to return.
-[Terminal sessions](docs/embedded-shell.md).
+[Terminal sessions](https://github.com/0xbadcaffe/yoctui/blob/master/docs/embedded-shell.md).
 
 ## SDK, Wic, tests, security and maintenance
 
@@ -408,7 +408,7 @@ and ptest, CVE/SBOM imports, QA checks, structured Raw Mode commands and mainten
 Actions depend on the active image/machine/distro and show prerequisites/review.
 Cleanup and removable-device writing require explicit confirmation; Yoctui
 does not invoke sudo for Wic writes. A package manifest is not a full SBOM.
-[Workflow controls and safeguards](docs/operator-guide.md#image-sdk-qemu-and-wic-operations).
+[Workflow controls and safeguards](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md#image-sdk-qemu-and-wic-operations).
 
 ## Daemon and remote use
 
@@ -439,7 +439,7 @@ Arrange the correct Yocto environment before starting the service; unit
 installation alone does not initialize a build or guarantee reboot readiness.
 For failures, inspect `yoctui daemon status` and
 `$XDG_STATE_HOME/yoctui/daemon.log` (default `~/.local/state/yoctui/daemon.log`).
-[Daemon/session lifecycle](docs/embedded-shell.md#daemon-owned-terminal-sessions).
+[Daemon/session lifecycle](https://github.com/0xbadcaffe/yoctui/blob/master/docs/embedded-shell.md#daemon-owned-terminal-sessions).
 
 ## Settings and team profiles
 
@@ -448,7 +448,7 @@ Preferences are local. Optional `.yoctui/project.toml` profiles share favorites,
 build presets and workflows, not credentials/host paths/shell hooks.
 `yoctui --build-dir "$BUILDDIR" profile` inspects one without executing it;
 select a preset and review before running.
-[Settings/profile reference](docs/operator-guide.md#settings-configuration-and-sessions).
+[Settings/profile reference](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md#settings-configuration-and-sessions).
 
 ## Features
 
@@ -478,6 +478,9 @@ Unavailable actions show the required tools, tasks or files.
 
 ## Compatibility and troubleshooting
 
+Yoctui functionality is Yocto-feature-correlated: available actions depend on
+what the initialized Yocto release and BSP provide.
+
 Open Compatibility for detected tools/tasks/versions and disabled-action reasons:
 
 ```sh
@@ -485,7 +488,7 @@ yoctui --build-dir "$BUILDDIR" doctor
 yoctui --build-dir "$BUILDDIR" doctor --json
 ```
 
-The [compatibility matrix](docs/compatibility-matrix.md) records exact tested
+The [compatibility matrix](https://github.com/0xbadcaffe/yoctui/blob/master/docs/compatibility-matrix.md) records exact tested
 Yocto/BitBake revisions and host limits. A version number alone is not support
 evidence; workflows depend on the connected environment's actual capabilities.
 
@@ -509,11 +512,11 @@ changed since this capture. The historical measurements apply to v0.1.64, not
 the current release.
 
 <p align="center">
-  <a href="artifacts/flamegraph/yoctui.svg"><img src="artifacts/flamegraph/yoctui.svg" alt="Interactive Yoctui large-metadata workbench CPU Flamegraph"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/blob/master/artifacts/flamegraph/yoctui.svg"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/artifacts/flamegraph/yoctui.svg" alt="Interactive Yoctui large-metadata workbench CPU Flamegraph"></a>
 </p>
 
-[Machine-readable summary](artifacts/flamegraph/summary.txt) ·
-[Profiling method and current limits](docs/profiling.md)
+[Machine-readable summary](https://github.com/0xbadcaffe/yoctui/blob/master/artifacts/flamegraph/summary.txt) ·
+[Profiling method and current limits](https://github.com/0xbadcaffe/yoctui/blob/master/docs/profiling.md)
 
 Reproduce the current-source report on a Linux host that permits userspace
 `perf` sampling:
@@ -541,7 +544,7 @@ viewing. Stored files are not executed.
 `s` edits manual 0–100% bring-up values for Bootloader, Kernel, Device tree,
 Drivers, RootFS and Packages. Enter saves; Esc cancels. The overall bar averages
 these entries, not build-task progress.
-[Hardware text and viewer details](docs/operator-guide.md#view-and-edit-hardware-text-files).
+[Hardware text and viewer details](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md#view-and-edit-hardware-text-files).
 
 ## Development and license
 
@@ -558,12 +561,12 @@ python3 -m pytest bridge/tests
 ./scripts/verify-completion.sh
 ```
 
-[Testing](docs/testing.md) · [Profiling](docs/profiling.md) ·
-[Performance contract](docs/performance.md) · [UI specification](docs/ui-spec.md) ·
-[Architecture](docs/architecture.md) · [Implementation status](docs/implementation-status.md)
+[Testing](https://github.com/0xbadcaffe/yoctui/blob/master/docs/testing.md) · [Profiling](https://github.com/0xbadcaffe/yoctui/blob/master/docs/profiling.md) ·
+[Performance contract](https://github.com/0xbadcaffe/yoctui/blob/master/docs/performance.md) · [UI specification](https://github.com/0xbadcaffe/yoctui/blob/master/docs/ui-spec.md) ·
+[Architecture](https://github.com/0xbadcaffe/yoctui/blob/master/docs/architecture.md) · [Implementation status](https://github.com/0xbadcaffe/yoctui/blob/master/docs/implementation-status.md)
 
-Yoctui is [MIT-licensed](LICENSE). Dependency licenses are listed in
-[third-party notices](docs/compliance/THIRD_PARTY_NOTICES.md).
+Yoctui is [MIT-licensed](https://github.com/0xbadcaffe/yoctui/blob/master/LICENSE). Dependency licenses are listed in
+[third-party notices](https://github.com/0xbadcaffe/yoctui/blob/master/docs/compliance/THIRD_PARTY_NOTICES.md).
 The offline systemd service view was informed by the MIT-licensed
 [systemd-manager-tui](https://github.com/Matheus-git/systemd-manager-tui) by
 Matheus-git; Yoctui uses its own parser for unbooted images.

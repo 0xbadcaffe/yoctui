@@ -1,4 +1,7 @@
 M118 IN_PROGRESS: scoped user request repairs registry README URLs and GitHub
+README URL child DONE: absolute raw image/repository document URLs, preserved
+23 screenshot hashes, registry-link/header/gallery/anchor/Flamegraph/Bash and
+compatibility structure checks PASS. Version315 unchanged.
 CI before publishing0.1.315. Atomic tasks are registered; no publication or CI
 success claimed yet. No presentation, runtime, daemon/session or image changes.
 

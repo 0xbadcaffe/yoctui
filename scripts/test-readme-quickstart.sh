@@ -17,7 +17,21 @@ import struct
 import subprocess
 import tomllib
 
-readme = Path("README.md").read_text(encoding="utf-8")
+published_readme = Path("README.md").read_text(encoding="utf-8")
+raw_base = "https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/"
+blob_base = "https://github.com/0xbadcaffe/yoctui/blob/master/"
+# The registry must not resolve workspace-inherited links relative to the CLI
+# crate directory. Validate published URLs before mapping them to local assets
+# for the existing hash, order and anchor checks.
+published_links = re.findall(r'(?:src|href)="([^"]+)"', published_readme)
+published_links += re.findall(r'!?\[[^\]]+\]\(([^)\s]+)\)', published_readme)
+for target in published_links:
+    assert target.startswith("#") or urlsplit(target).scheme == "https", f"Registry-relative README link: {target}"
+for source in re.findall(r'<img\b[^>]*\bsrc="([^"]+)"', published_readme):
+    if "docs/media/" in source:
+        assert source.startswith(raw_base), f"Screenshot must use direct raw image URL: {source}"
+assert raw_base + "docs/media/yoctui-header.png" in published_readme
+readme = published_readme.replace(raw_base, "").replace(blob_base, "")
 def prose_headings(markdown, level="#{1,6}"):
     prose = re.sub(r"^```[^\n]*\n.*?^```[ \t]*$", "", markdown, flags=re.M | re.S)
     return re.findall(rf"^{level} (.+)$", prose, re.M)
