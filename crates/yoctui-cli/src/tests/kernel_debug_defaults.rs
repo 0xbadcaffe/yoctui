@@ -221,12 +221,13 @@ async fn kernel_debug_defaults_worker_preserves_live_edits_and_does_not_launch()
 #[test]
 #[ignore = "explicit read-only local OpenBMC artifact smoke, no guest launch"]
 fn kernel_debug_defaults_actual_openbmc_read_only_smoke() {
-    for build in [
-        "/home/bspguy-dev/src/openbmc/build/romulus",
-        "/home/bspguy-dev/src/build-openbmc-romulus",
-    ] {
+    let native_build = std::env::var("YOCTUI_OPENBMC_NATIVE_BUILD")
+        .expect("set YOCTUI_OPENBMC_NATIVE_BUILD to the current native Romulus build");
+    let retained_build = std::env::var("YOCTUI_OPENBMC_RETAINED_BUILD")
+        .expect("set YOCTUI_OPENBMC_RETAINED_BUILD to the retained build with matching symbols");
+    for (build, expects_symbols) in [(&native_build, false), (&retained_build, true)] {
         let defaults = discover(&KernelDebugDefaultContext {
-            build_dir: build.into(),
+            build_dir: build.as_str().into(),
             machine: "romulus".into(),
             image: Some("obmc-phosphor-image".into()),
         })
@@ -243,7 +244,7 @@ fn kernel_debug_defaults_actual_openbmc_read_only_smoke() {
         }
         assert_eq!(
             defaults.values.iter().any(|(f, _)| *f == F::Symbols),
-            build.ends_with("build-openbmc-romulus"),
+            expects_symbols,
             "{defaults:?}"
         );
         println!("Read-only {build}: {defaults:?}");

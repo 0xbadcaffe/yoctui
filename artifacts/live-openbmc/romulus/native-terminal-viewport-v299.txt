@@ -1,7 +1,7 @@
 Native ordinary terminal visible-cell sizing acceptance: PASS
 2026-10-03 08:19 Asia/Jerusalem; same boot, not actual reboot.
 Code3d0d2940b11f4d442a8b939b20409fb3a15264de, v0.1.299.
-Installed /home/bspguy-dev/.cargo/bin/yoctui SHA256:
+Installed /home/build-user/.cargo/bin/yoctui SHA256:
 3e03cc5974c47e955cec066dfb8f23fd2104f794afc1ef6207f1dbf013a586c1
 Byte-identical release artifact. Locked thinLTO/debug1/codegen1/frame pointers/
 two workers, build6m23s/cached install1.74s.

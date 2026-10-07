@@ -10,12 +10,12 @@
   "evidence": {
     "input_and_render": {
       "path": "artifacts/performance/input-latency/host-audit.json",
-      "sha256": "bc8e06ad4b8c57b1cc3f4abaafb6cdc24dec83ab2e0b588362436da593e29505",
+      "sha256": "c25e331f1e71f7aa87354201d1f9dab5bdb4f67ea6d0466f03b3c3d33b90801e",
       "schema": "yoctui.performance.input-latency.v1"
     },
     "ipc_backend_cancellation_detach_reconnect": {
       "path": "artifacts/performance/ipc-latency/host-audit.json",
-      "sha256": "adb0a281e9cab6434fc82cdf3e49456ef0a61428075ce968ab8914fd36cffa26",
+      "sha256": "4d117a1d6240a9b8956d7e611f934566ed444477b90f6dc9858f400d7dbc39d6",
       "schema": "yoctui.performance.ipc-latency.v1"
     }
   },

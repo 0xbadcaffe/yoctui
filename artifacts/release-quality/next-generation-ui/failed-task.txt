@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.3  •  Project: build  •  ✕ Failed  •  Target: core-image-minimal                             Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers…│
+│Workspace: /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/build  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers…│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: core-image-minimal · All─────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││Overall  progress unknown ◐  0/—                                                    ││No task selected.                           │

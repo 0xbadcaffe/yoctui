@@ -68,7 +68,7 @@
   },
   "poky": {
     "release": "6.0.2",
-    "root": "/home/bspguy-dev/src/poky",
+    "root": "/home/build-user/src/poky",
     "build_directory": "/tmp/yoctui-m52-poky.nHLLjU",
     "target": "linux-yocto",
     "task": "compile",
@@ -86,7 +86,7 @@
     },
     "repositories": {
       "bitbake": {
-        "path": "/home/bspguy-dev/src/poky/layers/bitbake",
+        "path": "/home/build-user/src/poky/layers/bitbake",
         "revision": "acfe02fa38b5da9e6a36c6cedcf91d4fcbefbfbd",
         "describe": "yocto-6.0.2",
         "dirty": false,
@@ -94,7 +94,7 @@
         "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       "openembedded_core": {
-        "path": "/home/bspguy-dev/src/poky/layers/openembedded-core",
+        "path": "/home/build-user/src/poky/layers/openembedded-core",
         "revision": "5d1aa5c806c061a2994f4decb59016610f093213",
         "describe": "yocto-6.0.2-dirty",
         "dirty": true,
@@ -104,7 +104,7 @@
         "working_diff_sha256": "8806ef5477b5912b058a7012763446a024eaa3f2aed9e1169d4510acc39f97d7"
       },
       "meta_yocto": {
-        "path": "/home/bspguy-dev/src/poky/layers/meta-yocto",
+        "path": "/home/build-user/src/poky/layers/meta-yocto",
         "revision": "24c24cef5d1523fefe43a3e3d34667b37ae551f3",
         "describe": "yocto-6.0.2",
         "dirty": false,

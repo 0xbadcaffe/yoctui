@@ -164,7 +164,7 @@ Reconnect and owned-job cancellation passed, and all capture processes exited.
 No Cargo or profiler ran during either acceptance window.
 
 The exact release binary is preserved at
-`/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui`, SHA-256
+`/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui`, SHA-256
 `261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd`.
 The [canonical manifest](../artifacts/performance/real-poky/manifest.json)
 binds the actual record, all runtime Rust/bundled bridge source hashes, and
@@ -182,7 +182,7 @@ inferred from these measurements.
 
 RELEASE-PERF-REFRESH-001 tracks source-bound evidence after the OpenBMC repairs;
 historical v0.1.64 evidence cannot certify current sources. The isolated fixture is
-`/home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs`, initialized from the
+`/home/build-user/.local/state/yoctui-release-poky.xWaZbs`, initialized from the
 existing supported Poky checkout. Read-only `bitbake -e linux-yocto` confirms
 MACHINE `qemux86-64`, DISTRO `poky`, BitBake 2.18.0 and kernel 6.18.24+git.
 TOPDIR, TMPDIR, WORKDIR, DL_DIR, SSTATE_DIR and the sstate cleanup path pattern

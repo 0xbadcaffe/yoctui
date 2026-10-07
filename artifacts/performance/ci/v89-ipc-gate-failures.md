@@ -6,7 +6,7 @@ Runtime sources are commit `11f3d8f` (v0.1.89).
 ## Obsolete constructor assertion
 
 The exact clean worktree
-`/home/bspguy-dev/.local/state/yoctui-v89-completion.QlFQ43` ran
+`/home/build-user/.local/state/yoctui-v89-completion.QlFQ43` ran
 `./scripts/verify-completion.sh`; session 99674 exited 1. Full log:
 `/tmp/yoctui-v89-completion.log`.
 
@@ -37,7 +37,7 @@ frames, leaving the actual fixture, command sequence and timing unchanged.
 It reproduced the same failure. Log: `/tmp/yoctui-v90-flood-diagnostic.log`.
 The exact binary was preserved before subsequent Cargo output could replace it:
 
-- Path: `/home/bspguy-dev/.local/state/yoctui-v89-flood-diagnostic.ymsiXE/yoctui`
+- Path: `/home/build-user/.local/state/yoctui-v89-flood-diagnostic.ymsiXE/yoctui`
 - Version: `yoctui 0.1.89`
 - SHA-256: `abbed425952c112633fdeace40ab95acb85cd37e59656bdf12f47013bb66657b`
 

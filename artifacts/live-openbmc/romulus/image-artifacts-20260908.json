@@ -4,31 +4,31 @@
   "source_clean": true,
   "machine": "romulus",
   "target": "obmc-phosphor-image",
-  "build_dir": "/home/bspguy-dev/src/build-openbmc-romulus",
-  "rootfs": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs",
+  "build_dir": "/home/build-user/src/build-openbmc-romulus",
+  "rootfs": "/home/build-user/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs",
   "artifacts": [
     {
-      "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.static.mtd",
+      "path": "/home/build-user/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.static.mtd",
       "bytes": 33554432,
       "sha256": "00c37b3aed9961a37d50a70afc3c670c50a25282c93784f7022b8e67d1c4f7f0"
     },
     {
-      "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.squashfs-xz",
+      "path": "/home/build-user/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.squashfs-xz",
       "bytes": 23498752,
       "sha256": "ebe8cca00405777d532bb8bc5573f30e7d3703c9f7758fcf2e7bdcf4a4a6cefe"
     },
     {
-      "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest",
+      "path": "/home/build-user/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest",
       "bytes": 9527,
       "sha256": "ab1d7e6508710d752002558ac54697c01aaea06ca02b3545147e78116e09a44d"
     },
     {
-      "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.static.mtd.tar",
+      "path": "/home/build-user/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.static.mtd.tar",
       "bytes": 28231680,
       "sha256": "25871ad02f6d2323278412ce15773425382d1da3bf94744566367bd9b49ce3e0"
     },
     {
-      "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.static.mtd.all.tar",
+      "path": "/home/build-user/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.static.mtd.all.tar",
       "bytes": 33566720,
       "sha256": "87713b19df055df492b25a498f711c0919fe901021985cf1562f0fee9249d84e"
     }

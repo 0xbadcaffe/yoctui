@@ -36,7 +36,7 @@ symbols SHA68c5e164595aa24b4f6ed7f6936fab17b971ce2d39d69e3722c2a92c57b0cd50
 rechecked equal. Unrelated ZCU daemon/clients/builds preserved.
 
 CAPTURE BOUNDARIES / REPRO
-Driver/assets above Git: /home/bspguy-dev/projects/yoctui-ydd2026-presentation.
+Driver/assets above Git: /home/build-user/projects/yoctui-ydd2026-presentation.
 capture_native_openbmc.py; inspect_native_daemon.py (read-only normal endpoint).
 Actual accepted assets/{basename}.{txt,cells,ansi}:
   demo-native-v294-qgdb-reviewed
@@ -71,7 +71,7 @@ IMAGE_ROOTFS; file/systemd views unavailable. Warm retry still needs validation.
 Kernel inspection fails actual local bridge import, not a supported empty view:
 "connected BitBake server does not provide get_recipe_metadata".
 Read-only native reproduction, selected source oe-init-build-env +
-PYTHONPATH=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib:
+PYTHONPATH=/home/build-user/src/openbmc/upstream-layers/bitbake/lib:
   PYTHONDONTWRITEBYTECODE=1 python3 -c 'import bb.tinfoil'
 fails ModuleNotFoundError: No module named 'pysh'; actual traceback through
 bb.codeparser -> bb.pysh.pyshyacc:661 -> bb._vendor.ply.yacc:3254.

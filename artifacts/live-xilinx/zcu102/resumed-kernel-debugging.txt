@@ -16,7 +16,7 @@ No live BitBake/compiler process found by ps (one old defunct run.do_compile
 is not live build authority). Private daemon/container remain untouched.
 
 Kernel work root:
-/home/bspguy-dev/src/yoctui-zcu102-2026.1/build/tmp/work/zynqmp_zcu102_sdt_full-amd-linux/linux-xlnx/6.18.10+git+v2026.1/linux-zynqmp_zcu102_sdt_full-standard-build
+/home/build-user/src/yoctui-zcu102-2026.1/build/tmp/work/zynqmp_zcu102_sdt_full-amd-linux/linux-xlnx/6.18.10+git+v2026.1/linux-zynqmp_zcu102_sdt_full-standard-build
 vmlinux.unstripped: approximately450MiB, ELF .debug_info/.symtab present.
 SHA256 b696c59669a570410c97e7e9f5ff85326d017e9eb9972247eb864ea619df75c9
 Build ID 5f76474462b0eb96d23bb62f5c78c1ab2c83060a

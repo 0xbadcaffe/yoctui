@@ -85,7 +85,7 @@
       "unix_ms": 1788837400237,
       "recipe": null,
       "task": null,
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/taskdata.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/taskdata.py",
       "build": null
     },
     {
@@ -95,7 +95,7 @@
       "unix_ms": 1788837404205,
       "recipe": null,
       "task": null,
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
@@ -105,7 +105,7 @@
       "unix_ms": 1788837411946,
       "recipe": null,
       "task": null,
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
@@ -115,7 +115,7 @@
       "unix_ms": 1788837414365,
       "recipe": null,
       "task": null,
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/runqueue.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/runqueue.py",
       "build": null
     },
     {
@@ -125,27 +125,27 @@
       "unix_ms": 1788837422337,
       "recipe": null,
       "task": null,
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "VERBOSE=1 cmake --build /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/build --target all --",
+      "message": "VERBOSE=1 cmake --build /home/build-user/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/build --target all --",
       "unix_ms": 1788837425177,
       "recipe": "llvm-native",
       "task": "do_compile",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "make -j 2 ARCH=arm CPU= CPUOPT= OPT= -O2 -g -fcanon-prefix-map  -ffile-prefix-map=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/sources/util-linux-2.42.2=/usr/src/debug/util-linux/2.42.2  -ffile-prefix-map=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/build=/usr/src/debug/util-linux/2.42.2  -ffile-prefix-map=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/recipe-sysroot=  -ffile-prefix-map=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/recipe-sysroot-native=  -pipe",
+      "message": "make -j 2 ARCH=arm CPU= CPUOPT= OPT= -O2 -g -fcanon-prefix-map  -ffile-prefix-map=/home/build-user/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/sources/util-linux-2.42.2=/usr/src/debug/util-linux/2.42.2  -ffile-prefix-map=/home/build-user/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/build=/usr/src/debug/util-linux/2.42.2  -ffile-prefix-map=/home/build-user/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/recipe-sysroot=  -ffile-prefix-map=/home/build-user/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/recipe-sysroot-native=  -pipe",
       "unix_ms": 1788837425709,
       "recipe": "util-linux",
       "task": "do_compile",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
@@ -155,17 +155,17 @@
       "unix_ms": 1788837548222,
       "recipe": "util-linux",
       "task": "do_compile",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "error",
-      "message": "Execution of '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/temp/run.do_compile.1198195' failed with exit code 1",
+      "message": "Execution of '/home/build-user/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/temp/run.do_compile.1198195' failed with exit code 1",
       "unix_ms": 1788837548223,
       "recipe": "util-linux",
       "task": "do_compile",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/build.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/build.py",
       "build": null
     }
   ],
@@ -183,7 +183,7 @@
           "unix_ms": 1788837548222,
           "recipe": "util-linux",
           "task": "do_compile",
-          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+          "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
           "build": null
         }
       }
@@ -197,11 +197,11 @@
         "data": {
           "source": "bitbake",
           "severity": "error",
-          "message": "Execution of '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/temp/run.do_compile.1198195' failed with exit code 1",
+          "message": "Execution of '/home/build-user/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/temp/run.do_compile.1198195' failed with exit code 1",
           "unix_ms": 1788837548223,
           "recipe": "util-linux",
           "task": "do_compile",
-          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/build.py",
+          "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/build.py",
           "build": null
         }
       }

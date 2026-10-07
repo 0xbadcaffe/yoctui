@@ -2,7 +2,7 @@
   "schema": "yoctui.performance.ipc-latency-manifest.v1",
   "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
   "artifact": "host-audit.json",
-  "artifact_sha256": "adb0a281e9cab6434fc82cdf3e49456ef0a61428075ce968ab8914fd36cffa26",
+  "artifact_sha256": "4d117a1d6240a9b8956d7e611f934566ed444477b90f6dc9858f400d7dbc39d6",
   "binary_sha256": "ee4be85588ce923b0910f71866a9bed5d8e0687f8fad4d29b0b07cb98ab27e8a",
   "sources": {
     "scripts/measure-ipc-latency.py": "a7681de536c4864f318ac6501e5d6bb528761a119b9722c1e19498744dba9b53",

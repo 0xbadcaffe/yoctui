@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.267 • Git: rel-v2026.1 synced* • Project: poky • T:not selected • Machine: zynqmp-zcu102-sdt-D:✓ Connected/Local • BB:– Disconnected • Local 08:44│
 │Daemon health: ✓ Connected/Local · BitBake: – Disconnected                                                                                                    │
-│Workspace: /home/bspguy-dev/src/yoctui-zcu102-2026.1/sources/poky  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                        │
+│Workspace: /home/build-user/src/yoctui-zcu102-2026.1/sources/poky  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                        │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator────────────────┐┌Build Overview───────────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
 │▾ OVERVIEW               ││Overall  build not started · 0%                                                      ││Environment                                 │
@@ -15,10 +15,10 @@
 │  ▱ Hardware             │┌Recent Builds · Job History──────────────────────────────────────────────────────────┐│                                            │
 │  ▱ Kernel               ││No completed builds or jobs retained. B opens build options.                         ││Workspace                                   │
 │  ▱ U-Boot / BIOS        ││                                                                                     ││Source           :                          │
-│  ▱ SDK                  ││                                                                                     ││/home/bspguy-dev/src/yoctui-zcu102-2026.1/so│
+│  ▱ SDK                  ││                                                                                     ││/home/build-user/src/yoctui-zcu102-2026.1/so│
 │▾ BUILD                  ││                                                                                     ││urces/poky                                  │
 │  ▱ Tasks                ││                                                                                     ││Build directory  :                          │
-│  ▱ Logs             LIVE││                                                                                     ││/home/bspguy-dev/src/yoctui-zcu102-2026.1/bu│
+│  ▱ Logs             LIVE││                                                                                     ││/home/build-user/src/yoctui-zcu102-2026.1/bu│
 │  ▱ Errors               ││                                                                                     ││ild                                         │
 │  ▱ Configuration        ││                                                                                     ││Disk             : 21.1 GiB free            │
 │  ▱ Dependencies         ││                                                                                     ││                                            │

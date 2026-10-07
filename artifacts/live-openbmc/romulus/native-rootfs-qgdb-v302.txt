@@ -58,7 +58,7 @@ Default devtool workspace remains absent; unrelated ZCU daemon/clients preserved
 
 ACTUAL CAPTURES / REPRO
 Driver/assets above Git, never committed/pushed:
-/home/bspguy-dev/projects/yoctui-ydd2026-presentation/capture_native_openbmc.py
+/home/build-user/projects/yoctui-ydd2026-presentation/capture_native_openbmc.py
 and inspect_native_daemon.py (read-only normal protocol endpoint).
 Accepted assets/{basename}.{txt,cells,ansi}:
 demo-native-v302-main-rootfs-workspace

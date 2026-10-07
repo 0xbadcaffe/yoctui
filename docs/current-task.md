@@ -23,6 +23,32 @@ No daemon restart, installed binary change, session termination, image build,
 presentation changes or broad demo/reboot certification. Four user captures
 remain untouched. Parent demo queue is deferred until user resumes it.
 
+## Completed production host privacy cleanup
+
+PROD-HOST-PRIVACY-001 DONE on feat_prod, based on master4ab8174463b7.
+Validation helpers use current-home defaults and canonical explicit root overrides.
+OpenBMC's ignored native/retained smoke takes explicit environment paths; rootfs
+ownership fixtures remain generic with all host-fallback assertions intact.
+Historical account paths, ANSI/text/cell captures, SVGs and live raster copies
+are anonymized. Live pixel changes stay within the replaced character cells;
+measurements, original binary/source identity, styles and geometry are preserved.
+Dependent manifests/checksum inventories, gallery copies and version-only
+production goldens/rasters are coherent at0.1.316, as required by version policy.
+
+Portable-path/guard tests6, cache5, inspector6, rootfs12, kernel-defaults4,
+production renderer16, bridge73, version-regression8, live-gallery4 and
+evidence-tamper4 checks pass. Retained and fresh IPC backpressure gates, both
+checksum inventories, exact pinned raster checks, formatting, strict affected
+all-target/all-feature Clippy on the CI-pinned Rust1.97.0, README, UI/source-layout,
+CI contract, version and roadmap checks pass. The current development account
+is absent from tracked bytes and decoded cell rows. Native/vendor live smoke
+remains unexecuted in the cloud workspace; no new live build is claimed.
+
+Scope is feat_prod only, committed as Roy Cohen <roy@0xbadcaffe.dev>.
+Master and Git history remain unchanged. The broader demo handoff stays deferred.
+Details: docs/testing/host-privacy.md.
+Receipt: artifacts/release-quality/host-privacy-0.1.316.json.
+
 ## Completed README installation and navigation review
 
 README-QUICKSTART-NAV-001 DONE (2026-10-04): every main section linked before
@@ -70,7 +96,7 @@ missing matching symbols, older6.18.49 uses its split DWARF ABI-named artifact.
 No cross-build fallback and final launch preflight/review unchanged.
 Optimized two-job build6m52/install1.63s; installed/release315 SHA256
 b63a1d1bd709ee78bdf9543353d4286bce9a598cf8453bf87c5ad50b9ea38d2f.
-Prior311 backup /home/bspguy-dev/.local/state/yoctui-installs/before-0.1.315.S0qgSI/yoctui
+Prior311 backup /home/build-user/.local/state/yoctui-installs/before-0.1.315.S0qgSI/yoctui
 retained. Private bundled-bridge doctor handshake/shutdown PASS (private authority
 Unavailable expected). Native daemon2787224 remains running309/SHA0cefb0ca with
 the same instance and all41 session identities/lifecycles unchanged, including
@@ -117,7 +143,7 @@ Optimized source-bound build6m28/install1.44s; installed/release SHA256
 d429a30bbbaa5e1d45d6b3c9c67301a814aa86a70b3e2df0ba18bf5adb4e7c58.
 Private bundled-bridge doctor handshake/shutdown PASS (private authority
 Unavailable as expected). Installed310 backup retained at
-/home/bspguy-dev/.local/state/yoctui-installs/before-0.1.311.OfQgy1/yoctui.
+/home/build-user/.local/state/yoctui-installs/before-0.1.311.OfQgy1/yoctui.
 Native daemon2787224 remains running309/unchanged SHA0cefb0ca; Hardware requires
 only a client relaunch, not a daemon wire change. Four user captures untouched.
 Receipt: artifacts/release-quality/hardware-text-0.1.311.json.
@@ -683,7 +709,7 @@ duplicates1411066648B cleared after UID/link/symlink/live-use checks. Installed
 and top-level optimized binary preserved. Rebuildable file-search index reset
 and temporarily runtime-masked under prior approval; user files untouched.
 Retained release cache moved OFF RAM-backed /tmp to
-/home/bspguy-dev/.cache/yoctui-demo-cargo.AAiva6/release; identical71ea03b6 hash.
+/home/build-user/.cache/yoctui-demo-cargo.AAiva6/release; identical71ea03b6 hash.
 Use parent AAiva6 as CARGO_TARGET_DIR for subsequent builds, two jobs/debug0/
 no incremental dev/test. Memory available12GiB vs5.1GiB initially; monitor disk
 (approximately810MiB remaining after303 build) and do not rebuild into the old
@@ -1234,7 +1260,7 @@ Original flash/config and selected matching package artifacts unchanged.
 Exact failures/prerequisites/recovery/limits and identities are recorded in
 artifacts/live-openbmc/romulus/managed-flash-debug-v269.txt. No image build/deploy.
 Four genuine screenshots/raw PTY cells and full serial log saved under
-/home/bspguy-dev/projects/yoctui-ydd2026-presentation/assets. Updated editable
+/home/build-user/projects/yoctui-ydd2026-presentation/assets. Updated editable
 PPTX/ODP slides17-19; LibreOffice/24slides/25minutes/notes/editability/layout and
 reference checks PASS. Presentation remains outside Git, uncommitted/unpushed.
 Focused tests/strict workspace Clippy/fmt/UI/version/roadmap checks passed;

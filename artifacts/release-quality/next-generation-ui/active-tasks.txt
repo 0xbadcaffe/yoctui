@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.3  •  Project: poky  •  ▶ Parsing  •  Target: core-image-minimal  •  Machine: qemux86-64          Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky  |  Build: core-image-minimal  |  Task: 0 / 3837  |  Elapsed: 00:00:00  |  Worke…│
+│Workspace: /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/poky  |  Build: core-image-minimal  |  Task: 0 / 3837  |  Elapsed: 00:00:00  |  Worke…│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: core-image-minimal · All─────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││                                Overall  0%  0/3837                                 ││Task        do_populate_lic_setscene        │
@@ -21,7 +21,7 @@
 │▾ VALIDATE                ││                                                                                    ││Elapsed     00:00:00                        │
 │  ▱ Testing               ││                                                                                    ││Workdir     unavailable                     │
 │    Security              ││                                                                                    ││Log file                                    │
-│  ▱ QA                    ││                                                                                    ││/home/bspguy-dev/projects/yoctui/.yoctui-nex│
+│  ▱ QA                    ││                                                                                    ││/home/build-user/projects/yoctui/.yoctui-nex│
 │▾ TOOLS                   ││                                                                                    ││t-ui-live.09chtF/build/tmp/work/x86_64-linux│
 │  ▱ Raw Mode              ││                                                                                    ││/tar-native/1.35/temp/log.do_populate_lic_se│
 │  ~ Terminal Sessions     ││                                                                                    │└────────────────────────────────────────────┘

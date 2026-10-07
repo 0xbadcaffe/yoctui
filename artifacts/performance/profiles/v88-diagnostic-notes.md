@@ -5,10 +5,10 @@ unchanged acceptance thresholds rejected the separately retained unprofiled
 360-sample v88 capture at 1.0334662486% combined CPU.
 
 The preserved v88 release binary
-`/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui`, SHA-256
+`/home/build-user/.local/state/yoctui-v88-release.TBqp2N/yoctui`, SHA-256
 `be5fa7261cd3ebaf7f6f1786eabb46736419d043086d0e92224f3cc63f48b510`,
 ran the committed `d2214e82974a5be708a7cc40f1532254d7c7de63` capture harness
-against `/home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs` using the
+against `/home/build-user/.local/state/yoctui-release-poky.xWaZbs` using the
 same isolated offline eight-worker linux-yocto cleansstate/compile procedure.
 All original Poky/OpenBMC data and normal installation were preserved.
 
@@ -20,7 +20,7 @@ seconds. It invoked:
 ```sh
 scripts/capture-runtime-profile.sh \
   --scenario v88-real-poky-diagnostic --duration 60 \
-  --binary /home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui \
+  --binary /home/build-user/.local/state/yoctui-v88-release.TBqp2N/yoctui \
   --revision d2214e82974a5be708a7cc40f1532254d7c7de63 \
   --pid daemon=2433848 --pid client=2457774
 ```

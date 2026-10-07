@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.3  •  Project: poky  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64      Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers:…│
+│Workspace: /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/poky  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers:…│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Failed build summary────────────────────────────────────────────────────────────────┐┌Inspector: Error────────────────────────────┐
 │▾ OVERVIEW                ││Target: core-image-minimal  ·  Result: Failed (exit 1)                              ││▾ PRIMARY FACTS                             │
@@ -27,15 +27,15 @@
 │  ~ Terminal Sessions     ││Time       Severity  Task          Message                                          ││▾ CONTEXTUAL ACTIONS                        │
 │  ▱ Devtool               ││1788118700 i Info                  Executing reproducible_final_image_task ...      ││✓ Inspect retained diagnostic …  [Enter/o] —│
 │  ▱ QEMU / Wic            ││1788118700 i Info                  reproducible_final_image_task: mtime set to 15205││Local                                       │
-│  ▱ Maintenance           ││1788118701 i Info                  Direct dependencies are ['/home/bspguy-dev/projec││                                            │
-│  ▱ Build environment     ││1788118701 i Info                  Direct dependencies are ['/home/bspguy-dev/projec││                                            │
+│  ▱ Maintenance           ││1788118701 i Info                  Direct dependencies are ['/home/build-user/projec││                                            │
+│  ▱ Build environment     ││1788118701 i Info                  Direct dependencies are ['/home/build-user/projec││                                            │
 │  ▱ Compatibility         ││1788118701 i Info                  Installed into sysroot: ['tar-native']           ││                                            │
 │  ▱ Settings              ││1788118701 i Info                  Skipping as already exists in sysroot: ['gettext-││                                            │
 │                          ││1788118701 i Info                  Installed into sysroot: ['e2fsprogs-native']     ││                                            │
 │                          ││1788118701 i Info                  Skipping as already exists in sysroot: ['gettext-││                                            │
-│                          ││1788118702 i Info                  Creating symlink: /home/bspguy-dev/projects/yoctu││                                            │
-│                          ││1788118702 i Info                  Creating symlink: /home/bspguy-dev/projects/yoctu││                                            │
-│                          ││1788118703 i Info                  Direct dependencies are ['/home/bspguy-dev/projec││                                            │
+│                          ││1788118702 i Info                  Creating symlink: /home/build-user/projects/yoctu││                                            │
+│                          ││1788118702 i Info                  Creating symlink: /home/build-user/projects/yoctu││                                            │
+│                          ││1788118703 i Info                  Direct dependencies are ['/home/build-user/projec││                                            │
 │                          ││1788118703 i Info                  Installed into sysroot: ['qemu-helper-native', 'q││                                            │
 │                          ││1788118703 i Info                  Skipping as already exists in sysroot: ['gettext-││                                            │
 │                          ││1788118704 i Info                  Using umask 0o002 (not 22) for sstate packaging  ││                                            │

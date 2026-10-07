@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.80  •  Project: openbmc  •  ▶ Running  •  Target: obmc-phosphor-image  •  Machine: romulus        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 3842 / 6812  |  Elapsed: --:--:--  |  Workers: 0                             │
+│Workspace: /home/build-user/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 3842 / 6812  |  Elapsed: --:--:--  |  Workers: 0                             │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  56%  3842/6812▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_install                      │
@@ -17,15 +17,15 @@
 │  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
 │▾ BUILD                   │┌Log Viewer — do_install (net-snmp) · ▶ Follow───────────────────────────────────────┐│Worker      unavailable                     │
 │  ▱ Tasks                2│││ Direct dependencies are                                                           ││PID         1631197                         │
-│  ▱ Logs              LIVE││['/home/bspguy-dev/src/openbmc/meta/recipes-bsp/pciutils/pciutils_3.15.0.bb:do_popul││Started     unavailable                     │
+│  ▱ Logs              LIVE││['/home/build-user/src/openbmc/meta/recipes-bsp/pciutils/pciutils_3.15.0.bb:do_popul││Started     unavailable                     │
 │  ▱ Errors                ││ate_sysroot',                                                                       ││Elapsed     unavailable                     │
-│  ▱ Configuration         ││'/home/bspguy-dev/src/openbmc/meta/recipes-connectivity/openssl/openssl_3.5.7.bb:do_││Workdir     unavailable                     │
+│  ▱ Configuration         ││'/home/build-user/src/openbmc/meta/recipes-connectivity/openssl/openssl_3.5.7.bb:do_││Workdir     unavailable                     │
 │  ▱ Dependencies          ││populate_sysroot',                                                                  ││Log file                                    │
-│▾ VALIDATE                ││'/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysr││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│▾ VALIDATE                ││'/home/build-user/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysr││/home/build-user/src/build-openbmc-romulus/t│
 │  ▱ Testing               ││oot',                                                                               ││mp/work/arm1176jzs-openbmc-linux-gnueabi/net│
-│    Security              ││'/home/bspguy-dev/src/openbmc/meta/recipes-core/systemd/systemd-systemctl-native_259││-snmp/5.9.5.2/temp/log.do_install.1631197   │
+│    Security              ││'/home/build-user/src/openbmc/meta/recipes-core/systemd/systemd-systemctl-native_259││-snmp/5.9.5.2/temp/log.do_install.1631197   │
 │  ▱ QA                    ││.5.bb:do_populate_sysroot',                                                         │└────────────────────────────────────────────┘
-│▾ TOOLS                   ││'/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populat│┌Recent output · Recent Log (tail)───────────┐
+│▾ TOOLS                   ││'/home/build-user/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populat│┌Recent output · Recent Log (tail)───────────┐
 │  ▱ Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘││ Installed into sysroot: []                │
 │  ▱ Terminal Sessions     │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 1 · Daemon-owned 2───┐││ Skipping as already exists in sysroot:    │
 │  ▱ Devtool               ││Status        Operation     Type         Target / Context        Started   Elapsed  ││['pciutils', 'openssl', 'base-files',       │

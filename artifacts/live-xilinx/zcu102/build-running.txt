@@ -7,17 +7,17 @@ Machine: zynqmp-zcu102-sdt-full, no substitute guest.
 
 Real release PTY at 09:07 UTC: 286/10994, active 2, errors 0, make -j2.
 Committed semantic frame: build-active-tasks.txt and .meta.
-Original ANSI: /home/bspguy-dev/src/yoctui-zcu102-2026.1/logs/build-active-tasks.ansi
+Original ANSI: /home/build-user/src/yoctui-zcu102-2026.1/logs/build-active-tasks.ansi
 ANSI SHA256: 12785f78d98fe577914afccc73144e924f3607b2ce8b0c7bd6db5e6c068b9909
-Text SHA256: aeb4315049946a256a813b783b1e08e4718cdd843b671b1d30a7242064b240cf
+Text SHA256: cb183c05434388bab68c06a387e44c80af5b7da66e034af017656e9ad787c598
 No successful image, deployed symbols/config, QEMU boot or GDB claim yet.
 
 Read-only IPC checkpoint: sequence 15403, aggregate completed 461/10994,
 job progress_current 435 (distinct job checkpoint), fetch_completed 27,
 fetch_failed 0, setscene_completed 29, setscene_failed 0, no retained task failures.
 Cache summary Wanted=4871 Local=0 Mirrors=0 Missed=4871 Current=0.
-Workspace source: /home/bspguy-dev/src/yoctui-zcu102-2026.1/sources/poky
-Workspace build: /home/bspguy-dev/src/yoctui-zcu102-2026.1/build
+Workspace source: /home/build-user/src/yoctui-zcu102-2026.1/sources/poky
+Workspace build: /home/build-user/src/yoctui-zcu102-2026.1/build
 Workspace identity_hash: bb06360eec6230cd
 Inspector: python3 scripts/inspect-zcu102-build.py; sends only hello/attach/detach.
 Verification: python3 scripts/test-inspect-zcu102-build.py (6 checks PASS).

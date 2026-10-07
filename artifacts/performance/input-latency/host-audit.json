@@ -1,6 +1,6 @@
 {
   "binary": {
-    "path": "/home/bspguy-dev/projects/yoctui/target/release/examples/input_latency_probe",
+    "path": "/home/build-user/projects/yoctui/target/release/examples/input_latency_probe",
     "sha256": "a656034cffccc8d4d7df36e73acc4c60ddc7e0975d770009b8c7f51b286372df"
   },
   "captured_at_unix_ms": 1788684912728,

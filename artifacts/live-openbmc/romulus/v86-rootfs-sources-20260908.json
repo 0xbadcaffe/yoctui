@@ -22,12 +22,12 @@
     ],
     "started_unix_ms": 1788862732781,
     "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
-    "executable": "/home/bspguy-dev/.local/state/yoctui-v86-final-validated.SGCjtr/yoctui"
+    "executable": "/home/build-user/.local/state/yoctui-v86-final-validated.SGCjtr/yoctui"
   },
   "binary_sha256": "35bf7d3afa85c454beaa0c23cbea602060f8cdb48a2cf8941f81f8bd2a837c14",
   "workspace": {
-    "canonical_source": "/home/bspguy-dev/src/openbmc",
-    "canonical_build": "/home/bspguy-dev/src/build-openbmc-romulus",
+    "canonical_source": "/home/build-user/src/openbmc",
+    "canonical_build": "/home/build-user/src/build-openbmc-romulus",
     "identity_hash": "b261670860dd0336"
   },
   "query": {
@@ -36,7 +36,7 @@
       "image": {
         "machine": "romulus",
         "image": "obmc-phosphor-image",
-        "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest"
+        "path": "/home/build-user/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest"
       }
     },
     "daemon_instance_id": [

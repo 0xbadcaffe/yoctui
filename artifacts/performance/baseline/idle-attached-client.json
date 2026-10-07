@@ -33,7 +33,7 @@
     ],
     "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
     "filesystem": {
-      "path": "/home/bspguy-dev/src/build",
+      "path": "/home/build-user/src/build",
       "type": "ext4",
       "free_bytes": 88571060224,
       "total_bytes": 489997189120
@@ -48,7 +48,7 @@
   "worktree_clean": false,
   "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
   "binary": {
-    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "path": "/home/build-user/projects/yoctui/target/release/yoctui",
     "sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5",
     "version_output": "yoctui 0.1.22"
   },
@@ -56,14 +56,14 @@
     "daemon": {
       "pid": 2502764,
       "start_time_ticks_since_boot": 96064258,
-      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "executable": "/home/build-user/projects/yoctui/target/release/yoctui",
       "command": "./target/release/yoctui daemon foreground"
     },
     "client": {
       "pid": 2503810,
       "start_time_ticks_since_boot": 96074467,
-      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui attach"
+      "executable": "/home/build-user/projects/yoctui/target/release/yoctui",
+      "command": "/home/build-user/projects/yoctui/target/release/yoctui attach"
     }
   },
   "supplemental_metrics": {

@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.84  •  Project: openbmc  •  ✓ Completed  •  Target: obmc-phosphor-image  •  Machine: romulus Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2 / 2  |  Elapsed: 00:00:01  |  Workers: 0                                   │
+│Workspace: /home/build-user/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2 / 2  |  Elapsed: 00:00:01  |  Workers: 0                                   │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
 │▾ OVERVIEW                ││ 1   │  2   │  3 Files  │  4   │  5   │  6    Tab switches                          ││▾ PRIMARY FACTS                             │
@@ -10,7 +10,7 @@
 │▾ CONTENT                 ││                                                                                    ││State: partial · 40 limitation(s)           │
 │  ▱ Layers                ││Installed-package evidence remains separate; press Shift-Tab.                       ││Image: obmc-phosphor-image                  │
 │  ▱ Recipes               ││                                                                                    ││Path:                                       │
-│  ▱ Packages              ││                                                                                    ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Packages              ││                                                                                    ││/home/build-user/src/build-openbmc-romulus/t│
 │  ▱ Images                ││                                                                                    ││mp/deploy/images/romulus/obmc-phosphor-image│
 │  ▱ Kernel                ││                                                                                    ││-romulus-20260908040925.manifest            │
 │  ▱ U-Boot / BIOS         ││                                                                                    ││Installed packages: partial · 40            │

@@ -4,9 +4,9 @@
   "source_patch": "artifacts/performance/real-poky/v89-source.patch",
   "source_patch_sha256": "7b6f623461363055a787988ab66a03a93b909cf537b36125ee25d1b68707269b",
   "artifact": "linux-yocto-do-compile.json",
-  "artifact_sha256": "ae23c4642d7689941232b06961dee7cce5f319d0a6691a4f186377b1d87da86a",
+  "artifact_sha256": "aab38bfe4e80ad690c58299752df41300e0c490c03ceeb9e0cbe16232168a845",
   "binary": {
-    "path": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
+    "path": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui",
     "sha256": "261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd",
     "version": "yoctui 0.1.89"
   },

@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.3  •  Project: build  •  ✓ Completed  •  Target: core-image-minimal                          Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build  |  Build: core-image-minimal  |  Task: 3837 / 3837  |  Elapsed: 00:00:06  |  W…│
+│Workspace: /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/build  |  Build: core-image-minimal  |  Task: 3837 / 3837  |  Elapsed: 00:00:06  |  W…│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: core-image-minimal · All─────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││██████████████████████████████Overall  100%  3837/3837 █████████████████████████████││Task        do_create_package_spdx_setscene │

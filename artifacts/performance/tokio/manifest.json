@@ -5,13 +5,13 @@
   "sample_seconds": 3,
   "pre_optimization": {
     "path": "pre-optimization.json",
-    "sha256": "c977144c7b359d73bf201826baf3a74a2995b2365f7a34cf09e34d5a1aef3b8f",
+    "sha256": "141514ab43c68f364106a61ff1a78f1ebd40f090e39319d821aa20da05245d21",
     "runtime_workers": 8,
     "process_threads": 9
   },
   "post_optimization": {
     "path": "post-optimization.json",
-    "sha256": "aeac18efbd1f0a5ba6e6241da0dd8fffb1a8a0b28656af5770217a419111c14c",
+    "sha256": "a1593ef46c51437e337385f0e30188a336dfec817065feec8febd567d9fce295",
     "runtime_workers": 2,
     "process_threads": 3,
     "cpu_percent_of_one_logical_cpu": 0.3333

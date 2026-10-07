@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.84  •  Project: openbmc  •  ✓ Completed  •  Target: obmc-phosphor-image  •  Machine: romulus Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2 / 2  |  Elapsed: 00:00:01  |  Workers: 0                                   │
+│Workspace: /home/build-user/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2 / 2  |  Elapsed: 00:00:01  |  Workers: 0                                   │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
 │▾ OVERVIEW                ││ 1   │  2 Rootfs packages  │  3   │  4   │  5   │  6    Tab switches                ││▾ PRIMARY FACTS                             │
@@ -10,7 +10,7 @@
 │▾ CONTENT                 │││                        ■ base 66.8%        ││base       164   37894822    66.81% │││State: partial · 40 limitation(s)           │
 │  ▱ Layers                │││                                            ││base/shell 7     14938500    26.33% │││Image: obmc-phosphor-image                  │
 │  ▱ Recipes               │││                        ■ base/shell 26.3%  ││base/utils 2     1744385     3.07%  │││Path:                                       │
-│  ▱ Packages              │││      ⣀⣤⣶⣶⣶⣷⣶⣶⣦⣄⡀                           ││console/ne 4     1129984     1.99%  │││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Packages              │││      ⣀⣤⣶⣶⣶⣷⣶⣶⣦⣄⡀                           ││console/ne 4     1129984     1.99%  │││/home/build-user/src/build-openbmc-romulus/t│
 │  ▱ Images                │││   ⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄     ■ base/utils 3.1%   ││devel      1     416603      0.73%  │││mp/deploy/images/romulus/obmc-phosphor-image│
 │  ▱ Kernel                │││  ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧                        ││libs       4     270928      0.47%  │││-romulus-20260908040925.manifest            │
 │  ▱ U-Boot / BIOS         │││ ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧   ■ console/network 2.││network    1     167437      0.29%  │││Installed packages: partial · 40            │

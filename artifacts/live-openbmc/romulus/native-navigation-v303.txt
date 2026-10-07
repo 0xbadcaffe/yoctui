@@ -16,7 +16,7 @@ Correct enabled user yoctui.service gracefully stopped old2483737 and started
 native303 daemon2509796 at12:42:03 UTC; normal user socket, instance
 98db48ae66611a55ddfe156456b4a34b. Compatibility completed12:45:38, inventory
 ready12:45:47 (224s total):4799recipes/nine layers. NRestarts0. Selected exact
-source /home/bspguy-dev/src/openbmc, build /home/bspguy-dev/src/build-openbmc-romulus,
+source /home/build-user/src/openbmc, build /home/build-user/src/build-openbmc-romulus,
 workspace b261670860dd0336. Kernel boot1e696f44-57bb-4193-af55-449269824bde
 unchanged: service restart/login recovery is NOT an actual reboot proof.
 

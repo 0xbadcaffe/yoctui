@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.3  •  Project: build  •  – Idle  •  Target: not selected                                     Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0            │
+│Workspace: /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0            │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Current Build · Idle────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
 │▾ OVERVIEW                ││Overall  progress unknown ◐  0/—                                                    ││Environment                                 │
@@ -14,7 +14,7 @@
 │  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
 │▾ BUILD                   │┌Recent Builds───────────────────────────────────────────────────────────────────────┐│Source           : unavailable              │
 │  ~ Tasks                 ││#    Image                          Result        Tasks    Duration                 ││Build directory  :                          │
-│  ▱ Logs              LIVE││–    No completed builds retained   –             –        Press B to build         ││/home/bspguy-dev/projects/yoctui/.yoctui-nex│
+│  ▱ Logs              LIVE││–    No completed builds retained   –             –        Press B to build         ││/home/build-user/projects/yoctui/.yoctui-nex│
 │  ▱ Errors                ││                                                                                    ││t-ui-live.09chtF/build                      │
 │  ▱ Configuration         ││                                                                                    ││Disk             : 51.5 GiB free            │
 │  ~ Dependencies          ││                                                                                    ││                                            │

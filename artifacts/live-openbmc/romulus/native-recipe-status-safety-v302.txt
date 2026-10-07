@@ -35,8 +35,8 @@ was not hidden or certified as read-only. Safety v302 prevents its repetition.
 Enabled native service upgraded only after checking no active owned work:
 old daemon2340904 stopped gracefully; new daemon2440420 instance
 2b078a9a4de6e8e8fa76afecf4d6965e, normal /run/user/1000/yoctui/daemon.sock.
-Same workspace b261670860dd0336, exact source /home/bspguy-dev/src/openbmc and
-build /home/bspguy-dev/src/build-openbmc-romulus. Startup journal07:05:52 UTC;
+Same workspace b261670860dd0336, exact source /home/build-user/src/openbmc and
+build /home/build-user/src/build-openbmc-romulus. Startup journal07:05:52 UTC;
 authority ready07:09:26, workspace ready07:09:35: approximately223s total.
 Real inventory4799recipes/nine layers, NRestarts0, healthy service. Linger=no;
 enabled user service starts after login. Same laptop boot, not a reboot proof.

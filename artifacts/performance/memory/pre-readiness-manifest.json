@@ -2,7 +2,7 @@
   "schema": "yoctui.performance.bounded-memory-manifest.v1",
   "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
   "artifact": "pre-readiness-endurance-30m.json",
-  "artifact_sha256": "3435232978fd0996921fef08ee781edc5f61db3074c144c46bd4afec0deb5a40",
+  "artifact_sha256": "56ca1f243b21722f11b2a4453fabe5c62ddf6c440290cb3dd29f078a4d853a3b",
   "binary_sha256": "ee4be85588ce923b0910f71866a9bed5d8e0687f8fad4d29b0b07cb98ab27e8a",
   "sources": {
     "scripts/measure-bounded-memory.py": "63238e103633286c54b41e309daaaeb01194abb2a39a28c76317a1642ce536fe",

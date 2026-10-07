@@ -33,7 +33,7 @@
     ],
     "boot_id": "1e696f44-57bb-4193-af55-449269824bde",
     "filesystem": {
-      "path": "/home/bspguy-dev/src/build-openbmc-romulus",
+      "path": "/home/build-user/src/build-openbmc-romulus",
       "type": "ext4",
       "free_bytes": 580325376,
       "total_bytes": 489997189120
@@ -48,7 +48,7 @@
   "worktree_clean": false,
   "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
   "binary": {
-    "path": "/home/bspguy-dev/.cargo/bin/yoctui",
+    "path": "/home/build-user/.cargo/bin/yoctui",
     "sha256": "fc7cfa3a42dc8bc220cd042bb610562b8e2471428d96441f0897fd4003c7f901",
     "version_output": "yoctui 0.1.305"
   },
@@ -56,14 +56,14 @@
     "client": {
       "pid": 2553310,
       "start_time_ticks_since_boot": 11492252,
-      "executable": "/home/bspguy-dev/.cargo/bin/yoctui",
-      "command": "/home/bspguy-dev/.cargo/bin/yoctui attach"
+      "executable": "/home/build-user/.cargo/bin/yoctui",
+      "command": "/home/build-user/.cargo/bin/yoctui attach"
     },
     "daemon": {
       "pid": 2553232,
       "start_time_ticks_since_boot": 11491509,
-      "executable": "/home/bspguy-dev/.cargo/bin/yoctui",
-      "command": "/home/bspguy-dev/.cargo/bin/yoctui --config /home/bspguy-dev/.config/yoctui/openbmc-demo-daemon.toml daemon foreground"
+      "executable": "/home/build-user/.cargo/bin/yoctui",
+      "command": "/home/build-user/.cargo/bin/yoctui --config /home/build-user/.config/yoctui/openbmc-demo-daemon.toml daemon foreground"
     }
   },
   "supplemental_metrics": {},

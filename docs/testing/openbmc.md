@@ -63,7 +63,7 @@ directory, with all three historical jobs unchanged. The freshly parsed
 IMAGE_MANIFEST expands to a new timestamp which does not exist; the client
 retains the selected deployed artifact's manifest authority instead of guessing
 that new filename or rebuilding. Corrected workspace-tested/private binary:
-/home/bspguy-dev/.local/state/yoctui-v86-command-validated.mdKFIT/yoctui,
+/home/build-user/.local/state/yoctui-v86-command-validated.mdKFIT/yoctui,
 SHA-256 d24d35b2ea13af0bf28e82556b540148e80643dafea3a7b4e0aa3b4ce0a86f4b.
 Private PID 2355755, instance 2b9f400ab1ea2f7b79370a6831705b43; always re-read
 the runtime identity before lifecycle actions.
@@ -116,7 +116,7 @@ query is not connected; that finding is OPENBMC-ROOTFS-SOURCES-001, not waived.
 The first connected frame arrived in 0.369 seconds; this single read-only
 capture is not a release-performance claim. No daemon restart or image rebuild
 occurred. Exact captured/workspace-tested binary:
-/home/bspguy-dev/.local/state/yoctui-v85-validated.YhRRZA/yoctui, SHA-256
+/home/build-user/.local/state/yoctui-v85-validated.YhRRZA/yoctui, SHA-256
 cf19348c978d8e3810874d49cad4875aa5a1194bce0dd21871de1699f32bd9b0.
 Private daemon remains v0.1.84; installed release stays v0.1.64.
 
@@ -148,7 +148,7 @@ it. This is investigated upstream image metadata, not a Yoctui build/protocol
 failure; nothing was patched or suppressed and runtime impact is untested.
 
 The exact workspace-tested v0.1.84 candidate is preserved at
-/home/bspguy-dev/.local/state/yoctui-v84-validated.Gh0uoK/yoctui, SHA-256
+/home/build-user/.local/state/yoctui-v84-validated.Gh0uoK/yoctui, SHA-256
 c1fd3f3ccd2c269d3c7d11d35e1f7b69deb1a6c5ff0a553b33621c0aa9f0d221.
 Its private daemon PID 2310652, instance 4832e5d8285444a5445264dae2900239,
 loaded 4799 recipes and recovered jobs 1/2 unchanged. The real two-target
@@ -219,7 +219,7 @@ remains unavailable. This validates the client-only worker projection against
 the unchanged v0.1.76 daemon, not the undeployed queue/timing bridge repairs.
 
 The captured and workspace-tested binary is preserved at
-/home/bspguy-dev/.local/state/yoctui-v83-validated.O7H2jM/yoctui, SHA-256
+/home/build-user/.local/state/yoctui-v83-validated.O7H2jM/yoctui, SHA-256
 041e10543ec703d66031b8803e4809e33a0339cf7222d3ae9c63d5b868ce5713.
 No build was submitted, cancelled or restarted for this read-only check.
 
@@ -276,7 +276,7 @@ six rasters and roadmap checks pass. Cargo checks now run
 sequentially: one overlapping default-profile docs build caused workspace
 doc-tests to fail resolving a dependency artifact while it was being replaced.
 The sequential rerun passed without weakening tests. The verified executable
-is /home/bspguy-dev/.local/state/yoctui-v81-validated.18e7ox/yoctui, SHA-256
+is /home/build-user/.local/state/yoctui-v81-validated.18e7ox/yoctui, SHA-256
 0dcce028d77c7218d508914e1a3b02fc7828ffb7ed05b405b70bba8caaebd364.
 It has not replaced the running image daemon or normal installed release.
 
@@ -342,12 +342,12 @@ build directory.
 
 Isolated paths (both were absent before setup):
 
-- Source: `/home/bspguy-dev/src/openbmc`
-- Build: `/home/bspguy-dev/src/build-openbmc-romulus`
+- Source: `/home/build-user/src/openbmc`
+- Build: `/home/build-user/src/build-openbmc-romulus`
 
 Cloned upstream with `git clone --depth 1` at commit
 `d4fd7d3f54e88e800c0284b753af68a13aabbef6` (197 MiB checkout). Initialized with
-`. setup romulus /home/bspguy-dev/src/build-openbmc-romulus` from its source root.
+`. setup romulus /home/build-user/src/build-openbmc-romulus` from its source root.
 Host: Ubuntu 26.04, eight logical CPUs, approximately 15 GiB RAM. Required
 compiler/archive tools and `unshare -Ur true` preflight pass; no sysctl changed.
 Default build parallelism is unchanged.
@@ -355,12 +355,12 @@ Default build parallelism is unchanged.
 Live identity: BitBake 2.19.0, MACHINE romulus, DISTRO openbmc-openpower,
 OE-Core series blacksail/wrynose, nine configured layers. Yoctui daemon
 v0.1.65 uses private XDG config/state directories under
-`/home/bspguy-dev/.local/state/yoctui-openbmc-validation` and runtime directory
+`/home/build-user/.local/state/yoctui-openbmc-validation` and runtime directory
 `/run/user/1000/yoctui-openbmc-validation`. Its socket is in `yoctui/daemon.sock`
 under that runtime directory. It does not own the Poky workspace.
 
 The [doctor capture](../../artifacts/live-openbmc/romulus/doctor-v0.1.65.txt)
-has SHA-256 `0e138dcbf10e62725e0e5fb699dca7b26de50af3df285c2a164feaf1884789d9`.
+has SHA-256 `4eb26acf531dab3d33e830288f9a7a3859df9981505e0de32ab8e510e16294fe`.
 It confirms Current authority and a bounded bridge handshake, not full release
 support or a completed build. The debug candidate's hash is recorded in
 [compact telemetry evidence](compact-telemetry.md#delivery-boundary).
@@ -429,9 +429,9 @@ Focused coverage includes 12 daemon compatibility and 66 backend compatibility
 tests. The startup scan eventually finished and the private socket served
 Current authority, but this does not resolve the 180-second lifecycle defect.
 The live probe hash is
-`ece1d80f04608b795cb47b49288e25b5509dda3fa87c2e4638f330e2c3218bc2`;
+`e267c90f29698e4a576fe6f12ed13266420ac2c89f9f47dbb21ee814c394db41`;
 daemon JSON hash is
-`313528101babdad46f71dd366cee3cd4f40b7058ab8067ca34e05e35a3b8b540`.
+`dba240070f0eda2ce627a0d7be9e7cd594d6f454463713994c463c3554c50f69`.
 
 ## Required live evidence
 
@@ -527,7 +527,7 @@ unavailable before any image/package build.
 The private daemon started in 113.21 seconds with running executable SHA-256
 `031841516c11bf8ef9d39cda7414737cd169d68b44b30b58d00bfa9589b61b43`.
 The JSON report SHA-256 is
-`91e4d008820ad7323f114dd0e85a7e9d12225c433f0c80c9fc68db8f5fd3c248`.
+`9dbd5950c11a297e55c093d1a5f383d497d4617804bce20643c2ab8b042161ba`.
 All 1,543 workspace tests (four existing ignored), 49 bridge tests, strict
 Clippy, formatting, Ruff/mypy and documentation checks pass. Version-only
 goldens and six production rasters were refreshed. Another 58.3 GiB of agent
@@ -556,7 +556,7 @@ After the persistent Python repair, the
 records 84 Available capabilities, including Devtool status/modify and
 Recipetool create. The private daemon's running executable hash is
 `1240dc7e83c8f0bf5bcdfac282d6013539a42fdfa384687b6266c4e4e86f8b63`;
-report hash is `7d42406e1d787ca0d051e8edf44efd41d0b93b837be61d89c701fc991b2b3e70`.
+report hash is `67d78f3606172caf63e3f851cf24670ef0ee3d5fdb9681de7c5126195cc4099d`.
 It is the v0.1.72 candidate and remains isolated from the normal user daemon.
 
 All 1,545 workspace tests (four existing ignored), 49 bridge tests, strict
@@ -608,7 +608,7 @@ The preserved candidate `/tmp/yoctui-v73-validated.vMBk6H/yoctui` reports
 v0.1.73 and SHA-256
 `f34b9b26fb6d60d1503b20674bf194252552159ca63953b37000eb3e0b817a26`.
 An initial recovery daemon was stopped while idle, then only
-`/home/bspguy-dev/src/build-openbmc-romulus/conf/local.conf` gained:
+`/home/build-user/src/build-openbmc-romulus/conf/local.conf` gained:
 
 ```bitbake
 # Bound this validation build after the host OOM on 2026-09-08.
@@ -640,7 +640,7 @@ in 0.553 ms and produced a failed terminal result; this is an acknowledgement
 observation, not a cleanup or release-performance measurement.
 
 After the task was inactive, only that damaged object was moved to
-`/home/bspguy-dev/.local/state/yoctui-openbmc-object-recovery.plNE35/more-more.o`.
+`/home/build-user/.local/state/yoctui-openbmc-object-recovery.plNE35/more-more.o`.
 It remains recoverable. The next image submission was accepted as job 2 in the
 same daemon. It generated a 140 KiB object containing `T main`, linked `more`,
 and completed util-linux compilation and subsequent package tasks. The
@@ -653,7 +653,7 @@ compiled objects predating 06:00: function2 (8), boost (7), and fmt (8).
 After confirming the exact private instance and running job 2, Yoctui accepted
 cancellation in 235 ms and retained terminal failure. The workers stopped and
 the idle daemon was stopped normally. Only those 23 objects were moved into
-`/home/bspguy-dev/.local/state/yoctui-openbmc-object-recovery-23.bbZM2i`, preserving
+`/home/build-user/.local/state/yoctui-openbmc-object-recovery-23.bbZM2i`, preserving
 their relative paths. They are recoverable; a subsequent check found no empty
 objects in those three build trees. Source, sysroots and Poky were not changed.
 
@@ -666,7 +666,7 @@ replay undercounts completion. OPENBMC-SNAPSHOT-PROGRESS-001 owns the bounded
 typed snapshot repair and regression tests, now verified in v0.1.76.
 
 The tested candidate is preserved at
-`/home/bspguy-dev/.local/state/yoctui-v76-validated.tWHDMp/yoctui`, SHA-256
+`/home/build-user/.local/state/yoctui-v76-validated.tWHDMp/yoctui`, SHA-256
 `93515b28b1e5bd041ce9b486f376b0dde9a006b0d334d6ce5f2ff23851061d9f`.
 Private daemon PID 1302830, instance `7f104be5e67613b8bb221198aea44aaa`, accepted
 the fifth image attempt as job 1 after metadata readiness. Verify identity before
@@ -706,7 +706,7 @@ strict Clippy, formatting, documentation, rasters and roadmap checks pass.
 DAEMON-JOB-IDENTITY-001 is DONE. This is not a live image completion claim or
 a deployment to the running daemon, which still uses the preserved v0.1.76.
 The tested v0.1.78 binary is preserved at
-`/home/bspguy-dev/.local/state/yoctui-v78-validated.RaKSXe/yoctui`, SHA-256
+`/home/build-user/.local/state/yoctui-v78-validated.RaKSXe/yoctui`, SHA-256
 `185d14449e85f0397c80c53ce1ed5f63ec04c7282c57ab5aa08ffa6d5c9740fb`.
 
 A later [reattachment capture](../../artifacts/live-openbmc/romulus/v78-reattach-timing-20260908.txt)

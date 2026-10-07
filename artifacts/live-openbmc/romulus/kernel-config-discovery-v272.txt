@@ -6,10 +6,10 @@ Independent Ubuntu validation container, unchanged daemon host2125313/container3
 new client host2208479/container10411. No native image build or source edit.
 
 Real navigator Kernel selection then Enter starts the bounded typed inspection.
-Provider /home/bspguy-dev/src/openbmc/meta-aspeed/recipes-kernel/linux/linux-aspeed_git.bb.
+Provider /home/build-user/src/openbmc/meta-aspeed/recipes-kernel/linux/linux-aspeed_git.bb.
 Metadata-reported STAGING_KERNEL_BUILDDIR adds the exact shared artifact root.
 Configuration view now shows .config105069bytes; inspector exact selected path:
-/home/bspguy-dev/src/build-openbmc-romulus/tmp/work-shared/romulus/kernel-build-artifacts/.config.
+/home/build-user/src/build-openbmc-romulus/tmp/work-shared/romulus/kernel-build-artifacts/.config.
 3roots/4096files, unchanged global quota, one explicit partial-scan limitation.
 Before v271:2roots/4096files and no .config despite retained matching file.
 After Enter, actual config content opens in the existing clean in-app editor,

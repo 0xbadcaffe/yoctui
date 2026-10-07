@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.86  •  Project: openbmc  •  – Idle  •  Target: obmc-phosphor-image  •  Machine: romulus      Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                   │
+│Workspace: /home/build-user/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                   │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
 │▾ OVERVIEW                ││ 1   │  2   │  3 Files  │  4   │  5   │  6    Tab switches                          ││▾ PRIMARY FACTS                             │
@@ -10,7 +10,7 @@
 │▾ CONTENT                 ││Showing 1–35 of 2628 · package ownership is independent authority                   ││State: partial · 1 limitation(s)            │
 │  ▱ Layers                ││Logical path                                      Kind          Exact bytes         ││Image: obmc-phosphor-image                  │
 │  ▱ Recipes               ││Package                                                                             ││Path:                                       │
-│  ▱ Packages              ││├─ /                                              directory              0          ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Packages              ││├─ /                                              directory              0          ││/home/build-user/src/build-openbmc-romulus/t│
 │  ▱ Images                ││unavailable                                                                         ││mp/deploy/images/romulus/obmc-phosphor-image│
 │  ▱ Kernel                ││├─ bin                                            symlink                7          ││-romulus-20260908040925.manifest            │
 │  ▱ U-Boot / BIOS         ││unavailable                                                                         ││Installed packages: available               │
@@ -35,7 +35,7 @@
 │  ▱ Compatibility         ││    ├─ hosts                                      file                1121          ││unavailable from IMAGE_ROOTFS traversal     │
 │  ▱ Settings              ││unavailable                                                                         ││                                            │
 │                          ││    ├─ services                                   directory              0          ││▾ RELATED PATHS                             │
-│                          ││unavailable                                                                         ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│                          ││unavailable                                                                         ││/home/build-user/src/build-openbmc-romulus/t│
 │                          ││      ├─ obmc_console.service                     file                 291          ││mp/deploy/images/romulus/obmc-phosphor-image│
 │                          ││unavailable                                                                         ││-romulus-20260908040925.manifest            │
 │                          ││  ├─ busybox.links.nosuid                         file                2877          ││                                            │

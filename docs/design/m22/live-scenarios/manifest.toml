@@ -1,7 +1,7 @@
 schema_version = 1
 label = "supported-live-m22-design-regression-gallery"
 source_manifest = "artifacts/release-quality/m22-concept-live/manifest.json"
-source_manifest_sha256 = "aab7efbd30c1f8a214a924f2ad3c9075003c335cf6b2a17c23e5bbef347955dc"
+source_manifest_sha256 = "751e723acd4dec074e3d17bb7c6bf2e4c7209bf0cf00cec7253a834237fd902e"
 source_commit = "28de12c401c4bbe782126a1f303872c100f1eb9b"
 binary_sha256 = "bbe9b9509a254c6c8c5057061635883c44dd0a02f106d1e61d3ac5d052dc3352"
 host_distribution = "Ubuntu 24.04.4 LTS"
@@ -18,31 +18,31 @@ pixel_height = 1000
 [[scenario]]
 id = "idle-dashboard"
 file = "docs/design/m22/live-scenarios/01-idle-dashboard.png"
-sha256 = "a7eac4986ad0a72dee150e4ec6532184381ddbc0918e09d18ee568157bdf8984"
+sha256 = "c75e15446396408b7119a5f8d88547a2b63893ec7d8d20b9b9d2bfa69d6a178c"
 source = "artifacts/release-quality/m22-concept-live/idle-dashboard.png"
 
 [[scenario]]
 id = "active-build-tasks"
 file = "docs/design/m22/live-scenarios/02-active-build-tasks.png"
-sha256 = "2cb09918b7928fbef3cecc30858150b132775fdc011fde1eac64f30c558ac68a"
+sha256 = "28f2f61ff16732f1bcc853ee41812e9178a6a089fe40306b5a97e402fa9581fe"
 source = "artifacts/release-quality/m22-concept-live/active-build-tasks.png"
 
 [[scenario]]
 id = "failed-build-errors"
 file = "docs/design/m22/live-scenarios/03-failed-build-errors.png"
-sha256 = "e447a7c5960ce30f31e1e0942bf3bd103404eba9f3bc23dc71edbb1ef9f118a9"
+sha256 = "2f583af6e0a5578794b6effbb1c3716d9ca8e8aebedd8adb385690b75875371a"
 source = "artifacts/release-quality/m22-concept-live/failed-build-errors.png"
 
 [[scenario]]
 id = "rootfs-composition"
 file = "docs/design/m22/live-scenarios/04-rootfs-composition.png"
-sha256 = "0401fbf63483d0e620576897ab2ce7be87305a61a0db7959fcaea8ff91f0bc7e"
+sha256 = "9187667d49597584c00d3c8ef7bf0270b36e1bcb4dc20eda58ec152c2768966f"
 source = "artifacts/release-quality/m22-concept-live/rootfs-composition.png"
 
 [[scenario]]
 id = "editor-application-menu"
 file = "docs/design/m22/live-scenarios/05-editor-application-menu.png"
-sha256 = "2b9caf228f6121c7b0355e78ffcf1f8541d05c53682783b3ad3d80e748217274"
+sha256 = "94641f405e8f66466dd677bc5f57b4d7f39bedaeb1f479d7bd042c89ae590486"
 source = "artifacts/release-quality/m22-concept-live/editor-application-menu.png"
 
 [[scenario]]

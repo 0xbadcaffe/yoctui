@@ -8,7 +8,7 @@ same shim again. This matches
 [upstream issue 2696](https://github.com/pyenv/pyenv/issues/2696).
 
 The user explicitly requested a persistent global repair. Scope is the
-`bspguy-dev` account's default shells and its discovered Yocto host-tool links;
+`build-user` account's default shells and its discovered Yocto host-tool links;
 no distribution-owned interpreter, other user's configuration, virtualenv,
 source tree or package output was deleted or replaced.
 
@@ -68,7 +68,7 @@ not a replacement for selecting a real host interpreter.
 ## Recovery
 
 Original `.bashrc`, `.profile` and OpenBMC Python link are preserved at
-`/home/bspguy-dev/.local/state/yoctui-host-python-backup.p4JYl8`.
+`/home/build-user/.local/state/yoctui-host-python-backup.p4JYl8`.
 Pyenv's previous revision is retained in branch
 `yoctui-host-python-before-20260907`. Restoring the old configuration/link can
 restore the original build failure; do not do so while a build is running.

@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "PROD-HOST-PRIVACY-001"
+milestone = "M119"
+title = "Remove machine identity from validation and retained evidence"
+status = "DONE"
+priority = 3620
+required = true
+depends_on = []
+verify = ["python3 scripts/test-host-privacy.py", "python3 scripts/test-preseed-zcu102-kernel-cache.py", "python3 scripts/test-inspect-zcu102-build.py", "./scripts/verify-next-generation-ui-evidence.sh", "python3 scripts/verify-live-m22-concept-evidence.py", "./scripts/verify-ipc-continuity.sh --backpressure", "cargo fmt --all --check", "cargo test --locked -p yoctui-model -p yoctui-bitbake -p yoctui-ui rootfs_browser", "cargo test --locked -p yoctui --bin yoctui kernel_debug_defaults", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "User requests feat_prod only; master must remain unchanged. Preserve safety guards, generic test coverage and observed evidence while removing host-specific identity. Verified portable path/ownership guards, focused Rust/bridge tests, exact historical raster redaction, evidence digests, fresh IPC backpressure, coherent316 identity and strict CI-pinned1.97 Clippy. Broader demo handoff remains deferred."
+
+[[task]]
 id = "CI-BRIDGE-PYTHON-GATES-001"
 milestone = "M118"
 title = "Statically check shared bridge namespace and apply AST-identical formatting"
@@ -1341,8 +1352,8 @@ status = "DONE"
 priority = 1190
 required = true
 depends_on = ["RELEASE-README-001"]
-verify = ["yoctui --version", "python3 scripts/test-environment-setup.py /home/bspguy-dev/.cargo/bin/yoctui"]
-notes = "Installed optimized v0.1.63 with cargo install --frozen --path crates/yoctui-cli --force --target-dir target. Release build took 34m50s; installation reused it. Installed version/help, Cargo tracking, byte comparison and SHA-256 agree. Private real-PTY manual paste/directory browser/save test passes for both candidate and installed executable. Backed up v0.1.21 and Cargo records under /home/bspguy-dev/.local/state/yoctui-installs/before-0.1.63.tLBPt3. Existing daemon PID 3708780 retains its original executable and was not restarted. Local installation is explicitly requested, not release-gate approval. Receipt: artifacts/release-quality/cratesio/0.1.63.json."
+verify = ["yoctui --version", "python3 scripts/test-environment-setup.py $HOME/.cargo/bin/yoctui"]
+notes = "Installed optimized v0.1.63 with cargo install --frozen --path crates/yoctui-cli --force --target-dir target. Release build took 34m50s; installation reused it. Installed version/help, Cargo tracking, byte comparison and SHA-256 agree. Private real-PTY manual paste/directory browser/save test passes for both candidate and installed executable. Backed up v0.1.21 and Cargo records under /home/build-user/.local/state/yoctui-installs/before-0.1.63.tLBPt3. Existing daemon PID 3708780 retains its original executable and was not restarted. Local installation is explicitly requested, not release-gate approval. Receipt: artifacts/release-quality/cratesio/0.1.63.json."
 
 [[task]]
 id = "RELEASE-PUBLISH-001"
@@ -10833,7 +10844,7 @@ priority = 3051
 required = true
 depends_on = ["DAEMON-BUILD-DIR-COMPAT-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "DONE in v0.1.240. Formatting, strict CLI Clippy, version policy, roadmap validation, and the optimized release build pass. The installed and release binaries have SHA-256 58539b3629db54f135cf15f705ea96fcda7a043e70de3bf11b882042e0f50612 and embed source SHA b15a47f16972. The fresh daemon runs as PID 3738308 with BUILDDIR=/home/bspguy-dev/src/openbmc/build/romulus; live generation 1 authority is current with bitbake.getvar, bitbake.recipe_metadata, and bitbake.recipe_inventory available. The full workspace suite remains deferred until requested."
+notes = "DONE in v0.1.240. Formatting, strict CLI Clippy, version policy, roadmap validation, and the optimized release build pass. The installed and release binaries have SHA-256 58539b3629db54f135cf15f705ea96fcda7a043e70de3bf11b882042e0f50612 and embed source SHA b15a47f16972. The fresh daemon runs as PID 3738308 with BUILDDIR=/home/build-user/src/openbmc/build/romulus; live generation 1 authority is current with bitbake.getvar, bitbake.recipe_metadata, and bitbake.recipe_inventory available. The full workspace suite remains deferred until requested."
 
 [[task]]
 id = "MENUCONFIG-RESUME-001"

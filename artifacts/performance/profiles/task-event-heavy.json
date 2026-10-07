@@ -8,7 +8,7 @@
     "machine": "x86_64"
   },
   "binary": {
-    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "path": "/home/build-user/projects/yoctui/target/release/yoctui",
     "sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5"
   },
   "sampling": {
@@ -25,14 +25,14 @@
     {
       "role": "daemon",
       "pid": 2692789,
-      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui daemon foreground"
+      "executable": "/home/build-user/projects/yoctui/target/release/yoctui",
+      "command": "/home/build-user/projects/yoctui/target/release/yoctui daemon foreground"
     },
     {
       "role": "client",
       "pid": 2700494,
-      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui attach"
+      "executable": "/home/build-user/projects/yoctui/target/release/yoctui",
+      "command": "/home/build-user/projects/yoctui/target/release/yoctui attach"
     }
   ],
   "artifacts": {

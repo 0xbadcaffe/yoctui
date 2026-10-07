@@ -10,14 +10,14 @@ tmp/stamps/zynqmp_zcu102_sdt_full-amd-linux/linux-xlnx/
 6.18.10+git+v2026.1.do_unpack.debdfebb31743a0024a738f918bbb12c9d788fe3b7aaef626646a16d09be9e95
 These completion stamps were created by the real build, not the cache helper.
 Unpacked source directory:
-/home/bspguy-dev/src/yoctui-zcu102-2026.1/build/tmp/work-shared/zynqmp-zcu102-sdt-full/kernel-source
+/home/build-user/src/yoctui-zcu102-2026.1/build/tmp/work-shared/zynqmp-zcu102-sdt-full/kernel-source
 Native source HEAD: 4f7afe14f7246986ca858d9a0880f5db6ba02a4b
 Native source tree: b623c34f5a0acb9cb6a9efe7cfb7402ce6d3dad2
 Both exactly match the recipe pin/preseed, before later build processing.
 Native fetch log shows tarball creation, no reported fetch failures.
 
 Actual do_kernel_configme produced the following current resolved configuration:
-/home/bspguy-dev/src/yoctui-zcu102-2026.1/build/tmp/work/zynqmp_zcu102_sdt_full-amd-linux/linux-xlnx/6.18.10+git+v2026.1/linux-zynqmp_zcu102_sdt_full-standard-build/.config
+/home/build-user/src/yoctui-zcu102-2026.1/build/tmp/work/zynqmp_zcu102_sdt_full-amd-linux/linux-xlnx/6.18.10+git+v2026.1/linux-zynqmp_zcu102_sdt_full-standard-build/.config
 226531 bytes, mtime 2026-10-02 11:22:47 UTC.
 SHA256 d390a52a4b1d509cd350ac144dcb03c4915a68851e8258bfa9256fd71820ab97
 CONFIG_DEBUG_INFO=y
@@ -43,7 +43,7 @@ build-after-index-cleanup-wide.ansi
 SHA256 ee60f59cc59c3be06796f4f7fbca8b22ddcca27f15028d13849f317b7f2d4459
 build-after-index-cleanup-wide.txt
 SHA256 68923cad3848f3fb585f3190bbfe0cbb563781b1efb08026205d5a66535be308
-PROJECT=/home/bspguy-dev/src/yoctui-zcu102-2026.1
+PROJECT=/home/build-user/src/yoctui-zcu102-2026.1
 Earlier 160-column capture is retained too: UI showed D:Connected/
 Local shorthand, but the full-label capture predicate rejected it; that capture
 is not claimed as a passed machine/health assertion. No product UI was changed.

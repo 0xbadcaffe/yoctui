@@ -22,12 +22,12 @@
     ],
     "started_unix_ms": 1788858071564,
     "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
-    "executable": "/home/bspguy-dev/.local/state/yoctui-v84-validated.Gh0uoK/yoctui"
+    "executable": "/home/build-user/.local/state/yoctui-v84-validated.Gh0uoK/yoctui"
   },
   "binary_sha256": "c1fd3f3ccd2c269d3c7d11d35e1f7b69deb1a6c5ff0a553b33621c0aa9f0d221",
   "workspace": {
-    "canonical_source": "/home/bspguy-dev/src/openbmc",
-    "canonical_build": "/home/bspguy-dev/src/build-openbmc-romulus",
+    "canonical_source": "/home/build-user/src/openbmc",
+    "canonical_build": "/home/build-user/src/build-openbmc-romulus",
     "identity_hash": "b261670860dd0336"
   },
   "targets": [

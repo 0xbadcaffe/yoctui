@@ -46,11 +46,11 @@
     "bundled_bridge": "PASS: isolated doctor bounded protocol handshake/shutdown; private authority Unavailable as expected, not a live daemon validation."
   },
   "release": {
-    "build_command": "CARGO_TARGET_DIR=/home/bspguy-dev/.cache/yoctui-demo-cargo.AAiva6 CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 RUSTFLAGS='-C force-frame-pointers=yes' cargo build --release --locked -p yoctui --bin yoctui -j 2",
+    "build_command": "CARGO_TARGET_DIR=/home/build-user/.cache/yoctui-demo-cargo.AAiva6 CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 RUSTFLAGS='-C force-frame-pointers=yes' cargo build --release --locked -p yoctui --bin yoctui -j 2",
     "install_command": "Same target/jobs/incremental/RUSTFLAGS; cargo install --path crates/yoctui-cli --force --locked --bin yoctui -j 2",
-    "binary": "/home/bspguy-dev/.cache/yoctui-demo-cargo.AAiva6/release/yoctui",
-    "installed_binary": "/home/bspguy-dev/.cargo/bin/yoctui",
-    "old_binary_backup": "/home/bspguy-dev/.local/state/yoctui-installs/before-0.1.311.OfQgy1/yoctui",
+    "binary": "/home/build-user/.cache/yoctui-demo-cargo.AAiva6/release/yoctui",
+    "installed_binary": "/home/build-user/.cargo/bin/yoctui",
+    "old_binary_backup": "/home/build-user/.local/state/yoctui-installs/before-0.1.311.OfQgy1/yoctui",
     "old_binary_sha256": "5d07ef88197366c718db132129ce0bde2cf3739e1f29918c9c980588c7c5621a",
     "crates_io_publication": "NOT RUN",
     "build_duration": "6m28s",

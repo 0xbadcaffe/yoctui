@@ -1,3 +1,9 @@
+# Scoped production privacy cleanup
+
+PROD-HOST-PRIVACY-001 DONE: covers portable validation roots and anonymized retained
+host evidence on feat_prod only. No merge or change to the broader demo queue.
+See [host privacy](testing/host-privacy.md).
+
 # Yoctui Product Roadmap
 
 ## M118 — registry-safe README, CI repair and publication315
@@ -610,7 +616,7 @@ Pseudo authority: [Yocto fakeroot/Pseudo](https://docs.yoctoproject.org/dev/over
 ### M105 real Romulus read-only ownership evidence
 
 The adapter smoke on 2026-10-01 used the exact root
-`/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs`
+`/home/build-user/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs`
 and sibling `pseudo/files.db`. Host lstat reports UID/GID 1000/1000. The adapter
 reports `/etc/passwd` and `/etc/group` as `0644 root(0) root(0)`, and
 `/etc/shadow` as `0400 root(0) root(0)` (host mode is 0600). No shadow contents
@@ -618,7 +624,7 @@ were read. Pseudo database bytes remained identical; daemon PID 1729515 stayed
 alive. No BitBake job, mount, guest boot or daemon restart was required.
 
 ```bash
-YOCTUI_ROOTFS_SMOKE_ROOT=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs \
+YOCTUI_ROOTFS_SMOKE_ROOT=$HOME/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs \
   CARGO_INCREMENTAL=0 cargo test -p yoctui-bitbake rootfs_browser_live_target_metadata_read_only_smoke -- --ignored --nocapture
 ```
 
@@ -676,7 +682,7 @@ optimized delivery follow; M67 performance certification remains separate.
 The genuine Poky 6.0.2 qemux86-64 guest used GDB 17.1 (Ubuntu 17.1-2ubuntu1)
 and existing Yocto-native QEMU 10.2.0. No rebuild, daemon restart, deployment,
 installation or configuration write was needed. Exact inputs below
-`/home/bspguy-dev/src/build`:
+`/home/build-user/src/build`:
 
 | Input | Relative path | SHA-256 |
 | --- | --- | --- |
@@ -685,7 +691,7 @@ installation or configuration write was needed. Exact inputs below
 | Symbols | `tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/linux-qemux86_64-standard-build/vmlinux` | `e178509f643ce040de0247df75d9b95bdae38d7d3b7bc5903b163cdd9a7995f6` |
 | Rootfs | `tmp/deploy/images/qemux86-64/core-image-minimal-qemux86-64.rootfs-20260904162153.ext4.zst` | `ae8ab7187a802c11c9d4acb3b690a57ff7444897379803d2244163de7d8f02de` |
 
-Runqemu: `/home/bspguy-dev/src/poky/scripts/runqemu`. Native QEMU relative path:
+Runqemu: `/home/build-user/src/poky/scripts/runqemu`. Native QEMU relative path:
 `tmp/work/x86_64-linux/qemu-helper-native/1.0/recipe-sysroot-native/usr/bin/qemu-system-x86_64`.
 Memory 1024 MiB, TCG, four CPUs; vmlinux build ID
 `826485cb9fd378a843ab7d1c57b0fadc1453e4a3`. The boot kernel comes from the

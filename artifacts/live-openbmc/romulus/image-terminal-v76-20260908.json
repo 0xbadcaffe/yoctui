@@ -23,11 +23,11 @@
     ],
     "started_unix_ms": 1788840447388,
     "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
-    "executable": "/home/bspguy-dev/.local/state/yoctui-v76-validated.tWHDMp/yoctui"
+    "executable": "/home/build-user/.local/state/yoctui-v76-validated.tWHDMp/yoctui"
   },
   "workspace": {
-    "canonical_source": "/home/bspguy-dev/src/openbmc",
-    "canonical_build": "/home/bspguy-dev/src/build-openbmc-romulus",
+    "canonical_source": "/home/build-user/src/openbmc",
+    "canonical_build": "/home/build-user/src/build-openbmc-romulus",
     "identity_hash": "b261670860dd0336"
   },
   "sequence": 50002,
@@ -70,7 +70,7 @@
       "unix_ms": 1788857703713,
       "recipe": "obmc-phosphor-image",
       "task": "do_rootfs",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "path": "/home/build-user/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     }
   ]

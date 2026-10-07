@@ -10,7 +10,7 @@ Release host debug0 does not modify target kernel DWARF configuration.
 
 Only idle private daemon restarted. Instance0b20c2dd7719990023902d8d24d1ada8,
 containerPID1593489, ready workspace/recipe inventory at1790943667363ms.
-Exact canonical workspace /home/bspguy-dev/src/yoctui-zcu102-2026.1/build.
+Exact canonical workspace /home/build-user/src/yoctui-zcu102-2026.1/build.
 One real Yoctui daemon build petalinux-image-minimal accepted as job2.
 Native start1790943780998ms; terminal1790943855583ms.
 Read-only framed IPC peer UID/workspace/instance verified, sequence11119:
@@ -22,7 +22,7 @@ Actual native warning: free space .../build/tmp running low (1.935GB left).
 Native error: No new tasks can be executed since the disk space monitor action
 is "STOPTASKS"! Native path sources/poky/bitbake/lib/bb/monitordisk.py.
 New typed native event log, severityerror, recipe/task/pathnull:
-BitBake disk guard stopped this build at /home/bspguy-dev/src/yoctui-zcu102-2026.1/build/tmp; remaining=2077360128 bytes. The runqueue is incomplete.
+BitBake disk guard stopped this build at /home/build-user/src/yoctui-zcu102-2026.1/build/tmp; remaining=2077360128 bytes. The runqueue is incomplete.
 Same real guard diagnostics for downloads (2077360128) and sstate(2077356032).
 No widget text parsing, fake task failure, guard weakening or automatic retry.
 

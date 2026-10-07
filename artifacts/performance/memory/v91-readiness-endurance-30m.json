@@ -2,7 +2,7 @@
   "schema": "yoctui.performance.bounded-memory.v1",
   "source_base_revision": "db7a6a78e0fb437e0c947e4510cebba7a64bbfb8",
   "binary": {
-    "path": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
+    "path": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui",
     "sha256": "261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd"
   },
   "configuration": {

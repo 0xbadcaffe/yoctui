@@ -1,7 +1,7 @@
 validation=real AMD ZCU102 PetaLinux preparation; image build/boot/debug not yet certified
 date_utc=2026-10-02
-source_root=/home/bspguy-dev/src/yoctui-zcu102-2026.1
-build_dir=/home/bspguy-dev/src/yoctui-zcu102-2026.1/build
+source_root=/home/build-user/src/yoctui-zcu102-2026.1
+build_dir=/home/build-user/src/yoctui-zcu102-2026.1/build
 manifest_branch=rel-v2026.1
 manifest_url=https://github.com/Xilinx/yocto-manifests
 manifest=ec6578c0930b47fcacc9622e15669a6a16a2fe80
@@ -24,7 +24,7 @@ meta-xilinx-tsn=2049bfdc0d2bf7788afe0df8797b9eda7052619d
 poky=1d54d1c4736a114e1cecbe85a0306e3814d5ce70
 yocto-scripts=27644974099014f27a84549a4610a6b908271155
 
-binary=/home/bspguy-dev/projects/yoctui/target/release/yoctui
+binary=/home/build-user/projects/yoctui/target/release/yoctui
 version=0.1.267
 binary_source_commit=3b95675ee0f39b183fb3332d65f00954e2391414
 binary_sha256=9f25e328ec8c906dce9cecc452522fbe39e27b264d73a1bc528958296888d77c
@@ -37,13 +37,13 @@ build_uid_gid=1000:1000 (nonroot)
 daemon_pid_in_container=619
 daemon_instance=3c04a55bff77055188ba8a6b84b519ac
 daemon_started_unix_ms=1790920520349
-daemon_socket=/home/bspguy-dev/src/yoctui-zcu102-2026.1/runtime/yoctui/daemon.sock
-XDG_STATE_HOME=/home/bspguy-dev/src/yoctui-zcu102-2026.1/state
-daemon_log=/home/bspguy-dev/src/yoctui-zcu102-2026.1/logs/daemon.log
+daemon_socket=/home/build-user/src/yoctui-zcu102-2026.1/runtime/yoctui/daemon.sock
+XDG_STATE_HOME=/home/build-user/src/yoctui-zcu102-2026.1/state
+daemon_log=/home/build-user/src/yoctui-zcu102-2026.1/logs/daemon.log
 existing_user_daemon=PID 1729515 preserved; instance b520138453d24dfaa94b3ccf8086c639
 
 cleanup=Cargo dev/release regenerable objects (8.0+6.6 GiB); release copied aside and restored with identical SHA256
-cleanup_sstate=official Poky sstate-cache-management.py --cache-dir /home/bspguy-dev/src/build/sstate-cache --remove-duplicated -j 2 --yes
+cleanup_sstate=official Poky sstate-cache-management.py --cache-dir /home/build-user/src/build/sstate-cache --remove-duplicated -j 2 --yes
 cleanup_sstate_preview=6114 of 16899 cache files; newest matching architecture/package/task entries retained
 disk_free_after_cleanup_and_clones=approximately 24 GiB (df -h); original approximately 6.8 GiB
 preserved=user source trees, images/debug kernel evidence, existing daemon and four user dashboard captures
@@ -51,7 +51,7 @@ cleanup_recovery=deleted Cargo and older duplicate sstate entries can be regener
 
 local_conf_sha256=b8d89b2bb50ff697713c58773792a2fd8b7f0dbcd88408345209add60c6b952c
 local_conf_snapshot_note=committed evidence normalizes three upstream comment-line trailing spaces only; actual build config is unchanged and the hash above refers to that original file
-bblayers_conf_sha256=7fdd156ce4fcc3fca8891c3d82a22b04a7073286cb62a4548950a3e5376151e1
+bblayers_conf_sha256=69f07101a5951273d151bd2d947c9746db68d64b9a05b761a3f4dad8f99e62a8
 resolved_via=real bb.tinfoil config_only=True inside initialized vendor setupsdk environment
 MACHINE=zynqmp-zcu102-sdt-full
 DISTRO=petalinux
@@ -71,7 +71,7 @@ headless_native_qemu=sdl/gtk+ removed from PACKAGECONFIG
 BB_DISKMON_DIRS=STOPTASKS for tmp/downloads/sstate at 4G/100K inodes; HALT at 1G/10K
 gdb=/usr/bin/gdb-multiarch (15.1 Ubuntu 24.04 package installed only inside validation container)
 
-initial_ui=/home/bspguy-dev/src/yoctui-zcu102-2026.1/logs/initialized-ui.{ansi,txt,cells,meta}
+initial_ui=/home/build-user/src/yoctui-zcu102-2026.1/logs/initialized-ui.{ansi,txt,cells,meta}
 initial_ui_capture=real release PTY attached to isolated daemon; current Connected/Local health predicate verified
 capture_helper_verification=five focused current/legacy/negative health-predicate checks
 startup_workaround=source setupsdk <build> then yoctui daemon start without --build-dir; explicit discovery currently assumes oe-init-build-env in a build ancestor and misses vendor sources/poky layout

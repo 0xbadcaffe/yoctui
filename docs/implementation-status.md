@@ -1,3 +1,12 @@
+# Host privacy cleanup on feat_prod
+
+PROD-HOST-PRIVACY-001 DONE: portable validation roots, generic ownership
+fixtures and explicit OpenBMC smoke paths; historical evidence account redaction
+with cell/style preservation and verified dependent digest updates. Focused
+Rust/bridge, raster/evidence, IPC, formatting, strict CI-pinned Clippy and
+governance checks pass at coherent0.1.316. Native/vendor live smoke was not run. See
+[host privacy](testing/host-privacy.md). Broader demo work remains deferred.
+
 M118 DONE: README registry URLs repaired, GitHub CI fixed and all seven
 public crates0.1.315 published from clean3205c277 with normal Cargo verification.
 Exact sparse-index checksums match uploaded AND independently downloaded
@@ -1024,7 +1033,7 @@ Historical pause/resume handoff (superseded by completed ENV above):
 M111 was resumed by the user after laptop shutdown (2026-10-02), with
 ENV still IN_PROGRESS, not DONE. Official AMD rel-v2026.1 sources and an exact
 zynqmp-zcu102-sdt-full/PetaLinux configuration are retained under
-/home/bspguy-dev/src/yoctui-zcu102-2026.1. Two task/parse/make workers, disk
+/home/build-user/src/yoctui-zcu102-2026.1. Two task/parse/make workers, disk
 guards, rm_work excluding linux-xlnx/image and vendor DWARF5 feature are set.
 Cargo cache and duplicate sstate cleanup raised free space from about 6.8 to
 24 GiB; unchanged source-bound release and existing user daemon were preserved.
@@ -2488,7 +2497,7 @@ bytes. Package metadata and offline system maps are available; systemd service
 rows and previews work. The sole remaining partial limitation is explicitly
 unknown filesystem package ownership, not missing sources. Private tested
 binary SHA-256 d24d35b2ea13af0bf28e82556b540148e80643dafea3a7b4e0aa3b4ce0a86f4b,
-/home/bspguy-dev/.local/state/yoctui-v86-command-validated.mdKFIT/yoctui.
+/home/build-user/.local/state/yoctui-v86-command-validated.mdKFIT/yoctui.
 OPENBMC-LIVE-001 is current for final handoff and completion-gate assessment.
 No image rebuild, firmware boot, normal installation replacement or Poky-data
 cleanup occurred. Details and actual failed-first/success captures are in
@@ -2505,7 +2514,7 @@ packages available, 81062873 bytes and 1778 files, with all 40 missing metadata
 warnings removed. OPENBMC-ROOTFS-SOURCES-001 is current: overall composition
 still correctly reports partial availability because IMAGE_ROOTFS acquisition
 is not connected. The daemon stays v0.1.84; no image rebuild occurred.
-Captured tested candidate: /home/bspguy-dev/.local/state/yoctui-v85-validated.YhRRZA/yoctui,
+Captured tested candidate: /home/build-user/.local/state/yoctui-v85-validated.YhRRZA/yoctui,
 SHA-256 cf19348c978d8e3810874d49cad4875aa5a1194bce0dd21871de1699f32bd9b0.
 
 OPENBMC-PKGDATA-001 is current in v0.1.84; OPENBMC-LIVE-001 waits for it and
@@ -2514,7 +2523,7 @@ no runtime behavior changes from v0.1.83. All
 1,580 workspace tests/doc-tests, 52 bridge tests, strict Clippy, fmt, docs,
 rasters, roadmap and version-policy checks/tests pass; all 17 golden diffs are
 version digits only. The workspace-tested candidate is preserved at
-/home/bspguy-dev/.local/state/yoctui-v84-validated.Gh0uoK/yoctui, SHA-256
+/home/build-user/.local/state/yoctui-v84-validated.Gh0uoK/yoctui, SHA-256
 c1fd3f3ccd2c269d3c7d11d35e1f7b69deb1a6c5ff0a553b33621c0aa9f0d221. The
 image SUCCEEDED under the preserved v0.1.76 daemon: 6812/6812, job 1 exit 0,
 typed successful Completed event. The 32 MiB flash image and XZ SquashFS were
@@ -2547,7 +2556,7 @@ version digits plus terminal worker counts 1 to 0 and reconnecting 1 to
 unavailable; all six rasters were refreshed and verified. The actual production
 client shows Workers: 2 at 5936/6812, matching rust-native and qemu-system-native
 PIDs without optional labels. The captured binary is preserved at
-/home/bspguy-dev/.local/state/yoctui-v83-validated.O7H2jM/yoctui, SHA-256
+/home/build-user/.local/state/yoctui-v83-validated.O7H2jM/yoctui, SHA-256
 041e10543ec703d66031b8803e4809e33a0339cf7222d3ae9c63d5b868ce5713.
 Its isolated terminal-timing reattachment check passes. OPENBMC-LIVE-001 resumes;
 the real image still uses v0.1.76 and has no terminal result.
@@ -2576,7 +2585,7 @@ disables Tinfoil's event-draining cleanup. A sequential final baseline passes
 after overlapping Cargo documentation compilation disrupted an earlier doc-test
 run. OPENBMC-LIVE-001 resumes; the image daemon stays v0.1.76, observed running
 at 4737/6812 without terminal success. The validated v0.1.81 binary is preserved
-at /home/bspguy-dev/.local/state/yoctui-v81-validated.18e7ox/yoctui, SHA-256
+at /home/build-user/.local/state/yoctui-v81-validated.18e7ox/yoctui, SHA-256
 0dcce028d77c7218d508914e1a3b02fc7828ffb7ed05b405b70bba8caaebd364.
 
 OPENBMC-ATTACH-TIMING-001 is DONE in v0.1.80. Optional observed lifecycle
@@ -2590,7 +2599,7 @@ client now retains an injected 64-second duration across two fresh attachments;
 three consecutive harness runs pass after correcting a detach-cleanup race.
 Read-only OpenBMC attachment correctly leaves v0.1.76's missing timing unknown.
 The tested binary is preserved at
-/home/bspguy-dev/.local/state/yoctui-v80-validated.GDZdkr/yoctui, SHA-256
+/home/build-user/.local/state/yoctui-v80-validated.GDZdkr/yoctui, SHA-256
 ba7bd5dc15cb886f9268daba79e1828c9860a3bff5cd3c57f86df363181f3ca3.
 Real image completion and live new-daemon
 timing/identity rechecks remain pending; the running daemon is unchanged.

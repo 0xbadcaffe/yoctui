@@ -47,14 +47,14 @@ same JSON argv defect. Actual large Doctor JSON retained read-only at
 
 ACTUAL NATIVE SOURCE-ONLY CHECK
 Exact retained native source oe-init-build-env initializes sibling Romulus build;
-caller PYTHONPATH is only /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib,
+caller PYTHONPATH is only /home/build-user/src/openbmc/upstream-layers/bitbake/lib,
 PYTHONDONTWRITEBYTECODE=1. Run real source bridge (not fake fixture) in that build,
 get_recipe_metadata virtual/kernel, get_variable STAGING_KERNEL_BUILDDIR for
 virtual/kernel, shutdown. Exit0/actual metadata63tasks/nine packages/three sources:
   meta-aspeed/recipes-kernel/linux/linux-aspeed_git.bb
   meta-phosphor/recipes-kernel/linux/linux-%.bbappend
   meta-ibm/meta-romulus/recipes-kernel/linux/linux-aspeed_%.bbappend
-Shared build /home/bspguy-dev/src/build-openbmc-romulus/tmp/work-shared/romulus/
+Shared build /home/build-user/src/build-openbmc-romulus/tmp/work-shared/romulus/
 kernel-build-artifacts; original ${TMPDIR}/work-shared/${MACHINE}/kernel-build-artifacts,
 actual source meta/conf/bitbake.conf:494 provenance. bridge_shutdown observed.
 NDJSON /tmp/yoctui-native-import-metadata-v295.ndjson

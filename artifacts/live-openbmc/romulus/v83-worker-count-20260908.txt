@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.83  •  Project: openbmc  •  ▶ Running  •  Target: obmc-phosphor-image  •  Machine: romulus        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 5936 / 6812  |  Elapsed: --:--:--  |  Workers: 2                             │
+│Workspace: /home/build-user/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 5936 / 6812  |  Elapsed: --:--:--  |  Workers: 2                             │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  87%  5936/6812▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫││Task        do_compile                      │
@@ -17,17 +17,17 @@
 │  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
 │▾ BUILD                   │┌Log Viewer — do_compile (qemu-system-native) · ▶ Follow─────────────────────────────┐│Worker      unavailable                     │
 │  ▱ Tasks                2│││ make -j 2 LD=ld  AR=ar OBJCOPY=objcopy                                            ││PID         2077511                         │
-│  ▱ Logs              LIVE││LDFLAGS=-L/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-syst││Started     unavailable                     │
+│  ▱ Logs              LIVE││LDFLAGS=-L/home/build-user/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-syst││Started     unavailable                     │
 │  ▱ Errors                ││em-native/11.0.2/recipe-sysroot-native/usr/lib                                      ││Elapsed     unavailable                     │
-│  ▱ Configuration         ││-L/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-nativ││Workdir     unavailable                     │
+│  ▱ Configuration         ││-L/home/build-user/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-nativ││Workdir     unavailable                     │
 │  ▱ Dependencies          ││e/11.0.2/recipe-sysroot-native/lib                         -Wl,--enable-new-dtags   ││Log file                                    │
-│▾ VALIDATE                ││                     -Wl,-rpath-link,/home/bspguy-dev/src/build-openbmc-romulus/tmp/││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│▾ VALIDATE                ││                     -Wl,-rpath-link,/home/build-user/src/build-openbmc-romulus/tmp/││/home/build-user/src/build-openbmc-romulus/t│
 │  ▱ Testing               ││work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native/usr/lib           ││mp/work/x86_64-linux/qemu-system-native/11.0│
-│    Security              ││             -Wl,-rpath-link,/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86││.2/temp/log.do_compile.2077511              │
+│    Security              ││             -Wl,-rpath-link,/home/build-user/src/build-openbmc-romulus/tmp/work/x86││.2/temp/log.do_compile.2077511              │
 │  ▱ QA                    ││_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native/lib                       │└────────────────────────────────────────────┘
-│▾ TOOLS                   ││ -Wl,-rpath,/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-sy│┌Recent output · Recent Log (tail)───────────┐
+│▾ TOOLS                   ││ -Wl,-rpath,/home/build-user/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-sy│┌Recent output · Recent Log (tail)───────────┐
 │  ▱ Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘││ make -j 2 LD=ld  AR=ar OBJCOPY=objcopy    │
-│  ▱ Terminal Sessions     │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 1 · Daemon-owned 2───┐│LDFLAGS=-L/home/bspguy-dev/src/build-openbmc│
+│  ▱ Terminal Sessions     │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 1 · Daemon-owned 2───┐│LDFLAGS=-L/home/build-user/src/build-openbmc│
 │  ▱ Devtool               ││Status        Operation     Type         Target / Context        Started   Elapsed  ││-romulus/tmp/work/x86_64-linux/qemu-system-n│
 │  ▱ QEMU / Wic            ││▶ Running     BitBake build Build        5936/6812               --        --       │└────────────────────────────────────────────┘
 │  ▱ Maintenance           ││✕ Failed      BitBake build Build        daemon                  --        --       │┌Contextual Actions──────────────────────────┐

@@ -61,9 +61,9 @@ and fixture authority against spec, not weaken/drop tests or restore old UX.
 Separate actual clipping/dialog/inspection/integration defects from fixture drift.
 
 REAL DEMO DEFECT
-Kernel/Firmware platform inspection of /home/bspguy-dev/src/build-openbmc-romulus
+Kernel/Firmware platform inspection of /home/build-user/src/build-openbmc-romulus
 reports cannot locate oe-init-build-env. The selected source exists at sibling
-/home/bspguy-dev/src/openbmc and has the exact initializer; current platform
+/home/build-user/src/openbmc and has the exact initializer; current platform
 helper searches only build ancestors. Use exact selected workspace source/
 build identity with no arbitrary script guessing, source editing or build retry.
 
