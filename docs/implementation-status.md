@@ -1,3 +1,12 @@
+# Production documentation cleanup
+
+PROD-DOCS-CLEANUP-001 DONE: cherry-picked from `feat_prod` to `master`: removed four redundant or historical
+standalone documents and condensed the mandatory current handoff. The canonical
+Raw Mode reference, authoritative specifications, registry task states, runtime
+source and retained evidence are preserved. Profiling measurements are retained
+in `docs/performance.md`; workbench principles are in `docs/product-roadmap.md`.
+No product version bump or live demo acceptance is implied.
+
 M118 DONE: README registry URLs repaired, GitHub CI fixed and all seven
 public crates0.1.315 published from clean3205c277 with normal Cargo verification.
 Exact sparse-index checksums match uploaded AND independently downloaded
