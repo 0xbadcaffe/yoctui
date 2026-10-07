@@ -9,9 +9,9 @@ Release SHA256: 785779c2502b452897efd41c6aabbbc0ccd94946f1dcd0d133050d80a6e9081b
 Build SHA embedded by build script: 361ff4484104; release build 9m04s.
 Independent container: yoctui-openbmc-qemu-validation, Ubuntu 24.04,
 UID 1000; no replacement/restart of the AMD or existing user daemon.
-Source: /home/bspguy-dev/src/openbmc, mounted read-only,
+Source: /home/build-user/src/openbmc, mounted read-only,
 HEAD 34f11d15c1b17df26a1063602918eead23253669; BitBake 2.19.1.
-Build: /home/bspguy-dev/src/build-openbmc-romulus.
+Build: /home/build-user/src/build-openbmc-romulus.
 Private daemon PID3142, instance826d7bdaa62bb63b3f5cc470ddc3c42f;
 runtime /tmp/yoctui-openbmc-runtime, state /tmp/yoctui-openbmc-state.
 The daemon was started using v0.1.268 before the new release was installed;
@@ -115,7 +115,7 @@ Original flash/config and selected recovered reference/symbol hashes unchanged.
 Other user/AMD daemons and retained ZCU102 work were not changed.
 
 SCREENSHOTS AND PRESENTATION (outside Git, uncommitted/unpushed)
-/home/bspguy-dev/projects/yoctui-ydd2026-presentation/assets/
+/home/build-user/projects/yoctui-ydd2026-presentation/assets/
 openbmc-qemu-boot-live.png:
 ace4a8454a3d369903739135e88e432d582fea34f0de1a71cc1fe97eaa8668c0
 openbmc-kernel-debug-live.png:

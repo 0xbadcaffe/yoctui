@@ -8,7 +8,7 @@ unchanged protocol, active/NRestarts0. Not final daemon upgrade or reboot proof.
 
 Reviewed new build-shell39 /bin/sh at exact BUILD, automatic new selection and
 Workspace focus, explicit writer epoch1. Owned dash2731328 parent2614647 and
-PTY pwd both confirm /home/bspguy-dev/src/build-openbmc-romulus.
+PTY pwd both confirm /home/build-user/src/build-openbmc-romulus.
 Click Recipes once focuses Navigator; existing Ctrl+B K opens pinned inline
 KILL #39:build shell review with Workspace focus. Actual F4, Tab, Ctrl+B n,
 ordinary text and bracketed paste are trapped; clicking Recipes is ignored.

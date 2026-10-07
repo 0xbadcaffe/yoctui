@@ -2,7 +2,7 @@
   "schema": "yoctui.performance.input-latency-manifest.v1",
   "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
   "artifact": "host-audit.json",
-  "artifact_sha256": "bc8e06ad4b8c57b1cc3f4abaafb6cdc24dec83ab2e0b588362436da593e29505",
+  "artifact_sha256": "c25e331f1e71f7aa87354201d1f9dab5bdb4f67ea6d0466f03b3c3d33b90801e",
   "binary_sha256": "a656034cffccc8d4d7df36e73acc4c60ddc7e0975d770009b8c7f51b286372df",
   "sources": {
     "crates/yoctui-e2e/examples/input_latency_probe.rs": "78ac66134c00228fb9476d66fc4afdf3ff65e6258e68793163bb987b25924108",

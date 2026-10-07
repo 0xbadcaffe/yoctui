@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.267 • Git: unavailable • Project: build • T:not selected                                     D:✓ Connected/Local • BB:– Disconnected • Local 05:58│
 │Daemon health: ✓ Connected/Local · BitBake: – Disconnected                                                                                                    │
-│Workspace: /home/bspguy-dev/src/yoctui-zcu102-2026.1/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                               │
+│Workspace: /home/build-user/src/yoctui-zcu102-2026.1/build  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator────────────────┐┌Build Overview───────────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
 │▾ OVERVIEW               ││Overall  build not started · 0%                                                      ││Environment                                 │
@@ -14,7 +14,7 @@
 │    Images               │└─────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
 │  ▱ Hardware             │┌Recent Builds · Job History──────────────────────────────────────────────────────────┐│Source           : unavailable              │
 │    Kernel               ││No completed builds or jobs retained. B opens build options.                         ││Build directory  :                          │
-│    U-Boot / BIOS        ││                                                                                     ││/home/bspguy-dev/src/yoctui-zcu102-2026.1/bu│
+│    U-Boot / BIOS        ││                                                                                     ││/home/build-user/src/yoctui-zcu102-2026.1/bu│
 │    SDK                  ││                                                                                     ││ild                                         │
 │▾ BUILD                  ││                                                                                     ││Disk             : 23.7 GiB free            │
 │    Tasks                ││                                                                                     ││                                            │

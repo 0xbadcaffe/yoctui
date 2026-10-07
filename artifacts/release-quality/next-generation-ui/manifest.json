@@ -1,7 +1,8 @@
 {
+  "privacy_redaction": "Historical account paths anonymized; measurements and source/binary identities unchanged. See docs/testing/host-privacy.md.",
   "binary_sha256": "bbe9b9509a254c6c8c5057061635883c44dd0a02f106d1e61d3ac5d052dc3352",
   "bitbake_version": "BitBake Build Tool Core version 2.12.1",
-  "build_directory": "/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build",
+  "build_directory": "/home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/build",
   "distro": "poky",
   "finished_utc": "2026-08-30T19:42:24Z",
   "host": "Linux 7.0.0-30-generic x86_64",

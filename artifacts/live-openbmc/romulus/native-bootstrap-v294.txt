@@ -5,7 +5,7 @@ IDENTITY
 Built source: 7eef0058c2b615f3bc2ee6c29eafe3ea0c7a4482; product v0.1.294.
 Product code/full local quality baseline: 399ce139393d18ce551be927d89a87d1f5751d8b.
 Intervening commits change task/evidence documents, not product code.
-Installed executable: /home/bspguy-dev/.cargo/bin/yoctui.
+Installed executable: /home/build-user/.cargo/bin/yoctui.
 Installed and freshly built release SHA256 (equal):
 c0f800a1462fcc2acfc1c2347a997821ccb870b7014f181a3ab9c7254ad22c72.
 Release: optimized, thin LTO, codegen-units1, debug1, force-frame-pointers=yes;
@@ -18,9 +18,9 @@ Logs: /tmp/yoctui-native-{release,install}-v294.log.
 Not a registry install/publication; hosted CI and actual reboot remain required.
 
 NATIVE TOOLS AND AUTHORITY
-Source /home/bspguy-dev/src/openbmc:
+Source /home/build-user/src/openbmc:
 34f11d15c1b17df26a1063602918eead23253669; BitBake2.19.1.
-Build /home/bspguy-dev/src/build-openbmc-romulus; nine configured layers.
+Build /home/build-user/src/build-openbmc-romulus; nine configured layers.
 Exact source oe-init-build-env initializes this sibling build on native host.
 Python3.14 imports bb/tinfoil/cooker/command and actual native API inventory
 works. No unsupported-Python assumption, alternate Python or container needed.
@@ -38,7 +38,7 @@ Executable SHA179ccce5b2a59151f027113f859013fd2ad14cf89c477e9bda1f6e610d36609f.
 This is persistent Yocto build storage, not volatile OS /tmp. Preserve this
 native sysroot/tools; an explicit future Yocto clean could remove them.
 Native gdb-multiarch17.1-2ubuntu1 privately extracted under
-/home/bspguy-dev/.local/lib/yoctui-demo/gdb-17.1; matching host gdb/dependencies
+/home/build-user/.local/lib/yoctui-demo/gdb-17.1; matching host gdb/dependencies
 already installed. Official APT archive SHA checked before extraction:
 bdf666723214e6ee4964a41664760766c4a40fbba027815244468b84328823e7.
 Extracted executable SHA450401555504d3cd80e67a1a4b993e7e5b830f5d7a129153a29b01459b102039.

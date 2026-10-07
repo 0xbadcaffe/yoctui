@@ -1,5 +1,5 @@
 environment initialized: yes
-build directory: /home/bspguy-dev/src/build-openbmc-romulus (usable)
+build directory: /home/build-user/src/build-openbmc-romulus (usable)
 bitbake: BitBake Build Tool version 2.19.0
 BitBake Python module: 2.19.0
 conf/local.conf: present
@@ -10,7 +10,7 @@ compatibility report:
   release support: Unknown (Runtime capability evidence is current; no live release-support claim is encoded yet.)
   snapshot generation: 1
   operating mode: Some(Degraded)
-  build directory: /home/bspguy-dev/src/build-openbmc-romulus [InitializedEnvironment]
+  build directory: /home/build-user/src/build-openbmc-romulus [InitializedEnvironment]
   BitBake: 2.19.0 [BitBakeVersionProbe]
   OE-Core: blacksail unknown [BitBakeDatastore]
   Poky: unknown
@@ -19,23 +19,23 @@ compatibility report:
   backend: unknown
   protocol: yoctui-daemon 1.2 [ProtocolNegotiation]
   capabilities: available=56 limited=1 unavailable=33 unknown=17 unsupported=0
-  source root: layer=/home/bspguy-dev/src/openbmc/meta-aspeed [ConfiguredLayerMetadata]
-  source root: layer=/home/bspguy-dev/src/openbmc/meta-ibm/meta-romulus [ConfiguredLayerMetadata]
-  source root: layer=/home/bspguy-dev/src/openbmc/meta-openpower [ConfiguredLayerMetadata]
-  source root: layer=/home/bspguy-dev/src/openbmc/meta-phosphor [ConfiguredLayerMetadata]
-  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-networking [ConfiguredLayerMetadata]
-  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-oe [ConfiguredLayerMetadata]
-  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-perl [ConfiguredLayerMetadata]
-  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-python [ConfiguredLayerMetadata]
-  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta [ConfiguredLayerMetadata]
-  layer series: core=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta (blacksail, wrynose) [ConfiguredLayerMetadata]
-  available tool: bitbake=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake 2.19.0 [ExecutableProbe]
-  available tool: bitbake-diffsigs=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs unknown [ExecutableProbe]
-  available tool: bitbake-dumpsig=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig unknown [ExecutableProbe]
-  available tool: bitbake-getvar=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar unknown [ExecutableProbe]
-  available tool: bitbake-layers=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers unknown [ExecutableProbe]
-  available tool: bitbake-prserv=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv unknown [ExecutableProbe]
-  available tool: bitbake-selftest=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest unknown [ExecutableProbe]
+  source root: layer=/home/build-user/src/openbmc/meta-aspeed [ConfiguredLayerMetadata]
+  source root: layer=/home/build-user/src/openbmc/meta-ibm/meta-romulus [ConfiguredLayerMetadata]
+  source root: layer=/home/build-user/src/openbmc/meta-openpower [ConfiguredLayerMetadata]
+  source root: layer=/home/build-user/src/openbmc/meta-phosphor [ConfiguredLayerMetadata]
+  source root: layer=/home/build-user/src/openbmc/upstream-layers/meta-openembedded/meta-networking [ConfiguredLayerMetadata]
+  source root: layer=/home/build-user/src/openbmc/upstream-layers/meta-openembedded/meta-oe [ConfiguredLayerMetadata]
+  source root: layer=/home/build-user/src/openbmc/upstream-layers/meta-openembedded/meta-perl [ConfiguredLayerMetadata]
+  source root: layer=/home/build-user/src/openbmc/upstream-layers/meta-openembedded/meta-python [ConfiguredLayerMetadata]
+  source root: layer=/home/build-user/src/openbmc/upstream-layers/openembedded-core/meta [ConfiguredLayerMetadata]
+  layer series: core=/home/build-user/src/openbmc/upstream-layers/openembedded-core/meta (blacksail, wrynose) [ConfiguredLayerMetadata]
+  available tool: bitbake=/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake 2.19.0 [ExecutableProbe]
+  available tool: bitbake-diffsigs=/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs unknown [ExecutableProbe]
+  available tool: bitbake-dumpsig=/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig unknown [ExecutableProbe]
+  available tool: bitbake-getvar=/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar unknown [ExecutableProbe]
+  available tool: bitbake-layers=/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers unknown [ExecutableProbe]
+  available tool: bitbake-prserv=/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv unknown [ExecutableProbe]
+  available tool: bitbake-selftest=/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest unknown [ExecutableProbe]
   missing tool: build-compare — build-compare is absent from the initialized environment
   missing tool: buildhistory-diff — buildhistory-diff is absent from the initialized environment
   missing tool: devtool — devtool is absent from the initialized environment

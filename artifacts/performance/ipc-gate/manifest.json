@@ -1,10 +1,11 @@
 {
+  "privacy_redaction": "Historical account paths anonymized; measurements and source/binary identities unchanged. See docs/testing/host-privacy.md.",
   "schema": "yoctui.performance.ipc-continuity-gate.v1",
   "source_base_revision": "db7a6a78e0fb437e0c947e4510cebba7a64bbfb8",
   "event_flood_artifact": "artifacts/performance/ipc-gate/v91-readiness-event-flood.json",
-  "event_flood_sha256": "c7dde982429919f729c87bc9c28feaf081fa1b8418b0486d8d6be51955d049cf",
+  "event_flood_sha256": "3ae8b37a1e8ed4201e1fd8643604e4c5bc49d003f7c42f808f82b8b7495f13e0",
   "saturated_latency_artifact": "artifacts/performance/ipc-latency/host-audit.json",
-  "saturated_latency_sha256": "adb0a281e9cab6434fc82cdf3e49456ef0a61428075ce968ab8914fd36cffa26",
+  "saturated_latency_sha256": "4d117a1d6240a9b8956d7e611f934566ed444477b90f6dc9858f400d7dbc39d6",
   "sources": {
     "scripts/event-flood-harness.py": "3072d5ae82e96bf07dc597debebf29de674df3c07e52c619c5306c1e71426b42",
     "scripts/fixtures/bitbake-event-flood-bridge.py": "001d0370fe32df2d21f788643cac8355d339a55d8db98f601d0d3b88567a949b",
@@ -26,7 +27,7 @@
     "saturated_detach_acknowledgement_ms": 0.149685
   },
   "flood_binary": {
-    "path": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
+    "path": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui",
     "sha256": "261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd",
     "version": "0.1.89"
   },

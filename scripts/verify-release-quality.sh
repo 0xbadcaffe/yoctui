@@ -11,5 +11,5 @@ python3 -m unittest scripts/test_pty_acceptance.py
 ./scripts/test-readme-quickstart.sh
 ./scripts/verify-utility-coverage.sh
 ./scripts/test-embedded-shell.sh
-./scripts/verify-roadmap.sh
+./scripts/verify-design-contracts.sh
 echo "release-quality deterministic gate passed"

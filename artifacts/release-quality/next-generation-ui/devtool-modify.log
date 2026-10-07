@@ -1,5 +1,5 @@
 NOTE: Starting bitbake server...
-INFO: Creating workspace layer in /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build/workspace
+INFO: Creating workspace layer in /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/build/workspace
 NOTE: Reconnecting to bitbake server...
 Loading cache...done.
 Loaded 0 entries from dependency cache.
@@ -27,7 +27,7 @@ Initialising tasks...Sstate summary: Wanted 10 Local 10 Mirrors 0 Missed 0 Curre
 done.
 NOTE: Executing Tasks
 NOTE: Tasks Summary: Attempted 103 tasks of which 100 didn't need to be rerun and all succeeded.
-INFO: Source tree extracted to /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build/workspace/sources/busybox
+INFO: Source tree extracted to /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/build/workspace/sources/busybox
 WARNING: SRC_URI is conditionally overridden in this recipe, thus several devtool-override-* branches have been created, one for each override that makes changes to SRC_URI. It is recommended that you make changes to the devtool branch first, then checkout and rebase each devtool-override-* branch and update any unique patches there (duplicates on those branches will be ignored by devtool finish/update-recipe)
 INFO: Using source tree as build directory since that would be the default for this recipe
-INFO: Recipe busybox now set up to build from /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build/workspace/sources/busybox
+INFO: Recipe busybox now set up to build from /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/build/workspace/sources/busybox

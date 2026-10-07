@@ -8,7 +8,7 @@ Job3 petalinux-image-minimal accepted12:29UTC, native start1790944300847ms.
 Real STOPTASKS/DiskFull at1790947062183ms (13:17:42UTC): free3.999GiB.
 Native warning/error path sources/poky/bitbake/lib/bb/monitordisk.py.
 Typed log: BitBake disk guard stopped this build at
-/home/bspguy-dev/src/yoctui-zcu102-2026.1/build/tmp; remaining=4293394432 bytes.
+/home/build-user/src/yoctui-zcu102-2026.1/build/tmp; remaining=4293394432 bytes.
 The runqueue is incomplete. Downloads4293263360/sstate4293160960 also stopped.
 
 Read-only framed IPC13:22:24UTC/sequence31591: job3Running, exitnull while active

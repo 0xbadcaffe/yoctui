@@ -3,7 +3,7 @@ Native terminal exit/writer authority acceptance: PASS
 
 Final code source: 8a30ba9f069f6bfe8dfd4336b05f3f029ae37cef (v0.1.297)
 Initial model correction: 4e0c8a144e49dfd622f6cac591a65782e5b611d5 (v296)
-Installed /home/bspguy-dev/.cargo/bin/yoctui SHA256:
+Installed /home/build-user/.cargo/bin/yoctui SHA256:
 3b25186b5cfbfb94aea7c663b77551995c39dc687411c4994b00dbbfd9f23d19
 Matches /tmp/yoctui-openbmc-cargo.G9B7ac/release/yoctui byte identity.
 Release: locked/thin LTO/codegen-units1/debug1/frame pointers/two workers,
@@ -21,7 +21,7 @@ current workspace/capability authority; no running build was claimed.
 Actual installed plain native attach client2363585 (no container/PYTHONPATH
 override) -> Ctrl+B t -> Ctrl+B c creates managed build shell26 -> select actual
 new session -> Ctrl+B o/current writer -> Tab Workspace. Native /bin/sh helper
-2363644 is child2340904, cwd /home/bspguy-dev/src/build-openbmc-romulus.
+2363644 is child2340904, cwd /home/build-user/src/build-openbmc-romulus.
 Writer00eeeeb5 /epoch1/current Running/viewer1/120x40 verified actual snapshot.
 Ordinary input: printf 'YOCTUI_NATIVE_EXIT_V297\n'; pwd; exit<CR>.
 Actual helper exits0/disappears; typed PTY26 Exited/exit_code0 retains the exact

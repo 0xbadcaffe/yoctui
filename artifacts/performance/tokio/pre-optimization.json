@@ -1,6 +1,6 @@
 {
   "binary": {
-    "path": "/home/bspguy-dev/projects/yoctui/target/debug/yoctui",
+    "path": "/home/build-user/projects/yoctui/target/debug/yoctui",
     "sha256": "52f7b37f08c686021f3e37d8f0c63e83941e2558600e224ce0089955d1b1fe1f"
   },
   "captured_at_unix_ms": 1788609060473,

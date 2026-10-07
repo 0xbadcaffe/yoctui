@@ -22,12 +22,12 @@
     ],
     "started_unix_ms": 1788863229344,
     "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
-    "executable": "/home/bspguy-dev/.local/state/yoctui-v86-command-validated.mdKFIT/yoctui"
+    "executable": "/home/build-user/.local/state/yoctui-v86-command-validated.mdKFIT/yoctui"
   },
   "binary_sha256": "d24d35b2ea13af0bf28e82556b540148e80643dafea3a7b4e0aa3b4ce0a86f4b",
   "workspace": {
-    "canonical_source": "/home/bspguy-dev/src/openbmc",
-    "canonical_build": "/home/bspguy-dev/src/build-openbmc-romulus",
+    "canonical_source": "/home/build-user/src/openbmc",
+    "canonical_build": "/home/build-user/src/build-openbmc-romulus",
     "identity_hash": "b261670860dd0336"
   },
   "query": {
@@ -36,7 +36,7 @@
       "image": {
         "machine": "romulus",
         "image": "obmc-phosphor-image",
-        "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest"
+        "path": "/home/build-user/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest"
       }
     },
     "daemon_instance_id": [
@@ -111,7 +111,7 @@
               "image": {
                 "machine": "romulus",
                 "image": "obmc-phosphor-image",
-                "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest"
+                "path": "/home/build-user/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest"
               }
             },
             "daemon_instance_id": [
@@ -134,9 +134,9 @@
             ],
             "compatibility_generation": 1
           },
-          "image_manifest": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/deploy-obmc-phosphor-image-image-complete/obmc-phosphor-image-romulus-20260908102829.manifest",
-          "pkgdata_dir": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/pkgdata/romulus",
-          "image_rootfs": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs"
+          "image_manifest": "/home/build-user/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/deploy-obmc-phosphor-image-image-complete/obmc-phosphor-image-romulus-20260908102829.manifest",
+          "pkgdata_dir": "/home/build-user/src/build-openbmc-romulus/tmp/pkgdata/romulus",
+          "image_rootfs": "/home/build-user/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs"
         }
       }
     }

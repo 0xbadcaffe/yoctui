@@ -69,7 +69,7 @@ def inspect(connection, build_dir):
 
 def main():
     root = Path(os.environ.get("YOCTUI_ZCU102_ROOT",
-                               "/home/bspguy-dev/src/yoctui-zcu102-2026.1"))
+                               Path.home() / "src/yoctui-zcu102-2026.1"))
     if not root.is_absolute() or root.resolve() != root:
         raise ValueError("validation root must be a canonical absolute path")
     with socket.socket(socket.AF_UNIX) as connection:

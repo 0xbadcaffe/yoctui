@@ -14,7 +14,7 @@
     "CARGO_PROFILE_DEV_DEBUG": "0",
     "CARGO_PROFILE_TEST_DEBUG": "0",
     "CARGO_INCREMENTAL": "0",
-    "CARGO_TARGET_DIR": "/home/bspguy-dev/projects/yoctui/target/cratesio-package"
+    "CARGO_TARGET_DIR": "/home/build-user/projects/yoctui/target/cratesio-package"
   },
   "dry_run_exit_status": 0,
   "publish_exit_status": 0,
@@ -140,7 +140,7 @@
     }
   },
   "local_install": {
-    "path": "/home/bspguy-dev/.cargo/bin/yoctui",
+    "path": "/home/build-user/.cargo/bin/yoctui",
     "version": "0.1.309",
     "profile": "optimized release",
     "sha256": "0cefb0ca76c346aa2dbceae3e27f0cf37cd497db9a7253dfc47e3ed300bc6420",

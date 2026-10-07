@@ -1,0 +1,1446 @@
+# Minimal acceptance metadata consumed by verification scripts.
+# No completed-task notes, delivery history, agent priorities, or execution queue.
+# IDs remain stable because design evidence manifests refer to them.
+version = 1
+project = "Yoctui"
+status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
+
+[[task]]
+id = "DEMO-DOCS-001"
+milestone = "M114"
+title = "Refresh README real screenshots measured flamegraph report and operator runbook"
+status = "NOT_STARTED"
+required = true
+depends_on = ["DEMO-INSTALL-LIVE-001", "DEMO-DOCS-JSON-STREAM-001"]
+
+[[task]]
+id = "DEMO-NATIVE-PERSISTENCE-001"
+milestone = "M114"
+title = "Prepare durable native OpenBMC daemon startup after laptop login and reboot"
+status = "IN_PROGRESS"
+required = true
+depends_on = ["DEMO-NATIVE-POSTREBOOT-001"]
+
+[[task]]
+id = "DEMO-NATIVE-POSTREBOOT-001"
+milestone = "M114"
+title = "Verify accepted native demo after coordinated laptop reboot and login"
+status = "NOT_STARTED"
+required = true
+depends_on = ["DEMO-GITHUB-CI-001"]
+
+[[task]]
+id = "DEMO-INSTALL-LIVE-001"
+milestone = "M114"
+title = "Install optimized release and rehearse all OpenBMC demo screens and sessions"
+status = "IN_PROGRESS"
+required = true
+depends_on = []
+
+[[task]]
+id = "DEMO-DOCS-JSON-STREAM-001"
+milestone = "M114"
+title = "Validate full Doctor JSON without the OS argument-size limit"
+status = "NOT_STARTED"
+required = true
+depends_on = ["DEMO-INSTALL-LIVE-001"]
+
+[[task]]
+id = "DEMO-GITHUB-CI-001"
+milestone = "M114"
+title = "Fix remaining GitHub CI failures after local demo release verification"
+status = "NOT_STARTED"
+required = true
+depends_on = ["DEMO-INSTALL-LIVE-001", "DEMO-DOCS-001"]
+
+[[task]]
+id = "XILINX-ZCU102-BUILD-001"
+milestone = "M111"
+title = "Build a real ZCU102 PetaLinux image through the Yoctui daemon"
+status = "BLOCKED"
+required = false
+depends_on = []
+
+[[task]]
+id = "XILINX-ZCU102-QEMU-GDB-001"
+milestone = "M111"
+title = "Validate ZCU102 QEMU boot and live kernel debugging inside Yoctui"
+status = "NOT_STARTED"
+required = false
+depends_on = ["XILINX-ZCU102-BUILD-001"]
+
+[[task]]
+id = "KERNEL-INSTRUMENTATION-LIVE-001"
+milestone = "M110"
+title = "Verify preset retention and diagnostics on a matching instrumented kernel"
+status = "BLOCKED"
+required = true
+depends_on = []
+
+[[task]]
+id = "KGDB-SERIAL-LIVE-001"
+milestone = "M108"
+title = "Verify KGDB attach backtrace resume and re-entry on a real board"
+status = "BLOCKED"
+required = true
+depends_on = []
+
+[[task]]
+id = "COMPAT-SPEC-001"
+milestone = "M18"
+title = "Specify Yocto-feature-correlated functionality"
+status = "DONE"
+required = true
+depends_on = []
+
+[[task]]
+id = "COMPAT-ENV-ID-001"
+milestone = "M18"
+title = "Add typed Yocto environment identity"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-SPEC-001"]
+
+[[task]]
+id = "COMPAT-CAP-MODEL-001"
+milestone = "M18"
+title = "Create centralized typed capability model"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-ENV-ID-001"]
+
+[[task]]
+id = "COMPAT-CATALOG-001"
+milestone = "M18"
+title = "Create versioned capability catalog"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-CAP-MODEL-001"]
+
+[[task]]
+id = "COMPAT-PROBE-001"
+milestone = "M18"
+title = "Implement safe capability probing"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-CATALOG-001"]
+
+[[task]]
+id = "COMPAT-VERSION-001"
+milestone = "M18"
+title = "Add release and version fallback mapping"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-PROBE-001"]
+
+[[task]]
+id = "COMPAT-UNKNOWN-001"
+milestone = "M18"
+title = "Handle future Yocto releases conservatively"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-VERSION-001"]
+
+[[task]]
+id = "COMPAT-OLD-001"
+milestone = "M18"
+title = "Define older-release degradation policy"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-VERSION-001"]
+
+[[task]]
+id = "COMPAT-CACHE-001"
+milestone = "M18"
+title = "Cache and invalidate capability snapshots safely"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-PROBE-001", "COMPAT-ENV-ID-001"]
+
+[[task]]
+id = "COMPAT-PROTOCOL-001"
+milestone = "M18"
+title = "Add capability snapshot to client and daemon protocol"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-CAP-MODEL-001", "COMPAT-ENV-ID-001"]
+
+[[task]]
+id = "COMPAT-DAEMON-001"
+milestone = "M18"
+title = "Move compatibility state into daemon ownership"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-CACHE-001", "COMPAT-PROTOCOL-001", "COMPAT-VERSION-001"]
+
+[[task]]
+id = "COMPAT-BITBAKE-CMD-001"
+milestone = "M18"
+title = "Make BitBake command construction capability-aware"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-DAEMON-001", "COMPAT-VERSION-001"]
+
+[[task]]
+id = "COMPAT-BITBAKE-API-001"
+milestone = "M18"
+title = "Make BitBake backend and API behavior capability-aware"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-DAEMON-001", "COMPAT-VERSION-001"]
+
+[[task]]
+id = "COMPAT-DEVTOOL-001"
+milestone = "M18"
+title = "Make Devtool workflows capability-aware"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001"]
+
+[[task]]
+id = "COMPAT-RECIPETOOL-001"
+milestone = "M18"
+title = "Make Recipetool workflows capability-aware"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001"]
+
+[[task]]
+id = "COMPAT-LAYERS-001"
+milestone = "M18"
+title = "Make bitbake-layers workflows capability-aware"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001"]
+
+[[task]]
+id = "COMPAT-PKGDATA-001"
+milestone = "M18"
+title = "Make oe-pkgdata-util capability-aware"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001"]
+
+[[task]]
+id = "COMPAT-UTILITIES-001"
+milestone = "M18"
+title = "Correlate every Yocto utility to environment capabilities"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001"]
+
+[[task]]
+id = "COMPAT-WORKSPACE-CATALOG-001"
+milestone = "M18"
+title = "Catalog every workspace capability requirement"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UTILITIES-001"]
+
+[[task]]
+id = "COMPAT-WORKSPACE-MODEL-001"
+milestone = "M18"
+title = "Project workspace availability and revalidate state"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-WORKSPACE-CATALOG-001"]
+
+[[task]]
+id = "COMPAT-WORKSPACE-APP-001"
+milestone = "M18"
+title = "Install and enforce workspace capability authority"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-WORKSPACE-MODEL-001", "COMPAT-PROTOCOL-001"]
+
+[[task]]
+id = "COMPAT-WORKSPACE-001"
+milestone = "M18"
+title = "Apply capabilities to all workspaces"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-WORKSPACE-CATALOG-001", "COMPAT-WORKSPACE-MODEL-001", "COMPAT-WORKSPACE-APP-001"]
+
+[[task]]
+id = "COMPAT-UI-MODEL-001"
+milestone = "M18"
+title = "Project typed compatibility presentation state"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-WORKSPACE-001", "COMPAT-PROTOCOL-001"]
+
+[[task]]
+id = "COMPAT-UI-INSPECTOR-001"
+milestone = "M18"
+title = "Render the Environment and Compatibility inspector"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UI-MODEL-001"]
+
+[[task]]
+id = "COMPAT-UI-ACTION-CATALOG-001"
+milestone = "M18"
+title = "Catalog visible UI action capability requirements"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001"]
+
+[[task]]
+id = "COMPAT-UI-NAV-ACTIONS-001"
+milestone = "M18"
+title = "Render capability state in global action surfaces"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UI-ACTION-CATALOG-001"]
+
+[[task]]
+id = "COMPAT-UI-WORKSPACE-ACTIONS-001"
+milestone = "M18"
+title = "Render capability state in workspace and Inspector actions"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001"]
+
+[[task]]
+id = "COMPAT-UI-DIALOG-ACTIONS-001"
+milestone = "M18"
+title = "Render and enforce capability state in dialogs"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-WORKSPACE-ACTIONS-001"]
+
+[[task]]
+id = "COMPAT-UI-ACTIONS-001"
+milestone = "M18"
+title = "Apply capability state to visible workspace actions"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001", "COMPAT-UI-WORKSPACE-ACTIONS-001", "COMPAT-UI-DIALOG-ACTIONS-001"]
+
+[[task]]
+id = "COMPAT-UI-001"
+milestone = "M18"
+title = "Expose capability state clearly in the UI"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001", "COMPAT-UI-ACTIONS-001"]
+
+[[task]]
+id = "COMPAT-DOCTOR-001"
+milestone = "M18"
+title = "Add compatibility report to Doctor diagnostics"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UI-001", "COMPAT-DAEMON-001"]
+
+[[task]]
+id = "COMPAT-MATRIX-001"
+milestone = "M18"
+title = "Define supported Yocto release matrix"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-SPEC-001", "COMPAT-OLD-001", "COMPAT-UNKNOWN-001"]
+
+[[task]]
+id = "COMPAT-TEST-FIXTURES-001"
+milestone = "M18"
+title = "Add release capability fixtures"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-UNKNOWN-001", "COMPAT-OLD-001", "COMPAT-CATALOG-001"]
+
+[[task]]
+id = "COMPAT-TEST-CMDS-001"
+milestone = "M18"
+title = "Test version-correlated command generation"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-TEST-FIXTURES-001", "COMPAT-BITBAKE-CMD-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001"]
+
+[[task]]
+id = "COMPAT-TEST-UI-001"
+milestone = "M18"
+title = "Test dynamic feature loading and unloading"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-TEST-FIXTURES-001", "COMPAT-UI-001"]
+
+[[task]]
+id = "COMPAT-BITBAKE-GETVAR-001"
+milestone = "M18"
+title = "Use the release-supported BitBake variable-query command"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001", "COMPAT-PROBE-001", "COMPAT-TEST-CMDS-001"]
+
+[[task]]
+id = "COMPAT-DAEMON-RUNTIME-001"
+milestone = "M18"
+title = "Install probed compatibility authority in the production daemon"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-ENV-ID-001", "COMPAT-PROBE-001", "COMPAT-DAEMON-001", "COMPAT-DOCTOR-001", "COMPAT-BITBAKE-GETVAR-001"]
+
+[[task]]
+id = "COMPAT-PROBE-AGGREGATION-001"
+milestone = "M18"
+title = "Require complete direct evidence for compound capabilities"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-CATALOG-001", "COMPAT-PROBE-001", "COMPAT-DAEMON-RUNTIME-001"]
+
+[[task]]
+id = "COMPAT-BITBAKE-CANCEL-RUNTIME-001"
+milestone = "M18"
+title = "Keep live BitBake cancellation responsive during native events"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-BITBAKE-API-001", "COMPAT-DAEMON-RUNTIME-001", "COMPAT-PROBE-AGGREGATION-001"]
+
+[[task]]
+id = "COMPAT-BITBAKE-CANCEL-ORDER-001"
+milestone = "M18"
+title = "Prioritize older BitBake cancellation terminals"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-BITBAKE-CANCEL-RUNTIME-001"]
+
+[[task]]
+id = "COMPAT-LIVE-LATEST-001"
+milestone = "M18"
+title = "Validate latest supported Yocto stable release"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-DOCTOR-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-MATRIX-001", "COMPAT-BITBAKE-GETVAR-001", "COMPAT-DAEMON-RUNTIME-001", "COMPAT-PROBE-AGGREGATION-001", "COMPAT-BITBAKE-CANCEL-RUNTIME-001"]
+
+[[task]]
+id = "COMPAT-LIVE-OLDER-001"
+milestone = "M18"
+title = "Validate an older supported Yocto release"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-DOCTOR-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-MATRIX-001", "COMPAT-BITBAKE-CANCEL-ORDER-001"]
+
+[[task]]
+id = "COMPAT-LIVE-MATRIX-001"
+milestone = "M18"
+title = "Add multi-release live compatibility validation"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-LIVE-LATEST-001", "COMPAT-LIVE-OLDER-001"]
+
+[[task]]
+id = "COMPAT-CI-001"
+milestone = "M18"
+title = "Integrate compatibility tests into CI"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-LIVE-MATRIX-001"]
+
+[[task]]
+id = "COMPAT-DOC-001"
+milestone = "M18"
+title = "Document dynamic release correlation"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-DOCTOR-001", "COMPAT-MATRIX-001", "COMPAT-LIVE-MATRIX-001"]
+
+[[task]]
+id = "COMPAT-001"
+milestone = "M18"
+title = "Complete Yocto release correlated functionality"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-SPEC-001", "COMPAT-ENV-ID-001", "COMPAT-CAP-MODEL-001", "COMPAT-CATALOG-001", "COMPAT-PROBE-001", "COMPAT-VERSION-001", "COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001", "COMPAT-UTILITIES-001", "COMPAT-WORKSPACE-CATALOG-001", "COMPAT-WORKSPACE-MODEL-001", "COMPAT-WORKSPACE-APP-001", "COMPAT-WORKSPACE-001", "COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001", "COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001", "COMPAT-UI-WORKSPACE-ACTIONS-001", "COMPAT-UI-DIALOG-ACTIONS-001", "COMPAT-UI-ACTIONS-001", "COMPAT-UI-001", "COMPAT-DOCTOR-001", "COMPAT-CACHE-001", "COMPAT-DAEMON-001", "COMPAT-DAEMON-RUNTIME-001", "COMPAT-PROBE-AGGREGATION-001", "COMPAT-BITBAKE-CANCEL-RUNTIME-001", "COMPAT-BITBAKE-CANCEL-ORDER-001", "COMPAT-PROTOCOL-001", "COMPAT-UNKNOWN-001", "COMPAT-OLD-001", "COMPAT-MATRIX-001", "COMPAT-TEST-FIXTURES-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-BITBAKE-GETVAR-001", "COMPAT-LIVE-LATEST-001", "COMPAT-LIVE-OLDER-001", "COMPAT-LIVE-MATRIX-001", "COMPAT-CI-001", "COMPAT-DOC-001"]
+
+[[task]]
+id = "M19-GOV-001"
+milestone = "M19"
+title = "Register next-generation TUI implementation and polish"
+status = "DONE"
+required = true
+depends_on = ["COMPAT-001"]
+
+[[task]]
+id = "FOUNDATION-UI-001"
+milestone = "M19"
+title = "Specify the new visual layout contract"
+status = "DONE"
+required = true
+depends_on = ["M19-GOV-001"]
+
+[[task]]
+id = "FOUNDATION-UI-002"
+milestone = "M19"
+title = "Create reusable layout primitives"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-001"]
+
+[[task]]
+id = "FOUNDATION-UI-003"
+milestone = "M19"
+title = "Unify visual theme semantics"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-002"]
+
+[[task]]
+id = "NAV-UI-001"
+milestone = "M19"
+title = "Redesign Navigator presentation"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+
+[[task]]
+id = "TASKS-UI-001"
+milestone = "M19"
+title = "Redesign the Tasks table"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+
+[[task]]
+id = "TASKS-UI-002"
+milestone = "M19"
+title = "Improve overall build progress presentation"
+status = "DONE"
+required = true
+depends_on = ["TASKS-UI-001"]
+
+[[task]]
+id = "TASKS-UI-003"
+milestone = "M19"
+title = "Add high-quality task state visualization"
+status = "DONE"
+required = true
+depends_on = ["TASKS-UI-002"]
+
+[[task]]
+id = "LOG-UI-001"
+milestone = "M19"
+title = "Redesign live Log Viewer"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+
+[[task]]
+id = "LOG-UI-002"
+milestone = "M19"
+title = "Add compact log activity indicator"
+status = "DONE"
+required = true
+depends_on = ["LOG-UI-001"]
+
+[[task]]
+id = "JOB-UI-001"
+milestone = "M19"
+title = "Redesign Job History"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+
+[[task]]
+id = "JOB-UI-002"
+milestone = "M19"
+title = "Add compact job summary"
+status = "DONE"
+required = true
+depends_on = ["JOB-UI-001"]
+
+[[task]]
+id = "INSPECTOR-UI-001"
+milestone = "M19"
+title = "Redesign Inspector shell"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+
+[[task]]
+id = "INSPECTOR-UI-002"
+milestone = "M19"
+title = "Add task Inspector"
+status = "DONE"
+required = true
+depends_on = ["INSPECTOR-UI-001", "TASKS-UI-001", "LOG-UI-001"]
+
+[[task]]
+id = "INSPECTOR-UI-003"
+milestone = "M19"
+title = "Add action list presentation"
+status = "DONE"
+required = true
+depends_on = ["INSPECTOR-UI-001"]
+
+[[task]]
+id = "METRICS-MODEL-001"
+milestone = "M19"
+title = "Audit all currently available telemetry"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-001"]
+
+[[task]]
+id = "METRICS-MODEL-002"
+milestone = "M19"
+title = "Add bounded telemetry history model"
+status = "DONE"
+required = true
+depends_on = ["METRICS-MODEL-001"]
+
+[[task]]
+id = "METRICS-UI-001"
+milestone = "M19"
+title = "Add CPU gauge"
+status = "DONE"
+required = true
+depends_on = ["METRICS-MODEL-002", "FOUNDATION-UI-003"]
+
+[[task]]
+id = "METRICS-UI-002"
+milestone = "M19"
+title = "Add RAM gauge"
+status = "DONE"
+required = true
+depends_on = ["METRICS-UI-001"]
+
+[[task]]
+id = "METRICS-UI-003"
+milestone = "M19"
+title = "Add disk and build-filesystem gauge"
+status = "DONE"
+required = true
+depends_on = ["METRICS-UI-002"]
+
+[[task]]
+id = "METRICS-UI-004"
+milestone = "M19"
+title = "Add disk I/O sparklines"
+status = "DONE"
+required = true
+depends_on = ["METRICS-UI-003"]
+
+[[task]]
+id = "METRICS-UI-005"
+milestone = "M19"
+title = "Add network sparklines"
+status = "DONE"
+required = true
+depends_on = ["METRICS-UI-004"]
+
+[[task]]
+id = "METRICS-UI-006"
+milestone = "M19"
+title = "Create responsive telemetry strip"
+status = "DONE"
+required = true
+depends_on = ["METRICS-UI-005"]
+
+[[task]]
+id = "SYSTEM-UI-001"
+milestone = "M19"
+title = "Redesign System Status pane"
+status = "DONE"
+required = true
+depends_on = ["INSPECTOR-UI-001", "METRICS-MODEL-001"]
+
+[[task]]
+id = "SYSTEM-UI-002"
+milestone = "M19"
+title = "Add health and warning indicators"
+status = "DONE"
+required = true
+depends_on = ["SYSTEM-UI-001"]
+
+[[task]]
+id = "HEADER-UI-001"
+milestone = "M19"
+title = "Redesign header"
+status = "DONE"
+required = true
+depends_on = ["SYSTEM-UI-002"]
+
+[[task]]
+id = "FOOTER-UI-001"
+milestone = "M19"
+title = "Redesign bottom shortcut bar"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+
+[[task]]
+id = "FOOTER-UI-002"
+milestone = "M19"
+title = "Add transient status area"
+status = "DONE"
+required = true
+depends_on = ["FOOTER-UI-001"]
+
+[[task]]
+id = "SEARCH-UI-001"
+milestone = "M19"
+title = "Improve search UX"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+
+[[task]]
+id = "PALETTE-UI-001"
+milestone = "M19"
+title = "Polish command palette"
+status = "DONE"
+required = true
+depends_on = ["SEARCH-UI-001"]
+
+[[task]]
+id = "DIALOG-UI-001"
+milestone = "M19"
+title = "Polish typed dialogs"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+
+[[task]]
+id = "MOUSE-UI-001"
+milestone = "M19"
+title = "Ensure mouse parity"
+status = "DONE"
+required = true
+depends_on = ["NAV-UI-001", "TASKS-UI-003", "LOG-UI-002", "DIALOG-UI-001"]
+
+[[task]]
+id = "A11Y-UI-001"
+milestone = "M19"
+title = "Improve accessibility"
+status = "DONE"
+required = true
+depends_on = ["TASKS-UI-003", "LOG-UI-002", "DIALOG-UI-001", "METRICS-UI-006", "FOOTER-UI-002"]
+
+[[task]]
+id = "PERF-UI-001"
+milestone = "M19"
+title = "Profile rendering"
+status = "DONE"
+required = true
+depends_on = ["A11Y-UI-001", "METRICS-UI-006"]
+
+[[task]]
+id = "PERF-UI-002"
+milestone = "M19"
+title = "Add render caching where justified"
+status = "DONE"
+required = true
+depends_on = ["PERF-UI-001"]
+
+[[task]]
+id = "RESPONSIVE-UI-001"
+milestone = "M19"
+title = "Add explicit breakpoint tests"
+status = "DONE"
+required = true
+depends_on = ["HEADER-UI-001", "METRICS-UI-006", "DIALOG-UI-001"]
+
+[[task]]
+id = "VISUAL-TEST-001"
+milestone = "M19"
+title = "Create semantic Ratatui snapshot tests"
+status = "DONE"
+required = true
+depends_on = ["RESPONSIVE-UI-001"]
+
+[[task]]
+id = "VISUAL-TEST-002"
+milestone = "M19"
+title = "Create target-design golden tests"
+status = "DONE"
+required = true
+depends_on = ["VISUAL-TEST-001"]
+
+[[task]]
+id = "VISUAL-TEST-003"
+milestone = "M19"
+title = "Add style invariant tests"
+status = "DONE"
+required = true
+depends_on = ["VISUAL-TEST-002"]
+
+[[task]]
+id = "INPUT-TEST-001"
+milestone = "M19"
+title = "Test every documented shortcut"
+status = "DONE"
+required = true
+depends_on = ["FOOTER-UI-001", "PALETTE-UI-001"]
+
+[[task]]
+id = "INPUT-TEST-002"
+milestone = "M19"
+title = "Test Tab and Shift-Tab flow"
+status = "DONE"
+required = true
+depends_on = ["INPUT-TEST-001", "RESPONSIVE-UI-001"]
+
+[[task]]
+id = "INPUT-TEST-003"
+milestone = "M19"
+title = "Test mouse interaction"
+status = "DONE"
+required = true
+depends_on = ["MOUSE-UI-001"]
+
+[[task]]
+id = "PTY-UI-TEST-001"
+milestone = "M19"
+title = "Test embedded terminal rendering"
+status = "DONE"
+required = true
+depends_on = ["INPUT-TEST-002", "INPUT-TEST-003"]
+
+[[task]]
+id = "LIVE-UI-POKY-001"
+milestone = "M19"
+title = "Validate redesigned UI against real Poky"
+status = "DONE"
+required = true
+depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
+
+[[task]]
+id = "README-UI-001"
+milestone = "M19"
+title = "Update README screenshots and UI documentation"
+status = "DONE"
+required = true
+depends_on = ["LIVE-UI-POKY-001"]
+
+[[task]]
+id = "UI-REGRESSION-001"
+milestone = "M19"
+title = "Verify all existing functionality remains available"
+status = "DONE"
+required = true
+depends_on = ["VISUAL-TEST-003", "INPUT-TEST-002"]
+
+[[task]]
+id = "UI-CLEANUP-001"
+milestone = "M19"
+title = "Refactor rendering modules after behavior stabilizes"
+status = "DONE"
+required = true
+depends_on = ["README-UI-001", "UI-REGRESSION-001"]
+
+[[task]]
+id = "M13-UI-001"
+milestone = "M19"
+title = "Complete next-generation Yoctui TUI"
+status = "DONE"
+required = true
+depends_on = ["FOUNDATION-UI-001", "FOUNDATION-UI-002", "FOUNDATION-UI-003", "NAV-UI-001", "TASKS-UI-001", "TASKS-UI-002", "TASKS-UI-003", "LOG-UI-001", "LOG-UI-002", "JOB-UI-001", "JOB-UI-002", "INSPECTOR-UI-001", "INSPECTOR-UI-002", "INSPECTOR-UI-003", "METRICS-MODEL-001", "METRICS-MODEL-002", "METRICS-UI-001", "METRICS-UI-002", "METRICS-UI-003", "METRICS-UI-004", "METRICS-UI-005", "METRICS-UI-006", "SYSTEM-UI-001", "SYSTEM-UI-002", "HEADER-UI-001", "FOOTER-UI-001", "FOOTER-UI-002", "SEARCH-UI-001", "PALETTE-UI-001", "DIALOG-UI-001", "MOUSE-UI-001", "A11Y-UI-001", "PERF-UI-001", "PERF-UI-002", "RESPONSIVE-UI-001", "VISUAL-TEST-001", "VISUAL-TEST-002", "VISUAL-TEST-003", "INPUT-TEST-001", "INPUT-TEST-002", "INPUT-TEST-003", "PTY-UI-TEST-001", "LIVE-UI-POKY-001", "README-UI-001", "UI-REGRESSION-001", "UI-CLEANUP-001"]
+
+[[task]]
+id = "UX-SPEC-001"
+milestone = "M21"
+title = "Research and specify the one-stop Yocto workbench UX"
+status = "DONE"
+required = true
+depends_on = ["M13-UI-001"]
+
+[[task]]
+id = "UX-CONCEPT-VALIDATION-001"
+milestone = "M21"
+title = "Validate visual concepts through the production Yoctui renderer"
+status = "DONE"
+required = true
+depends_on = ["UX-SPEC-001"]
+
+[[task]]
+id = "UX-LICENSE-001"
+milestone = "M21"
+title = "Establish third-party widget license and supply-chain gate"
+status = "DONE"
+required = true
+depends_on = ["UX-SPEC-001"]
+
+[[task]]
+id = "UX-ACTION-CATALOG-001"
+milestone = "M21"
+title = "Unify all operator actions in one typed catalog"
+status = "DONE"
+required = true
+depends_on = ["UX-SPEC-001"]
+
+[[task]]
+id = "UX-KEYMAP-MODEL-001"
+milestone = "M21"
+title = "Implement scoped configurable keybinding model"
+status = "DONE"
+required = true
+depends_on = ["UX-ACTION-CATALOG-001"]
+
+[[task]]
+id = "UX-KEYMAP-UI-001"
+milestone = "M21"
+title = "Add discoverable keybinding preferences and report"
+status = "DONE"
+required = true
+depends_on = ["UX-KEYMAP-MODEL-001"]
+
+[[task]]
+id = "UX-MENU-001"
+milestone = "M21"
+title = "Implement typed application and context menus"
+status = "DONE"
+required = true
+depends_on = ["UX-ACTION-CATALOG-001", "UX-KEYMAP-MODEL-001"]
+
+[[task]]
+id = "UX-FOCUS-001"
+milestone = "M21"
+title = "Polish pane subfocus zoom and focus restoration"
+status = "DONE"
+required = true
+depends_on = ["UX-MENU-001", "UX-KEYMAP-MODEL-001"]
+
+[[task]]
+id = "UX-SCROLL-001"
+milestone = "M21"
+title = "Standardize scrolling across every workspace"
+status = "DONE"
+required = true
+depends_on = ["UX-KEYMAP-MODEL-001"]
+
+[[task]]
+id = "UX-WIDGET-PRIMITIVES-001"
+milestone = "M21"
+title = "Build shared gauges meters charts tabs and scrollbar primitives"
+status = "DONE"
+required = true
+depends_on = ["UX-SPEC-001"]
+
+[[task]]
+id = "UX-PROGRESS-001"
+milestone = "M21"
+title = "Implement hierarchical build task and job progress"
+status = "DONE"
+required = true
+depends_on = ["UX-WIDGET-PRIMITIVES-001"]
+
+[[task]]
+id = "UX-THROBBER-001"
+milestone = "M21"
+title = "Adopt one accessible indeterminate activity language"
+status = "DONE"
+required = true
+depends_on = ["UX-PROGRESS-001", "UX-LICENSE-001"]
+
+[[task]]
+id = "UX-TELEMETRY-001"
+milestone = "M21"
+title = "Polish telemetry gauges meters and zoomed charts"
+status = "DONE"
+required = true
+depends_on = ["UX-WIDGET-PRIMITIVES-001"]
+
+[[task]]
+id = "UX-LOGS-001"
+milestone = "M21"
+title = "Polish the bounded BitBake log explorer"
+status = "DONE"
+required = true
+depends_on = ["UX-SCROLL-001", "UX-WIDGET-PRIMITIVES-001"]
+
+[[task]]
+id = "UX-INTERNAL-LOG-001"
+milestone = "M21"
+title = "Add a separate Yoctui self-diagnostic log view"
+status = "DONE"
+required = true
+depends_on = ["UX-LOGS-001", "UX-LICENSE-001"]
+
+[[task]]
+id = "UX-TEXTAREA-MODEL-001"
+milestone = "M21"
+title = "Extend the reducer-owned multiline editor model"
+status = "DONE"
+required = true
+depends_on = ["UX-KEYMAP-MODEL-001", "UX-SCROLL-001"]
+
+[[task]]
+id = "UX-TEXTAREA-UI-001"
+milestone = "M21"
+title = "Render safe multiline editors and decide ratatui-textarea adoption"
+status = "DONE"
+required = true
+depends_on = ["UX-TEXTAREA-MODEL-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+
+[[task]]
+id = "UX-CHECKBOX-001"
+milestone = "M21"
+title = "Add accessible checkboxes and batch selection"
+status = "DONE"
+required = true
+depends_on = ["UX-KEYMAP-MODEL-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+
+[[task]]
+id = "UX-LIST-TREE-001"
+milestone = "M21"
+title = "Evaluate and integrate tree scrollview and variable-list adapters"
+status = "DONE"
+required = true
+depends_on = ["UX-SCROLL-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+
+[[task]]
+id = "UX-DEPENDENCY-GRAPH-001"
+milestone = "M21"
+title = "Add navigable dependency topology visualization"
+status = "DONE"
+required = true
+depends_on = ["UX-LIST-TREE-001", "UX-LICENSE-001"]
+
+[[task]]
+id = "UX-ROOTFS-MODEL-001"
+milestone = "M21"
+title = "Define typed root filesystem composition state"
+status = "DONE"
+required = true
+depends_on = ["UX-SPEC-001"]
+
+[[task]]
+id = "UX-ROOTFS-ADAPTER-001"
+milestone = "M21"
+title = "Acquire bounded authoritative rootfs composition"
+status = "DONE"
+required = true
+depends_on = ["UX-ROOTFS-MODEL-001"]
+
+[[task]]
+id = "UX-ROOTFS-UI-001"
+milestone = "M21"
+title = "Render rootfs pie bar table and tree exploration"
+status = "DONE"
+required = true
+depends_on = ["UX-ROOTFS-ADAPTER-001", "UX-LIST-TREE-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+
+[[task]]
+id = "UX-IMAGE-PREVIEW-001"
+milestone = "M21"
+title = "Evaluate optional terminal image previews"
+status = "DONE"
+required = true
+depends_on = ["UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+
+[[task]]
+id = "UX-TERMINAL-EVAL-001"
+milestone = "M21"
+title = "Evaluate tui-term against typed terminal replicas"
+status = "DONE"
+required = true
+depends_on = ["UX-SPEC-001", "UX-LICENSE-001"]
+
+[[task]]
+id = "UX-TERMINAL-UX-001"
+milestone = "M21"
+title = "Complete the first-class built-in terminal workbench"
+status = "DONE"
+required = true
+depends_on = ["UX-TERMINAL-EVAL-001", "UX-FOCUS-001", "UX-SCROLL-001", "UX-KEYMAP-MODEL-001"]
+
+[[task]]
+id = "UX-DASHBOARD-001"
+milestone = "M21"
+title = "Compose a clearer operational dashboard"
+status = "DONE"
+required = true
+depends_on = ["UX-PROGRESS-001", "UX-THROBBER-001", "UX-TELEMETRY-001"]
+
+[[task]]
+id = "UX-WORKBENCH-CENTER-001"
+milestone = "M21"
+title = "Create a one-stop workbench command center"
+status = "DONE"
+required = true
+depends_on = ["UX-MENU-001", "UX-DASHBOARD-001", "UX-LOGS-001", "UX-ROOTFS-UI-001", "UX-TERMINAL-UX-001"]
+
+[[task]]
+id = "UX-ONBOARDING-001"
+milestone = "M21"
+title = "Add guided first-run and workflow onboarding"
+status = "DONE"
+required = true
+depends_on = ["UX-WORKBENCH-CENTER-001", "UX-TEXTAREA-UI-001"]
+
+[[task]]
+id = "UX-PREFERENCES-001"
+milestone = "M21"
+title = "Unify usability and visual preferences"
+status = "DONE"
+required = true
+depends_on = ["UX-KEYMAP-UI-001", "UX-CHECKBOX-001", "UX-MENU-001"]
+
+[[task]]
+id = "UX-RESPONSIVE-001"
+milestone = "M21"
+title = "Verify every M21 workflow across responsive layouts"
+status = "DONE"
+required = true
+depends_on = ["UX-DEPENDENCY-GRAPH-001", "UX-IMAGE-PREVIEW-001", "UX-ONBOARDING-001", "UX-PREFERENCES-001"]
+
+[[task]]
+id = "UX-A11Y-001"
+milestone = "M21"
+title = "Verify M21 accessibility and nonvisual meaning"
+status = "DONE"
+required = true
+depends_on = ["UX-RESPONSIVE-001", "UX-THROBBER-001", "UX-CHECKBOX-001"]
+
+[[task]]
+id = "UX-PERF-001"
+milestone = "M21"
+title = "Profile and bound the expanded workbench"
+status = "DONE"
+required = true
+depends_on = ["UX-RESPONSIVE-001"]
+
+[[task]]
+id = "UX-KEYMAP-E2E-001"
+milestone = "M21"
+title = "Verify real-terminal menus keybindings focus and scrolling"
+status = "DONE"
+required = true
+depends_on = ["UX-PREFERENCES-001", "UX-FOCUS-001", "UX-SCROLL-001"]
+
+[[task]]
+id = "UX-PTY-E2E-001"
+milestone = "M21"
+title = "Verify the built-in terminal session UX end to end"
+status = "DONE"
+required = true
+depends_on = ["UX-TERMINAL-UX-001", "UX-KEYMAP-E2E-001"]
+
+[[task]]
+id = "UX-LIVE-001"
+milestone = "M21"
+title = "Validate the one-stop workbench against supported live Yocto"
+status = "DONE"
+required = true
+depends_on = ["UX-WORKBENCH-CENTER-001", "UX-ROOTFS-UI-001", "UX-TERMINAL-UX-001", "UX-KEYMAP-E2E-001"]
+
+[[task]]
+id = "UX-DOC-001"
+milestone = "M21"
+title = "Document the polished one-stop workbench"
+status = "DONE"
+required = true
+depends_on = ["UX-LIVE-001", "UX-A11Y-001", "UX-PERF-001", "UX-PTY-E2E-001"]
+
+[[task]]
+id = "UX-001"
+milestone = "M21"
+title = "Complete the one-stop Yocto workbench UX milestone"
+status = "DONE"
+required = true
+depends_on = ["UX-SPEC-001", "UX-CONCEPT-VALIDATION-001", "UX-LICENSE-001", "UX-ACTION-CATALOG-001", "UX-KEYMAP-MODEL-001", "UX-KEYMAP-UI-001", "UX-MENU-001", "UX-FOCUS-001", "UX-SCROLL-001", "UX-WIDGET-PRIMITIVES-001", "UX-PROGRESS-001", "UX-THROBBER-001", "UX-TELEMETRY-001", "UX-LOGS-001", "UX-INTERNAL-LOG-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001", "UX-CHECKBOX-001", "UX-LIST-TREE-001", "UX-DEPENDENCY-GRAPH-001", "UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001", "UX-IMAGE-PREVIEW-001", "UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001", "UX-DASHBOARD-001", "UX-WORKBENCH-CENTER-001", "UX-ONBOARDING-001", "UX-PREFERENCES-001", "UX-RESPONSIVE-001", "UX-A11Y-001", "UX-PERF-001", "UX-KEYMAP-E2E-001", "UX-PTY-E2E-001", "UX-LIVE-001", "UX-DOC-001"]
+
+[[task]]
+id = "UX-CONCEPT-ERRORS-001"
+milestone = "M22"
+title = "Compose the complete failed-build concept workflow"
+status = "DONE"
+required = true
+depends_on = []
+
+[[task]]
+id = "UX-CONCEPT-ROOTFS-001"
+milestone = "M22"
+title = "Compose the canonical Rootfs exploration concept"
+status = "DONE"
+required = true
+depends_on = []
+
+[[task]]
+id = "UX-CONCEPT-EDITOR-MENU-001"
+milestone = "M22"
+title = "Compose the recipe editor with the application menu"
+status = "DONE"
+required = true
+depends_on = []
+
+[[task]]
+id = "UX-CONCEPT-TERMINAL-LIVE-001"
+milestone = "M22"
+title = "Drive the Terminal Sessions concept through a real client"
+status = "DONE"
+required = true
+depends_on = []
+
+[[task]]
+id = "UX-CONCEPT-RASTER-001"
+milestone = "M22"
+title = "Render deterministic PNGs from production cells"
+status = "DONE"
+required = true
+depends_on = ["UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001"]
+
+[[task]]
+id = "UX-CONCEPT-LIVE-001"
+milestone = "M22"
+title = "Capture every concept workflow on a supported live Yocto host"
+status = "DONE"
+required = true
+depends_on = ["UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-TERMINAL-LIVE-001"]
+
+[[task]]
+id = "UX-TELEMETRY-DIAL-001"
+milestone = "M27"
+title = "Render dashboard telemetry as concept-shaped dials"
+status = "DONE"
+required = true
+depends_on = []
+
+[[task]]
+id = "PERF-SPEC-001"
+milestone = "M46"
+title = "Specify the low-overhead and responsiveness contract"
+status = "DONE"
+required = true
+depends_on = []
+
+[[task]]
+id = "PERF-BASELINE-001"
+milestone = "M46"
+title = "Capture the pre-optimization performance baseline"
+status = "DONE"
+required = true
+depends_on = ["PERF-SPEC-001"]
+
+[[task]]
+id = "PERF-FLAMEGRAPH-001"
+milestone = "M46"
+title = "Capture CPU flamegraphs for all baseline workloads"
+status = "DONE"
+required = true
+depends_on = ["PERF-BASELINE-001"]
+
+[[task]]
+id = "PERF-WAKEUPS-001"
+milestone = "M46"
+title = "Measure wakeups and timer behavior"
+status = "DONE"
+required = true
+depends_on = ["PERF-BASELINE-001"]
+
+[[task]]
+id = "PERF-SATURATION-HARNESS-001"
+milestone = "M46"
+title = "Create a deterministic CPU saturation harness"
+status = "DONE"
+required = true
+depends_on = ["PERF-SPEC-001"]
+
+[[task]]
+id = "PERF-EVENT-FLOOD-001"
+milestone = "M46"
+title = "Create a BitBake-like event flood harness"
+status = "DONE"
+required = true
+depends_on = ["PERF-SPEC-001"]
+
+[[task]]
+id = "PERF-EVENTLOOP-001"
+milestone = "M46"
+title = "Eliminate idle busy loops"
+status = "DONE"
+required = true
+depends_on = ["PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001"]
+
+[[task]]
+id = "PERF-RENDER-001"
+milestone = "M46"
+title = "Make rendering dirty and event driven"
+status = "DONE"
+required = true
+depends_on = ["PERF-WAKEUPS-001", "PERF-EVENTLOOP-001"]
+
+[[task]]
+id = "PERF-ANIM-001"
+milestone = "M46"
+title = "Bound animation work and cadence"
+status = "DONE"
+required = true
+depends_on = ["PERF-RENDER-001"]
+
+[[task]]
+id = "PERF-TELEMETRY-001"
+milestone = "M46"
+title = "Optimize telemetry collection"
+status = "DONE"
+required = true
+depends_on = ["PERF-EVENTLOOP-001", "PERF-RENDER-001"]
+
+[[task]]
+id = "PERF-LOG-001"
+milestone = "M46"
+title = "Optimize bounded log ingestion and rendering"
+status = "DONE"
+required = true
+depends_on = ["PERF-EVENT-FLOOD-001", "PERF-RENDER-001"]
+
+[[task]]
+id = "PERF-TASKS-001"
+milestone = "M46"
+title = "Optimize high-rate task updates"
+status = "DONE"
+required = true
+depends_on = ["PERF-EVENT-FLOOD-001", "PERF-RENDER-001"]
+
+[[task]]
+id = "PERF-IPC-001"
+milestone = "M46"
+title = "Audit and optimize daemon client IPC"
+status = "DONE"
+required = true
+depends_on = ["PERF-BASELINE-001", "PERF-EVENT-FLOOD-001"]
+
+[[task]]
+id = "PERF-IPC-BACKPRESSURE-001"
+milestone = "M46"
+title = "Implement bounded priority-aware IPC backpressure"
+status = "DONE"
+required = true
+depends_on = ["PERF-IPC-001"]
+
+[[task]]
+id = "PERF-BITBAKE-CONN-001"
+milestone = "M46"
+title = "Harden BitBake connectivity under CPU saturation"
+status = "DONE"
+required = true
+depends_on = ["PERF-IPC-001", "PERF-EVENTLOOP-001"]
+
+[[task]]
+id = "PERF-TOKIO-001"
+milestone = "M46"
+title = "Audit Tokio runtime scheduling"
+status = "DONE"
+required = true
+depends_on = ["PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001"]
+
+[[task]]
+id = "PERF-SCHED-001"
+milestone = "M46"
+title = "Evaluate safe unprivileged scheduling recommendations"
+status = "DONE"
+required = true
+depends_on = ["PERF-BASELINE-001", "PERF-SATURATION-HARNESS-001"]
+
+[[task]]
+id = "PERF-CPU-AFFINITY-001"
+milestone = "M46"
+title = "Evaluate optional CPU affinity and isolation"
+status = "DONE"
+required = true
+depends_on = ["PERF-BASELINE-001", "PERF-SATURATION-HARNESS-001"]
+
+[[task]]
+id = "PERF-BITBAKE-COEXIST-001"
+milestone = "M46"
+title = "Document measured BitBake coexistence guidance"
+status = "DONE"
+required = true
+depends_on = ["PERF-SCHED-001", "PERF-CPU-AFFINITY-001"]
+
+[[task]]
+id = "PERF-INPUT-LATENCY-001"
+milestone = "M46"
+title = "Measure saturated UI input latency"
+status = "DONE"
+required = true
+depends_on = ["PERF-SATURATION-HARNESS-001", "PERF-RENDER-001"]
+
+[[task]]
+id = "PERF-IPC-LATENCY-001"
+milestone = "M46"
+title = "Measure saturated IPC latency"
+status = "DONE"
+required = true
+depends_on = ["PERF-SATURATION-HARNESS-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001"]
+
+[[task]]
+id = "PERF-CPU-GATE-001"
+milestone = "M46"
+title = "Implement the one-percent steady-state CPU gate"
+status = "DONE"
+required = true
+depends_on = ["PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-TOKIO-001"]
+
+[[task]]
+id = "PERF-RESPONSIVENESS-GATE-001"
+milestone = "M46"
+title = "Gate interactive responsiveness under saturation"
+status = "DONE"
+required = true
+depends_on = ["PERF-INPUT-LATENCY-001", "PERF-BITBAKE-CONN-001"]
+
+[[task]]
+id = "PERF-IPC-GATE-001"
+milestone = "M46"
+title = "Gate IPC continuity and critical-event ordering"
+status = "DONE"
+required = true
+depends_on = ["PERF-IPC-LATENCY-001", "PERF-EVENT-FLOOD-001"]
+
+[[task]]
+id = "PERF-MEMORY-GATE-001"
+milestone = "M46"
+title = "Gate bounded memory under sustained event load"
+status = "DONE"
+required = true
+depends_on = ["PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-BACKPRESSURE-001"]
+
+[[task]]
+id = "PERF-REAL-POKY-001"
+milestone = "M46"
+title = "Validate responsiveness during a real saturated Poky build"
+status = "DONE"
+required = true
+depends_on = ["PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001"]
+
+[[task]]
+id = "PERF-REGRESSION-001"
+milestone = "M46"
+title = "Track machine-readable performance regressions"
+status = "DONE"
+required = true
+depends_on = ["PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001"]
+
+[[task]]
+id = "PERF-CI-001"
+milestone = "M46"
+title = "Integrate deterministic and scheduled performance CI"
+status = "DONE"
+required = true
+depends_on = ["PERF-REGRESSION-001"]
+
+[[task]]
+id = "PERF-DOC-001"
+milestone = "M46"
+title = "Document low-overhead architecture and tuning"
+status = "DONE"
+required = true
+depends_on = ["PERF-BITBAKE-COEXIST-001", "PERF-REGRESSION-001", "PERF-REAL-POKY-001"]
+
+[[task]]
+id = "PERF-001"
+milestone = "M46"
+title = "Complete low-overhead build-saturation responsiveness"
+status = "DONE"
+required = true
+depends_on = ["PERF-SPEC-001", "PERF-BASELINE-001", "PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001", "PERF-EVENTLOOP-001", "PERF-RENDER-001", "PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001", "PERF-TOKIO-001", "PERF-SCHED-001", "PERF-CPU-AFFINITY-001", "PERF-BITBAKE-COEXIST-001", "PERF-INPUT-LATENCY-001", "PERF-IPC-LATENCY-001", "PERF-SATURATION-HARNESS-001", "PERF-EVENT-FLOOD-001", "PERF-REAL-POKY-001", "PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001", "PERF-REGRESSION-001", "PERF-CI-001", "PERF-DOC-001"]
+
+[[task]]
+id = "M67-LIVE-EVIDENCE-001"
+milestone = "M67"
+title = "Supply current-source real-Poky release performance evidence"
+status = "BLOCKED"
+required = true
+depends_on = []

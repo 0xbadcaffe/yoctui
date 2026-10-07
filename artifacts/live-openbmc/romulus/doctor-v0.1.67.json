@@ -10,7 +10,7 @@
   "environment": {
     "build_directory": {
       "state": "detected",
-      "value": "/home/bspguy-dev/src/build-openbmc-romulus",
+      "value": "/home/build-user/src/build-openbmc-romulus",
       "authority": "initialized_environment"
     },
     "source_roots": {
@@ -18,39 +18,39 @@
       "value": [
         {
           "kind": "layer",
-          "path": "/home/bspguy-dev/src/openbmc/meta-aspeed"
+          "path": "/home/build-user/src/openbmc/meta-aspeed"
         },
         {
           "kind": "layer",
-          "path": "/home/bspguy-dev/src/openbmc/meta-ibm/meta-romulus"
+          "path": "/home/build-user/src/openbmc/meta-ibm/meta-romulus"
         },
         {
           "kind": "layer",
-          "path": "/home/bspguy-dev/src/openbmc/meta-openpower"
+          "path": "/home/build-user/src/openbmc/meta-openpower"
         },
         {
           "kind": "layer",
-          "path": "/home/bspguy-dev/src/openbmc/meta-phosphor"
+          "path": "/home/build-user/src/openbmc/meta-phosphor"
         },
         {
           "kind": "layer",
-          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-networking"
+          "path": "/home/build-user/src/openbmc/upstream-layers/meta-openembedded/meta-networking"
         },
         {
           "kind": "layer",
-          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-oe"
+          "path": "/home/build-user/src/openbmc/upstream-layers/meta-openembedded/meta-oe"
         },
         {
           "kind": "layer",
-          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-perl"
+          "path": "/home/build-user/src/openbmc/upstream-layers/meta-openembedded/meta-perl"
         },
         {
           "kind": "layer",
-          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-python"
+          "path": "/home/build-user/src/openbmc/upstream-layers/meta-openembedded/meta-python"
         },
         {
           "kind": "layer",
-          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta"
+          "path": "/home/build-user/src/openbmc/upstream-layers/openembedded-core/meta"
         }
       ],
       "authority": "configured_layer_metadata"
@@ -89,7 +89,7 @@
       "value": [
         {
           "layer": "core",
-          "root": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta",
+          "root": "/home/build-user/src/openbmc/upstream-layers/openembedded-core/meta",
           "compatible_series": [
             "blacksail",
             "wrynose"
@@ -103,37 +103,37 @@
       "value": [
         {
           "id": "bitbake",
-          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "executable": "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
           "version": "2.19.0"
         },
         {
           "id": "bitbake-diffsigs",
-          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
+          "executable": "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
           "version": null
         },
         {
           "id": "bitbake-dumpsig",
-          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig",
+          "executable": "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig",
           "version": null
         },
         {
           "id": "bitbake-getvar",
-          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+          "executable": "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
           "version": null
         },
         {
           "id": "bitbake-layers",
-          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "executable": "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
           "version": null
         },
         {
           "id": "bitbake-prserv",
-          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv",
+          "executable": "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv",
           "version": null
         },
         {
           "id": "bitbake-selftest",
-          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest",
+          "executable": "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest",
           "version": null
         }
       ],
@@ -889,9 +889,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake"
           ]
         },
         {
@@ -900,7 +900,7 @@
           "subject": "bitbake",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         },
@@ -910,7 +910,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes -f",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         },
@@ -920,7 +920,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes -c",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -940,9 +940,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake"
           ]
         },
         {
@@ -951,7 +951,7 @@
           "subject": "bitbake",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         },
@@ -961,7 +961,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes -e",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -981,9 +981,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake"
           ]
         },
         {
@@ -992,7 +992,7 @@
           "subject": "bitbake",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         },
@@ -1002,7 +1002,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes -g",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1056,9 +1056,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-getvar",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar"
           ]
         },
         {
@@ -1067,7 +1067,7 @@
           "subject": "bitbake-getvar",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
             "--help"
           ]
         },
@@ -1077,7 +1077,7 @@
           "subject": "bitbake-getvar",
           "detail": "Bounded help output exposes --value",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
             "--help"
           ]
         },
@@ -1087,7 +1087,7 @@
           "subject": "bitbake-getvar",
           "detail": "Bounded help output exposes --recipe",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
             "--help"
           ]
         }
@@ -1126,9 +1126,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-diffsigs",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs"
           ]
         },
         {
@@ -1137,7 +1137,7 @@
           "subject": "bitbake-diffsigs",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
             "--help"
           ]
         },
@@ -1147,7 +1147,7 @@
           "subject": "bitbake-diffsigs",
           "detail": "Bounded help output exposes -c",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
             "--help"
           ]
         }
@@ -1167,9 +1167,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-dumpsig",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig"
           ]
         },
         {
@@ -1178,7 +1178,7 @@
           "subject": "bitbake-dumpsig",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig",
             "--help"
           ]
         }
@@ -1217,9 +1217,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake"
           ]
         },
         {
@@ -1228,7 +1228,7 @@
           "subject": "bitbake",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         },
@@ -1238,7 +1238,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --status-only",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1258,9 +1258,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake"
           ]
         },
         {
@@ -1269,7 +1269,7 @@
           "subject": "bitbake",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         },
@@ -1279,7 +1279,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --server-only",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1299,9 +1299,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake"
           ]
         },
         {
@@ -1310,7 +1310,7 @@
           "subject": "bitbake",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         },
@@ -1320,7 +1320,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --kill-server",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1361,7 +1361,7 @@
           "subject": "bitbake",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1383,7 +1383,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --show-versions",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1405,7 +1405,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --cmd",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1427,7 +1427,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --clear-stamp",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1449,7 +1449,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --dry-run",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1471,7 +1471,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --parse-only",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1493,7 +1493,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --continue",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1515,7 +1515,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --profile",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1537,7 +1537,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --dump-signatures",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1559,7 +1559,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --revisions-changed",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1581,7 +1581,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --buildfile",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1603,7 +1603,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --debug",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1625,7 +1625,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --log-domains",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1647,7 +1647,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --verbose",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1669,7 +1669,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --quiet",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1691,7 +1691,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --write-log",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1713,7 +1713,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --ui",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1735,7 +1735,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --bind",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1757,7 +1757,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --idle-timeout",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1779,7 +1779,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --remote-server",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1801,7 +1801,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --token",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1823,7 +1823,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --observe-only",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1845,7 +1845,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --read",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1867,7 +1867,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --postread",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1889,7 +1889,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --ignore-deps",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1916,7 +1916,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output does not expose mc:",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1935,7 +1935,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --runall",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1957,7 +1957,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --runonly",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -1979,7 +1979,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --no-setscene",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -2001,7 +2001,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --skip-setscene",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -2023,7 +2023,7 @@
           "subject": "bitbake",
           "detail": "Bounded help output exposes --setscene-only",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake",
             "--help"
           ]
         }
@@ -2386,9 +2386,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-layers",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
           ]
         },
         {
@@ -2397,7 +2397,7 @@
           "subject": "bitbake-layers",
           "detail": "Bounded help output exposes show-layers",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
             "show-layers",
             "--help"
           ]
@@ -2418,9 +2418,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-layers",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
           ]
         },
         {
@@ -2429,7 +2429,7 @@
           "subject": "bitbake-layers",
           "detail": "Bounded help output exposes create-layer",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
             "create-layer",
             "--help"
           ]
@@ -2455,9 +2455,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-layers",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
           ]
         },
         {
@@ -2466,7 +2466,7 @@
           "subject": "bitbake-layers",
           "detail": "Bounded help output exposes create-layer",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
             "create-layer",
             "--help"
           ]
@@ -2477,7 +2477,7 @@
           "subject": "bitbake-layers",
           "detail": "Read-only probe timed out and its process group was terminated",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
             "create-layer",
             "--help"
           ]
@@ -2507,9 +2507,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-layers",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
           ]
         },
         {
@@ -2518,7 +2518,7 @@
           "subject": "bitbake-layers",
           "detail": "Read-only probe timed out and its process group was terminated",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
             "add-layer",
             "--help"
           ]
@@ -2548,9 +2548,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-layers",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
           ]
         },
         {
@@ -2559,7 +2559,7 @@
           "subject": "bitbake-layers",
           "detail": "Read-only probe timed out and its process group was terminated",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
             "remove-layer",
             "--help"
           ]
@@ -3109,9 +3109,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-selftest",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest"
           ]
         },
         {
@@ -3120,7 +3120,7 @@
           "subject": "bitbake-selftest",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest",
             "--help"
           ]
         }
@@ -3539,9 +3539,9 @@
           "kind": "executable_identity",
           "outcome": "positive",
           "subject": "bitbake-prserv",
-          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv",
+          "detail": "Canonical executable is available at /home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv"
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv"
           ]
         },
         {
@@ -3550,7 +3550,7 @@
           "subject": "bitbake-prserv",
           "detail": "Bounded version/help probe succeeded",
           "argv": [
-            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv",
+            "/home/build-user/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv",
             "--help"
           ]
         }

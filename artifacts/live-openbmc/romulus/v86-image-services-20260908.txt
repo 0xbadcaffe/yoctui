@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.86  •  Project: openbmc  •  – Idle  •  Target: obmc-phosphor-image  •  Machine: romulus      Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                   │
+│Workspace: /home/build-user/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                   │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
 │▾ OVERVIEW                ││ 1   │  2   │  3   │  4 systemd  │  5   │  6    Tab switches                        ││▾ PRIMARY FACTS                             │
@@ -10,7 +10,7 @@
 │▾ CONTENT                 │││autovt@.service              Getty on %I                  —            disabled/st│││State: partial · 1 limitation(s)            │
 │  ▱ Layers                │││avahi-daemon.service         Avahi mDNS/DNS-SD Stack      org.freedesk multi-user.│││Image: obmc-phosphor-image                  │
 │  ▱ Recipes               │││avsbus-disable@.service      Disable the AVS bus on the V —            obmc-chassi│││Path:                                       │
-│  ▱ Packages              │││avsbus-enable@.service       Enable the AVS bus on VRMs   —            obmc-chassi│││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Packages              │││avsbus-enable@.service       Enable the AVS bus on VRMs   —            obmc-chassi│││/home/build-user/src/build-openbmc-romulus/t│
 │  ▱ Images                │││bmcweb.service               bmcweb server                —            network.tar│││mp/deploy/images/romulus/obmc-phosphor-image│
 │  ▱ Kernel                │││breakpoint-pre-basic.service Breakpoint Before basic.targ —            disabled/st│││-romulus-20260908040925.manifest            │
 │  ▱ U-Boot / BIOS         │││breakpoint-pre-mount.service Breakpoint Before Mounting t —            disabled/st│││Installed packages: available               │

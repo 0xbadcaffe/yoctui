@@ -147,8 +147,8 @@ fn rootfs_browser_modes_cover_special_bits_and_unknown_accounts() {
         unknown.listing(Some(13)),
         "?????????? mode unavailable unavailable unavailable 13 B"
     );
-    unknown.owner = Some("bspguy-dev".into());
-    assert!(!unknown.listing(None).contains("bspguy-dev"));
+    unknown.owner = Some("build-user".into());
+    assert!(!unknown.listing(None).contains("build-user"));
 }
 
 #[test]

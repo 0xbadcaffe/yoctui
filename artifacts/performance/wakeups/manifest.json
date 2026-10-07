@@ -24,8 +24,8 @@
   "artifacts": {
     "idle-attached-perf-stat.csv": "3a9274cc38c69ea5702ed3db49005fae597c479c446e9d88955a411b34237a63",
     "idle-attached-strace.txt": "994bd4970597e840b6f0ce1942637fac7c51e70acee40a7dec855c8074e28f29",
-    "idle-daemon-baseline.json": "2626c1a5becbf8daa01158556f918b8f110088c1e7eceee325777fd6f53e2319",
-    "idle-attached-client-baseline.json": "e18cf90ca1f923db307e8341278c0957353be0a15459c08ef432c12bdd97c2b5"
+    "idle-daemon-baseline.json": "ee694f1b4e57024127fe71d81f6fadfc35a4d03da84a0f6b82b1a96018695393",
+    "idle-attached-client-baseline.json": "564abf588e793f8822b49532cc0c8f18b07d9c011a788a120ad984bc656f5e29"
   },
   "observations": {
     "idle_daemon_cpu_percent_one_logical_cpu": 5.4173823832923285,

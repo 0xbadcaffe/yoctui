@@ -30,7 +30,7 @@ required = {
     "UI-REGRESSION-001", "UI-CLEANUP-001", "M13-UI-001",
 }
 
-data = tomllib.loads(Path("docs/task-registry.toml").read_text(encoding="utf-8"))
+data = tomllib.loads(Path("docs/design/acceptance-contracts.toml").read_text(encoding="utf-8"))
 tasks = {task["id"]: task for task in data.get("task", [])}
 missing = sorted(required - tasks.keys())
 if missing:
@@ -41,7 +41,7 @@ if wrong_milestone:
 incomplete = sorted(task_id for task_id in required if tasks[task_id].get("status") != "DONE")
 if incomplete:
     raise SystemExit("next-generation UI tasks incomplete: " + ", ".join(incomplete))
-print(f"next-generation UI registry complete: {len(required)} required tasks")
+print(f"next-generation UI acceptance metadata complete: {len(required)} required tasks")
 PY
 
 # These commands remain explicit so the final gate independently exercises each
@@ -60,5 +60,5 @@ cargo test -p yoctui-ui accessibility_invariants
 ./scripts/verify-next-generation-ui-evidence.sh
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo fmt --all --check
-./scripts/verify-roadmap.sh
+./scripts/verify-design-contracts.sh
 ./scripts/verify-product-complete.sh

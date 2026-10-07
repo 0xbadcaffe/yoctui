@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.76  •  Project: openbmc  •  ▶ Running  •  Target: obmc-phosphor-image  •  Machine: romulus        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2854 / 6812  |  Elapsed: 00:00:06  |  Workers: 0                             │
+│Workspace: /home/build-user/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2854 / 6812  |  Elapsed: 00:00:06  |  Workers: 0                             │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  41%  2854/6812▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_compile                      │
@@ -17,17 +17,17 @@
 │  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
 │▾ BUILD                   │┌Log Viewer — do_compile (llvm-native) · ▶ Follow────────────────────────────────────┐│Worker      unavailable                     │
 │  ▱ Tasks                2│││ VERBOSE=1 cmake --build                                                           ││PID         1304077                         │
-│  ▱ Logs              LIVE││/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/││Started     04:10:04                        │
+│  ▱ Logs              LIVE││/home/build-user/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/││Started     04:10:04                        │
 │  ▱ Errors                ││build --target all --                                                               ││Elapsed     00:00:06                        │
 │  ▱ Configuration         ││                                                                                    ││Workdir     unavailable                     │
 │  ▱ Dependencies          ││                                                                                    ││Log file                                    │
-│▾ VALIDATE                ││                                                                                    ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│▾ VALIDATE                ││                                                                                    ││/home/build-user/src/build-openbmc-romulus/t│
 │  ▱ Testing               ││                                                                                    ││mp/work/x86_64-linux/llvm-native/22.1.8/temp│
 │    Security              ││                                                                                    ││/log.do_compile.1304077                     │
 │  ▱ QA                    ││                                                                                    │└────────────────────────────────────────────┘
 │▾ TOOLS                   ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
 │  ▱ Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘││ VERBOSE=1 cmake --build                   │
-│  ▱ Terminal Sessions     │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 1 · Daemon-owned 2───┐│/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Terminal Sessions     │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 1 · Daemon-owned 2───┐│/home/build-user/src/build-openbmc-romulus/t│
 │  ▱ Devtool               ││Status        Operation     Type         Target / Context        Started   Elapsed  ││mp/work/x86_64-linux/llvm-native/22.1.8/buil│
 │  ▱ QEMU / Wic            ││▶ Running     BitBake build Build        2854/6812               --        --       │└────────────────────────────────────────────┘
 │  ▱ Maintenance           ││✕ Failed      BitBake build Build        daemon                  --        --       │┌Contextual Actions──────────────────────────┐

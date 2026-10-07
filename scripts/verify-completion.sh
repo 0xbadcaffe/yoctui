@@ -24,7 +24,7 @@ python3 - <<'PY'
 from pathlib import Path
 import tomllib
 
-tasks = tomllib.loads(Path("docs/task-registry.toml").read_text(encoding="utf-8"))["task"]
+tasks = tomllib.loads(Path("docs/design/acceptance-contracts.toml").read_text(encoding="utf-8"))["task"]
 required = [
     task
     for task in tasks

@@ -3,14 +3,14 @@ Native terminal pane/session identity acceptance: PASS
 
 Code445128070790f5993ed9a7eb80b57afe11351d57 v0.1.298.
 Pinned raster handofffc6cb51b0d5e1b6a3930b3de7818d23de5bae449; no code change.
-Installed /home/bspguy-dev/.cargo/bin/yoctui SHA256:
+Installed /home/build-user/.cargo/bin/yoctui SHA256:
 d538bd242506cb5a510aef48ec57098318bd9b39d87497252725386ba1bdefdc
 Byte-identical temporary release artifact. Locked thinLTO/debug1/codegen1/
 frame pointers/two Cargo workers: build6m15s/cached install1.43s.
 
 Actual plain native client2385897/capture controller16959/Python2385896,
 no container/ambient PYTHONPATH override. Default user endpoint/exact selected
-/home/bspguy-dev/src/openbmc and sibling build-openbmc-romulus.
+/home/build-user/src/openbmc and sibling build-openbmc-romulus.
 Daemon2340904 healthy enabled source62716abc/v295/hash917a9788,
 instance20921e3a1f994603dabf6b9043dda64f/NRestarts0. Client model/UI-only correction,
 unchanged protocol; no inferred restart. Idle BitBake lifecycle Disconnected is

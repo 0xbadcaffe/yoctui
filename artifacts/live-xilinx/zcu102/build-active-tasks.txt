@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.267 • Git: rel-v2026.1 synced* • Project: poky • Target: petalinux-image-minimal • Machine: zynqmp-zcu10Daemon: ✓ Connected/Local  •  BitBake: ✓ Running • Local 09:07│
 │⢻ Build running · 2 active                                                                                                                                                        │
-│Workspace: /home/bspguy-dev/src/yoctui-zcu102-2026.1/sources/poky  |  Build: petalinux-image-minimal  |  Task: 286 / 10994  |  Elapsed: 00:04:41  |  Workers: 2                   │
+│Workspace: /home/build-user/src/yoctui-zcu102-2026.1/sources/poky  |  Build: petalinux-image-minimal  |  Task: 286 / 10994  |  Elapsed: 00:04:41  |  Workers: 2                   │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator───────────────────┐┌Tasks: petalinux-image-minimal · All────────────────────────────────────────────────────────────┐┌Inspector: Task───────────────────────────────────┐
 │▾ OVERVIEW                  ││█▉                                   Overall  2%  286/10994                                     ││Task        do_compile                            │
@@ -18,7 +18,7 @@
 │  ▱ SDK                     │┌Log Viewer — do_compile (gmp-native) · ▶ Follow─────────────────────────────────────────────────┐│Elapsed     00:00:01                              │
 │▾ BUILD                     │││ make -j2                                                                                      ││Workdir     unavailable                           │
 │  ▱ Tasks                  2││                                                                                                ││Log file                                          │
-│  ▱ Logs                LIVE││                                                                                                ││/home/bspguy-dev/src/yoctui-zcu102-2026.1/build/tm│
+│  ▱ Logs                LIVE││                                                                                                ││/home/build-user/src/yoctui-zcu102-2026.1/build/tm│
 │  ▱ Errors                  ││                                                                                                ││p/work/x86_64-linux/gmp-native/6.3.0/temp/log.do_c│
 │  ▱ Configuration           ││                                                                                                ││ompile.81542                                      │
 │  ▱ Dependencies            ││                                                                                                ││Dependencies none reported                        │

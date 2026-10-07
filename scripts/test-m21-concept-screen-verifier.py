@@ -34,7 +34,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         for relative in [
             "docs/design/m21/concepts/manifest.toml",
-            "docs/task-registry.toml",
+            "docs/design/acceptance-contracts.toml",
         ]:
             destination = self.root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -56,7 +56,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         self.verifier = load_verifier()
         self.verifier.ROOT = self.root
         self.verifier.MANIFEST = self.root / "docs/design/m21/concepts/manifest.toml"
-        self.verifier.REGISTRY = self.root / "docs/task-registry.toml"
+        self.verifier.REGISTRY = self.root / "docs/design/acceptance-contracts.toml"
 
     def tearDown(self) -> None:
         self.temporary.cleanup()

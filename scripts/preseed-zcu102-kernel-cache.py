@@ -12,7 +12,6 @@ from pathlib import Path
 import subprocess
 import sys
 
-ROOT = Path('/home/bspguy-dev/src/yoctui-zcu102-2026.1')
 REVISION = '4f7afe14f7246986ca858d9a0880f5db6ba02a4b'
 BRANCH = 'xlnx_rebase_v6.18_LTS'
 REMOTE = 'https://github.com/Xilinx/linux-xlnx.git'
@@ -57,12 +56,18 @@ def install(stage, cache, revision, branch, remote, lock, unlock):
 
 def main():
     if len(sys.argv) != 1:
-        raise SystemExit('This helper has no overrides; it is scoped to ZCU102 validation')
-    sys.path.insert(0, str(ROOT / 'sources/poky/bitbake/lib'))
+        raise SystemExit('No arguments accepted; use YOCTUI_ZCU102_ROOT for the validation checkout')
+    root = Path(os.environ.get('YOCTUI_ZCU102_ROOT',
+                               Path.home() / 'src/yoctui-zcu102-2026.1'))
+    if not root.is_absolute() or root.resolve() != root:
+        raise ValueError('validation root must be a canonical absolute path')
+    if not root.is_dir() or root.stat().st_uid != os.getuid():
+        raise ValueError('validation root must be a directory owned by the current user')
+    sys.path.insert(0, str(root / 'sources/poky/bitbake/lib'))
     import bb.utils
     print(install(
-        ROOT / 'inspection/linux-xlnx-pinned.git',
-        ROOT / 'build/downloads/git2/github.com.Xilinx.linux-xlnx.git',
+        root / 'inspection/linux-xlnx-pinned.git',
+        root / 'build/downloads/git2/github.com.Xilinx.linux-xlnx.git',
         REVISION, BRANCH, REMOTE, bb.utils.lockfile, bb.utils.unlockfile,
     ))
 

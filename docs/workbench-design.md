@@ -1,9 +1,4 @@
-# Yoctui One-Stop Workbench UX Roadmap
-
-Status: **approved implementation roadmap; implementation evidence is tracked in
-`docs/task-registry.toml`**
-
-Research snapshot: **2026-08-26**
+# Workbench interaction design
 
 ## Product outcome
 
@@ -327,41 +322,6 @@ stale output, incomplete or dangling candidate graphs, invalid checksums,
 implicit default features, and non-admitted candidates in the real manifests
 or lockfile. The workspace graph also builds with `--locked --offline`.
 
-## Delivery phases and progress
-
-Progress counts required registry tasks, including the parent completion gate.
-
-| Phase | Scope | Task IDs | Progress |
-|---|---|---|---:|
-| 0 | Research, visual acceptance, dependency/license policy | `UX-SPEC-001`, `UX-CONCEPT-VALIDATION-001`, `UX-LICENSE-001` | 3/3 |
-| 1 | Action catalog, menus, keybindings, focus, scrolling | `UX-ACTION-CATALOG-001` through `UX-SCROLL-001` | 6/6 |
-| 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 10/10 |
-| 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 5/5 |
-| 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 6/6 |
-| 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 7/7 |
-| 6 | Parent completion gate | `UX-001` | 1/1 |
-| **M21 total** | | | **38/38 (100.0%)** |
-
-The historical product registry was 540/540 before M21. Registering these 38
-tasks makes overall required progress **578/578 (100.0%)**. The research/spec,
-six-scene production-renderer acceptance baseline, exact cell goldens, semantic
-captures, executable implementation-gap ledger, and reusable dependency
-admission/notices/SBOM/offline-build gate are complete. The validated
-137-entry typed action catalog now drives global palette metadata/search,
-contextual workspace actions, compatibility availability, and Help projection.
-The versioned effective command keymap now validates scoped bounded chords,
-preserves catalog defaults unless explicitly replaced, reserves the PTY prefix,
-keeps critical routes reachable, routes through the app boundary, exports a
-deterministic report, and migrates/persists atomically in the private session.
-The Settings workspace now presents and edits that authority with scoped
-search, textual states, trapped bounded capture, exact validation failures,
-per-action/all reset, bounded export, atomic save, and retry.
-The broader Settings surface now uses one schema-v1 15-row preference authority
-for density, symbols, motion, color, mouse, footer, log behavior, pane
-restoration, charts, image/terminal constraints, and keybindings. It previews
-immediately, resets as one bounded operation, migrates legacy session fields,
-and restores through atomic normalized session persistence.
-
 ## Test strategy
 
 The pre-implementation visual-direction pack lives in
@@ -386,11 +346,11 @@ dimensions, hashes, anchors, and lossless format.
 | License/supply chain | `cargo deny check`, dependency feature audit, locked/offline build, third-party notice validation, SBOM generation, and source/checksum verification. |
 | Live Yocto | Supported older/latest environments exercise menus and availability, a real build and cancellation, log correlation, image manifest/pkgdata/rootfs composition, context terminal, menuconfig/devshell where available, reconnect, and evidence expiry. |
 
-## Milestone completion definition
+## Acceptance criteria
 
-M21 is complete only when:
+The workbench is accepted only when:
 
-- all 38 required M21 tasks are `DONE` and `./scripts/verify-roadmap.sh` passes;
+- design contracts and representative tests pass;
 - the action catalog is the sole authority for menus, palette, Help, footer,
   configurable bindings, and action availability;
 - keyboard-only, mouse, no-color, ASCII, reduced-motion, narrow, and terminal

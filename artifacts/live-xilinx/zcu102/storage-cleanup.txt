@@ -2,7 +2,7 @@ Latest storage checkpoint — 2026-10-02 12:27 UTC
 
 User explicitly approved clearing ~4.4GiB older download archive caches.
 Validated exact canonical owned download directories, no older active build:
-/home/bspguy-dev/src/build/downloads: 628 top-level single-link regular archives
+/home/build-user/src/build/downloads: 628 top-level single-link regular archives
 allocated3001368576bytes; build-openbmc-romulus/downloads:673 allocated1769263104.
 Removed1301 archives plus1301 same-owner/single-link regular .done markers.
 Only suffixes tar.gz/tar.xz/tar.bz2/tar.zst/tgz/zip/crate, no subdirectories,
@@ -33,14 +33,14 @@ unit. Before reset, a read-only SQLite snapshot preserved all 216 tag declaratio
 and 349 tagged-file associations, including actual file URLs, in private JSON.
 CLI bulk exports timed out; they are not claimed as successful backups.
 Successful private backup (not committed; contains personal file metadata):
-/home/bspguy-dev/src/yoctui-zcu102-2026.1/logs/desktop-tags-20261002T1035.json
+/home/build-user/src/yoctui-zcu102-2026.1/logs/desktop-tags-20261002T1035.json
 Mode 0600, 133074 bytes.
 SHA256 ae89b79d2bddeb645875d3765e5caac4d554fbfbf5e1b90e9182a74f78965b82
 Backup helper outside repository: project/inspection/backup-desktop-tags.py.
 Verified exact tag/association counts and recovery URLs before deleting index.
 
 Official reset: localsearch reset --filesystem
-Reset removed /home/bspguy-dev/.cache/tracker3/files, recovering ~9.5 GiB.
+Reset removed /home/build-user/.cache/tracker3/files, recovering ~9.5 GiB.
 Unit failure state cleared; verified inactive, masked-runtime, no indexer PID.
 No persistent service disable or search-folder preference changes.
 After validation, restore previous desktop service state:
@@ -51,7 +51,7 @@ automatic tag restoration has not been executed or verified.
 
 Additional prior scoped cleanup while image remained active: official Poky
 sstate-cache-management.py removed remaining 7704 unused-by-new-validation
-old-cache files under /home/bspguy-dev/src/build/sstate-cache (~4.6 GiB), after
+old-cache files under /home/build-user/src/build/sstate-cache (~4.6 GiB), after
 interactive preview/cancel. Exact manager args: --cache-dir that old path,
 --stamps-dir new validation build/tmp/stamps -j2 --yes. Old outputs/stamps,
 kernel/debug/image evidence, native QEMU and source trees retained. Old cache

@@ -11,7 +11,7 @@ daemon2553232 remains v305/NRestarts0; client-only reducer fix has no wire chang
 This does not certify a final daemon upgrade, every screen or actual reboot.
 
 Actual 160x50 Terminal Sessions: new build-shell chooser shows /bin/sh and exact
-/home/bspguy-dev/src/build-openbmc-romulus, Embedded default. Esc cancellation
+/home/build-user/src/build-openbmc-romulus, Embedded default. Esc cancellation
 preserves history and creates no daemon session. Reopen n/Enter: session34 is
 selected automatically with Workspace focus, no historical-row next-key loop.
 It starts Viewer with no writer. Explicit o grants this client writer epoch1;
@@ -27,7 +27,7 @@ Do not claim this HUP as normal detached-session acceptance. Accepted embedded
 captures below were obtained through separate settled n/Esc/n/Enter actions.
 
 Actual captures remain above Git in
-/home/bspguy-dev/projects/yoctui-ydd2026-presentation/assets/:
+/home/build-user/projects/yoctui-ydd2026-presentation/assets/:
 demo-native-v306-new-shell-auto-selected.txt
   4870a9becbb4c659016a983537a45e6a00c83286a8ffc1cc9920e8fbb494eb7c
 demo-native-v306-shell-real-directory.txt

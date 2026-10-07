@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.81  •  Project: openbmc  •  ▶ Running  •  Target: obmc-phosphor-image  •  Machine: romulus        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 5083 / 6812  |  Elapsed: --:--:--  |  Workers: 0                             │
+│Workspace: /home/build-user/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 5083 / 6812  |  Elapsed: --:--:--  |  Workers: 0                             │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  74%  5083/6812▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_install                      │
@@ -21,7 +21,7 @@
 │  ▱ Errors                ││                                                                                    ││Elapsed     unavailable                     │
 │  ▱ Configuration         ││                                                                                    ││Workdir     unavailable                     │
 │  ▱ Dependencies          ││                                                                                    ││Log file                                    │
-│▾ VALIDATE                ││                                                                                    ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│▾ VALIDATE                ││                                                                                    ││/home/build-user/src/build-openbmc-romulus/t│
 │  ▱ Testing               ││                                                                                    ││mp/work/x86_64-linux/rust-native/1.96.1/temp│
 │    Security              ││                                                                                    ││/log.do_install.1618606                     │
 │  ▱ QA                    ││                                                                                    │└────────────────────────────────────────────┘

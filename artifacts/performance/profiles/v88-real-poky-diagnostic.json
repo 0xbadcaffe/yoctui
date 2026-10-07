@@ -8,7 +8,7 @@
     "machine": "x86_64"
   },
   "binary": {
-    "path": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui",
+    "path": "/home/build-user/.local/state/yoctui-v88-release.TBqp2N/yoctui",
     "sha256": "be5fa7261cd3ebaf7f6f1786eabb46736419d043086d0e92224f3cc63f48b510"
   },
   "sampling": {
@@ -25,14 +25,14 @@
     {
       "role": "daemon",
       "pid": 2433848,
-      "executable": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui",
-      "command": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui daemon foreground"
+      "executable": "/home/build-user/.local/state/yoctui-v88-release.TBqp2N/yoctui",
+      "command": "/home/build-user/.local/state/yoctui-v88-release.TBqp2N/yoctui daemon foreground"
     },
     {
       "role": "client",
       "pid": 2457774,
-      "executable": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui",
-      "command": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui attach"
+      "executable": "/home/build-user/.local/state/yoctui-v88-release.TBqp2N/yoctui",
+      "command": "/home/build-user/.local/state/yoctui-v88-release.TBqp2N/yoctui attach"
     }
   ],
   "artifacts": {

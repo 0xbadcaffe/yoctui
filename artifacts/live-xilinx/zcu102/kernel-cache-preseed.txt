@@ -9,7 +9,7 @@ Acquisition into a new staged bare repository, not an active download:
 git init --bare --initial-branch=xlnx_rebase_v6.18_LTS PROJECT/inspection/linux-xlnx-pinned.git
 git -C PROJECT/inspection/linux-xlnx-pinned.git remote add origin https://github.com/Xilinx/linux-xlnx.git
 git -C PROJECT/inspection/linux-xlnx-pinned.git fetch --depth=1 --no-tags origin 4f7afe14f7246986ca858d9a0880f5db6ba02a4b:refs/heads/xlnx_rebase_v6.18_LTS
-PROJECT=/home/bspguy-dev/src/yoctui-zcu102-2026.1 (expand explicit paths).
+PROJECT=/home/build-user/src/yoctui-zcu102-2026.1 (expand explicit paths).
 
 Installer: python3 scripts/preseed-zcu102-kernel-cache.py
 Checks owner/normalized nonsymlink directories, bare/shallow type, exact branch
@@ -17,7 +17,7 @@ commit, recipe remote and full Git fsck. Uses vendored bb.utils.lockfile with
 retry=False/inode validation. Busy lock or existing cache is a no-write skip.
 Only an absent cache is atomically installed; no .done/task stamp is fabricated.
 Exact Git cache path:
-/home/bspguy-dev/src/yoctui-zcu102-2026.1/build/downloads/git2/github.com.Xilinx.linux-xlnx.git
+/home/build-user/src/yoctui-zcu102-2026.1/build/downloads/git2/github.com.Xilinx.linux-xlnx.git
 Actual result: INSTALLED; lock released normally, stage moved, stamps unchanged.
 Revision: 4f7afe14f7246986ca858d9a0880f5db6ba02a4b
 Tree: b623c34f5a0acb9cb6a9efe7cfb7402ce6d3dad2

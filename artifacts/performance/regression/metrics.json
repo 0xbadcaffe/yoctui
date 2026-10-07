@@ -79,7 +79,7 @@
       "warmup_seconds": 10,
       "window_seconds": 360,
       "workload_trigger": {
-        "log_path": "/home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.2503821",
+        "log_path": "/home/build-user/.local/state/yoctui-release-poky.xWaZbs/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.2503821",
         "pid": 2503821,
         "recipe": "linux-yocto",
         "started_unix_ms": 1788872454246,
@@ -297,35 +297,35 @@
   "source_artifacts": {
     "idle_attached": {
       "path": "artifacts/performance/results/low-overhead/idle-attached-client.json",
-      "sha256": "daae52bee3c1d9de0b57049b9bac850105c73e0b490e393621def5e994a5a780"
+      "sha256": "3efdde4eaafcc87bd3290518b10eccdd875ba19b1dc562fe98bafaddde4c344e"
     },
     "idle_daemon": {
       "path": "artifacts/performance/results/low-overhead/idle-daemon.json",
-      "sha256": "0f0e08c02b3f2466f4b473526052fe6cfb9318af1037f1ab027545fe7b3422c1"
+      "sha256": "e3a9cf9290a9c86f98f5174a147832ea38e7ff4aa7fabcc8ae8ce5ace1db7536"
     },
     "idle_suite": {
       "path": "artifacts/performance/results/low-overhead/measurement.json",
-      "sha256": "329e29e4750edd517ca6973a986a44590cac646b78afd4663bc53e097da16c44"
+      "sha256": "a9f2da00658acf3e92a44c73908ad4efd458c1cebf8212a30eeefe05014d8e34"
     },
     "input_latency": {
       "path": "artifacts/performance/input-latency/host-audit.json",
-      "sha256": "bc8e06ad4b8c57b1cc3f4abaafb6cdc24dec83ab2e0b588362436da593e29505"
+      "sha256": "c25e331f1e71f7aa87354201d1f9dab5bdb4f67ea6d0466f03b3c3d33b90801e"
     },
     "ipc_continuity": {
       "path": "artifacts/performance/ipc-gate/manifest.json",
-      "sha256": "124e19943cdf6b2f18c2813fb369091e48d0802b54bfa6ca201d099802b7d497"
+      "sha256": "8712a839e9ae4d3938f24e802b3091076dbd23c16ade1733d8a97a5c48e226e6"
     },
     "ipc_latency": {
       "path": "artifacts/performance/ipc-latency/host-audit.json",
-      "sha256": "adb0a281e9cab6434fc82cdf3e49456ef0a61428075ce968ab8914fd36cffa26"
+      "sha256": "4d117a1d6240a9b8956d7e611f934566ed444477b90f6dc9858f400d7dbc39d6"
     },
     "memory_endurance": {
       "path": "artifacts/performance/memory/endurance-30m.json",
-      "sha256": "c65a54266bfaa0b6b04b2d514d1f73f4964227d97c6084221fed4a22db8417ee"
+      "sha256": "578643c7913be4923426d54fb3e8647bfeab9e6136fe14f844dca73c9c7d92ee"
     },
     "real_poky": {
       "path": "artifacts/performance/real-poky/linux-yocto-do-compile.json",
-      "sha256": "ae23c4642d7689941232b06961dee7cce5f319d0a6691a4f186377b1d87da86a"
+      "sha256": "aab38bfe4e80ad690c58299752df41300e0c490c03ceeb9e0cbe16232168a845"
     }
   }
 }

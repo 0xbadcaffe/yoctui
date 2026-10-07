@@ -20,7 +20,7 @@ Reviewed actual devshell35 starts initialized native BitBake and sees217 current
 sstate entries, but exits1 on unchanged15GiB STOPTASKS/8GiB HALT disk thresholds.
 No guard weakened, no successful devshell inferred from dry-run or task startup.
 User explicitly approves only older Poky generated host-tool work directory
-/home/bspguy-dev/src/build/tmp/work/x86_64-linux cleanup (~31GiB du estimate).
+/home/build-user/src/build/tmp/work/x86_64-linux cleanup (~31GiB du estimate).
 Resolved owned directory/non-symlink, no matching open files; exact directory
 removed. Root free space observed afterward54–59GiB; other concurrent filesystem
 changes are not attributed to this cleanup. Source repositories/downloads/
@@ -44,7 +44,7 @@ Separate DEMO-EMBEDDED-DEVSHELL-RELAY-001 split before code; both it and lease
 require real embedded pwd/environment/normal exit/repeat inspection before DONE.
 
 Actual unedited presentation captures stay above Git under
-/home/bspguy-dev/projects/yoctui-ydd2026-presentation/assets/ with matching cells/ANSI:
+/home/build-user/projects/yoctui-ydd2026-presentation/assets/ with matching cells/ANSI:
 demo-native-v307-qemu-helper-inspection.txt e90b94009c14b4cd5a66e86962ca30f4dbca79031f60b94db4b802a097837e6d
 demo-native-v307-variable-detail-scoped.txt dee2486f5bcac69902596d01efee843b948e6f4532e5e58af0f008e10cc42b65
 demo-native-v307-repeat-inspection-after-task-refusal.txt 7f0c029efc16aba98e4d22e360941314cd478dc2d41438bdae38bbff97526dc9

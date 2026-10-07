@@ -12,8 +12,8 @@ Same release flags: two workers, thin LTO, one codegen unit, debug=1,
 After user service yoctui.service enabled, daemon2553232, instance
 f4adc01212676305a2a18652e23c0b55, zero restarts. Started14:17:49 UTC;
 initial workspace ready14:21:34 UTC (225s),4799recipes/nine layers.
-Same real source /home/bspguy-dev/src/openbmc and generated build
-/home/bspguy-dev/src/build-openbmc-romulus, workspace b261670860dd0336.
+Same real source /home/build-user/src/openbmc and generated build
+/home/build-user/src/build-openbmc-romulus, workspace b261670860dd0336.
 Plain native attach; no container, fake backend or inherited BitBake/Python
 caller environment. Same boot ID1e696f44-57bb-4193-af55-449269824bde.
 
@@ -94,7 +94,7 @@ checks. Originals/installed/top-level binary and matching ELF cache preserved.
 Deleted compiler files can be rebuilt. No broad source/image/cache-root deletion.
 Raw captures, rejected logs, scoped filter reports, PID sample listings, snapshots
 and diagnostic perf wrapper preserved outside Git in
-/home/bspguy-dev/projects/yoctui-ydd2026-presentation/validation-performance/.
+/home/build-user/projects/yoctui-ydd2026-presentation/validation-performance/.
 Cached ELFs remain durable under ~/.debug, presentation/captures never committed.
 Wrapper passes perf script/report --pid ROLE_PIDS --symfs MATCHING_SYMBOL_ROOT;
 all other commands call normal perf. Run flamegraph --no-inline --perfdata RAW

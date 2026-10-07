@@ -87,6 +87,6 @@ upstream or host blocker is diagnostic evidence, not a passing substitute.
 ## Exit criteria
 
 This contract is complete when it is non-empty, referenced by the active task,
-and `./scripts/verify-roadmap.sh` passes. Subsequent tasks add executable
+and `./scripts/verify-design-contracts.sh` passes. Subsequent tasks add executable
 evidence; they must not weaken these requirements or the distinction between
 live and fixture results.

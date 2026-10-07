@@ -2,9 +2,9 @@
   "schema": "yoctui.performance.ipc-continuity-gate.v1",
   "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
   "event_flood_artifact": "artifacts/performance/ipc-gate/event-flood.json",
-  "event_flood_sha256": "94d577aaaff9db8fe2c629924f6717789d4363fa3a44d6aa22c2fd81aa86d206",
+  "event_flood_sha256": "680c1fd5c4b161d598840809f868eea111dbe71cf573cf9206761b0253ca282d",
   "saturated_latency_artifact": "artifacts/performance/ipc-latency/host-audit.json",
-  "saturated_latency_sha256": "adb0a281e9cab6434fc82cdf3e49456ef0a61428075ce968ab8914fd36cffa26",
+  "saturated_latency_sha256": "4d117a1d6240a9b8956d7e611f934566ed444477b90f6dc9858f400d7dbc39d6",
   "sources": {
     "scripts/event-flood-harness.py": "ccf91c0a588525534a750f07f1cdfbf5d56dc82e3858e6da467b65ca18c3b83f",
     "scripts/fixtures/bitbake-event-flood-bridge.py": "001d0370fe32df2d21f788643cac8355d339a55d8db98f601d0d3b88567a949b",

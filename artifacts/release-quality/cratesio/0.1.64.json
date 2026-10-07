@@ -36,15 +36,15 @@
     "log_sha256": "a398066ac600f8dc6bb547e003404a3340c7bf5cb539484eb6e4ee83253a65fb"
   },
   "local_install": {
-    "path": "/home/bspguy-dev/.cargo/bin/yoctui",
+    "path": "/home/build-user/.cargo/bin/yoctui",
     "version": "0.1.64",
     "profile": "optimized release",
-    "command": "cargo install --frozen --path crates/yoctui-cli --force --target-dir /home/bspguy-dev/projects/yoctui/target",
+    "command": "cargo install --frozen --path crates/yoctui-cli --force --target-dir /home/build-user/projects/yoctui/target",
     "sha256": "8e311a902b8dd2f0b7da1a8c0ed87b6b16941c27fcdf7fbee0f065eeaa53f02d",
     "matches_real_poky_measured_binary": true,
     "version_and_real_pty_startup": "PASS",
     "previous_version": "0.1.63",
-    "backup_directory": "/home/bspguy-dev/.local/state/yoctui-installs/before-0.1.64.DlM6oM",
+    "backup_directory": "/home/build-user/.local/state/yoctui-installs/before-0.1.64.DlM6oM",
     "daemon_restarted": false
   }
 }

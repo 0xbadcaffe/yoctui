@@ -14,10 +14,10 @@
 │  ▱ SDK             ││  do_package_write_ipk_setscene       ✓ Succeeded   ▪▪▪▪▪▪▪▪▪▪ 100%         ││Elapsed     00:00:11                  │
 │▾ BUILD             ││  do_package_write_ipk_setscene       ✓ Succeeded   ▪▪▪▪▪▪▪▪▪▪ 100%         ││Workdir     unavailable               │
 │  ▱ Tasks          1││  do_package_write_ipk_setscene       ✓ Succeeded   ▪▪▪▪▪▪▪▪▪▪ 100%         ││Log file                              │
-│  ▱ Logs        LIVE│└────────────────────────────────────────────────────────────────────────────┘│/home/bspguy-dev/src/build-openbmc-rom│
+│  ▱ Logs        LIVE│└────────────────────────────────────────────────────────────────────────────┘│/home/build-user/src/build-openbmc-rom│
 │  ▱ Errors         2│┌Log Viewer — do_compile (llvm-native) · ▶ Follow────────────────────────────┐│ulus/tmp/work/x86_64-linux/llvm-native│
 │  ▱ Configuration   │││ VERBOSE=1 cmake --build                                                   ││/22.1.8/temp/log.do_compile.1198191   │
-│  ▱ Dependencies    ││/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native││Dependencies none reported            │
+│  ▱ Dependencies    ││/home/build-user/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native││Dependencies none reported            │
 │▾ VALIDATE          ││/22.1.8/build --target all --                                               ││                                      │
 │  ▱ Testing         ││                                                                            ││                                      │
 │    Security        ││                                                                            │└──────────────────────────────────────┘

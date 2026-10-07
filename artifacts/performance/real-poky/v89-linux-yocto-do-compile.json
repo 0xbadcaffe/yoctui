@@ -17,14 +17,14 @@
       4.09765625
     ],
     "filesystem": {
-      "path": "/home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs",
+      "path": "/home/build-user/.local/state/yoctui-release-poky.xWaZbs",
       "type": "ext4",
       "free_bytes": 27185721344,
       "total_bytes": 489997189120
     }
   },
   "binary": {
-    "path": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
+    "path": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui",
     "sha256": "261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd",
     "version": "yoctui 0.1.89"
   },
@@ -32,14 +32,14 @@
     "daemon": {
       "pid": 2479778,
       "start_time_ticks_since_boot": 124941124,
-      "executable": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
-      "command": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui daemon foreground"
+      "executable": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui",
+      "command": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui daemon foreground"
     },
     "client": {
       "pid": 2503822,
       "start_time_ticks_since_boot": 124958118,
-      "executable": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
-      "command": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui attach"
+      "executable": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui",
+      "command": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui attach"
     }
   },
   "daemon_runtime": {
@@ -64,12 +64,12 @@
     ],
     "started_unix_ms": 1788872284309,
     "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
-    "executable": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui"
+    "executable": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui"
   },
   "poky": {
     "release": "6.0.2",
-    "root": "/home/bspguy-dev/src/poky",
-    "build_directory": "/home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs",
+    "root": "/home/build-user/src/poky",
+    "build_directory": "/home/build-user/.local/state/yoctui-release-poky.xWaZbs",
     "target": "linux-yocto",
     "task": "compile",
     "force": false,
@@ -86,7 +86,7 @@
     },
     "repositories": {
       "bitbake": {
-        "path": "/home/bspguy-dev/src/poky/layers/bitbake",
+        "path": "/home/build-user/src/poky/layers/bitbake",
         "revision": "acfe02fa38b5da9e6a36c6cedcf91d4fcbefbfbd",
         "describe": "yocto-6.0.2",
         "dirty": false,
@@ -94,7 +94,7 @@
         "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       },
       "openembedded_core": {
-        "path": "/home/bspguy-dev/src/poky/layers/openembedded-core",
+        "path": "/home/build-user/src/poky/layers/openembedded-core",
         "revision": "5d1aa5c806c061a2994f4decb59016610f093213",
         "describe": "yocto-6.0.2-dirty",
         "dirty": true,
@@ -104,7 +104,7 @@
         "working_diff_sha256": "8806ef5477b5912b058a7012763446a024eaa3f2aed9e1169d4510acc39f97d7"
       },
       "meta_yocto": {
-        "path": "/home/bspguy-dev/src/poky/layers/meta-yocto",
+        "path": "/home/build-user/src/poky/layers/meta-yocto",
         "revision": "24c24cef5d1523fefe43a3e3d34667b37ae551f3",
         "describe": "yocto-6.0.2",
         "dirty": false,
@@ -127,7 +127,7 @@
       "started_unix_ms": 1788872454246,
       "pid": 2503821,
       "worker": null,
-      "log_path": "/home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.2503821",
+      "log_path": "/home/build-user/.local/state/yoctui-release-poky.xWaZbs/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.2503821",
       "stats": null
     },
     "terminal": {

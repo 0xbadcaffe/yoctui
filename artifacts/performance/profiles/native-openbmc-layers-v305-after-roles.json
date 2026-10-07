@@ -8,7 +8,7 @@
     "machine": "x86_64"
   },
   "binary": {
-    "path": "/home/bspguy-dev/.cargo/bin/yoctui",
+    "path": "/home/build-user/.cargo/bin/yoctui",
     "sha256": "fc7cfa3a42dc8bc220cd042bb610562b8e2471428d96441f0897fd4003c7f901"
   },
   "sampling": {
@@ -25,14 +25,14 @@
     {
       "role": "client",
       "pid": 2553310,
-      "executable": "/home/bspguy-dev/.cargo/bin/yoctui",
-      "command": "/home/bspguy-dev/.cargo/bin/yoctui attach"
+      "executable": "/home/build-user/.cargo/bin/yoctui",
+      "command": "/home/build-user/.cargo/bin/yoctui attach"
     },
     {
       "role": "daemon",
       "pid": 2553232,
-      "executable": "/home/bspguy-dev/.cargo/bin/yoctui",
-      "command": "/home/bspguy-dev/.cargo/bin/yoctui --config /home/bspguy-dev/.config/yoctui/openbmc-demo-daemon.toml daemon foreground"
+      "executable": "/home/build-user/.cargo/bin/yoctui",
+      "command": "/home/build-user/.cargo/bin/yoctui --config /home/build-user/.config/yoctui/openbmc-demo-daemon.toml daemon foreground"
     }
   ],
   "artifacts": {

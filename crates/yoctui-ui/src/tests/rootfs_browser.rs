@@ -118,7 +118,7 @@ fn rootfs_browser_renders_target_nonroot_and_unavailable_attributes_without_host
     let text = rendered_text(&app, 200, 50);
     assert!(text.contains("app(4242) service(73)"), "{text}");
     assert!(
-        !text.contains("Host IMAGE_ROOTFS") && !text.contains("bspguy-dev"),
+        !text.contains("Host IMAGE_ROOTFS") && !text.contains("build-user"),
         "{text}"
     );
     let metadata = app.layer_browser.as_mut().unwrap().entries[0]
@@ -136,7 +136,7 @@ fn rootfs_browser_renders_target_nonroot_and_unavailable_attributes_without_host
         "{text}"
     );
     assert!(
-        !text.contains("root(0)") && !text.contains("bspguy-dev"),
+        !text.contains("root(0)") && !text.contains("build-user"),
         "{text}"
     );
 }

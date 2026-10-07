@@ -8,8 +8,8 @@ SHA256: 2ae3ee60082ed081f8003597ed7bdfcd5da0eda9ea6ceb9c23999ad253beb9f9
 Capture: genuine attached 160x50 terminal; no supplied model fixtures
 Environment: existing yoctui-openbmc-qemu-validation Ubuntu container
 Daemon: existing container instance 826d7bdaa62bb63b3f5cc470ddc3c42f
-Source: /home/bspguy-dev/src/openbmc
-Build: /home/bspguy-dev/src/build-openbmc-romulus
+Source: /home/build-user/src/openbmc
+Build: /home/build-user/src/build-openbmc-romulus
 Observed MACHINE: romulus; DISTRO: openbmc-openpower; nine layers
 This isolated container daemon does not satisfy plain native laptop attach.
 
@@ -22,7 +22,7 @@ Full verification before this review:
 - No renderer state normalization or version/clock/identity masking
 
 Actual frames, above the repository and not presentation commits:
-/home/bspguy-dev/projects/yoctui-ydd2026-presentation/assets/
+/home/build-user/projects/yoctui-ydd2026-presentation/assets/
   demo-v286-live-dashboard.{txt,cells,ansi}
   demo-v286-live-sdk.{txt,cells,ansi}
   demo-v286-live-environment.{txt,cells,ansi}

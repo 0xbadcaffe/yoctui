@@ -3,7 +3,7 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
-validation_root="${YOCTUI_ZCU102_ROOT:-/home/bspguy-dev/src/yoctui-zcu102-2026.1}"
+validation_root="${YOCTUI_ZCU102_ROOT:-$HOME/src/yoctui-zcu102-2026.1}"
 validation_container="${YOCTUI_ZCU102_CONTAINER:-yoctui-zcu102-validation-2026-1}"
 binary="$repo_root/target/release/yoctui"
 

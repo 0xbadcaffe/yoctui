@@ -33,7 +33,7 @@
     ],
     "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
     "filesystem": {
-      "path": "/home/bspguy-dev/projects/yoctui",
+      "path": "/home/build-user/projects/yoctui",
       "type": "ext4",
       "free_bytes": 27503050752,
       "total_bytes": 489997189120
@@ -48,7 +48,7 @@
   "worktree_clean": false,
   "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
   "binary": {
-    "path": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
+    "path": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui",
     "sha256": "261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd",
     "version_output": "yoctui 0.1.89"
   },
@@ -56,8 +56,8 @@
     "daemon": {
       "pid": 2478921,
       "start_time_ticks_since_boot": 124923035,
-      "executable": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
-      "command": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui daemon foreground"
+      "executable": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui",
+      "command": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui daemon foreground"
     }
   },
   "supplemental_metrics": {},

@@ -1,10 +1,10 @@
 {
   "artifacts": {
-    "idle-attached-client.json": "daae52bee3c1d9de0b57049b9bac850105c73e0b490e393621def5e994a5a780",
-    "idle-daemon.json": "0f0e08c02b3f2466f4b473526052fe6cfb9318af1037f1ab027545fe7b3422c1"
+    "idle-attached-client.json": "3efdde4eaafcc87bd3290518b10eccdd875ba19b1dc562fe98bafaddde4c344e",
+    "idle-daemon.json": "e3a9cf9290a9c86f98f5174a147832ea38e7ff4aa7fabcc8ae8ce5ace1db7536"
   },
   "binary": {
-    "path": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
+    "path": "/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui",
     "sha256": "261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd",
     "version": "yoctui 0.1.89"
   },

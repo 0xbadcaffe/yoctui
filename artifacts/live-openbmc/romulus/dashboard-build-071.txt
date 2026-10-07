@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui v0.1.71  •  Project: openbmc  •  ▶ Parsing  •  Target: obmc-phosphor-image  •  Machine: romulus     Daemon: ✓ Connected/Local  •  BitBake: … Connecting│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                   │
+│Workspace: /home/build-user/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                   │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Build environment───────────────────────────────────────────────────────────────────┐┌Inspector: Build environment────────────────┐
 │▾ OVERVIEW                ││Build environment                                                                   ││▾ PRIMARY FACTS                             │

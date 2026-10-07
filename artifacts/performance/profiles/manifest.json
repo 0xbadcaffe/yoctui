@@ -13,31 +13,31 @@
   "profiles": {
     "active-real-poky-build": {
       "authority": "real-poky-wrynose-6.0.2",
-      "report_sha256": "435ead6e3e44c8819628ebf350525dc84a6c940753e0c3c280dac59e69647a0f"
+      "report_sha256": "a9b3629d987c5de7f281c9b6d619d64d5a6447fd7ab69de454d104c954efdb6b"
     },
     "idle-client": {
       "authority": "production-runtime",
-      "report_sha256": "4c29f32bd89471757e2ab0776d81b93e81c488c118ab3c34bf23fde21b776b1f"
+      "report_sha256": "2e2fa74e01453f9b479030189277aeba925c6f925bbc548ce5690441d3aa6f73"
     },
     "idle-daemon": {
       "authority": "production-runtime",
-      "report_sha256": "6c1c59982a10eb267d57e71df49d30f2c815bccfce53d95a741b77ba8d0a2b71"
+      "report_sha256": "6c56427f2ae8298d9304fbce63eb89e26f1ae2796c0a449a1e4b89b7d83dcbcc"
     },
     "log-heavy": {
       "authority": "deterministic-bitbake-like-fixture",
-      "report_sha256": "e1c437343612eb6b14f1509a5dbcb79c53c8193673e03821b856d69a7fb723aa"
+      "report_sha256": "a3649fcdddc4e9f4a99d4522f50a5c5f05350ac5f98139c3c237b9a7276e489d"
     },
     "pty-active": {
       "authority": "production-daemon-pty-100-lines-per-second",
-      "report_sha256": "a67a52eaf5a0e7514c38e20fa6d18f002fc549bbbf2e092165559f262609905b"
+      "report_sha256": "f6082cbfb96df69e650b3a834bdf4b3c21dd4d9f75b74eb04fd278bf1cbad66c"
     },
     "pty-idle": {
       "authority": "production-daemon-pty",
-      "report_sha256": "a757cd5b576f12d824e17a2d710d6b51fb15038879e66a1642e8587cbd2203a9"
+      "report_sha256": "f362d742ce5a033e9ce1d4571af6ab9d556d69715db39da4f4a94bc194e3942a"
     },
     "task-event-heavy": {
       "authority": "deterministic-bitbake-like-fixture",
-      "report_sha256": "30061d75539d9cc14bc485d0d98660640e59791a2cf00e170f3b31f069507eed"
+      "report_sha256": "eae7034131ac9bb7c2d8086abd918c8a809c2edc037d783be61b0790e8b11c51"
     }
   },
   "findings": [

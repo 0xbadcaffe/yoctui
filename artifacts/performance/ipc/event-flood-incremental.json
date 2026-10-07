@@ -3,7 +3,7 @@
   "status": "observed",
   "identity": {
     "source_base_revision": "e9731cfb61ac25dbcd30a5d80e32fd3b0c0044db",
-    "binary_path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "binary_path": "/home/build-user/projects/yoctui/target/release/yoctui",
     "binary_sha256": "abcc1f802463e75219f9d9cf47235826fca57fad09fca42e78d0266e8ed11f87"
   },
   "configuration": {

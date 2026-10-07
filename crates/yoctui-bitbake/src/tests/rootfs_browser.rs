@@ -204,7 +204,7 @@ fn rootfs_browser_rejects_stale_deleting_duplicate_invalid_and_locked_records() 
             (None, None, None)
         );
         assert!(!attributes.listing(None).contains("root(0)"));
-        assert!(!attributes.listing(None).contains("bspguy-dev"));
+        assert!(!attributes.listing(None).contains("build-user"));
     };
     record(&db, &file, 0, 0, 0o100644);
     for modification in [
