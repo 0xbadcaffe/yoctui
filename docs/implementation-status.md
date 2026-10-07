@@ -1,3 +1,12 @@
+# Production documentation cleanup
+
+PROD-DOCS-CLEANUP-001 DONE on `feat_prod`: removed four redundant or historical
+standalone documents and condensed the mandatory current handoff. The canonical
+Raw Mode reference, authoritative specifications, registry task states, runtime
+source and retained evidence are preserved. Profiling measurements are retained
+in `docs/performance.md`; workbench principles are in `docs/product-roadmap.md`.
+No product version bump or live demo acceptance is implied.
+
 # Host privacy cleanup on feat_prod
 
 PROD-HOST-PRIVACY-001 DONE: portable validation roots, generic ownership

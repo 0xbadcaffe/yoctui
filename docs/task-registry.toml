@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "PROD-DOCS-CLEANUP-001"
+milestone = "M119"
+title = "Remove redundant documents and condense the current handoff"
+status = "DONE"
+priority = 3621
+required = true
+depends_on = ["PROD-HOST-PRIVACY-001"]
+verify = ["./scripts/verify-roadmap.sh", "./scripts/test-readme-quickstart.sh", "python3 scripts/check-library-layout.py", "python3 scripts/check-version-bump.py", "cargo fmt --all --check", "git diff --check", "Manual: validate tracked Markdown links, unchanged canonical Raw Mode reference and unchanged runtime source"]
+notes = "feat_prod only. Remove unused duplicate cheatsheet and completed Raw Mode request; authoritative reference, UI spec, architecture and catalog generator stay intact. Consolidate historical profiling observations into performance.md and workbench principles into product-roadmap.md. Keep the mandatory current-task file concise with deferred task identity and registry verification pointers. No runtime behavior, artifact, checksum, version or broader demo change."
+
+[[task]]
 id = "PROD-HOST-PRIVACY-001"
 milestone = "M119"
 title = "Remove machine identity from validation and retained evidence"

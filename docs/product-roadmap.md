@@ -1,3 +1,20 @@
+# Consolidated workbench principles
+
+Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users should be able to build images, follow package progress, inspect and edit supported workspace files, and invoke BitBake/Devtool operations without leaving the TUI. BitBake and Devtool remain authoritative for metadata and workspace changes. Every future write operation must be an explicit user action with a preview or confirmation where it changes a workspace.
+
+## Workspace principles
+
+- Build cockpit: start image tasks for the effective machine, track all observed package tasks, inspect host capacity, and fall back to the inherited Yocto shell when a direct command is needed.
+- Orientation: keep the active Yocto release/workspace visible and expose the relevant shortcuts in the bottom bar on every screen.
+- Workspace changes: browse layers and configuration, open supported sources, and use Devtool-backed editing rather than guessing metadata ownership.
+- Safe configuration: show BitBake's effective values and provenance first; only then add narrowly scoped edits with a diff preview, confirmation, and metadata refresh.
+- Trust boundary: Yoctui never reimplements BitBake dependency resolution or silently writes generated build state.
+
+
+Workflow completion states are maintained in `docs/task-registry.toml`; the
+standalone historical workbench checklist has been retired. Current behavior
+and shortcuts are specified in `docs/ui-spec.md` and `docs/operator-guide.md`.
+
 # Scoped production privacy cleanup
 
 PROD-HOST-PRIVACY-001 DONE: covers portable validation roots and anonymized retained
