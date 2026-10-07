@@ -6,6 +6,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import hashlib
 import re
 import shutil
 import sys
@@ -47,11 +48,6 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         raster_source = SOURCE_ROOT / "docs/design/m22/production-raster"
         raster_destination = self.root / "docs/design/m22/production-raster"
         shutil.copytree(raster_source, raster_destination)
-        live_source = SOURCE_ROOT / "artifacts/release-quality/m22-concept-live"
-        live_destination = self.root / "artifacts/release-quality/m22-concept-live"
-        live_destination.mkdir(parents=True)
-        for source in live_source.glob("*.txt"):
-            shutil.copy2(source, live_destination / source.name)
 
         self.verifier = load_verifier()
         self.verifier.ROOT = self.root
@@ -64,14 +60,14 @@ class ConceptScreenVerifierTests(unittest.TestCase):
     def run_verifier(self) -> str:
         output = io.StringIO()
         with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
-            self.verifier.main()
+            self.verifier.main(fixtures_only=True)
         return output.getvalue()
 
     def assert_rejected(self, message: str) -> None:
         output = io.StringIO()
         with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
             with self.assertRaises(SystemExit) as raised:
-                self.verifier.main()
+                self.verifier.main(fixtures_only=True)
         self.assertEqual(raised.exception.code, 1)
         self.assertIn(message, output.getvalue())
 
@@ -162,14 +158,40 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         self.assert_rejected("raster source must be the exact production cell golden")
 
     def test_rejects_verified_live_evidence_without_interactions(self) -> None:
-        path = self.verifier.MANIFEST
-        text = path.read_text(encoding="utf-8").replace(
-            'interactions = ["launch a real client against the idle supported-host daemon"], ',
-            "",
-            1,
+        artifact = self.root / "synthetic-live.txt"
+        artifact.write_text("first assertion\nsecond assertion\n")
+        evidence = {
+            "status": "verified", "artifact": "synthetic-live.txt",
+            "sha256": hashlib.sha256(artifact.read_bytes()).hexdigest(),
+            "assertions": ["first assertion", "second assertion"],
+        }
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+            with self.assertRaises(SystemExit):
+                self.verifier.verify_external_evidence(
+                    evidence, "live", "synthetic", set(), set(), {}
+                )
+        self.assertIn("verified live evidence needs explicit interactions", output.getvalue())
+
+    def test_attributed_synthetic_live_evidence_passes(self) -> None:
+        artifact = self.root / "synthetic-live.txt"
+        artifact.write_text("first assertion\nsecond assertion\n")
+        self.verifier.verify_external_evidence(
+            {
+                "status": "verified", "artifact": "synthetic-live.txt",
+                "sha256": hashlib.sha256(artifact.read_bytes()).hexdigest(),
+                "interactions": ["synthetic input for verifier unit coverage"],
+                "assertions": ["first assertion", "second assertion"],
+            },
+            "live", "synthetic", set(), set(), {},
         )
-        path.write_text(text, encoding="utf-8")
-        self.assert_rejected("verified live evidence needs explicit interactions")
+
+    def test_full_validation_rejects_missing_live_evidence(self) -> None:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+            with self.assertRaises(SystemExit):
+                self.verifier.main()
+        self.assertIn("live_evidence status must be gap or verified", output.getvalue())
 
 
 if __name__ == "__main__":

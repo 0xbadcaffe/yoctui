@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
-import shutil
 import subprocess
 import tempfile
 import unittest
@@ -13,7 +13,6 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "artifacts/release-quality/m22-concept-live"
 VERIFIER = ROOT / "scripts/verify-live-m22-concept-evidence.py"
 
 
@@ -21,7 +20,66 @@ class LiveM22EvidenceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory(prefix="yoctui-m22-live-test-")
         self.evidence = Path(self.temporary.name) / "evidence"
-        shutil.copytree(SOURCE, self.evidence)
+        self.evidence.mkdir()
+        # Synthetic validator inputs are generated only in an owned temporary
+        # directory. They do not represent a live capture or certify a host.
+        base = json.loads(
+            (
+                ROOT / "artifacts/release-quality/next-generation-ui/manifest.json"
+            ).read_text()
+        )
+        base["source_commit"] = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+        ).strip()
+        self.base = Path(self.temporary.name) / "base.json"
+        self.base.write_text(json.dumps(base))
+        manifest = {
+            **base,
+            "schema": 1,
+            "label": "supported-live-m22-concept-parity",
+            "scenarios": {},
+        }
+        raster = next((ROOT / "docs/design/m22").rglob("*.png"))
+        for scenario in (
+            "idle-dashboard",
+            "active-build-tasks",
+            "failed-build-errors",
+            "rootfs-composition",
+            "editor-application-menu",
+            "terminal-sessions",
+        ):
+            interactions = ["fixture interaction"]
+            assertions = [f"fixture {scenario}"]
+            files = {
+                "report": (
+                    f"{scenario}.json",
+                    json.dumps(
+                        {
+                            "scenario": scenario,
+                            "interactions": interactions,
+                            "observed_assertions": assertions,
+                        }
+                    ).encode(),
+                ),
+                "terminal": (f"{scenario}.ansi", b"\x1b[?1049hfixture"),
+                "semantic": (f"{scenario}.txt", assertions[0].encode()),
+                "metadata": (f"{scenario}.meta", b"width=160\nheight=50\n"),
+                "raster": (f"{scenario}.png", raster.read_bytes()),
+            }
+            entry = {"interactions": interactions, "observed_assertions": assertions}
+            for field, (name, content) in files.items():
+                (self.evidence / name).write_bytes(content)
+                entry[field] = name
+                entry[f"{field}_sha256"] = hashlib.sha256(content).hexdigest()
+            manifest["scenarios"][scenario] = entry
+        self.write_manifest(manifest)
+        (self.evidence / "checksums.sha256").write_text(
+            "\n".join(
+                f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}"
+                for path in sorted(self.evidence.iterdir())
+            )
+            + "\n"
+        )
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -37,6 +95,8 @@ class LiveM22EvidenceTests(unittest.TestCase):
     def verify(self, expected: str, *, succeeds: bool = False) -> None:
         environment = os.environ.copy()
         environment["YOCTUI_M22_EVIDENCE"] = str(self.evidence)
+        environment["YOCTUI_M22_BASE_MANIFEST"] = str(self.base)
+        environment.pop("YOCTUI_LIVE_BINARY", None)
         result = subprocess.run(
             ["python3", str(VERIFIER)],
             cwd=ROOT,

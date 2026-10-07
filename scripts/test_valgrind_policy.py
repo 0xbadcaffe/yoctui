@@ -15,9 +15,9 @@ def report() -> ET.Element:
         "<status><state>FINISHED</state></status></valgrindoutput>"
     )
     record = json.loads(
-        Path("artifacts/performance/logger/memcheck-optimized.json").read_text()
+        (Path(__file__).parent / "tests/fixtures/memcheck-caches.json").read_text()
     )
-    for finding in record["captures"][0]["findings"]:
+    for finding in record:
         error = ET.SubElement(root, "error")
         ET.SubElement(error, "kind").text = "Leak_PossiblyLost"
         what = ET.SubElement(error, "xwhat")

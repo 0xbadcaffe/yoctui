@@ -123,11 +123,6 @@ jobs:
         with: { python-version: '3.12' }
       - name: Build release performance binary
         run: cargo build --release --locked -p yoctui --all-features
-      - name: Validate retained profiles and real-build evidence
-        run: |
-          set -o pipefail
-          mkdir -p artifacts/performance/ci
-          ./scripts/verify-performance.sh --real-poky-evidence 2>&1 | tee artifacts/performance/ci/evidence.log
       - name: Run controlled steady-state CPU gate
         run: ./scripts/verify-low-overhead.sh
       - name: Run 30-minute memory endurance

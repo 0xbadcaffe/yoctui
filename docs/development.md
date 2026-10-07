@@ -63,3 +63,13 @@ The ignored OpenBMC defaults smoke requires `YOCTUI_OPENBMC_NATIVE_BUILD` for
 the native build without matching symbols and `YOCTUI_OPENBMC_RETAINED_BUILD`
 for the retained build with matching symbols. Read-only discovery does not launch
 a guest. Values must identify the user's actual initialized workspaces.
+
+## Retained README assets and external evidence
+
+The repository retains only the flamegraph, its summary, and source captures
+and manifest needed by README media. Historical performance, board-debugging
+and release-validation outputs are no longer bundled. Capture fresh evidence
+before running checks that read `artifacts/performance/` or complete live UI
+bundles. Missing evidence is a prerequisite failure, not a passing check or
+proof that a measurement remains valid for the current release. The evidence
+verifiers and their assertions remain intact.

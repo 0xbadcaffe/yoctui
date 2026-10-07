@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import re
 import sys
@@ -163,7 +164,7 @@ def verify_external_evidence(
                 fail(f"{scenario_id}: live evidence is missing assertion {assertion!r}")
 
 
-def main() -> None:
+def main(*, fixtures_only: bool = False) -> None:
     with MANIFEST.open("rb") as manifest_file:
         manifest = tomllib.load(manifest_file)
     with REGISTRY.open("rb") as registry_file:
@@ -297,20 +298,28 @@ def main() -> None:
             tasks,
             golden,
         )
-        verify_external_evidence(
-            scenario.get("live_evidence"),
-            "live",
-            scenario_id,
-            implementation_tasks,
-            gap_tasks,
-            tasks,
-        )
+        if not fixtures_only:
+            verify_external_evidence(
+                scenario.get("live_evidence"),
+                "live",
+                scenario_id,
+                implementation_tasks,
+                gap_tasks,
+                tasks,
+            )
 
     print(
         f"M21 concept screens verified: {len(scenarios)} production-renderer "
-        f"scenes at {WIDTH}x{HEIGHT}; {gap_count} tracked implementation gaps"
+        f"scenes at {WIDTH}x{HEIGHT}; {gap_count} tracked implementation gaps; "
+        + ("live acceptance not checked" if fixtures_only else "live evidence checked")
     )
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--fixtures-only",
+        action="store_true",
+        help="validate production cells/rasters without claiming live acceptance",
+    )
+    main(fixtures_only=parser.parse_args().fixtures_only)

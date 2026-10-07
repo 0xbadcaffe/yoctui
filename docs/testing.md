@@ -146,7 +146,7 @@ without a screen-level failure.
 
 ## Live workbench evidence
 
-The checked-in M21 evidence is verified without rebuilding Yocto by:
+Fresh live workbench evidence can be captured and verified with:
 
 ```bash
 ./scripts/test-live-workbench-ux.sh
@@ -154,63 +154,30 @@ The checked-in M21 evidence is verified without rebuilding Yocto by:
 ./scripts/verify-compatibility.sh
 ```
 
-The first command drives the release binary through real PTYs against the
-recorded live workspace and checks semantic menus, progress, completion,
-failure, manifest/pkgdata/rootfs, context-terminal, and reconnect screens. The
-second validates scenario coverage, hashes, freshness, source ancestry, package
-evidence, and the current latest/older release anchors. `check-docs.sh` also
-re-renders the three live SVGs from their semantic captures and fails when a
-checked-in visual is stale.
+The live commands require a complete newly supplied workspace/capture bundle;
+the old tracked bundle was removed. They retain capability, source identity,
+scenario, checksum and freshness checks. Documentation validation separately
+reproduces the three README SVGs from the retained source captures.
 
-Deterministic M22 visual review artifacts are checked separately from both the
-original concept art and live-host evidence:
+Deterministic screenshot checks validate current production cells and rasters:
 
 ```bash
 ./scripts/render-m22-concept-screenshots.sh --check
 python3 scripts/test-m22-concept-raster.py
-python3 scripts/test-m22-live-design-gallery.py
+python3 scripts/verify-m21-concept-screens.py --fixtures-only
+python3 scripts/test-m21-concept-screen-verifier.py
+python3 scripts/render-next-generation-ui-screenshots.py --check
 ```
 
-The first command parses all exact production cell/style goldens, renders with
-the pinned Cairo/font environment, and byte-compares six PNGs. The second also
-checks dimensions, source/output hashes, repeatability, malformed-cell
-rejection, and renderer/font identity.
+The fixture checks validate dimensions, symbols, styles, semantic anchors,
+hashes and raster-source identity. The SVG check reproduces the three README
+live illustrations from their retained source text and manifest. The retired
+six-scene live gallery is outside documentation validation. None of these
+checks establishes fresh live Yocto acceptance.
 
-The third command checks the six real supported-host design screens separately:
-their capture identity, ordered gallery membership, README image links, hashes,
-dimensions, and byte equality with the attributed live evidence must all agree.
-
-Checked-in supported-host concept evidence is validated without rebuilding
-Yocto by:
-
-```bash
-./scripts/verify-live-m22-concept-evidence.sh
-python3 scripts/test-live-m22-concept-evidence.py
-./scripts/verify-m22-concept-parity.sh
-```
-
-The verifier requires the exact six attributed scenarios, one supported-host
-run identity and binary hash, alternate-screen `160x50` PTY captures, explicit
-interactions/assertions, complete checksums, and `1600x1000` PNGs. Failure tests
-mutate isolated copies and prove that unsupported hosts, unattributed scenarios,
-and stale artifact hashes are rejected.
-
-Regeneration is opt-in and requires a disposable supported Yocto host. The live
-harness accepts an exact already-built release binary so an older supported
-container does not need the development Rust toolchain:
-
-```bash
-YOCTUI_LIVE_COMPLETE=1 \
-YOCTUI_LIVE_SOURCE=/absolute/path/to/poky \
-YOCTUI_LIVE_PREBUILT_BINARY=/absolute/path/to/release/yoctui \
-./scripts/test-live-next-generation-ui.sh
-python3 scripts/render-next-generation-ui-screenshots.py
-```
-
-Record the host distribution/libc, source revision, binary hash, machine,
-target, and every terminal outcome. The current run used Ubuntu 24.04.4 with
-glibc 2.39 because the development host is outside the tested Yocto host
-matrix. A failed host build is never converted into passing evidence.
+Fresh live bundles can still be captured and checked with
+`./scripts/test-live-m22-concept-parity.sh` and its explicit live-evidence
+verifier. They require new complete inputs; missing captures must fail.
 
 ## Documentation validation
 

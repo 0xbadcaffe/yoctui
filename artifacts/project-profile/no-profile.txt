@@ -1,2 +1,0 @@
-project profile: absent (optional)
-BitBake version: 2.8.1

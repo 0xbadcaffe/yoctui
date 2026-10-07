@@ -26,13 +26,17 @@ def current_cgroup() -> tuple[str | None, int | None]:
     try:
         unified = next(
             line.split(":", 2)[2]
-            for line in Path("/proc/self/cgroup").read_text(encoding="utf-8").splitlines()
+            for line in Path("/proc/self/cgroup")
+            .read_text(encoding="utf-8")
+            .splitlines()
             if line.startswith("0::")
         )
     except (OSError, StopIteration):
         return None, None
     try:
-        weight = int(Path("/sys/fs/cgroup", unified.lstrip("/"), "cpu.weight").read_text())
+        weight = int(
+            Path("/sys/fs/cgroup", unified.lstrip("/"), "cpu.weight").read_text()
+        )
     except (OSError, ValueError):
         weight = None
     return unified, weight
@@ -41,16 +45,17 @@ def current_cgroup() -> tuple[str | None, int | None]:
 def measure(duration: float, interval: float) -> dict[str, object]:
     started = time.monotonic()
     process_started = time.process_time()
-    deadline = started + interval
-    end = started + duration
+    # Count periods independently of the absolute clock: repeated floating-point
+    # addition can otherwise drop the last sample at an exact duration boundary.
+    sample_count = math.floor(math.nextafter(duration / interval, math.inf))
     latencies = []
-    while deadline <= end:
+    for sample in range(1, sample_count + 1):
+        deadline = started + sample * interval
         remaining = deadline - time.monotonic()
         if remaining > 0:
             time.sleep(remaining)
         observed = time.monotonic()
         latencies.append(max(0.0, (observed - deadline) * 1_000.0))
-        deadline += interval
     elapsed = time.monotonic() - started
     cgroup, weight = current_cgroup()
     return {
