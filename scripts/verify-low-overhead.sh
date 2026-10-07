@@ -4,8 +4,6 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-evidence_dir="artifacts/performance/results/low-overhead"
-
 validate() {
   python3 - "$1" <<'PY'
 from pathlib import Path
@@ -161,7 +159,6 @@ print(
 PY
 }
 
-validate "$evidence_dir"
 python3 -m unittest scripts/test_measure_low_overhead.py
 
 binary="target/release/yoctui"

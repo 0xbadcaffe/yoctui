@@ -1,4 +1,0 @@
-build_dir=/home/$USER/src/poky/build
-recipe_count=1829
-recipes=core-image-minimal,busybox
-pty=colored-wide-workbench-passed

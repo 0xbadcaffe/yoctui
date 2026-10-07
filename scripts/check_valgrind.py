@@ -11,8 +11,8 @@ import tomllib
 import xml.etree.ElementTree as ET
 
 
-# Reviewed in artifacts/performance/logger/memcheck-optimized.json. These are
-# allocation identities, not a general allowance for upstream or small leaks.
+# Reviewed allocation identities, covered by tests/fixtures/memcheck-caches.json.
+# These are not a general allowance for upstream or small leaks.
 CACHE_RULES = (
     (
         "logger_target_name",

@@ -41,8 +41,8 @@ mapping resolves renamed packages instead of assuming equal identities. See
 [RootFS composition](../rootfs-composition.md).
 
 The retained production source-query record is
-[v86 RootFS sources](../../artifacts/live-openbmc/romulus/v86-rootfs-sources-20260908.json).
-The [old-daemon diagnostic](../../artifacts/live-openbmc/romulus/v86-old-daemon-clean-error-20260908.txt)
+v86 RootFS sources (retired capture).
+The old-daemon diagnostic (retired capture)
 records an unsupported-query/upgrade boundary. These are regression inputs,
 not measurements or certification of the current checkout.
 

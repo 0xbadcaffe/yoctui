@@ -1,3 +1,0 @@
-core /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/meta
-yocto /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/meta-poky
-yoctobsp /home/build-user/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/meta-yocto-bsp

@@ -1,3 +1,0 @@
-core /home/$USER/src/poky/meta
-yocto /home/$USER/src/poky/meta-poky
-yoctobsp /home/$USER/src/poky/meta-yocto-bsp

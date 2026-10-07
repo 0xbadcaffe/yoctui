@@ -151,7 +151,7 @@ labelled as fixture evidence or inferred from a deterministic generator.
 
 ### Supported real-Poky saturation evidence
 
-The [fresh v0.1.89 observation](../artifacts/performance/real-poky/v89-linux-yocto-do-compile.json)
+The fresh v0.1.89 observation (retired capture)
 passes the unchanged real-Poky validator with 360 unprofiled samples after a
 ten-second warmup. Combined CPU is **0.5831064335% of one logical CPU**, down
 from the failed v88 observation at 1.0334662486%. Daemon/client independently
@@ -166,11 +166,11 @@ No Cargo or profiler ran during either acceptance window.
 The exact release binary is preserved at
 `/home/build-user/.local/state/yoctui-v89-release.N94Frh/yoctui`, SHA-256
 `261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd`.
-The [canonical manifest](../artifacts/performance/real-poky/manifest.json)
+The canonical manifest (retired capture)
 binds the actual record, all runtime Rust/bundled bridge source hashes, and
-the [v89 source patch](../artifacts/performance/real-poky/v89-source.patch)
+the v89 source patch (retired capture)
 to d2214e8. Reapply zero-context patches with `git apply --unidiff-zero`.
-Fresh [idle evidence](../artifacts/performance/results/low-overhead-v89/measurement.json)
+Fresh idle evidence (retired capture)
 also passes unchanged limits: daemon 0.0416%, client 0.1248%, combined 0.2704%
 of one CPU. These actual records replace the canonical v64 real/idle results;
 historical records remain in Git and the failed v88 record remains separately
@@ -194,7 +194,7 @@ are configured only in the new fixture. The initial v0.1.88 release build passed
 the exact preserved binary has SHA-256
 `be5fa7261cd3ebaf7f6f1786eabb46736419d043086d0e92224f3cc63f48b510`.
 
-The [fresh v88 capture](../artifacts/performance/real-poky/v88-linux-yocto-do-compile.json)
+The fresh v88 capture (retired capture)
 completed 360 samples after ten seconds of warmup on September 8, 2026, but
 **failed** the unchanged combined CPU gate: 1.0334662486% > 1.00% of one
 logical CPU. Daemon and client independently trimmed means are 0.5872427701%
@@ -205,15 +205,15 @@ the BitBake tree used 304.048% of one logical CPU. Input-to-frame p95 was
 40.886 ms. Queue maximum was 87/256 with no drops, resynchronization or backend
 disconnect; reconnect and owned-job cancellation passed. No Cargo or profiler
 ran during this measurement. The capture completed its own process cleanup.
-The [failed-candidate manifest](../artifacts/performance/real-poky/v88-failed-manifest.json)
-and [source patch](../artifacts/performance/real-poky/v88-source.patch) preserve
+The failed-candidate manifest (retired capture)
+and source patch (retired capture) preserve
 exact provenance without being promoted as passing canonical evidence.
 RELEASE-DAEMON-CPU-001 was registered before runtime edits. Profiles are
 diagnostic only; acceptance requires a new unprofiled release observation.
 The old fixture used tmpfs and the new one
 uses ext4, so this comparison alone does not establish a code regression.
 
-The separately labeled [v88 diagnostic profile](../artifacts/performance/profiles/v88-diagnostic-notes.md)
+The separately labeled v88 diagnostic profile (retired capture)
 contains 275 actual userspace-cycle samples with no lost samples or unresolved
 stack weight. Full snapshot serialization accounts for 26.90% inclusive cycle
 weight; journal publication totals 43.81%. Filtering the raw flat report to
@@ -239,7 +239,7 @@ metadata failure, missing variables, EOF and timeout. Three failed-first
 regression tests cover these cases and run in the real-Poky verifier. This
 readiness work occurs before any build command or measurement; warmup, workload
 trigger, sampling and all performance/source-validation thresholds are unchanged.
-The [actual read-only recheck](../artifacts/performance/real-poky/v88-readonly-startup-probe.txt)
+The actual read-only recheck (retired capture)
 reached its intentional stop after metadata readiness and before any command.
 It is functional evidence only, not a release CPU or latency measurement.
 
@@ -709,9 +709,9 @@ does not run a full image build or a 30-minute endurance sample.
 The flood assertion follows the priority model: progress is coalescible, but
 failure, terminal, warning, error, and task-lifecycle sentinels are mandatory.
 
-Weekly and manually dispatched CI builds the release binary, validates the
-retained flamegraph and real-Poky roles, repeats the 60-second low-overhead
-measurement, and captures a fresh 30-minute memory result. Fresh real-Poky
+Weekly and manually dispatched CI builds the release binary, runs the fresh
+60-second low-overhead measurement, and captures a fresh 30-minute memory
+result. Archived performance captures are not CI prerequisites. Fresh real-Poky
 capture is separately opt-in through `YOCTUI_LIVE_PERFORMANCE=1` on a labeled
 self-hosted runner with `YOCTUI_PERF_BUILD_DIR` and `YOCTUI_PERF_POKY_ROOT`.
 Pull requests therefore cannot accidentally download or modify a Poky tree.
@@ -755,8 +755,8 @@ thread maxima remain three/one, and critical retention, strict ordering,
 continuity, and owned-process cleanup all pass. The canonical memory manifest
 and derived 22-metric/seven-correctness regression record are regenerated from
 that evidence. No threshold, runtime source, historical record, or measured
-binary identity was changed. The [original failed diagnostics and exact binary
-identity](../artifacts/performance/ci/v89-ipc-gate-failures.md) remain retained.
+binary identity was changed. The original failed diagnostics and exact binary
+identity (retired capture) remain retained.
 
 ## Operator and developer quick reference
 

@@ -6038,15 +6038,11 @@ revision, BitBake 2.12.1, machine, target, and run timestamps. Every artifact is
 checksummed; missing attribution, unsupported hosts, stale hashes, open gaps,
 or a different binary fail parity.
 
-The six supported-host live rasters are also retained as operator-visible
-historical capture evidence under `docs/design/m22/live-scenarios`. The gallery
-must contain exactly one ordered screen for each M22 scenario, preserve the
-captured source commit, binary, host, Poky, BitBake, machine, target, terminal
-geometry, and raster geometry, and remain byte-identical to the attributed live
-evidence. Its README image list and machine-readable manifest are part of the
-evidence-integrity contract. Fixture- or production-cell rendering cannot
-replace fresh live acceptance; changing the historical capture requires new
-supported-host evidence.
+Historical six-scene live-gallery files are no longer bundled. Current design
+validation uses the deterministic production-cell rasters. README live SVGs
+retain their source text and capture identity separately. Fixture or
+production-cell rendering cannot replace fresh live acceptance; live claims
+require complete new supported-host evidence.
 
 ## 36. M21 visual resemblance contract
 

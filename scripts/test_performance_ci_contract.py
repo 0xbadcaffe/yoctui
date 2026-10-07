@@ -34,7 +34,8 @@ class PerformanceCiContractTests(unittest.TestCase):
         self.assertIn(condition, live)
         self.assertIn("./scripts/verify-low-overhead.sh", scheduled)
         self.assertIn("--sample-seconds 1800", scheduled)
-        self.assertIn("--real-poky-evidence", scheduled)
+        self.assertNotIn("Validate retained profiles", scheduled)
+        self.assertIn("--output artifacts/performance/ci/real-poky.json", live)
         self.assertIn("capture-real-poky-performance.py", live)
         self.assertIn("YOCTUI_LIVE_PERFORMANCE", live)
 

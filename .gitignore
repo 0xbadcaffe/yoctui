@@ -1,8 +1,14 @@
-/target/
+/target
 /bridge/__pycache__/
 /bridge/tests/__pycache__/
 /crates/yoctui-bitbake/bridge/__pycache__/
 /scripts/__pycache__/
+/scripts/tests/__pycache__/
+__pycache__/
+*.py[cod]
+# Generated captures and diagnostics stay local; README media already tracked
+# in this directory remain versioned.
+/artifacts/
 /artifacts/valgrind/*.xml
 /artifacts/valgrind/*.txt
 /artifacts/flamegraph/*.svg
