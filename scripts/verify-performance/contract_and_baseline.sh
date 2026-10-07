@@ -28,7 +28,7 @@ missing = [text for text in required if text not in contract]
 if missing:
     raise SystemExit("performance contract is incomplete: " + ", ".join(missing))
 
-data = tomllib.loads(Path("docs/task-registry.toml").read_text(encoding="utf-8"))
+data = tomllib.loads(Path("docs/design/acceptance-contracts.toml").read_text(encoding="utf-8"))
 tasks = {task["id"]: task for task in data["task"]}
 required_ids = {
     "PERF-SPEC-001", "PERF-BASELINE-001", "PERF-FLAMEGRAPH-001",
@@ -60,7 +60,7 @@ verify_all_done() {
 from pathlib import Path
 import tomllib
 
-tasks = tomllib.loads(Path("docs/task-registry.toml").read_text(encoding="utf-8"))["task"]
+tasks = tomllib.loads(Path("docs/design/acceptance-contracts.toml").read_text(encoding="utf-8"))["task"]
 incomplete = [
     task["id"]
     for task in tasks

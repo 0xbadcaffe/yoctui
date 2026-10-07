@@ -20,11 +20,11 @@ import tomllib
 
 mode = sys.argv[1]
 root = Path.cwd()
-registry_path = root / "docs/task-registry.toml"
+registry_path = root / "docs/design/acceptance-contracts.toml"
 try:
     registry = tomllib.loads(registry_path.read_text(encoding="utf-8"))
 except (OSError, tomllib.TOMLDecodeError) as exc:
-    raise SystemExit(f"compatibility gate: task registry does not parse: {exc}")
+    raise SystemExit(f"compatibility gate: acceptance contracts does not parse: {exc}")
 
 expected_ids = {
     "COMPAT-SPEC-001", "COMPAT-ENV-ID-001", "COMPAT-CAP-MODEL-001",
@@ -169,7 +169,7 @@ for kind, evidence in evidence_by_kind.items():
             f"compatibility gate: {kind} live identity is not exactly represented as Claimed supported"
         )
 
-print("compatibility registry, documentation, and live evidence are current")
+print("compatibility contracts, documentation, and live evidence are current")
 PY
 
 if [[ "$mode" == "--structure-only" ]]; then

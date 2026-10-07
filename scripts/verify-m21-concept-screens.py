@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "docs" / "design" / "m21" / "concepts" / "manifest.toml"
-REGISTRY = ROOT / "docs" / "task-registry.toml"
+REGISTRY = ROOT / "docs" / "design" / "acceptance-contracts.toml"
 WIDTH = 160
 HEIGHT = 50
 CELL_COUNT = WIDTH * HEIGHT

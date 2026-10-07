@@ -5083,32 +5083,13 @@ The user can browse layers and files while a build or other job continues.
 
 ---
 
-## 30. Implementation contract for the agent
+## 30. Implementation standards
 
-The implementation agent must:
-
-1. Read this file before changing UI behavior.
-2. Treat it as authoritative.
-3. Implement the persistent shell before adding more disconnected screens.
-4. Use the shared focus model.
-5. Use the shared dialog system.
-6. Use the shared footer shortcut system.
-7. Consume typed backend events rather than parsing output in widgets.
-8. Preserve build activity while navigating other workspaces.
-9. Add tests for every interaction change.
-10. Update this file in the same commit when intentionally changing the UI contract.
-
-The agent must not continue implementing unrelated feature checkboxes when a user request changes this specification.
-
-When the user provides a new UI requirement:
-
-1. pause unrelated implementation
-2. update this document
-3. update tests
-4. implement the requirement
-5. verify the behavior
-6. commit the coherent change
-7. then resume the implementation-status checklist
+This specification is authoritative for UI behavior. Use the shared focus,
+dialog and footer models, consume typed backend events, preserve build activity
+across workspace navigation, and test interaction changes. Update this document
+when intentionally changing the UI contract. Development scope follows the
+current request rather than a historical implementation checklist.
 
 ---
 
@@ -5549,7 +5530,7 @@ abbreviate words but may not hide cancel/detach or misstate availability.
 M21 refines the existing workbench without replacing its persistent shell,
 typed event boundary, focus traps, safety rules, responsive breakpoints, or
 function-key destinations. The complete researched delivery plan is
-[`workbench-ux-roadmap.md`](workbench-ux-roadmap.md); this section records the
+[`workbench-design.md`](workbench-design.md); this section records the
 authoritative interaction rules that each implementation task must preserve.
 
 ### Actions menus and bindings

@@ -292,3 +292,13 @@ test. Any sanitizer diagnostic or nonzero workload exit fails the gate.
 # Completion gate
 
 `./scripts/verify-completion.sh` is intentionally strict. It verifies the clean checkout, ordinary tests, pseudo-terminal lifecycle, finite fuzz smoke, repeated stress/process-tree behavior, ASan/LSan, coverage thresholds, security checks, Python static checks, Valgrind, deterministic profiling, Flamegraph output, and the opt-in live BitBake gate. It exits with status 2 and names a missing prerequisite or host permission; no hardening check is silently skipped.
+
+## Yocto host Python troubleshooting
+
+BitBake hosttools must resolve a working Python interpreter in their restricted
+PATH. A pyenv shim pointing back to the same hosttools link can recurse rather
+than execute Python. Check interpreter and hosttools resolution in the actual
+initialized build environment. Preserve explicit virtualenv/pyenv choices and
+avoid changing distribution-owned interpreters or another user's configuration.
+See [pyenv issue 2696](https://github.com/pyenv/pyenv/issues/2696) and the
+[upstream shim-alias fix](https://github.com/pyenv/pyenv/pull/3375).

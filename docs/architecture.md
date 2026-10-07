@@ -4,8 +4,8 @@
 
 Retained IPC source proof reconstructs the recorded ancestor plus checked patch
 inside a private temporary Git tree. Original measured results and source/binary identities remain unchanged;
-retained path redaction updates artifact digests as documented in
-`docs/testing/host-privacy.md`. Tampering still fails. A separate fresh event flood still exercises the
+retained path redaction updates affected artifact digests. Tampering still
+fails. A separate fresh event flood still exercises the
 current production daemon/bridge/IPC path and its original acceptance limits.
 
 IPC source contracts read the production daemon_ipc root plus its split modules;

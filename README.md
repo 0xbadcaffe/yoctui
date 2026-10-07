@@ -557,13 +557,13 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 -m pytest bridge/tests
 ./scripts/test-readme-quickstart.sh
-./scripts/verify-roadmap.sh
+./scripts/verify-design-contracts.sh
 ./scripts/verify-completion.sh
 ```
 
 [Testing](https://github.com/0xbadcaffe/yoctui/blob/master/docs/testing.md) · [Profiling](https://github.com/0xbadcaffe/yoctui/blob/master/docs/profiling.md) ·
 [Performance contract](https://github.com/0xbadcaffe/yoctui/blob/master/docs/performance.md) · [UI specification](https://github.com/0xbadcaffe/yoctui/blob/master/docs/ui-spec.md) ·
-[Architecture](https://github.com/0xbadcaffe/yoctui/blob/master/docs/architecture.md) · [Implementation status](https://github.com/0xbadcaffe/yoctui/blob/master/docs/implementation-status.md)
+[Architecture](https://github.com/0xbadcaffe/yoctui/blob/master/docs/architecture.md) · [Development](https://github.com/0xbadcaffe/yoctui/blob/master/docs/development.md)
 
 Yoctui is [MIT-licensed](https://github.com/0xbadcaffe/yoctui/blob/master/LICENSE). Dependency licenses are listed in
 [third-party notices](https://github.com/0xbadcaffe/yoctui/blob/master/docs/compliance/THIRD_PARTY_NOTICES.md).
