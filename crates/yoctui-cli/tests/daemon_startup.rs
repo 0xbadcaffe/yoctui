@@ -137,6 +137,74 @@ fn daemon_startup_serves_ipc_before_slow_compatibility_probes_complete() {
     check_startup_inventory(true, true);
 }
 
+#[test]
+fn daemon_build_preserves_the_prepared_inventory_environment() {
+    let fixture = Fixture::new(
+        "build-environment",
+        "#!/bin/sh\necho 'BitBake Build Tool Core version 2.18.0'\n",
+        true,
+    );
+    let record = "{key: os.environ.get(key) for key in ".to_owned()
+        + "('OE_TERMINAL', 'OE_TERMINAL_CUSTOMCMD', 'BB_ENV_PASSTHROUGH_ADDITIONS')}";
+    let bridge = include_str!("../../../scripts/fixtures/bitbake-ipc-latency-bridge.py")
+        .replace(
+            "emit({\"type\": \"recipes\", \"recipes\": []}, correlation)",
+            &format!("with open('inventory-environment.json', 'w') as output:\n            json.dump({record}, output)\n        emit({{\"type\": \"recipes\", \"recipes\": []}}, correlation)"),
+        )
+        .replace(
+            "emit({\"type\": \"build_started\"}, build_correlation)",
+            &format!("with open('build-environment.json', 'w') as output:\n            json.dump({record}, output)\n        emit({{\"type\": \"build_started\"}}, build_correlation)\n        active = False\n        emit({{\"type\": \"build_completed\", \"success\": True, \"exit_code\": 0}}, build_correlation)"),
+        );
+    fs::write(fixture.root.join("bridge.py"), bridge).unwrap();
+    let start = fixture.run("start");
+    assert!(start.status.success(), "{start:?}");
+    fixture.wait_for(|| {
+        String::from_utf8_lossy(&fixture.run("status").stdout)
+            .contains("Initial workspace and recipe inventory ready")
+    });
+    let inventory: serde_json::Value = serde_json::from_slice(
+        &fs::read(fixture.build.join("inventory-environment.json")).unwrap(),
+    )
+    .unwrap();
+    let (mut connection, snapshot) = fixture.attach();
+    connection
+        .send(&ClientMessage::Command(CommandRequest {
+            request_id: RequestId(1),
+            expected_generation: Some(snapshot.generation),
+            command: DaemonCommand::StartBuild {
+                targets: vec!["fixture-image".into()],
+                task: None,
+                force: false,
+            },
+        }))
+        .unwrap();
+    loop {
+        if let ServerMessage::CommandResult(result) = connection.receive().unwrap() {
+            assert!(matches!(result.outcome, CommandOutcome::Accepted));
+            break;
+        }
+    }
+    fixture.wait_for(|| {
+        String::from_utf8_lossy(&fixture.run("status").stdout)
+            .contains("build completed success=true")
+    });
+    let build: serde_json::Value =
+        serde_json::from_slice(&fs::read(fixture.build.join("build-environment.json")).unwrap())
+            .unwrap();
+    assert_eq!(build, inventory);
+    assert_eq!(build["OE_TERMINAL"], "custom");
+    assert!(
+        build["OE_TERMINAL_CUSTOMCMD"].as_str().unwrap().contains(
+            &fixture
+                .root
+                .join("yoctui/menuconfig.sock")
+                .display()
+                .to_string()
+        )
+    );
+    fixture.stop();
+}
+
 fn check_startup_inventory(complete: bool, slow_compatibility: bool) {
     let fixture = Fixture::new(
         &format!("inventory-{complete}-{slow_compatibility}"),

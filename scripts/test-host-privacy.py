@@ -49,7 +49,10 @@ class PortableValidationTests(unittest.TestCase):
         git.chmod(0o755)
         docker = mockbin / 'docker'
         docker.write_text('#!' + sys.executable + '\nimport json,sys\n'
-                          'print("true" if sys.argv[1] == "inspect" else json.dumps(sys.argv[1:]))\n')
+                          'if "readlink" in sys.argv:\n'
+                          '    print(sys.argv[-1])\n'
+                          'else:\n'
+                          '    print("true" if sys.argv[1] == "inspect" else json.dumps(sys.argv[1:]))\n')
         docker.chmod(0o755)
         for name in ('live-zcu102.sh', 'prepare-zcu102-metadata.sh'):
             for root, override in ((self.default, {}),
@@ -67,6 +70,45 @@ class PortableValidationTests(unittest.TestCase):
                     self.assertIn(str(root / 'setupsdk'), args)
                     self.assertIn(str(root / 'build'), args)
                     self.assertIn('test-container', args)
+
+    def test_metadata_preflight_uses_container_canonical_binary_path(self):
+        repo = self.base / 'repo'
+        binary = repo / 'target/release/yoctui'
+        binary.parent.mkdir(parents=True)
+        binary.write_text('#!/bin/sh\nexit 0\n')
+        binary.chmod(0o755)
+        mockbin = self.base / 'bin'
+        mockbin.mkdir()
+        git = mockbin / 'git'
+        git.write_text('#!/bin/sh\nprintf "%s\\n" "$MOCK_REPO"\n')
+        git.chmod(0o755)
+        docker = mockbin / 'docker'
+        docker.write_text('#!' + sys.executable + '\nimport json,os,sys\n'
+                          'if "readlink" in sys.argv:\n'
+                          '    print(os.environ["CONTAINER_BINARY"])\n'
+                          'else:\n'
+                          '    print(json.dumps(sys.argv[1:]))\n')
+        docker.chmod(0o755)
+        canonical = str(self.base / 'container cache/release/yoctui')
+        env = {**os.environ, **self.env,
+               'PATH': str(mockbin) + os.pathsep + os.environ['PATH'],
+               'MOCK_REPO': str(repo), 'YOCTUI_ZCU102_ROOT': str(self.override),
+               'YOCTUI_ZCU102_CONTAINER': 'test-container',
+               'CONTAINER_BINARY': canonical}
+        result = subprocess.run(['bash', str(SCRIPTS / 'prepare-zcu102-metadata.sh')],
+                                env=env, capture_output=True, text=True, check=True)
+        args = json.loads(result.stdout)
+        handoff = next(arg for arg in args if arg.startswith('OE_TERMINAL_CUSTOMCMD='))
+        self.assertEqual(handoff, f"OE_TERMINAL_CUSTOMCMD='{canonical}' __menuconfig-handoff "
+                         f"--socket '{self.override}/runtime/yoctui/menuconfig.sock' -- {{command}}")
+        for invalid in ('relative/yoctui', canonical + "'", canonical + '\nother'):
+            with self.subTest(binary=invalid):
+                result = subprocess.run(
+                    ['bash', str(SCRIPTS / 'prepare-zcu102-metadata.sh')],
+                    env={**env, 'CONTAINER_BINARY': invalid},
+                    capture_output=True, text=True)
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(result.stdout, '')
 
     def test_preseed_default_and_override_preserve_exact_cache_and_pin(self):
         module = load('preseed-zcu102-kernel-cache')

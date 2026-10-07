@@ -10,6 +10,13 @@ if (( $# != 0 )) || [[ ! -f "$validation_root/build/conf/bblayers.conf" || ! -x 
   printf 'Requires the initialized isolated validation build and release; no arguments accepted.\n' >&2
   exit 2
 fi
+# The daemon canonicalizes current_exe inside the container. A symlinked Cargo
+# target directory must produce the same OE_TERMINAL_CUSTOMCMD/cache identity.
+binary="$(docker exec --user 1000:1000 "$validation_container" readlink -e -- "$binary")"
+if [[ "$binary" != /* ]]; then
+  printf 'Cannot resolve the release binary inside the validation container.\n' >&2
+  exit 2
+fi
 # These paths are serialized into OE_TERMINAL_CUSTOMCMD, not evaluated here.
 if [[ "$binary$validation_root" == *"'"* || "$binary$validation_root" == *$'\n'* ]]; then
   printf 'Validation paths containing quotes/newlines are unsupported by this helper.\n' >&2

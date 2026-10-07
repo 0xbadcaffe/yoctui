@@ -1,12 +1,9 @@
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{BTreeMap, HashMap, VecDeque},
     path::PathBuf,
     sync::Arc,
     time::Duration,
 };
-
-#[cfg(test)]
-use std::collections::BTreeMap;
 
 use tokio::sync::mpsc;
 use yoctui_bitbake::{BackendEvent, BitBakeBackend};
@@ -44,8 +41,7 @@ impl DaemonBitBakeSupervisor {
 }
 
 impl DaemonBitBakeSupervisor {
-    #[cfg(test)]
-    pub(super) fn with_bridge_environment(mut self, environment: BTreeMap<String, String>) -> Self {
+    pub(crate) fn with_bridge_environment(mut self, environment: BTreeMap<String, String>) -> Self {
         self.bridge_environment = Some(environment);
         self
     }
@@ -126,8 +122,27 @@ impl DaemonBitBakeSupervisor {
                     return;
                 }
             };
-            match backend.inspect_workspace().await {
-                Ok(mut workspace) => {
+            let workspace = tokio::select! {
+                biased;
+                Some(()) = cancel_rx.recv() => {
+                    let sent = cancellation_terminal_tx.send(DaemonBitBakeEvent::Backend {
+                        job_id,
+                        event: Box::new(BackendEvent::BuildCompleted {
+                            success: false,
+                            exit_code: Some(130),
+                        }),
+                    }).await.is_ok();
+                    if sent && let Some(activity) = &activity {
+                        activity.signal();
+                    }
+                    let _ = tokio::time::timeout(
+                        Duration::from_secs(2),
+                        backend.terminate_server(),
+                    ).await;
+                    return;
+                }
+                workspace = async {
+                    let mut workspace = backend.inspect_workspace().await?;
                     // The lightweight workspace response intentionally omits
                     // metadata collections.  Populate them through the same
                     // daemon-owned bridge before the build starts so attached
@@ -147,6 +162,11 @@ impl DaemonBitBakeSupervisor {
                             "daemon BitBake layer inventory is unavailable"
                         ),
                     }
+                    Ok::<_, yoctui_bitbake::BackendError>(workspace)
+                } => workspace,
+            };
+            match workspace {
+                Ok(workspace) => {
                     send_bitbake_event(
                         &reliable_tx,
                         &cosmetic_tx,

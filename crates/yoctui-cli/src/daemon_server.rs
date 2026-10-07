@@ -112,7 +112,8 @@ pub(crate) async fn run_daemon_foreground(
     let mut raw_supervisor = daemon_raw::DaemonRawSupervisor::default();
     raw_supervisor.replace_compatibility(daemon_state.compatibility.clone())?;
     raw_supervisor.restore_snapshot(daemon_journal.snapshot())?;
-    let mut bitbake_supervisor = daemon_bitbake::DaemonBitBakeSupervisor::new(job_ids.clone());
+    let mut bitbake_supervisor = daemon_bitbake::DaemonBitBakeSupervisor::new(job_ids.clone())
+        .with_bridge_environment(startup_environment.clone());
     bitbake_supervisor
         .replace_compatibility(daemon_state.compatibility.clone())
         .map_err(anyhow::Error::msg)?;
