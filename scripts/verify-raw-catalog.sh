@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$repo_root"
 
-reference=docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md
+reference=docs/reference/bitbake-raw-wrynose-6.0-bitbake-2.18.md
 expected=ad95ecfa6a17691fa2a6d12f598f01fbd33de524c2a08ebccd218ef5fe88dd47
 actual=$(sha256sum "$reference")
 actual=${actual%% *}

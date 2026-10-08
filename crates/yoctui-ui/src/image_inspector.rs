@@ -137,6 +137,9 @@ pub(crate) fn rootfs_inspector_text(app: &App) -> String {
             format!("loading generation {}", request.generation)
         }
         RootfsCompositionState::AvailableEmpty { .. } => "available empty".into(),
+        RootfsCompositionState::LoadingDetails { .. } => {
+            "packages available · loading filesystem details".into()
+        }
         RootfsCompositionState::Available { .. } => "available".into(),
         RootfsCompositionState::Partial { limitations, .. } => {
             format!("partial · {} limitation(s)", limitations.len())
@@ -248,7 +251,8 @@ pub(crate) fn rootfs_inspector_text(app: &App) -> String {
             )),
     };
     let limitations = match &app.rootfs_composition {
-        RootfsCompositionState::Partial { limitations, .. } => limitations
+        RootfsCompositionState::LoadingDetails { limitations, .. }
+        | RootfsCompositionState::Partial { limitations, .. } => limitations
             .iter()
             .map(|value| format!("! {value}"))
             .collect::<Vec<_>>()

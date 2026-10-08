@@ -1,4 +1,7 @@
 fn global_metadata(command: CommandId) -> GlobalMetadata {
+    if let Some(metadata) = additional_global_metadata(command) {
+        return metadata;
+    }
     if let Some(metadata) = devtool_utility_global_metadata(command) {
         return metadata;
     }
@@ -10,6 +13,16 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
     use OperatorActionSafety as Safety;
     use OperatorActionScope as Scope;
     match command {
+        CommandId::OpenInsights
+        | CommandId::OpenBuildHistory
+        | CommandId::OpenSignatures
+        | CommandId::OpenLayerRelationships
+        | CommandId::OpenDevtoolWorkspace
+        | CommandId::OpenKernel
+        | CommandId::OpenFirmware
+        | CommandId::OpenBbmask
+        | CommandId::OpenCommandPalette
+        | CommandId::Quit => unreachable!("additional commands return above"),
         CommandId::BuildImage => GlobalMetadata {
             id: "build.image",
             scope: Scope::Workspace(WorkspaceDestination::Images),
@@ -55,7 +68,7 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
         CommandId::EditBbmask => GlobalMetadata {
             id: "configure.bbmask",
             scope: Scope::Workspace(WorkspaceDestination::Configuration),
-            menu_path: vec!["Workspace", "Configuration", "Edit BBMASK"],
+            menu_path: vec!["Config", "Edit BBMASK"],
             label: "Edit BBMASK",
             description: "Preview and save the effective BBMASK value",
             aliases: &["mask recipes", "configuration mask"],
@@ -116,7 +129,14 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             "Open Hardware",
             "Browse persistent board, SoC, memory, peripheral, and sensor documents",
             &["schematics", "datasheets", "pdf", "kicad"],
-            &["hardware", "board", "soc", "memory", "sensors", "schematics"],
+            &[
+                "hardware",
+                "board",
+                "soc",
+                "memory",
+                "sensors",
+                "schematics",
+            ],
             &[],
             65,
         ),
@@ -280,15 +300,18 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             &[],
             40,
         ),
-        CommandId::OpenSettings => navigation(
-            "navigate.settings",
-            "Open Settings",
-            "Edit persistent visual and log preferences",
-            &["preferences"],
-            &["settings", "preferences", "theme", "logs"],
-            &[],
-            40,
-        ),
+        CommandId::OpenSettings => GlobalMetadata {
+            menu_path: vec!["View", "Preferences"],
+            ..navigation(
+                "navigate.settings",
+                "Preferences",
+                "Review defaults and customize persistent workbench preferences",
+                &["preferences", "Open Settings"],
+                &["settings", "preferences", "theme", "logs"],
+                &[],
+                40,
+            )
+        },
         CommandId::ChooseTheme => GlobalMetadata {
             id: "view.choose-theme",
             scope: Scope::Global,
@@ -333,6 +356,16 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             "Toggle pane zoom",
             "Zoom or restore the focused pane without changing its state",
         ),
+        CommandId::ToggleInspector => GlobalMetadata {
+            bindings: &["Alt+i"],
+            aliases: &["hide inspector", "show inspector", "sidebar"],
+            keywords: &["view", "inspector", "sidebar", "hide", "show"],
+            ..focus_metadata(
+                "view.toggle-inspector",
+                "Toggle Inspector",
+                "Hide or restore the Inspector to give the Workspace more room",
+            )
+        },
         CommandId::ScrollFirst => navigation(
             "navigate.collection-first",
             "First row",

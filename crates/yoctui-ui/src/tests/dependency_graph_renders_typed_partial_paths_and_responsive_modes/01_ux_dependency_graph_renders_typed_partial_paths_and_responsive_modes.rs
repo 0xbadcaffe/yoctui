@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn ux_dependency_graph_renders_typed_partial_paths_and_responsive_modes() {
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Dependencies;
     app.focus = FocusTarget::Workspace;
     let root = DependencyNodeId::recipe("image");

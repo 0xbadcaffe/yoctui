@@ -169,8 +169,11 @@ fn ux_accessibility_m21_surfaces_never_require_color_glyph_shape_or_motion() {
         }
 
         let mut menu = App::new(10, 1_000);
+    menu.inspector_visible = true;
         configure(&mut menu);
         let _ = update(&mut menu, Action::OpenApplicationMenu);
+        let _ = update(&mut menu, Action::SelectMenuGroup { delta: yoctui_model::ApplicationMenuGroup::ALL.iter().position(|g| *g == yoctui_model::ApplicationMenuGroup::Configuration).unwrap() as isize });
+        let _ = update(&mut menu, Action::SelectMenuItem { delta: 2 });
         let menu_text = rendered_text_at(&menu, 80, 24, literal_now());
         for expected in [
             "Yoctui Application Menu",
@@ -247,6 +250,7 @@ fn animation_unknown_progress_never_fabricates_a_percentage() {
 #[test]
 fn images_workspace_renders_typed_artifacts_inspector_and_responsive_modes() {
     let mut app = App::new(20, 20_000);
+    app.inspector_visible = true;
     app.screen = Screen::Images;
     app.focus = FocusTarget::Workspace;
     app.workspace
@@ -314,6 +318,7 @@ fn images_workspace_renders_typed_artifacts_inspector_and_responsive_modes() {
 #[test]
 fn ux_image_preview_renders_deterministic_metadata_fallback_without_protocol_claims() {
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Images;
     app.focus = FocusTarget::Inspector;
     let identity = yoctui_model::ImageArtifactIdentity {

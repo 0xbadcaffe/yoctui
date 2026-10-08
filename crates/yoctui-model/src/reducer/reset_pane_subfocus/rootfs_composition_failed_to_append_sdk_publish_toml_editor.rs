@@ -5,9 +5,17 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::RootfsCompositionFailed { request, message } => {
             if matches!(
                 &app.rootfs_composition,
-                RootfsCompositionState::Loading { request: pending } if pending == &request
+                RootfsCompositionState::Loading { request: pending }
+                | RootfsCompositionState::LoadingDetails { request: pending, .. } if pending == &request
             ) {
                 app.rootfs_composition = RootfsCompositionState::Failed { request, message };
+                if app
+                    .layer_browser
+                    .as_ref()
+                    .is_some_and(LayerBrowser::is_rootfs)
+                {
+                    app.layer_browser = None;
+                }
             }
         }
         Action::SelectRootfsGroup { delta } => {
@@ -115,6 +123,13 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     })
             {
                 app.images_view = ImagesView::RootfsFilesystem;
+                if app
+                    .layer_browser
+                    .as_ref()
+                    .is_some_and(|browser| browser.is_rootfs() && browser.root == root)
+                {
+                    return None;
+                }
                 app.metadata_query.clear();
                 app.metadata_searching = false;
                 return Some(Effect::LoadLayerBrowserDirectory {

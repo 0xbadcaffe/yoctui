@@ -10,6 +10,7 @@ pub enum ApplicationMenuGroup {
     Build,
     Actions,
     Navigate,
+    Configuration,
     View,
     Devtool,
     Tools,
@@ -17,11 +18,12 @@ pub enum ApplicationMenuGroup {
 }
 
 impl ApplicationMenuGroup {
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::Workspace,
         Self::Build,
         Self::Actions,
         Self::Navigate,
+        Self::Configuration,
         Self::View,
         Self::Devtool,
         Self::Tools,
@@ -34,6 +36,7 @@ impl ApplicationMenuGroup {
             Self::Build => "Build",
             Self::Actions => "Actions",
             Self::Navigate => "Navigate",
+            Self::Configuration => "Config",
             Self::View => "View",
             Self::Devtool => "Devtool",
             Self::Tools => "Tools",
@@ -43,10 +46,27 @@ impl ApplicationMenuGroup {
 
     pub const fn for_command(command: CommandId) -> Self {
         match command {
-            CommandId::EditBbmask => Self::Workspace,
-            CommandId::BuildImage | CommandId::BuildSelectedRecipe => Self::Build,
-            CommandId::SelectImage
-            | CommandId::OpenDashboard
+            CommandId::OpenBuildEnvironment
+            | CommandId::OpenCompatibility
+            | CommandId::OpenTerminalSessions
+            | CommandId::OpenCommandPalette
+            | CommandId::Quit => Self::Workspace,
+            CommandId::EditBbmask
+            | CommandId::OpenBbmask
+            | CommandId::OpenConfiguration
+            | CommandId::OpenBitBakeConfigBuild
+            | CommandId::OpenBitBakeLayersSaveBuildConf
+            | CommandId::OpenBitBakeLayersCreateLayersSetup => Self::Configuration,
+            CommandId::OpenInsights
+            | CommandId::OpenBuildHistory
+            | CommandId::OpenSignatures
+            | CommandId::OpenLayerRelationships
+            | CommandId::OpenKernel
+            | CommandId::OpenFirmware => Self::Navigate,
+            CommandId::SelectImage | CommandId::BuildImage | CommandId::BuildSelectedRecipe => {
+                Self::Build
+            }
+            CommandId::OpenDashboard
             | CommandId::OpenLayers
             | CommandId::OpenRecipes
             | CommandId::OpenPackages
@@ -60,7 +80,6 @@ impl ApplicationMenuGroup {
             | CommandId::OpenTasks
             | CommandId::OpenLogs
             | CommandId::OpenErrors
-            | CommandId::OpenConfiguration
             | CommandId::ScrollFirst
             | CommandId::ScrollLast => Self::Navigate,
             CommandId::ChooseTheme
@@ -69,10 +88,11 @@ impl ApplicationMenuGroup {
             | CommandId::FocusInspector
             | CommandId::PreviousSubfocus
             | CommandId::NextSubfocus
-            | CommandId::TogglePaneZoom => Self::View,
-            CommandId::OpenDevtool(_) => Self::Devtool,
+            | CommandId::TogglePaneZoom
+            | CommandId::ToggleInspector
+            | CommandId::OpenSettings => Self::View,
+            CommandId::OpenDevtoolWorkspace | CommandId::OpenDevtool(_) => Self::Devtool,
             CommandId::OpenGitUi
-            | CommandId::OpenBitBakeConfigBuild
             | CommandId::OpenBitBakeLayersShowLayers
             | CommandId::OpenBitBakeLayersShowRecipes
             | CommandId::OpenBitBakeLayersShowOverlayed
@@ -85,18 +105,144 @@ impl ApplicationMenuGroup {
             | CommandId::OpenBitBakeLayersLayerIndexShowDepends
             | CommandId::OpenBitBakeLayersCreateLayer
             | CommandId::OpenBitBakeLayersShowMachines
-            | CommandId::OpenBitBakeLayersSaveBuildConf
-            | CommandId::OpenBitBakeLayersCreateLayersSetup
             | CommandId::OpenRawMode
-            | CommandId::OpenTerminalSessions
-            | CommandId::OpenMaintenance
-            | CommandId::OpenBuildEnvironment
-            | CommandId::OpenCompatibility
-            | CommandId::OpenSettings => Self::Tools,
+            | CommandId::OpenMaintenance => Self::Tools,
             CommandId::OpenOnboarding | CommandId::OpenHelp | CommandId::OpenAbout => Self::Help,
         }
     }
 }
+
+pub(crate) fn menu_item_order(group: ApplicationMenuGroup, item: &MenuItem) -> usize {
+    use CommandId::*;
+    let OperatorActionTarget::Command(command) = item.target else {
+        return 100;
+    };
+    if group == ApplicationMenuGroup::Navigate {
+        if let Some(screen) = command.screen() {
+            return MENU_SCREENS
+                .iter()
+                .position(|candidate| *candidate == screen)
+                .unwrap_or(100);
+        }
+        return if command == ScrollFirst { 101 } else { 102 };
+    }
+    let order: &[CommandId] = match group {
+        ApplicationMenuGroup::Workspace => &[
+            OpenBuildEnvironment,
+            OpenCompatibility,
+            OpenTerminalSessions,
+            OpenCommandPalette,
+            Quit,
+        ],
+        ApplicationMenuGroup::Build => &[BuildImage, SelectImage, BuildSelectedRecipe],
+        ApplicationMenuGroup::Configuration => &[
+            OpenConfiguration,
+            OpenBbmask,
+            EditBbmask,
+            OpenBitBakeConfigBuild,
+            OpenBitBakeLayersSaveBuildConf,
+            OpenBitBakeLayersCreateLayersSetup,
+        ],
+        ApplicationMenuGroup::View => &[
+            OpenSettings,
+            ChooseTheme,
+            ToggleInspector,
+            TogglePaneZoom,
+            FocusNavigator,
+            FocusWorkspace,
+            FocusInspector,
+            PreviousSubfocus,
+            NextSubfocus,
+        ],
+        ApplicationMenuGroup::Devtool => &[
+            OpenDevtoolWorkspace,
+            OpenDevtool(crate::DevtoolUtilityCommand::Status),
+            OpenDevtool(crate::DevtoolUtilityCommand::Search),
+            OpenDevtool(crate::DevtoolUtilityCommand::LatestVersion),
+            OpenDevtool(crate::DevtoolUtilityCommand::CheckUpgradeStatus),
+            OpenDevtool(crate::DevtoolUtilityCommand::Add),
+            OpenDevtool(crate::DevtoolUtilityCommand::Modify),
+            OpenDevtool(crate::DevtoolUtilityCommand::Upgrade),
+            OpenDevtool(crate::DevtoolUtilityCommand::FindRecipe),
+            OpenDevtool(crate::DevtoolUtilityCommand::EditRecipe),
+            OpenDevtool(crate::DevtoolUtilityCommand::Menuconfig),
+            OpenDevtool(crate::DevtoolUtilityCommand::ConfigureHelp),
+            OpenDevtool(crate::DevtoolUtilityCommand::UpdateRecipe),
+            OpenDevtool(crate::DevtoolUtilityCommand::Rename),
+            OpenDevtool(crate::DevtoolUtilityCommand::Build),
+            OpenDevtool(crate::DevtoolUtilityCommand::BuildImage),
+            OpenDevtool(crate::DevtoolUtilityCommand::IdeSdk),
+            OpenDevtool(crate::DevtoolUtilityCommand::CreateWorkspace),
+            OpenDevtool(crate::DevtoolUtilityCommand::Extract),
+            OpenDevtool(crate::DevtoolUtilityCommand::Sync),
+            OpenDevtool(crate::DevtoolUtilityCommand::Import),
+            OpenDevtool(crate::DevtoolUtilityCommand::Export),
+            OpenDevtool(crate::DevtoolUtilityCommand::DeployTarget),
+            OpenDevtool(crate::DevtoolUtilityCommand::Finish),
+            OpenDevtool(crate::DevtoolUtilityCommand::UndeployTarget),
+            OpenDevtool(crate::DevtoolUtilityCommand::Reset),
+        ],
+        ApplicationMenuGroup::Tools => &[
+            OpenGitUi,
+            OpenMaintenance,
+            OpenRawMode,
+            OpenBitBakeLayersShowMachines,
+            OpenBitBakeLayersShowLayers,
+            OpenBitBakeLayersShowRecipes,
+            OpenBitBakeLayersShowOverlayed,
+            OpenBitBakeLayersShowAppends,
+            OpenBitBakeLayersShowCrossDepends,
+            OpenBitBakeLayersLayerIndexShowDepends,
+            OpenBitBakeLayersCreateLayer,
+            OpenBitBakeLayersAddLayer,
+            OpenBitBakeLayersRemoveLayer,
+            OpenBitBakeLayersLayerIndexFetch,
+            OpenBitBakeLayersFlatten,
+        ],
+        ApplicationMenuGroup::Help => &[OpenHelp, OpenOnboarding, OpenAbout],
+        ApplicationMenuGroup::Actions | ApplicationMenuGroup::Navigate => &[],
+    };
+    order
+        .iter()
+        .position(|candidate| *candidate == command)
+        .unwrap_or(100)
+}
+
+pub(crate) const MENU_SCREENS: [crate::Screen; 30] = {
+    use crate::Screen::*;
+    [
+        Dashboard,
+        Insights,
+        BuildHistory,
+        Layers,
+        LayerRelationships,
+        Recipes,
+        Devtool,
+        Packages,
+        Images,
+        Hardware,
+        Kernel,
+        Firmware,
+        Sdk,
+        Tasks,
+        Logs,
+        Errors,
+        Configuration,
+        Bbmask,
+        Dependencies,
+        Signatures,
+        Testing,
+        Security,
+        Qa,
+        RawMode,
+        TerminalSessions,
+        Maintenance,
+        BuildEnvironment,
+        Compatibility,
+        Settings,
+        Help,
+    ]
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MenuKind {

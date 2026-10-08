@@ -42,6 +42,7 @@ fn client_replica_installs_authority_without_replacing_presentation() {
     });
     let mut app = yoctui_model::App::new(16, 4096);
     app.screen = Screen::Recipes;
+    app.inspector_visible = false;
     app.focus = FocusTarget::Inspector;
     app.theme = yoctui_model::Theme::MatrixGreen;
     app.dialogs
@@ -60,6 +61,7 @@ fn client_replica_installs_authority_without_replacing_presentation() {
     assert_eq!(app.daemon.jobs[0].label, "core-image-minimal");
     assert_eq!(app.daemon.pty_sessions[0].viewers, 2);
     assert_eq!(app.screen, Screen::Recipes);
+    assert!(!app.inspector_visible);
     assert_eq!(app.focus, FocusTarget::Inspector);
     assert_eq!(app.theme, yoctui_model::Theme::MatrixGreen);
     assert!(matches!(
@@ -84,4 +86,5 @@ fn client_replica_installs_authority_without_replacing_presentation() {
         yoctui_model::ClientReplicaStatus::Disconnected
     );
     assert_eq!(app.screen, Screen::Recipes);
+    assert!(!app.inspector_visible);
 }

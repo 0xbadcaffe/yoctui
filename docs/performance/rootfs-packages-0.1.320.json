@@ -1,0 +1,18 @@
+{
+  "version": "0.1.320",
+  "date": "2026-10-08",
+  "branch": "feature/prod",
+  "method": "Read-only live OpenBMC adapter benchmark, unoptimized test binary, first run then two repeats. No cache eviction; first sample is not a controlled cold-cache measurement. BitBake source lookup and UI redraw time are excluded.",
+  "build": "/home/bspguy-dev/src/openbmc/build/romulus",
+  "manifest": "tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20261003203704.manifest",
+  "pkgdata": "tmp/pkgdata/romulus",
+  "image_rootfs": "tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs",
+  "installed_packages": 228,
+  "installed_package_bytes": 81866423,
+  "filesystem_entries": 2631,
+  "package_only_ms": [219.077, 45.718, 45.431],
+  "full_scan_ms": [272.057, 158.500, 198.389],
+  "behavior": "Packages publish through an authority/generation-guarded preview while BitBake metadata acquisition proceeds concurrently. Full filesystem and service inventory replaces the preview only for the same pending request.",
+  "reproduce": "Set explicit YOCTUI_ROOTFS_BENCH_BUILD, MACHINE, IMAGE, ARTIFACT, MANIFEST, PKGDATA, ROOTFS environment variables; cargo test --locked -p yoctui --bin yoctui rootfs_live_package_loading_benchmark -- --ignored --nocapture",
+  "limits": "Missing exact manifest or workspace pkgdata retains the authoritative metadata path. No guessed source paths, image mounting, builds, daemon restarts or persistent scan cache."
+}

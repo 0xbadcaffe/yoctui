@@ -57,7 +57,15 @@ fn editor_gitui_local_preview_and_f12_menu_preserve_dirty_buffer() {
     update(&mut app, Action::AppendRecipeEditor('!'));
     let editor = app.active_dialog().cloned().unwrap();
     update(&mut app, Action::OpenApplicationMenu);
-    update(&mut app, Action::SelectMenuGroup { delta: 6 });
+    update(
+        &mut app,
+        Action::SelectMenuGroup {
+            delta: yoctui_model::ApplicationMenuGroup::ALL
+                .iter()
+                .position(|group| *group == yoctui_model::ApplicationMenuGroup::Tools)
+                .unwrap() as isize,
+        },
+    );
     for (width, height) in [(160, 50), (100, 30), (80, 24)] {
         let text = rendered_text(&app, width, height);
         assert!(text.contains("GitUI"), "{text}");

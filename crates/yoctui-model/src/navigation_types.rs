@@ -301,63 +301,8 @@ pub enum AnimationSpeed {
     #[default]
     Fast,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CommandId {
-    BuildImage,
-    SelectImage,
-    BuildSelectedRecipe,
-    EditBbmask,
-    OpenDashboard,
-    OpenLayers,
-    OpenRecipes,
-    OpenPackages,
-    OpenImages,
-    OpenHardware,
-    OpenSdk,
-    OpenDependencies,
-    OpenTesting,
-    OpenSecurity,
-    OpenQa,
-    OpenTasks,
-    OpenLogs,
-    OpenErrors,
-    OpenConfiguration,
-    OpenRawMode,
-    OpenTerminalSessions,
-    OpenGitUi,
-    OpenDevtool(DevtoolUtilityCommand),
-    OpenBitBakeConfigBuild,
-    OpenBitBakeLayersShowLayers,
-    OpenBitBakeLayersShowRecipes,
-    OpenBitBakeLayersShowOverlayed,
-    OpenBitBakeLayersShowAppends,
-    OpenBitBakeLayersShowCrossDepends,
-    OpenBitBakeLayersAddLayer,
-    OpenBitBakeLayersRemoveLayer,
-    OpenBitBakeLayersFlatten,
-    OpenBitBakeLayersLayerIndexFetch,
-    OpenBitBakeLayersLayerIndexShowDepends,
-    OpenBitBakeLayersCreateLayer,
-    OpenBitBakeLayersShowMachines,
-    OpenBitBakeLayersSaveBuildConf,
-    OpenBitBakeLayersCreateLayersSetup,
-    OpenMaintenance,
-    OpenBuildEnvironment,
-    OpenCompatibility,
-    OpenSettings,
-    ChooseTheme,
-    FocusNavigator,
-    FocusWorkspace,
-    FocusInspector,
-    PreviousSubfocus,
-    NextSubfocus,
-    TogglePaneZoom,
-    ScrollFirst,
-    ScrollLast,
-    OpenOnboarding,
-    OpenHelp,
-    OpenAbout,
-}
+mod commands;
+pub use commands::CommandId;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CommandPaletteMode {
     #[default]
@@ -481,8 +426,7 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     },
 ];
 
-/// Guidance and failure notifications require an explicit acknowledgement in
-/// the client instead of relying on the easy-to-miss transient status line.
+/// Guidance and failure notices require acknowledgement instead of a transient status line.
 pub fn notification_requires_acknowledgement(message: &str) -> bool {
     message.starts_with("Select ")
         || message.starts_with("No ")

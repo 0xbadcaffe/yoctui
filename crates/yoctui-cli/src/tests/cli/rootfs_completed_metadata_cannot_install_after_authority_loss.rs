@@ -38,6 +38,7 @@ async fn rootfs_completed_metadata_cannot_install_after_authority_loss() {
             compatibility_generation: 1,
         }),
         _cancellation: RootfsCompositionCancellation::default(),
+        package_preview: None,
         handle,
     });
     tokio::time::timeout(Duration::from_secs(1), async {

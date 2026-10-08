@@ -105,6 +105,10 @@ fn hardware_library_browser_and_viewer_have_typed_controls() {
         Some(Action::Hardware(HardwareAction::Zoom { delta: 25 }))
     );
     assert_eq!(
+        hardware_workspace_action(&app, Input::Char('=')),
+        Some(Action::Hardware(HardwareAction::Zoom { delta: 25 }))
+    );
+    assert_eq!(
         hardware_workspace_action(&app, Input::Char('/')),
         Some(Action::Hardware(HardwareAction::BeginSearch))
     );

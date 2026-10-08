@@ -1,6 +1,7 @@
 #[test]
 fn ux_dashboard_uses_live_build_cockpit_and_shared_braille_activity_language() {
     let mut app = App::new(20, 2_000);
+    app.inspector_visible = true;
     app.screen = Screen::Tasks;
     app.host_telemetry.cpu_utilization_percent = Some(42);
     let task = yoctui_model::TaskInfo::active(
@@ -174,20 +175,20 @@ fn ux_preferences_render_real_settings_across_sizes_and_accessibility_modes() {
     app.focus = FocusTarget::Workspace;
     for (width, height) in [(160, 50), (100, 30), (80, 24)] {
         let output = rendered_text(&app, width, height);
-        assert!(output.contains("Settings"), "{width}x{height}: {output}");
+        assert!(output.contains("Preferences"), "{width}x{height}: {output}");
         assert!(
-            output.contains("Active value"),
+            output.contains("Current"),
             "{width}x{height}: {output}"
         );
         assert!(!output.contains('�'), "{width}x{height}: {output}");
     }
 
-    app.settings_selection = 12;
+    app.settings_selection = yoctui_model::SETTINGS.iter().position(|s| *s == yoctui_model::Setting::ImagePreviews).unwrap();
     let locked = rendered_text(&app, 80, 24);
     assert!(locked.contains("MetadataOnly"), "{locked}");
     assert!(locked.contains("Raster preview is unavailable"), "{locked}");
 
-    app.settings_selection = 5;
+    app.settings_selection = yoctui_model::SETTINGS.iter().position(|s| *s == yoctui_model::Setting::Color).unwrap();
     app.color_forced_off = true;
     app.color_enabled = false;
     let no_color = rendered_text(&app, 100, 30);

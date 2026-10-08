@@ -1,0 +1,33 @@
+{
+  "version": "0.1.321",
+  "date": "2026-10-08",
+  "branch": "feature/prod",
+  "method": "Read-only live OpenBMC MTD test through deployed-source validation, preview adapter, lazy directory scanner and real CLI background-operation polling. Unoptimized test binary; no cache eviction or cold-cache claim. Terminal redraw time excluded.",
+  "build": "/home/bspguy-dev/src/openbmc/build/romulus",
+  "artifact": "tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20261003203704.static.mtd",
+  "manifest": "tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20261003203704.manifest",
+  "sidecar": "tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20261003203704.testdata.json",
+  "source_resolution_ms": [6.859, 9.958, 6.488],
+  "source_preview_and_root_directory_ms": [48.398, 42.554, 46.808],
+  "including_etc_navigation_and_passwd_preview_ms": [56.532, 45.485, 49.837],
+  "client_background_pipeline_first_tree_ms": 52.501,
+  "details_still_loading_when_tree_opened": true,
+  "root_directory_entries": 16,
+  "etc_directory_entries": 67,
+  "full_inventory_finished_and_tree_remained_available": true,
+  "native_laptop": {
+    "build": "/home/bspguy-dev/src/build-openbmc-romulus",
+    "artifact": "tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.static.mtd",
+    "source_resolution_ms": [6.284, 5.133, 5.825],
+    "source_preview_and_root_directory_ms": [29.973, 27.256, 30.519],
+    "client_background_pipeline_first_tree_ms": 30.124,
+    "installed_release_sha256": "d045709fcee03af3e1f7c831739f95445df02da76ab74046a4ff2921a9c7b97b",
+    "attached_ui_first_tree_seconds": 0.354254,
+    "ui_method": "200x60 private-session PTY attached to the existing native daemon; select exact MTD artifact and press 3. Includes terminal redraw; graphics probing disabled. No cache eviction.",
+    "target_root_owner_and_permissions_visible": true,
+    "keyboard_etc_expansion_and_passwd_preview_passed": true,
+    "daemon_pid_preserved": 5784
+  },
+  "boundary": "Uses the exact image's retained build-generated IMAGE_ROOTFS; does not mount, decode or certify flash-image contents. No image build or daemon restart.",
+  "reproduce": "Set YOCTUI_ROOTFS_BENCH_BUILD, MACHINE, IMAGE, ARTIFACT (.mtd), MANIFEST; cargo test --locked -p yoctui --bin yoctui rootfs_live_mtd_files_loading_benchmark -- --ignored --nocapture"
+}

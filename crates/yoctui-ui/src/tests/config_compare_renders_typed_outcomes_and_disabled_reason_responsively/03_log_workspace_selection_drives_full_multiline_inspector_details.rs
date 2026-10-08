@@ -1,6 +1,7 @@
 #[test]
 fn log_workspace_selection_drives_full_multiline_inspector_details() {
     let mut app = App::new(20, 4_000);
+    app.inspector_visible = true;
     app.screen = Screen::Logs;
     app.focus = FocusTarget::Workspace;
     app.logs.insert(yoctui_model::LogEntry {

@@ -84,7 +84,7 @@ fn semantic_snapshots_cover_required_workspaces_and_dialog_families() {
         SemanticSnapshot {
             name: "settings",
             screen: Screen::Settings,
-            anchors: &["Settings", "Theme", "Dark blue", "Settings controls"],
+            anchors: &["Preferences", "Theme", "Dark blue", "Preferences controls"],
             selected: Some("Theme"),
         },
         SemanticSnapshot {

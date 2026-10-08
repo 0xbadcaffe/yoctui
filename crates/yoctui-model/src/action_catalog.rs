@@ -8,6 +8,7 @@ use crate::{
 
 include!("action_catalog/types.rs");
 include!("action_catalog/global_metadata.rs");
+include!("action_catalog/additional_global_metadata.rs");
 include!("action_catalog/global_actions.rs");
 include!("action_catalog/workspace_actions.rs");
 include!("action_catalog/validation.rs");

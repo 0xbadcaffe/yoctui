@@ -20,8 +20,10 @@ pub fn hardware_native_raster_projection(
         || app.hardware.graphics_capability != yoctui_model::HardwareGraphicsCapability::Sixel
         || app.command_palette_open
         || app.menu.is_open()
+        || app.onboarding.open
+        || app.keymap_preferences_ui.open
         || app.active_dialog().is_some()
-        || app.notification.is_some()
+        || popup_notification(app).is_some()
     {
         return None;
     }
@@ -43,7 +45,17 @@ pub fn hardware_native_raster_projection(
             .saturating_sub(header)
             .saturating_sub(footer),
     );
-    let workspace = if terminal_width >= 100 {
+    let workspace = if let Some(zoomed) = app.zoomed_pane {
+        if zoomed != FocusTarget::Workspace {
+            return None;
+        }
+        Rect::new(
+            body.x,
+            body.y.saturating_add(1),
+            body.width,
+            body.height.saturating_sub(1),
+        )
+    } else if terminal_width >= 100 {
         let navigator_width = if app.preferences.density == yoctui_model::UiDensity::Compact {
             18
         } else {

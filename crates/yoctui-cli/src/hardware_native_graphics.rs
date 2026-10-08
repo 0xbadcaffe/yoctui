@@ -109,25 +109,18 @@ fn native_page(
     if viewport_width == 0 || viewport_height == 0 {
         return Err("native Hardware viewport is empty".into());
     }
-    let fit = (viewport_width as f64 / raster.width as f64)
-        .min(viewport_height as f64 / raster.height as f64);
+    // Bound the visible canvas, not the enlarged page. Capping the latter
+    // cancels zoom once the page reaches the pixel budget.
+    let mut canvas_width = viewport_width;
+    let mut canvas_height = viewport_height;
+    constrain_pixels(&mut canvas_width, &mut canvas_height);
+    let fit = (canvas_width as f64 / raster.width as f64)
+        .min(canvas_height as f64 / raster.height as f64);
     let scale = fit * f64::from(viewer.zoom_percent) / 100.0;
-    let mut target_width = (raster.width as f64 * scale).round().max(1.0) as usize;
-    let mut target_height = (raster.height as f64 * scale).round().max(1.0) as usize;
-    constrain_pixels(&mut target_width, &mut target_height);
-
-    let source = RgbImage::from_fn(raster.width as u32, raster.height as u32, |x, y| {
-        let pixel = raster.pixels[y as usize * raster.width + x as usize];
-        Rgb([pixel.red, pixel.green, pixel.blue])
-    });
-    let scaled = image::imageops::resize(
-        &source,
-        target_width as u32,
-        target_height as u32,
-        FilterType::Lanczos3,
-    );
-    let visible_width = target_width.min(viewport_width);
-    let visible_height = target_height.min(viewport_height);
+    let target_width = (raster.width as f64 * scale).round().max(1.0) as usize;
+    let target_height = (raster.height as f64 * scale).round().max(1.0) as usize;
+    let visible_width = target_width.min(canvas_width);
+    let visible_height = target_height.min(canvas_height);
     let crop_x = viewer
         .pan_x
         .saturating_mul(usize::from(cell_width))
@@ -136,14 +129,31 @@ fn native_page(
         .pan_y
         .saturating_mul(usize::from(cell_height))
         .min(target_height.saturating_sub(visible_height));
-    let image = image::imageops::crop_imm(
-        &scaled,
-        crop_x as u32,
-        crop_y as u32,
+    // Resize only the source rectangle visible through the zoomed viewport;
+    // even 400% zoom never allocates a full enlarged PDF page.
+    let source_x = crop_x * raster.width / target_width;
+    let source_y = crop_y * raster.height / target_height;
+    let source_right = ((crop_x + visible_width) * raster.width)
+        .div_ceil(target_width)
+        .min(raster.width);
+    let source_bottom = ((crop_y + visible_height) * raster.height)
+        .div_ceil(target_height)
+        .min(raster.height);
+    let source = RgbImage::from_fn(
+        (source_right - source_x) as u32,
+        (source_bottom - source_y) as u32,
+        |x, y| {
+            let pixel =
+                raster.pixels[(source_y + y as usize) * raster.width + source_x + x as usize];
+            Rgb([pixel.red, pixel.green, pixel.blue])
+        },
+    );
+    let image = image::imageops::resize(
+        &source,
         visible_width as u32,
         visible_height as u32,
-    )
-    .to_image();
+        FilterType::Lanczos3,
+    );
     Ok(NativePage {
         image,
         column_offset: u16::try_from(

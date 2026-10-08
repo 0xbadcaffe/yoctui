@@ -95,7 +95,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 78] = [
+const GLOBAL_COMMANDS: [CommandId; 89] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -162,6 +162,16 @@ const GLOBAL_COMMANDS: [CommandId; 78] = [
     CommandId::OpenBuildEnvironment,
     CommandId::OpenCompatibility,
     CommandId::OpenSettings,
+    CommandId::OpenInsights,
+    CommandId::OpenBuildHistory,
+    CommandId::OpenSignatures,
+    CommandId::OpenLayerRelationships,
+    CommandId::OpenDevtoolWorkspace,
+    CommandId::OpenKernel,
+    CommandId::OpenFirmware,
+    CommandId::OpenBbmask,
+    CommandId::OpenCommandPalette,
+    CommandId::Quit,
     CommandId::ChooseTheme,
     CommandId::FocusNavigator,
     CommandId::FocusWorkspace,
@@ -169,6 +179,7 @@ const GLOBAL_COMMANDS: [CommandId; 78] = [
     CommandId::PreviousSubfocus,
     CommandId::NextSubfocus,
     CommandId::TogglePaneZoom,
+    CommandId::ToggleInspector,
     CommandId::ScrollFirst,
     CommandId::ScrollLast,
     CommandId::OpenOnboarding,

@@ -5,6 +5,11 @@ pub enum RootfsCompositionState {
     Loading {
         request: RootfsCompositionRequest,
     },
+    LoadingDetails {
+        request: RootfsCompositionRequest,
+        composition: RootfsComposition,
+        limitations: Vec<String>,
+    },
     AvailableEmpty {
         request: RootfsCompositionRequest,
         composition: RootfsComposition,
@@ -33,6 +38,7 @@ impl RootfsCompositionState {
         match self {
             Self::NotLoaded => None,
             Self::Loading { request }
+            | Self::LoadingDetails { request, .. }
             | Self::AvailableEmpty { request, .. }
             | Self::Available { request, .. }
             | Self::Partial { request, .. }
@@ -44,6 +50,7 @@ impl RootfsCompositionState {
     pub fn composition(&self) -> Option<&RootfsComposition> {
         match self {
             Self::AvailableEmpty { composition, .. }
+            | Self::LoadingDetails { composition, .. }
             | Self::Available { composition, .. }
             | Self::Partial { composition, .. } => Some(composition),
             Self::NotLoaded

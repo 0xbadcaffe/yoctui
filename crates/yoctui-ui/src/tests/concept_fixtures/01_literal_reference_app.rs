@@ -2,6 +2,8 @@ use super::*;
 
 pub(crate) fn literal_reference_app() -> App {
     let mut app = App::new(512, 1024 * 1024);
+    // Design references demonstrate the optional inspector in its expanded layout.
+    app.inspector_visible = true;
     let source_dir = PathBuf::from("/workspace/yocto");
     app.screen = Screen::Tasks;
     app.focus = FocusTarget::Navigator;

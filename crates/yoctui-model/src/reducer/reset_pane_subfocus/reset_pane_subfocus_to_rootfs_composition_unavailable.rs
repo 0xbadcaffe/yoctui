@@ -478,6 +478,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         action @ (Action::BeginSelectedRootfsComposition
         | Action::ShiftImagesView { .. }
         | Action::RefreshRootfsComposition
+        | Action::RootfsCompositionPreview { .. }
         | Action::RootfsCompositionLoaded { .. }
         | Action::RootfsCompositionPartial { .. }
         | Action::RootfsCompositionUnavailable { .. }) => {

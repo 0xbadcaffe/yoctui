@@ -60,6 +60,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::CloseMenu
         | Action::SelectSetting { .. }
         | Action::ChangeSelectedSetting { .. }
+        | Action::ResetSelectedPreference
         | Action::ResetPreferences
         | Action::RetrySettingsPersistence
         | Action::OpenKeymapPreferences => {

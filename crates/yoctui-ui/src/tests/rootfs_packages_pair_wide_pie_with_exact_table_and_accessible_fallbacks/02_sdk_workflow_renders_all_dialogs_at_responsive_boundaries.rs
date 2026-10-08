@@ -256,6 +256,7 @@ fn test_workflow_comparison_renders_categories_limitations_and_outcomes() {
 #[test]
 fn test_workflow_lifecycle_and_junit_outcomes_remain_visibly_distinct() {
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Testing;
     app.focus = FocusTarget::Workspace;
     for (index, outcome) in [

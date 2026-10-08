@@ -244,6 +244,7 @@ pub(crate) fn readme_repaired_workflow_app(scene: &str) -> App {
     match scene {
         "cloning" => {
             app = App::new_unconfigured(512, 1024 * 1024);
+            app.inspector_visible = true;
             app.navigator_selection = 23;
             app.focus = FocusTarget::Workspace;
             update(

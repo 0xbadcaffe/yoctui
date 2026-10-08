@@ -104,6 +104,41 @@ class VersionBumpPolicyTests(unittest.TestCase):
         self.write("scripts/verify-cratesio-package.sh", 'version="0.1.1"\n')
         self.check(failure=True)
 
+    def prepare_reference_include(self) -> None:
+        self.write("docs/reference/old.md", "# Reference\n")
+        self.write("crates/example/src/tests/reference.rs", 'const REFERENCE: &str =\n    include_str!("../../../../docs/reference/old.md");\n')
+        self.commit()
+
+    def rename_reference_include(self) -> None:
+        (self.root / "docs/reference/old.md").rename(self.root / "docs/reference/new.md")
+        self.write("crates/example/src/tests/reference.rs", 'const REFERENCE: &str =\n    include_str!("../../../../docs/reference/new.md");\n')
+
+    def test_unchanged_test_reference_rename_keeps_version_dirty_and_committed(self) -> None:
+        self.prepare_reference_include()
+        self.rename_reference_include()
+        self.check()
+        self.commit()
+        self.check()
+
+    def test_test_reference_rename_with_changed_content_requires_bump(self) -> None:
+        self.prepare_reference_include()
+        self.rename_reference_include()
+        self.write("docs/reference/new.md", "# Changed reference\n")
+        self.check(failure=True)
+
+    def test_test_reference_rename_with_other_test_changes_requires_bump(self) -> None:
+        self.prepare_reference_include()
+        self.rename_reference_include()
+        path = self.root / "crates/example/src/tests/reference.rs"
+        path.write_text(path.read_text() + "fn changed_test() {}\n")
+        self.check(failure=True)
+
+    def test_test_reference_rename_with_missing_target_requires_bump(self) -> None:
+        self.prepare_reference_include()
+        self.rename_reference_include()
+        (self.root / "docs/reference/new.md").unlink()
+        self.check(failure=True)
+
     def test_nonproduct_commit_still_checks_internal_dependency_coherence(self) -> None:
         self.write("README.md", "# documentation\n")
         self.commit()

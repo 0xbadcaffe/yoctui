@@ -30,11 +30,7 @@ pub(crate) struct WorkbenchMouseRegion {
 }
 
 /// Shared chrome allocation keeps live mouse input aligned with the renderer.
-pub fn workbench_chrome_heights(
-    _app: &yoctui_model::App,
-    _width: u16,
-    _height: u16,
-) -> [u16; 2] {
+pub fn workbench_chrome_heights(_app: &yoctui_model::App, _width: u16, _height: u16) -> [u16; 2] {
     [5, 3]
 }
 
@@ -60,7 +56,11 @@ pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -
         && height == 50
         && !matches!(app.screen, Screen::Layers | Screen::Recipes)
     {
-        return [28, 86, 46];
+        return if app.inspector_visible {
+            [28, 86, 46]
+        } else {
+            [28, 132, 0]
+        };
     }
     let navigator = if compact {
         18
@@ -71,7 +71,8 @@ pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -
     } else {
         22
     };
-    if matches!(app.screen, Screen::Layers | Screen::Recipes)
+    if !app.inspector_visible
+        || matches!(app.screen, Screen::Layers | Screen::Recipes)
         || (app.screen == Screen::TerminalSessions && app.selected_terminal_uses_native_workspace())
     {
         return [navigator, width.saturating_sub(navigator), 0];
@@ -157,7 +158,9 @@ pub fn terminal_workspace_dimensions(
     } else {
         collect_terminal_mouse_panes(&app.pane_layout.root, terminal_area, &mut panes);
     }
-    let pane = panes.iter().find(|(_, id)| *id == app.pane_layout.focused)?;
+    let pane = panes
+        .iter()
+        .find(|(_, id)| *id == app.pane_layout.focused)?;
     let status_rows = 1 + app.selected_terminal_screen().map_or(0, |screen| {
         u16::from(!app.terminal.query.is_empty())
             + u16::from(screen.scrollback_lines > 0 || screen.dropped_line_feeds_lower_bound > 0)

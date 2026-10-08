@@ -44,6 +44,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 | Action::CyclePaneSubfocus { .. }
                 | Action::ResetPaneSubfocus
                 | Action::TogglePaneZoom
+                | Action::ToggleInspector
                 | Action::ScrollCurrent { .. }
                 | Action::Focus(
                     FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector
@@ -57,6 +58,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::ToggleInspector => {
+            app.set_inspector_visible(!app.inspector_visible);
+            None
+        }
         Action::SavedBuild(action) => {
             crate::saved_builds::reduce_saved_build(app, action)
         }
@@ -156,7 +161,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::ActivateCommandPalette | Action::RestoreGlobalSearchResults | Action::CloseCommandPalette | Action::OpenApplicationMenu
         | Action::OpenContextMenu | Action::SelectMenuGroup { .. } | Action::SelectMenuItem { .. }
         | Action::AppendMenuPrefix(..) | Action::BackspaceMenuPrefix | Action::CloseMenu
-        | Action::SelectSetting { .. } | Action::ChangeSelectedSetting { .. } | Action::ResetPreferences
+        | Action::SelectSetting { .. } | Action::ChangeSelectedSetting { .. } | Action::ResetSelectedPreference
+        | Action::ResetPreferences
         | Action::RetrySettingsPersistence | Action::OpenKeymapPreferences | Action::CloseKeymapPreferences
         | Action::SelectKeymapPreference { .. } | Action::BeginKeymapPreferenceSearch | Action::AppendKeymapPreferenceQuery(..)
         | Action::BackspaceKeymapPreferenceQuery | Action::ClearKeymapPreferenceQuery | Action::FinishKeymapPreferenceSearch
@@ -192,6 +198,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BeginSelectedImageArtifactBuild | Action::OpenSelectedImageArtifact | Action::OpenSelectedImageArtifactAssociation(..)
         | Action::ImageArtifactViewed { .. }
         | Action::BeginSelectedRootfsComposition | Action::ShiftImagesView { .. } | Action::RefreshRootfsComposition
+        | Action::RootfsCompositionPreview { .. }
         | Action::RootfsCompositionLoaded { .. } | Action::RootfsCompositionPartial { .. } | Action::RootfsCompositionUnavailable { .. }
         | Action::RootfsCompositionFailed { .. } | Action::SelectRootfsGroup { .. } | Action::SelectRootfsPackage { .. }
         | Action::SelectRootfsEntry { .. } | Action::SelectRootfsSystemdService { .. } | Action::SelectRootfsDbusService { .. }

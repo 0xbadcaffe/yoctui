@@ -4,9 +4,9 @@ Files in this directory are preserved, human-readable source references used
 to design and review Yoctui's typed integrations. They are not runtime command
 databases and are never parsed as authority when Yoctui starts.
 
-## BitBake Wrynose 6.0 / 2.18 cheatsheet
+## BitBake Raw — Wrynose 6.0 / 2.18
 
-`bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md` is the supplied command
+`bitbake-raw-wrynose-6.0-bitbake-2.18.md` is the supplied command
 reference snapshot for Yocto Project Wrynose 6.0 and BitBake 2.18. Its content
 is preserved verbatim, with source/version scope and upstream references inside
 the document.

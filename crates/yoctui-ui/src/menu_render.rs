@@ -242,10 +242,16 @@ pub(crate) fn application_menu_overlay(
         })
         .collect::<Vec<_>>();
     let prefix = if app.menu.typed_prefix.is_empty() {
-        items
-            .get(selected)
-            .and_then(|item| item.disabled_reason.clone())
-            .unwrap_or_else(|| "Type to jump".into())
+        items.get(selected).map_or_else(
+            || "Type to jump".into(),
+            |item| {
+                format!(
+                    "{} · {}",
+                    item.label,
+                    item.disabled_reason.as_deref().unwrap_or("Type to jump")
+                )
+            },
+        )
     } else {
         format!("Jump: {}_", app.menu.typed_prefix)
     };

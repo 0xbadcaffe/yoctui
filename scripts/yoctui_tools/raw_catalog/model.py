@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md"
+SOURCE = ROOT / "docs/reference/bitbake-raw-wrynose-6.0-bitbake-2.18.md"
 OUTPUT = ROOT / "crates/yoctui-model/src/raw_catalog_builtin.rs"
 OUTPUT_DIR = ROOT / "crates/yoctui-model/src/raw_catalog_builtin"
 EXPECTED_SHA256 = "ad95ecfa6a17691fa2a6d12f598f01fbd33de524c2a08ebccd218ef5fe88dd47"

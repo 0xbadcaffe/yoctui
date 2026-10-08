@@ -33,9 +33,9 @@ fn command_palette_selection_description_and_shortcut_render_in_all_themes() {
         app.command_palette_open = true;
         app.command_palette_query = "Open Settings".into();
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Open Settings"));
-        assert!(output.contains("persistent visual"));
-        assert!(output.contains("none"));
+        assert!(output.contains("Preferences"));
+        assert!(output.contains("persistent workbench"));
+        assert!(output.contains("F12 View"));
     }
 }
 

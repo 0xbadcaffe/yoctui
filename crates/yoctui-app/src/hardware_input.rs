@@ -50,7 +50,7 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
             Input::PageDown | Input::Char(']') => hardware(HardwareAction::ChangePage { delta: 1 }),
             Input::Home => hardware(HardwareAction::FirstPage),
             Input::End => hardware(HardwareAction::LastPage),
-            Input::Char('+') => hardware(HardwareAction::Zoom { delta: 25 }),
+            Input::Char('+' | '=') => hardware(HardwareAction::Zoom { delta: 25 }),
             Input::Char('-') => hardware(HardwareAction::Zoom { delta: -25 }),
             Input::Char('0') => hardware(HardwareAction::ResetZoom),
             Input::Char('v') => hardware(HardwareAction::TogglePresentation),

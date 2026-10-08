@@ -34,7 +34,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix="yoctui-concept-verifier-")
         self.root = Path(self.temporary.name)
         for relative in [
-            "docs/design/m21/concepts/manifest.toml",
+            "docs/design/ui-scenes.toml",
             "docs/design/acceptance-contracts.toml",
         ]:
             destination = self.root / relative
@@ -45,13 +45,13 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         golden_destination.mkdir(parents=True)
         for source in golden_source.glob("concept-*.*"):
             shutil.copy2(source, golden_destination / source.name)
-        raster_source = SOURCE_ROOT / "docs/design/m22/production-raster"
-        raster_destination = self.root / "docs/design/m22/production-raster"
+        raster_source = SOURCE_ROOT / "docs/design/screenshots"
+        raster_destination = self.root / "docs/design/screenshots"
         shutil.copytree(raster_source, raster_destination)
 
         self.verifier = load_verifier()
         self.verifier.ROOT = self.root
-        self.verifier.MANIFEST = self.root / "docs/design/m21/concepts/manifest.toml"
+        self.verifier.MANIFEST = self.root / "docs/design/ui-scenes.toml"
         self.verifier.REGISTRY = self.root / "docs/design/acceptance-contracts.toml"
 
     def tearDown(self) -> None:
@@ -143,7 +143,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         )
 
     def test_rejects_corrupt_raster_artifact(self) -> None:
-        path = self.root / "docs/design/m22/production-raster/01-idle-dashboard.png"
+        path = self.root / "docs/design/screenshots/01-idle-dashboard.png"
         path.write_bytes(path.read_bytes() + b"corrupt")
         self.assert_rejected("verified raster evidence checksum does not match")
 

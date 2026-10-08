@@ -10,7 +10,7 @@ class PerformanceDocumentationTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.performance = (ROOT / "docs/performance.md").read_text(encoding="utf-8")
         cls.architecture = (ROOT / "docs/architecture.md").read_text(encoding="utf-8")
-        cls.ui = (ROOT / "docs/ui-spec.md").read_text(encoding="utf-8")
+        cls.ui = (ROOT / "docs/interface-behavior.md").read_text(encoding="utf-8")
         cls.performance_flat = " ".join(cls.performance.split())
         cls.architecture_flat = " ".join(cls.architecture.split())
 

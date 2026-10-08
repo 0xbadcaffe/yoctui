@@ -10,7 +10,7 @@ fn ux_action_catalog_drives_palette_metadata_search_and_workspace_projection() {
     let command = &commands[0];
     assert_eq!(command.action_id.as_str(), "navigate.compatibility");
     assert_eq!(command.id, yoctui_model::CommandId::OpenCompatibility);
-    assert_eq!(command.menu_path, ["Navigate", "Open Compatibility"]);
+    assert_eq!(command.menu_path, ["Workspace", "Open Compatibility"]);
     assert!(command.aliases.contains(&"capabilities"));
     assert_eq!(
         command.help_group,

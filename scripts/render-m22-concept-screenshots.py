@@ -20,8 +20,8 @@ except ImportError as error:  # pragma: no cover - environment diagnostic
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONCEPT_MANIFEST = ROOT / "docs/design/m21/concepts/manifest.toml"
-OUTPUT_DIR = ROOT / "docs/design/m22/production-raster"
+SCENE_MANIFEST = ROOT / "docs/design/ui-scenes.toml"
+OUTPUT_DIR = ROOT / "docs/design/screenshots"
 PROVENANCE = OUTPUT_DIR / "manifest.toml"
 WIDTH = 160
 HEIGHT = 50
@@ -358,7 +358,7 @@ def png_dimensions(path: Path) -> tuple[int, int]:
 
 
 def scenarios() -> list[tuple[str, Path]]:
-    with CONCEPT_MANIFEST.open("rb") as manifest_file:
+    with SCENE_MANIFEST.open("rb") as manifest_file:
         manifest = tomllib.load(manifest_file)
     output: list[tuple[str, Path]] = []
     for scenario in manifest.get("scenario", []):
@@ -427,9 +427,8 @@ def update() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     rendered = render_all(OUTPUT_DIR)
     PROVENANCE.write_text(provenance_text(rendered, OUTPUT_DIR), encoding="utf-8")
-    # Keep the concept ledger bound to the exact newly rendered cell evidence.
-    # Historical live evidence and original concept-image hashes are untouched.
-    manifest = CONCEPT_MANIFEST.read_text(encoding="utf-8")
+    # Bind each scene to its newly rendered cells and raster evidence.
+    manifest = SCENE_MANIFEST.read_text(encoding="utf-8")
     for scenario_id, source, artifact in rendered:
         pattern = (
             r'(raster_evidence = \{[^\n]*artifact = "'
@@ -455,7 +454,7 @@ def update() -> None:
         manifest, count = re.subn(pattern, refresh, manifest)
         if count != 1:
             fail(f"{scenario_id}: expected one raster evidence entry")
-    CONCEPT_MANIFEST.write_text(manifest, encoding="utf-8")
+    SCENE_MANIFEST.write_text(manifest, encoding="utf-8")
     print(f"M22 production rasters updated: {len(rendered)} deterministic PNGs")
 
 

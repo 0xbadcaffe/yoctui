@@ -213,6 +213,24 @@ pub fn keymap_action_for_app(app: &mut yoctui_model::App, key: Input) -> KeymapI
     }
 }
 
+/// Layout controls precede workspace and PTY input, but never escape a modal.
+pub fn inspector_toggle_action(app: &App, key: Input) -> Option<Action> {
+    if app.onboarding.open
+        || app.keymap_preferences_ui.open
+        || app.menu.is_open()
+        || app.active_dialog().is_some()
+        || app.command_palette_open
+        || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
+    {
+        return None;
+    }
+    let stroke = input_key_stroke(key);
+    app.effective_keymap
+        .bindings_for_action(yoctui_model::OperatorActionId::new("view.toggle-inspector"))
+        .any(|binding| binding.sequence.strokes() == [stroke])
+        .then_some(Action::ToggleInspector)
+}
+
 /// Route menuconfig-style global search without stealing `/` from an active
 /// text editor, contextual search, or daemon-owned terminal session.
 pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
@@ -283,10 +301,11 @@ pub fn workspace_text_input_active(app: &yoctui_model::App) -> bool {
 
 pub fn terminal_owns_input(app: &yoctui_model::App) -> bool {
     app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation
-        || (app.screen == yoctui_model::Screen::TerminalSessions || app.platform_menuconfig_visible())
-        && app.focus == FocusTarget::Workspace
-        && (app.selected_terminal_is_writer()
-            || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live)
+        || (app.screen == yoctui_model::Screen::TerminalSessions
+            || app.platform_menuconfig_visible())
+            && app.focus == FocusTarget::Workspace
+            && (app.selected_terminal_is_writer()
+                || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live)
 }
 
 pub fn input_key_stroke(key: Input) -> yoctui_model::KeyStroke {

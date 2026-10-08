@@ -19,6 +19,7 @@ fn chain_app(length: usize) -> App {
         .collect();
     let (graph, _) = DependencyGraph::normalize(root.clone(), nodes, edges, 100, 100);
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Dependencies;
     app.focus = FocusTarget::Inspector;
     app.dependency_graph_selection = Some(root);

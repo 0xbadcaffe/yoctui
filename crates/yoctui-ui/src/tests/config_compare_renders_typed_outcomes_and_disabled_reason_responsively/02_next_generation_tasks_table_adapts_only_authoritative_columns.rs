@@ -238,6 +238,7 @@ fn next_generation_build_summary_is_determinate_only_with_a_real_total() {
 #[test]
 fn workbench_tasks_renders_table_log_history_and_structured_inspector() {
     let mut app = App::new(32, 8_192);
+    app.inspector_visible = true;
     app.screen = Screen::Tasks;
     app.build.target = Some("core-image-minimal".into());
     app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
@@ -325,6 +326,7 @@ fn workbench_tasks_reduced_height_prioritizes_the_task_table() {
 #[test]
 fn workbench_responsive_preserves_task_priority_at_every_breakpoint() {
     let mut app = App::new(16, 4_096);
+    app.inspector_visible = true;
     app.screen = Screen::Tasks;
     app.focus = FocusTarget::Workspace;
     app.build.target = Some("core-image-minimal".into());

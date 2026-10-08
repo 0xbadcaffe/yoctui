@@ -1,0 +1,121 @@
+# Production UI scenarios and executable acceptance checks.
+schema_version = 1
+logical_columns = 160
+logical_rows = 50
+theme = "dark-pro"
+exact_pixel_golden = false
+
+[[scenario]]
+id = "idle-dashboard"
+workspace = "Dashboard"
+state = "daemon current; BitBake idle"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt"
+real_yoctui_anchors = ["Build Overview", "build not started · 0%", "Job History", "Resource Telemetry", "Daemon Status : Connected", "Local 19:28"]
+required_features = [
+  { id = "next-action", description = "Capability-aware next action", fixture_anchors = ["Next Action", "Build image [Alt+b]"] },
+  { id = "persistent-shell", description = "Persistent shell and idle lifecycle", fixture_anchors = ["Build Overview", "Daemon Status : Connected"] },
+  { id = "build-cockpit", description = "Idle build overview and explicit current task", fixture_anchors = ["build not started · 0%", "Current Task  : none"] },
+  { id = "job-history", description = "Recent and active daemon-owned work", fixture_anchors = ["Job History", "Succeeded"] },
+  { id = "resource-state", description = "Typed telemetry and unavailable cache state", fixture_anchors = ["Resource Telemetry", "CPU Usage", "18%"] },
+  { id = "discoverability", description = "Navigator and application-menu routes remain visible", fixture_anchors = ["Enter open", "F12 Menu"] },
+]
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/01-idle-dashboard.png", sha256 = "3be2b8725ec161b35f938be1102b11501078dade1a2ada2690da3dcebcff3ad4", source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells", source_sha256 = "8f6e061c74030f66e650d32e3783c3b69802f28c951e62edd1dd392976e759a2", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+live_evidence = { status = "not-retained" }
+implementation_tasks = ["UX-DASHBOARD-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001", "UX-TELEMETRY-DIAL-001"]
+open_gaps = []
+
+[[scenario]]
+id = "active-build-tasks"
+workspace = "Tasks"
+state = "daemon current; BitBake running; bash:do_compile selected at 72 percent"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.txt"
+real_yoctui_anchors = ["Tasks: core-image-minimal", "Overall  40%  4/10", "do_compile", "72%", "Log Viewer", "Job History", "Local 19:28"]
+required_features = [
+  { id = "hierarchical-progress", description = "Build and selected task progress agree", fixture_anchors = ["Overall  40%  4/10", "Progress    72%"] },
+  { id = "selected-task", description = "Selected running task has exact context", fixture_anchors = ["do_compile", "State       ▶ Running"] },
+  { id = "correlated-log", description = "Following log matches the selected task", fixture_anchors = ["Log Viewer — do_compile", "▶ Follow"] },
+  { id = "job-history", description = "Retained work remains visible", fixture_anchors = ["Job History", "Recent complete 4"] },
+  { id = "context-actions", description = "Task actions expose availability", fixture_anchors = ["Actions", "Cancel active build"] },
+]
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/02-active-build-tasks.png", sha256 = "d180db2404d98862cbbb832ed982d1e0e3f8e258a130e8081482b3379af99098", source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells", source_sha256 = "9908bf4e0addf00b1c4f3ce7336923972d70684aa333eecf03c4bf065cbce6c4", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+live_evidence = { status = "not-retained" }
+implementation_tasks = ["UX-PROGRESS-001", "UX-TELEMETRY-001", "UX-LOGS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+open_gaps = []
+
+[[scenario]]
+id = "failed-build-errors"
+workspace = "Errors"
+state = "daemon current; BitBake failed; bash:do_compile error selected"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.txt"
+real_yoctui_anchors = ["Build Result · Failed", "Correlated-log filters", "Errors (checked)", "Warnings (checked)", "Correlated · Paused", "match 3/3", "loss 2 W1 E1", "Recovery actions", "confirmation required", "Inspector: Error", "ERROR: bash:do_compile failed with exit code 1", "D:✓ Connected/Local", "Local 19:28"]
+required_features = [
+  { id = "failed-lifecycle", description = "Header and BitBake state report failure", fixture_anchors = ["✕ Failed", "BitBake: ✕ Failed"] },
+  { id = "structured-diagnostics", description = "Error list and Inspector retain exact context", fixture_anchors = ["Errors and warnings", "Inspector: Error", "ERROR: bash:do_compile failed with exit code 1"] },
+  { id = "paused-correlated-log", description = "Paused correlated log exposes match, loss, and bounded position state", fixture_anchors = ["Correlated · Paused", "match 3/3", "loss 2 W1 E1", "1-3/3"] },
+  { id = "textual-filters", description = "Warning, error, and related-context filters expose accessible checkbox state", fixture_anchors = ["Errors (checked)", "Warnings (checked)", "Related task context (indeterminate)"] },
+  { id = "recovery-actions", description = "Recovery actions and confirmation requirements are visible", fixture_anchors = ["Recovery actions", "[Enter] Open matching log", "Alt+b rebuild options", "confirmation required"] },
+]
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/03-failed-build-errors.png", sha256 = "5da26427754d7fd54137139ce18591c2c8faedcd9c3336e03813703b995304df", source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells", source_sha256 = "98e7f84a3d14529236ad65264de989d9b121068fd6e9fbc8d1eead9e0efa04ee", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+live_evidence = { status = "not-retained" }
+implementation_tasks = ["UX-LOGS-001", "UX-CHECKBOX-001", "UX-CONCEPT-ERRORS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+open_gaps = []
+
+[[scenario]]
+id = "rootfs-composition"
+workspace = "Images / Rootfs composition"
+state = "current installed-package manifest; BitBake idle"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.txt"
+real_yoctui_anchors = ["Images · Rootfs composition", "Rootfs packages · installed bytes", "Exact composition table", "46800000", "Other", "base system group · 90 packages (indeterminate)", "base-system-000 · 520000 B · 3 files (checked)", "base-system-001 · 520000 B · 4 files (unchecked)", "Filesystem ownership (disabled)", "Filesystem tree: partial", "/bin/busybox", "Local 19:28"]
+required_features = [
+  { id = "separate-authorities", description = "Package and filesystem authority remain distinct", fixture_anchors = ["Installed packages: available", "Filesystem tree: partial"] },
+  { id = "chart-and-table", description = "Chart and exact table coexist", fixture_anchors = ["Rootfs packages · installed bytes", "Exact composition table", "46800000", "37.02%"] },
+  { id = "other-membership", description = "Other remains exact and inspectable", fixture_anchors = ["Other", "Other membership remains"] },
+  { id = "accessible-selection", description = "Package selection and authority rows expose checked, unchecked, indeterminate, and disabled meaning", fixture_anchors = ["base system group · 90 packages (indeterminate)", "base-system-000 · 520000 B · 3 files (checked)", "base-system-001 · 520000 B · 4 files (unchecked)", "Filesystem ownership (disabled)"] },
+  { id = "filesystem-drilldown", description = "Filesystem tree and textual position remain visible", fixture_anchors = ["Filesystem tree: partial", "2-4/9", "/bin/busybox", "Tab drill-down"] },
+]
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/04-rootfs-composition.png", sha256 = "fb378f15a15f3aaf22f241a4ef80f8968a0651b156cf723af1d0290867dc9501", source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells", source_sha256 = "5f65ce9334f196757dd429dea79b1731c0c6600001423c99eb0675d9a128c349", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+live_evidence = { status = "not-retained" }
+implementation_tasks = ["UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+open_gaps = []
+
+[[scenario]]
+id = "editor-application-menu"
+workspace = "Recipes / Editor"
+state = "modified recipe editor; BitBake idle; F12 Build menu owns focus"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.txt"
+real_yoctui_anchors = ["Recipe Inspector", "File: bash_5.2.bb", "Language: BitBake", "State: modified", "Yoctui Application Menu", "Workspace  Build  Actions  Navigate  Config  View  Devtool  Tools  Help", "Cancel active build", "No active build is avai", "Validation and diff state", "Local validation: ✕ line 9: assignment has no value", "Diff preview: loaded → buffer", "+  10 BROKEN_OVERRIDE =", "Ctrl+S save", "Ctrl+B build", "Tab files"]
+required_features = [
+  { id = "application-menu", description = "F12 application menu is composed over the editor and owns focus", fixture_anchors = ["Yoctui Application Menu", "Workspace  Build  Actions  Navigate  Config  View  Devtool  Tools  Help", "Enter select/confirm", "Esc cancel"] },
+  { id = "disabled-reason", description = "Disabled cancel action includes its bounded exact reason", fixture_anchors = ["Cancel active build", "No active build is avai"] },
+  { id = "editor-state", description = "Recipe tree, language, modified state, and selected file are visible", fixture_anchors = ["Recipe Inspector", "File: bash_5.2.bb", "Language: BitBake", "State: modified"] },
+  { id = "validation-diff", description = "Validation diagnostic and diff preview remain visible", fixture_anchors = ["Validation and diff state", "Local validation: ✕ line 9: assignment has no value", "Diff preview: loaded → buffer", "+  10 BROKEN_OVERRIDE =", "BitBake/compiler output remains authoritative"] },
+  { id = "editor-actions", description = "Save, exact-recipe build, search, and file-focus actions remain discoverable", fixture_anchors = ["Ctrl+S save", "Ctrl+B build", "Ctrl+F file", "Alt+f workspace", "/ global", "Tab files"] },
+]
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/05-editor-application-menu.png", sha256 = "ecc7abc694c84448835e2c5c5cf1ef6125c1a8441158e157baade850479966b8", source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells", source_sha256 = "3fe49878b1829dc6e912bd957ea92c5ed97671ccbc99ed2720314684599062bf", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+live_evidence = { status = "not-retained" }
+implementation_tasks = ["UX-MENU-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+open_gaps = []
+
+[[scenario]]
+id = "terminal-sessions"
+workspace = "Terminal Sessions"
+state = "two PTY panes; local writer and remote read-only client"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.txt"
+real_yoctui_anchors = ["Terminal Sessions", "BuildShell · writer · 2 viewer(s)", "Devshell · read-only · 2 viewer(s)", "last search: busybox · 3 matches", "history 312 · dropped ≥14", "Ctrl+B prefix", "Local 19:28"]
+required_features = [
+  { id = "split-sessions", description = "Two bounded daemon PTY panes are visible", fixture_anchors = ["shell #1 Running", "devshell:busybox #2 Running"] },
+  { id = "writer-ownership", description = "Writer and read-only ownership are textual", fixture_anchors = ["BuildShell · writer · 2 viewer(s)", "Devshell · read-only · 2 viewer(s)"] },
+  { id = "focused-pane", description = "The selected writer pane owns current focus", fixture_anchors = ["CURRENT · LIVE · WRITER", "Role: Writer"] },
+  { id = "scrollback-search", description = "Lower-pane search exposes matches and dropped-history accounting", fixture_anchors = ["last search: busybox · 3 matches", "history 312 · dropped ≥14"] },
+  { id = "prefix-help", description = "Prefix actions remain visible", fixture_anchors = ["Ctrl+B prefix", "[ copy", "/ search", "x close"] },
+]
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/06-terminal-sessions.png", sha256 = "f2fe1cfea10fd6d4c5a71b25f34e4f760aa9b274124c41f86409dfc5da8c0a7d", source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells", source_sha256 = "b2a38517927c85f7a1f192539a1cf490f65116b29085eefa32ff3383591e4bb2", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+live_evidence = { status = "not-retained" }
+implementation_tasks = ["UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001", "UX-CONCEPT-TERMINAL-LIVE-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+open_gaps = []

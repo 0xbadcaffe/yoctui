@@ -15,6 +15,7 @@ fn ux_preferences_migrate_persist_restart_and_reject_future_schema_atomically() 
 
     let mut legacy = read_session(Some(&path)).unwrap();
     let migrated = session_preferences(&legacy).unwrap();
+    assert!(!migrated.inspector_visible);
     assert_eq!(migrated.theme, Theme::MatrixGreen);
     assert_eq!(migrated.animation_speed, AnimationSpeed::Slow);
     assert!(migrated.reduced_motion);
@@ -24,6 +25,8 @@ fn ux_preferences_migrate_persist_restart_and_reject_future_schema_atomically() 
 
     let mut app = App::new(10, 1_000);
     app.install_preferences(migrated).unwrap();
+    app.preferences.inspector_visible = true;
+    app.set_inspector_visible(false); // A temporary session toggle must not be saved.
     app.preferences.density = yoctui_model::UiDensity::Compact;
     app.preferences.symbols = yoctui_model::SymbolPreference::Ascii;
     app.preferences.mouse_enabled = false;
@@ -48,6 +51,7 @@ fn ux_preferences_migrate_persist_restart_and_reject_future_schema_atomically() 
     let mut restarted = App::new(10, 1_000);
     restarted.install_preferences(preferences).unwrap();
     assert_eq!(restarted.preferences, app.preferences);
+    assert!(restarted.inspector_visible);
 
     let mut invalid = restored;
     invalid.preferences.as_mut().unwrap().schema_version += 1;
@@ -56,4 +60,16 @@ fn ux_preferences_migrate_persist_restart_and_reject_future_schema_atomically() 
 
     fs::remove_file(path).unwrap();
     fs::remove_dir(directory).unwrap();
+}
+
+#[test]
+fn typed_older_preferences_keep_custom_values_and_default_inspector_to_off() {
+    let session: Session =
+        toml::from_str("[preferences]\ntheme = 'matrix-green'\nmouse_enabled = false\n").unwrap();
+    let mut app = App::new(10, 1_000);
+    app.install_preferences(session_preferences(&session).unwrap())
+        .unwrap();
+    assert!(!app.inspector_visible);
+    assert_eq!(app.theme, Theme::MatrixGreen);
+    assert!(!app.preferences.mouse_enabled);
 }

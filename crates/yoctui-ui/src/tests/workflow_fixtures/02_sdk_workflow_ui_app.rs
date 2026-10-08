@@ -1,5 +1,6 @@
 pub(crate) fn sdk_workflow_ui_app() -> App {
     let mut app = App::new(20, 20_000);
+    app.inspector_visible = true;
     app.screen = Screen::Sdk;
     app.focus = FocusTarget::Workspace;
     app.workspace
@@ -124,6 +125,7 @@ pub(crate) fn test_workflow_results_app() -> (
     )
     .unwrap();
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Testing;
     app.focus = FocusTarget::Workspace;
     app.test_view = TestWorkspaceView::Results;
@@ -140,6 +142,7 @@ pub(crate) fn test_workflow_results_app() -> (
 
 pub(crate) fn qemu_workspace_app() -> App {
     let mut app = App::new(20, 20_000);
+    app.inspector_visible = true;
     app.screen = Screen::Images;
     app.focus = FocusTarget::Workspace;
     app.workspace
@@ -355,6 +358,7 @@ pub(crate) fn qa_workflow_ui_app() -> App {
     )
     .unwrap();
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Qa;
     app.focus = FocusTarget::Workspace;
     app.qa.scope = Some(scope);

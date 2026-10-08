@@ -32,6 +32,7 @@ pub(crate) fn maintenance_preview(id: u64) -> yoctui_model::MaintenanceOperation
 
 pub(crate) fn maintenance_workflow_ui_app() -> App {
     let mut app = App::new(100, 10_000);
+    app.inspector_visible = true;
     app.screen = Screen::Maintenance;
     app.focus = FocusTarget::Workspace;
     let available = |tool, path| MaintenanceToolCapability::Available {

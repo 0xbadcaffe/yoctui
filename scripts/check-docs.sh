@@ -18,9 +18,9 @@ root = Path(sys.argv[1]).resolve()
 required_documents = {
     "README.md": {
         "Install",
-        "Quickstart: Poky build environment",
+        "Quickstart",
     },
-    "docs/operator-guide.md": {
+    "docs/user-guide.md": {
         "Start a workspace safely",
         "Understand the persistent shell",
         "Daily image-build loop",
@@ -44,26 +44,26 @@ required_documents = {
         "Adding a supported live combination",
     },
     "docs/testing.md": {"Testing", "Completion gate"},
-    "docs/keymap.md": {
-        "Yoctui Keymap Reference",
+    "docs/keyboard-shortcuts.md": {
+        "Keyboard shortcuts",
         "Global destinations",
         "Terminal prefix",
         "Customize safely",
     },
-    "docs/rootfs-composition.md": {
-        "Rootfs Composition Evidence",
-        "Installed-package authority",
-        "Logical-filesystem authority",
-        "Recorded live boundary",
+    "docs/rootfs-inspection.md": {
+        "Rootfs inspection",
+        "Installed packages",
+        "Logical filesystem",
+        "Validation boundary",
     },
-    "docs/embedded-shell.md": {
-        "Embedded Shells and Terminal Sessions",
+    "docs/terminal-sessions.md": {
+        "Terminal sessions",
         "Inherited Yocto shell",
         "Daemon-owned Terminal Sessions",
     },
     "docs/profiling.md": {"Profiling"},
     "docs/performance.md": {
-        "Low-Overhead and Build-Saturation Performance Contract",
+        "Performance limits",
         "CPU accounting and release target",
         "Scenario thresholds",
         "Responsiveness and rendering",
@@ -72,8 +72,8 @@ required_documents = {
         "Baseline and profiling artifact policy",
     },
     "docs/architecture.md": set(),
-    "docs/protocol.md": set(),
-    "docs/ui-spec.md": set(),
+    "docs/bridge-and-daemon-protocols.md": set(),
+    "docs/interface-behavior.md": set(),
 }
 
 markdown_output = subprocess.check_output(
@@ -82,7 +82,7 @@ markdown_output = subprocess.check_output(
 markdown_files = [root / line for line in markdown_output.splitlines() if line]
 errors: list[str] = []
 immutable_reference_sources = {
-    root / "docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md",
+    root / "docs/reference/bitbake-raw-wrynose-6.0-bitbake-2.18.md",
 }
 
 
@@ -240,10 +240,7 @@ print(
 PY
 
 for media in \
-  docs/media/yoctui-demo.gif \
-  docs/media/yoctui-live-active-tasks.svg \
-  docs/media/yoctui-live-completion.svg \
-  docs/media/yoctui-live-failed-task.svg \
+  docs/media/yoctui-header.png \
   artifacts/flamegraph/yoctui.svg \
   artifacts/flamegraph/summary.txt
 do
@@ -253,7 +250,6 @@ do
   fi
 done
 
-python3 scripts/render-next-generation-ui-screenshots.py --check
 ./scripts/render-m22-concept-screenshots.sh --check
 python3 scripts/render-readme-screenshots.py --check
 python3 scripts/test-m22-concept-raster.py

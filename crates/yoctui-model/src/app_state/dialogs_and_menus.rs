@@ -137,7 +137,9 @@ impl App {
         let mut items = self
             .command_palette_commands()
             .into_iter()
-            .filter(|command| ApplicationMenuGroup::for_command(command.id) == group)
+            .filter(|command| ApplicationMenuGroup::for_command(command.id) == group
+                || (group == ApplicationMenuGroup::Navigate && command.id != CommandId::OpenAbout
+                    && command.id.screen().is_some()))
             .map(|command| MenuItem {
                 action_id: command.action_id,
                 target: OperatorActionTarget::Command(command.id),
@@ -180,6 +182,7 @@ impl App {
                 safety: definition.safety,
             });
         }
+        items.sort_by_key(|item| crate::menu::menu_item_order(group, item));
         items
     }
     pub fn context_menu_items(&self, destination: WorkspaceDestination) -> Vec<MenuItem> {

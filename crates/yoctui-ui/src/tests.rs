@@ -98,3 +98,7 @@ mod concept_layout_geometry;
 mod errors_history;
 
 use super::telemetry_strip::{TelemetryStripMode, telemetry_strip_mode};
+
+mod compact_workspaces;
+
+mod application_menus;

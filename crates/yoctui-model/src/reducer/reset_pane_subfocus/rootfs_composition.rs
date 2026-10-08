@@ -11,6 +11,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             };
             app.image_artifact_selection = Some(image.clone());
             app.images_view = ImagesView::RootfsPackages;
+            app.focus = FocusTarget::Workspace;
+            if app.zoomed_pane.is_some() {
+                app.zoomed_pane = Some(FocusTarget::Workspace);
+            }
             return begin_rootfs_composition(app, image);
         }
         Action::ShiftImagesView { delta } => {
@@ -34,6 +38,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     app.images_view = ImagesView::Artifacts;
                     return None;
                 };
+                app.focus = FocusTarget::Workspace;
+                if app.zoomed_pane.is_some() {
+                    app.zoomed_pane = Some(FocusTarget::Workspace);
+                }
                 app.image_artifact_selection = Some(image.clone());
                 let is_current = app
                     .rootfs_composition
@@ -63,13 +71,40 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             };
             return begin_rootfs_composition(app, image);
         }
+        Action::RootfsCompositionPreview {
+            request,
+            composition,
+            limitations,
+        } => {
+            if matches!(&app.rootfs_composition,
+                RootfsCompositionState::Loading { request: pending } if pending == &request)
+            {
+                set_rootfs_composition(app, request, composition, limitations);
+                if let RootfsCompositionState::Partial {
+                    request,
+                    composition,
+                    limitations,
+                } = &app.rootfs_composition
+                {
+                    app.rootfs_composition = RootfsCompositionState::LoadingDetails {
+                        request: request.clone(),
+                        composition: composition.clone(),
+                        limitations: limitations.clone(),
+                    };
+                    if app.images_view == ImagesView::RootfsFilesystem {
+                        return update(app, Action::BrowseRootfsFilesystem);
+                    }
+                }
+            }
+        }
         Action::RootfsCompositionLoaded {
             request,
             composition,
         } => {
             if matches!(
                 &app.rootfs_composition,
-                RootfsCompositionState::Loading { request: pending } if pending == &request
+                RootfsCompositionState::Loading { request: pending }
+                | RootfsCompositionState::LoadingDetails { request: pending, .. } if pending == &request
             ) {
                 set_rootfs_composition(app, request, composition, Vec::new());
                 if app.images_view == ImagesView::RootfsFilesystem {
@@ -84,7 +119,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         } => {
             if matches!(
                 &app.rootfs_composition,
-                RootfsCompositionState::Loading { request: pending } if pending == &request
+                RootfsCompositionState::Loading { request: pending }
+                | RootfsCompositionState::LoadingDetails { request: pending, .. } if pending == &request
             ) {
                 set_rootfs_composition(app, request, composition, limitations);
                 if app.images_view == ImagesView::RootfsFilesystem {
@@ -95,7 +131,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::RootfsCompositionUnavailable { request, reason } => {
             if matches!(
                 &app.rootfs_composition,
-                RootfsCompositionState::Loading { request: pending } if pending == &request
+                RootfsCompositionState::Loading { request: pending }
+                | RootfsCompositionState::LoadingDetails { request: pending, .. } if pending == &request
             ) {
                 app.rootfs_composition = RootfsCompositionState::Unavailable { request, reason };
             }

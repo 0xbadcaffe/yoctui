@@ -1,75 +1,58 @@
 # Development
 
-Yoctui is a Linux Rust workspace using edition 2024. CI pins Rust 1.97.0 with
-rustfmt and Clippy and Python 3.12. Build from the existing checkout with Git,
-a C compiler/linker, and pkg-config installed:
+Linux Rust workspace, edition 2024; CI uses Rust 1.97.0 and Python 3.12.
+Install Git, a C compiler/linker, and pkg-config, then:
 
 ```bash
 cargo build --locked -p yoctui -j 2
 ```
 
-The binary is `target/debug/yoctui`. Use a real terminal of at least 80×24 for
-interactive testing. An initialized Yocto workspace is needed only for live
-BitBake operations; see [operator guide](operator-guide.md).
+Run target/debug/yoctui in an 80x24+ terminal. Live BitBake requires an initialized
+build; see the [user guide](user-guide.md). Use release builds for performance.
 
-## Design and boundaries
+## Build from source
 
-- [Architecture](architecture.md): crate dependencies, authority, IPC and lifecycle.
-- [UI specification](ui-spec.md): behavior, focus, layouts, shortcuts and safety.
-- [Workbench design](workbench-design.md): interaction and widget decisions.
-- [Protocol](protocol.md): wire types and compatibility.
-- [Development priorities](product-roadmap.md): unresolved integration and validation.
-
-Update the relevant specification when intentionally changing behavior. Add
-meaningful reducer, application, renderer or integration coverage for the changed
-boundary. Preserve bounded state, terminal restoration, writer leases, exact
-workspace identity, and preview/confirmation for destructive actions.
-
-## Verification
+The published release may lag the source repository. For development or
+unpublished changes, install Git and clone into a new directory:
 
 ```bash
-cargo fmt --all --check
-cargo test --locked --workspace --all-features
-cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
-./scripts/verify-design-contracts.sh
-./scripts/test-readme-quickstart.sh
+mkdir -p "$HOME/projects"
+export YOCTUI_DIR="$HOME/projects/yoctui"
+git clone https://github.com/0xbadcaffe/yoctui.git "$YOCTUI_DIR"
+cd "$YOCTUI_DIR"
+cargo build --release --locked -p yoctui --bin yoctui -j 2
+# Optional: install this checkout's optimized binary on PATH.
+cargo install --locked --path crates/yoctui-cli --force --bin yoctui -j 2
+export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+type -a yoctui
+yoctui --version
 ```
 
-[Testing](testing.md) documents PTY, fixture, live, performance, and completion
-gates. CI's container uses `--init` to reap orphaned fixture children. A container
-without a child reaper can fail lifecycle tests because exited children remain
-visible as zombies; use an init/subreaper rather than weakening assertions.
+The build output is `target/release/yoctui` unless Cargo's target directory is
+overridden. `cargo install` uses release mode by default. Installation and build
+examples limit **Cargo** to two compile jobs; they do not change BitBake/make parallelism.
+Custom Cargo install roots use their own `bin` directory.
 
-`docs/design/acceptance-contracts.toml` contains only metadata consumed by
-existing design/evidence checks and unresolved acceptance boundaries. It is not
-an agent task registry. Preserve the stable IDs referenced by scenario manifests;
-current behavior is verified by tests and evidence, not completion labels alone.
+## Changing code
 
-No product version bump is needed for documentation-only changes. Rust source,
-Rust tests and dependency changes follow `scripts/check-version-bump.py`.
+Read [Architecture](architecture.md), [Interface behavior](interface-behavior.md), and
+[protocols](bridge-and-daemon-protocols.md). Preserve bounded state, identity, writer ownership,
+terminal restoration, and exact review. Add meaningful coverage at the changed boundary.
 
-## Optional vendor validation helpers
+Run [ordinary checks](testing.md#ordinary-verification) and the relevant PTY/UI/live
+checks. Containers need --init or a child subreaper; do not accept zombies.
+Documentation-only changes need no version bump; unchanged test reference renames
+are narrowly exempt. Source/test logic/dependencies follow scripts/check-version-bump.py.
+Design acceptance metadata and scene IDs remain inputs to verification.
 
-ZCU102 helpers default to `$HOME/src/yoctui-zcu102-2026.1`.
-`YOCTUI_ZCU102_ROOT` selects another existing canonical absolute checkout;
-`YOCTUI_ZCU102_CONTAINER` selects its validation container. Host and container
-must see the checkout at the same path. The inspector checks peer ownership and
-exact daemon/build authority. Cache preseed checks root ownership, pinned source
-identity and BitBake's fetch lock and never replaces an existing cache. These
-helpers do not create the checkout/container or override source pins.
+## Optional vendor helpers
 
-The ignored OpenBMC defaults smoke requires `YOCTUI_OPENBMC_NATIVE_BUILD` for
-the native build without matching symbols and `YOCTUI_OPENBMC_RETAINED_BUILD`
-for the retained build with matching symbols. Read-only discovery does not launch
-a guest. Values must identify the user's actual initialized workspaces.
+ZCU102 defaults to $HOME/src/yoctui-zcu102-2026.1; YOCTUI_ZCU102_ROOT and
+YOCTUI_ZCU102_CONTAINER select an existing canonical checkout/container visible
+at the same path. Helpers check identity/ownership/pins and do not create them.
+OpenBMC smoke uses YOCTUI_OPENBMC_NATIVE_BUILD and YOCTUI_OPENBMC_RETAINED_BUILD;
+read-only discovery does not boot a guest.
 
-## Retained README assets and external evidence
-
-The repository retains only the flamegraph, its summary, and source captures
-and manifest needed by README media. Historical performance, board-debugging
-and release-validation outputs are no longer bundled. Capture fresh evidence
-before running checks that read `artifacts/performance/` or complete live UI
-bundles. Missing evidence is a prerequisite failure, not a passing check or
-proof that a measurement remains valid for the current release. The evidence
-verifiers and their assertions remain intact.
+Generate temporary outputs locally; capture fresh live/performance evidence for
+checks requiring it. The retained [Flamegraph](profiling.md#flamegraph) is a dated example, and the
+base evidence manifest supports verifier tests. See the [documentation index](README.md).

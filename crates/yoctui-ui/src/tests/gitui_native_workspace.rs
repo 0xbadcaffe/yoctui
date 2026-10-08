@@ -7,6 +7,7 @@ use yoctui_model::{
 #[test]
 fn gitui_native_workspace_hides_passive_rails_and_matches_actual_rendered_cells() {
     let mut app = App::new(16, 4096);
+    app.inspector_visible = true;
     app.onboarding.open = false;
     app.screen = Screen::TerminalSessions;
     app.focus = FocusTarget::Workspace;

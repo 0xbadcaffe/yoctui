@@ -1,4 +1,5 @@
 use super::*;
+mod progressive_packages;
 
 fn image() -> ImageArtifactIdentity {
     ImageArtifactIdentity {

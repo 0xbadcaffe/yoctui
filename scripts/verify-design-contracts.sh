@@ -7,8 +7,8 @@ from pathlib import Path
 import tomllib
 
 required = (
-    "docs/development.md", "docs/ui-spec.md", "docs/architecture.md",
-    "docs/workbench-design.md", "docs/product-roadmap.md",
+    "docs/development.md", "docs/interface-behavior.md", "docs/architecture.md",
+    "docs/widgets-and-dependencies.md", "docs/design/README.md",
     "docs/design/acceptance-contracts.toml",
 )
 for name in required:

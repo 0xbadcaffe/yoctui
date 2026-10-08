@@ -42,6 +42,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::ShiftImagesView { .. }
         | Action::RefreshRootfsComposition
         | Action::RootfsCompositionLoaded { .. }
+        | Action::RootfsCompositionPreview { .. }
         | Action::RootfsCompositionPartial { .. }
         | Action::RootfsCompositionUnavailable { .. } => {
             reset_pane_subfocus_to_rootfs_composition_unavailable::reduce_actions(app, action)

@@ -4,6 +4,7 @@ fn scan_sources(
     sources: RootfsCompositionSources,
     cancellation: RootfsCompositionCancellation,
     deadline: Instant,
+    details: bool,
 ) -> Result<RootfsCompositionResponse, RootfsCompositionAdapterError> {
     let build = canonical_directory(&build_directory, None)?;
     let mut limitations = Vec::new();
@@ -37,17 +38,20 @@ fn scan_sources(
         Some(root) => {
             let canonical_root = canonical_directory(&root, Some(&build))?;
             root_directory = Some(canonical_root.clone());
-            (
+            if details { (
                 scan_filesystem(&build, &root, &cancellation, deadline, &mut limitations)?,
                 scan_system_inventory(&canonical_root, &cancellation, deadline, &mut limitations)?,
-            )
+            ) } else { (
+                RootfsAuthority::Unavailable { reason: "Filesystem details are still loading.".into() },
+                RootfsAuthority::Unavailable { reason: "System inventory is still loading.".into() },
+            ) }
         }
         None => (
             RootfsAuthority::Unavailable {
-                reason: "IMAGE_ROOTFS was not reported for the selected image".into(),
+                reason: if details { "IMAGE_ROOTFS was not reported for the selected image" } else { "Filesystem details are still loading." }.into(),
             },
             RootfsAuthority::Unavailable {
-                reason: "offline system inventory requires IMAGE_ROOTFS".into(),
+                reason: if details { "offline system inventory requires IMAGE_ROOTFS" } else { "System inventory is still loading." }.into(),
             },
         ),
     };

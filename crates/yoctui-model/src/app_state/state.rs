@@ -33,6 +33,7 @@ pub struct App {
     pub workspace_subfocus: WorkspaceSubfocus,
     pub inspector_subfocus: InspectorSubfocus,
     pub zoomed_pane: Option<FocusTarget>,
+    pub inspector_visible: bool,
     pub navigator_selection: usize,
     pub navigator_groups_expanded: [bool; NAVIGATOR_GROUPS.len()],
     pub backend: String,

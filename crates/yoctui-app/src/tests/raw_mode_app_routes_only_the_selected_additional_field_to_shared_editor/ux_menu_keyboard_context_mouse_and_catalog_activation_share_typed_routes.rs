@@ -54,3 +54,40 @@ fn ux_menu_keyboard_context_mouse_and_catalog_activation_share_typed_routes() {
         "every contextual catalog entry must retain a typed legacy route"
     );
 }
+
+#[test]
+fn menu_type_ahead_keeps_j_and_k_inside_command_names() {
+    let mut app = yoctui_model::App::new(16, 4096);
+    yoctui_model::update(&mut app, Action::OpenApplicationMenu);
+    assert_eq!(
+        menu_action(&app, Input::Char('k')),
+        Some(MenuInputResult::Reduce(Box::new(Action::SelectMenuItem {
+            delta: -1
+        })))
+    );
+    for prefix in ["edit bbmas", "open ", "pro"] {
+        app.menu.typed_prefix = prefix.into();
+        for character in ['j', 'k'] {
+            assert_eq!(
+                menu_action(&app, Input::Char(character)),
+                Some(MenuInputResult::Reduce(Box::new(Action::AppendMenuPrefix(
+                    character
+                ))))
+            );
+        }
+    }
+    app.menu.group_selection = yoctui_model::ApplicationMenuGroup::ALL
+        .iter()
+        .position(|g| *g == yoctui_model::ApplicationMenuGroup::Configuration)
+        .unwrap();
+    app.menu.typed_prefix.clear();
+    for character in "edit bbmask".chars() {
+        let Some(MenuInputResult::Reduce(action)) = menu_action(&app, Input::Char(character))
+        else {
+            panic!("type-ahead must reduce")
+        };
+        yoctui_model::update(&mut app, *action);
+    }
+    assert_eq!(app.selected_menu_item().unwrap().label, "Edit BBMASK");
+    assert_eq!(app.menu.typed_prefix, "edit bbmask");
+}

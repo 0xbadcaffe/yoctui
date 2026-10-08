@@ -9,15 +9,14 @@ from pathlib import Path
 import re
 import tomllib
 
-roadmap = Path("docs/workbench-design.md").read_text(encoding="utf-8")
-ui_spec = Path("docs/ui-spec.md").read_text(encoding="utf-8")
+roadmap = Path("docs/widgets-and-dependencies.md").read_text(encoding="utf-8")
+ui_spec = Path("docs/interface-behavior.md").read_text(encoding="utf-8")
 architecture = Path("docs/architecture.md").read_text(encoding="utf-8")
 registry = tomllib.loads(Path("docs/design/acceptance-contracts.toml").read_text(encoding="utf-8"))
 
 required_headings = {
     "Product outcome",
     "Non-negotiable constraints",
-    "Research baseline",
     "Interaction architecture",
     "Built-in widget plan",
     "Third-party dependency and license gate",
@@ -71,8 +70,8 @@ if not any(task["id"] == "UX-SPEC-001" and task["status"] == "DONE" for task in 
     raise SystemExit("UX-SPEC-001 must remain complete")
 
 required_contracts = {
-    "docs/ui-spec.md": (ui_spec, "## 33. One-stop workbench usability contract"),
-    "docs/architecture.md": (architecture, "## M21 widget integration boundary"),
+    "docs/interface-behavior.md": (ui_spec, "## Workbench usability contract"),
+    "docs/architecture.md": (architecture, "## Widget integration boundary"),
 }
 for path, (text, marker) in required_contracts.items():
     if marker not in text:

@@ -129,6 +129,7 @@ fn pkgdata_workspace_renders_typed_partial_details_footer_and_responsive_modes()
         generation: 2,
     };
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Packages;
     app.focus = FocusTarget::Workspace;
     app.package_selection = Some(identity.clone());

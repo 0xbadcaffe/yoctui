@@ -1,0 +1,165 @@
+{
+  "version": "0.1.319",
+  "verified_utc": "2026-10-08T09:47:43.133321+00:00",
+  "branch": "feature/prod",
+  "source_base_commit": "7ca028dab7a0b763f21b903054e56abc67ba7638",
+  "source_file_sha256": {
+    "Cargo.toml": "6685f1d087b37f4da6f1fd003068951334e9c5e45c8d3c3d7f81b03776c8f390",
+    "Cargo.lock": "60c97c4df3d82aed60b058f7b1cf18bb47c3c8dcf05937d675036230379b974a",
+    "crates/yoctui-cli/src/source_git.rs": "90589d364d8ff20bc819658caeae292bc51e74c0c825e101345bee9a1cee2c5f",
+    "crates/yoctui-cli/src/source_git/watcher.rs": "78fde44c43c92ea393d144a9a35dce789ac59200768bd73b6b81d3a31660b49d",
+    "crates/yoctui-cli/src/tests/source_git.rs": "ffcae2abb23248942fc50219175e8d5cc22e81cddc15d44eb2d1e20722fd0173",
+    "crates/yoctui-cli/src/tests/source_git_watcher.rs": "fdde656a5f5adf868b308a4224e71c5a159ff81c07498c56365e3fa63bc2f6a3",
+    "scripts/measure-attach-startup.py": "eef6dcf3e1a2ab829e617f384a6105e2994fd1b8f8f0d46d8f49644ce4e126be",
+    "scripts/test_measure_attach_startup.py": "ae2838cc9c15fc2d2cf2e8185a39c0f9e14a6cbedb54a851a824350dcd7526bd"
+  },
+  "baseline_watcher_equals_315_archive": true,
+  "first_frame_method": "real composed workspace in160x50 PTY, private config/session attached to existing OpenBMC daemon; monotonic spawn-to-frame. Warm cache samples are not cold-cache claims. Native probe included separately; desktop handoff disabled.",
+  "measurements": {
+    "baseline": {
+      "binary": "/home/bspguy-dev/.cargo/bin/yoctui",
+      "binary_sha256": "b63a1d1bd709ee78bdf9543353d4286bce9a598cf8453bf87c5ad50b9ea38d2f",
+      "first_frame_seconds": 3.524111,
+      "inotify_watches_after_two_seconds": 64889,
+      "connected": true,
+      "workspace_header": [
+        "│yoctui v0.1.315 • ⣏ Git: scanning… • Project: openbmc • T:not selected  •  Machine: romulus              D:✓ Connected/Local • BB:– Disconnected • Local 11:34│",
+        "│Workspace: /home/bspguy-dev/src/openbmc  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                  │"
+      ],
+      "dimensions": [
+        160,
+        50
+      ],
+      "terminal_graphics": "none (no desktop handoff/probe)",
+      "session": "private temporary config/session; existing daemon untouched"
+    },
+    "fixed": {
+      "binary": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "binary_sha256": "a9d9216f1b2225057b91c5411401444fea91289b7a0ed6451a32a9e3436d9649",
+      "first_frame_seconds": 0.034848,
+      "inotify_watches_after_two_seconds": 4101,
+      "connected": true,
+      "workspace_header": [
+        "│yoctui v0.1.319 • ⣏ Git: scanning… • Project: openbmc • T:not selected  •  Machine: romulus              D:✓ Connected/Local • BB:– Disconnected • Local 11:44│",
+        "│Workspace: /home/bspguy-dev/src/openbmc  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                  │"
+      ],
+      "dimensions": [
+        160,
+        50
+      ],
+      "terminal_graphics": "none (no desktop handoff/probe)",
+      "session": "private temporary config/session; existing daemon untouched"
+    },
+    "fixed-repeat": {
+      "binary": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "binary_sha256": "a9d9216f1b2225057b91c5411401444fea91289b7a0ed6451a32a9e3436d9649",
+      "first_frame_seconds": 0.041014,
+      "inotify_watches_after_two_seconds": 4101,
+      "connected": true,
+      "workspace_header": [
+        "│yoctui v0.1.319 • ⣏ Git: scanning… • Project: openbmc • T:not selected  •  Machine: romulus              D:✓ Connected/Local • BB:– Disconnected • Local 11:44│",
+        "│Workspace: /home/bspguy-dev/src/openbmc  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                  │"
+      ],
+      "dimensions": [
+        160,
+        50
+      ],
+      "terminal_graphics": "none (no desktop handoff/probe)",
+      "session": "private temporary config/session; existing daemon untouched"
+    },
+    "native-probe": {
+      "binary": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "binary_sha256": "a9d9216f1b2225057b91c5411401444fea91289b7a0ed6451a32a9e3436d9649",
+      "first_frame_seconds": 0.484261,
+      "inotify_watches_after_two_seconds": 4101,
+      "connected": true,
+      "workspace_header": [
+        "│yoctui v0.1.319 • ⣏ Git: scanning… • Project: openbmc • T:not selected  •  Machine: romulus              D:✓ Connected/Local • BB:– Disconnected • Local 11:45│",
+        "│Workspace: /home/bspguy-dev/src/openbmc  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                  │"
+      ],
+      "dimensions": [
+        160,
+        50
+      ],
+      "terminal_graphics": "native probe (no desktop handoff)",
+      "session": "private temporary config/session; existing daemon untouched"
+    },
+    "fixed-traced": {
+      "binary": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "binary_sha256": "a9d9216f1b2225057b91c5411401444fea91289b7a0ed6451a32a9e3436d9649",
+      "first_frame_seconds": 0.058455,
+      "inotify_watches_after_two_seconds": 4101,
+      "connected": true,
+      "workspace_header": [
+        "│yoctui v0.1.319 • ⣏ Git: scanning… • Project: openbmc • T:not selected  •  Machine: romulus              D:✓ Connected/Local • BB:– Disconnected • Local 11:45│",
+        "│Workspace: /home/bspguy-dev/src/openbmc  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                  │"
+      ],
+      "dimensions": [
+        160,
+        50
+      ],
+      "terminal_graphics": "none (no desktop handoff/probe)",
+      "session": "private temporary config/session; existing daemon untouched"
+    },
+    "installed": {
+      "binary": "/home/bspguy-dev/.cargo/bin/yoctui",
+      "binary_sha256": "a9d9216f1b2225057b91c5411401444fea91289b7a0ed6451a32a9e3436d9649",
+      "first_frame_seconds": 0.467022,
+      "inotify_watches_after_two_seconds": 4101,
+      "connected": true,
+      "workspace_header": [
+        "│yoctui v0.1.319 • ⣏ Git: scanning… • Project: openbmc • T:not selected  •  Machine: romulus              D:✓ Connected/Local • BB:– Disconnected • Local 11:47│",
+        "│Workspace: /home/bspguy-dev/src/openbmc  |  Build: none  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                  │"
+      ],
+      "dimensions": [
+        160,
+        50
+      ],
+      "terminal_graphics": "native probe (no desktop handoff)",
+      "session": "private temporary config/session; existing daemon untouched"
+    }
+  },
+  "traced_diagnostic_before": {
+    "first_frame_seconds": 41.696311,
+    "inotify_add_watch_calls": 67622,
+    "generated_openbmc_build_watch_calls": 60179,
+    "method": "strace -f -tt -T on old315client; profiling overhead inflates traversal, not a normal CPU/startup acceptance sample"
+  },
+  "traced_diagnostic_after": {
+    "inotify_add_watch_calls": 4101,
+    "generated_openbmc_build_watch_calls": 0,
+    "method": "strace on measurement harness plus new319client; timing is diagnostic, not directly comparable to unprofiled samples"
+  },
+  "checks": {
+    "source_watch_tests": 6,
+    "initial_attach_transport_tests": 2,
+    "startup_health_harness_tests": 2,
+    "production_render_tests": 16,
+    "identity_only_goldens_verified": 34,
+    "derived_rasters_verified": 29,
+    "strict_cli_clippy": "PASS",
+    "fmt_version_layout_readme_diff": "PASS",
+    "full_local_suite": "not run; focused checks only"
+  },
+  "release_build": {
+    "command": "CARGO_BUILD_JOBS=2 CARGO_INCREMENTAL=0 cargo build --release --locked -p yoctui --bin yoctui -j 2",
+    "elapsed": "9m48s",
+    "binary_sha256": "a9d9216f1b2225057b91c5411401444fea91289b7a0ed6451a32a9e3436d9649"
+  },
+  "installed_binary": "/home/bspguy-dev/.cargo/bin/yoctui",
+  "backup": "/home/bspguy-dev/.cargo/bin/yoctui-v0.1.315-before-attach-fix-20261008",
+  "daemon_after": [
+    "status: running",
+    "pid: 5784",
+    "instance: 23dbce85020e7398c572a29d01c07314",
+    "started_unix_ms: 1791447061807",
+    "socket: /run/user/1000/yoctui/daemon.sock"
+  ],
+  "preserved": "Daemon PID/instance unchanged, no build/terminal restart or termination. Original.vscode preserved; no master push or crates.io publication.",
+  "toolchain_and_host": [
+    "rustc 1.97.0 (2d8144b78 2026-07-07)",
+    "cargo 1.97.0 (c980f4866 2026-06-30)",
+    "Linux 7.0.0-34-generic",
+    "8"
+  ]
+}

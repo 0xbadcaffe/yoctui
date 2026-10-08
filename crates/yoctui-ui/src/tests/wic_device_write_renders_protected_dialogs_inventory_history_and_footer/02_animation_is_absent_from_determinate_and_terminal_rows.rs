@@ -51,7 +51,7 @@ fn renders_small_terminal() {
 #[test]
 fn persistent_shell_degrades_across_supported_terminal_widths() {
     for (width, height, expected) in [
-        (140, 30, "Inspector"),
+        (140, 30, "Dashboard"),
         (100, 24, "Navigator"),
         (80, 24, "Dashboard"),
     ] {
@@ -75,6 +75,7 @@ fn persistent_shell_degrades_across_supported_terminal_widths() {
 #[test]
 fn responsive_shell_uses_semantic_content_at_every_breakpoint() {
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Tasks;
 
     let wide = rendered_text(&app, 130, 24);
@@ -138,6 +139,7 @@ fn responsive_resize_preserves_the_selected_pane() {
 #[test]
 fn ux_focus_zoom_breadcrumb_and_subfocus_survive_responsive_accessible_rendering() {
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Tasks;
     app.focus = FocusTarget::Workspace;
     app.workspace_subfocus = yoctui_model::WorkspaceSubfocus::Secondary;

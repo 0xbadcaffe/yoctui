@@ -50,7 +50,8 @@ async fn rootfs_runtime_reverse_partial_scan_retains_control_and_containment() {
             build.clone(),
             sources.clone(),
             RootfsCompositionCancellation::default(),
-            Instant::now()
+            Instant::now(),
+            true
         ),
         Err(RootfsCompositionAdapterError::Timeout(_))
     ));

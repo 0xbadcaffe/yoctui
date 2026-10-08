@@ -288,12 +288,16 @@ fn every_devtool_menu_command_opens_its_typed_form() {
 fn application_menu_has_a_dedicated_complete_devtool_group() {
     let mut app = App::new(16, 4096);
     let _ = update(&mut app, Action::OpenApplicationMenu);
-    for _ in 0..5 {
+    for _ in 0..ApplicationMenuGroup::ALL
+        .iter()
+        .position(|group| *group == ApplicationMenuGroup::Devtool)
+        .unwrap()
+    {
         let _ = update(&mut app, Action::SelectMenuGroup { delta: 1 });
     }
     assert_eq!(app.menu.group(), ApplicationMenuGroup::Devtool);
     let items = app.active_menu_items();
-    assert_eq!(items.len(), DevtoolUtilityCommand::ALL.len());
+    assert_eq!(items.len(), DevtoolUtilityCommand::ALL.len() + 1);
     for command in DevtoolUtilityCommand::ALL {
         assert!(
             items.iter().any(|item| item.label == command.label()),

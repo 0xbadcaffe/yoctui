@@ -78,6 +78,7 @@ fn compatibility_ui_inspector_responsive_absent_themes_and_no_color_are_safe() {
     }
 
     let mut absent = App::new(32, 8192);
+    absent.inspector_visible = true;
     absent.screen = Screen::Compatibility;
     absent.focus = FocusTarget::Workspace;
     absent.daemon.status = yoctui_model::ClientReplicaStatus::Stale;
@@ -140,6 +141,7 @@ fn compatibility_ui_nav_actions_render_state_reason_and_fallback_from_one_snapsh
 #[test]
 fn compatibility_ui_nav_actions_keep_navigation_local_and_gate_operations() {
     let mut app = App::new(32, 8192);
+    app.inspector_visible = true;
     app.screen = Screen::Logs;
     app.focus = FocusTarget::Navigator;
     app.navigator_selection = 2;

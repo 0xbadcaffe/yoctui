@@ -46,3 +46,5 @@ mod terminal_mouse_uses_bound_later_history_session;
 mod terminal_visible_dimensions;
 
 mod terminal_pane_clicks_exclude_navigator_inspector_tabs_and_prefix_rail;
+
+mod inspector_toggle;

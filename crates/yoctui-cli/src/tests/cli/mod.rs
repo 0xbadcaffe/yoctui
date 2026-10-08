@@ -3,6 +3,7 @@ mod clipboard;
 mod gitui_native_workspace;
 mod modifier_shortcuts;
 mod rootfs_browser;
+mod rootfs_package_preview;
 mod startup_screen;
 mod terminal_kill_safety;
 

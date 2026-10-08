@@ -1,7 +1,10 @@
 //! Event-driven source status probes never delay the input loop or apply stale results.
 use super::*;
-use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{EventKind, RecommendedWatcher};
 use std::sync::mpsc::{Receiver, TryRecvError};
+
+mod watcher;
+use watcher::WatchSetup;
 
 const FALLBACK_REFRESH: Duration = Duration::from_secs(30);
 
@@ -13,6 +16,7 @@ pub(crate) struct SourceGitPoller {
     next: Option<Instant>,
     watcher: Option<RecommendedWatcher>,
     watch_events: Option<Receiver<notify::Result<notify::Event>>>,
+    watch_setup: Option<WatchSetup>,
     refresh_after_pending: bool,
 }
 
@@ -37,12 +41,34 @@ impl SourceGitPoller {
             self.watched_build_dir = build_dir.clone();
             self.next = None;
             self.refresh_after_pending = false;
-            self.install_watcher(source.as_deref(), build_dir.as_deref());
+            self.watcher = None;
+            self.watch_events = None;
+            self.watch_setup = source
+                .clone()
+                .map(|source| WatchSetup::spawn(source, build_dir.clone()));
             compatibility_workspace_action(
                 app,
                 Action::SourceGitStatusUpdated(yoctui_model::SourceGitStatus::Scanning),
             );
             changed = true;
+        }
+
+        if self
+            .watch_setup
+            .as_ref()
+            .is_some_and(WatchSetup::is_finished)
+        {
+            let setup = self
+                .watch_setup
+                .take()
+                .expect("finished watcher setup exists");
+            if let Some(installed) = setup.finish().await {
+                self.watcher = Some(installed.watcher);
+                self.watch_events = Some(installed.events);
+                // Cover edits made between the initial status and watch setup.
+                self.refresh_after_pending = self.pending.is_some();
+                self.next = Some(Instant::now());
+            }
         }
 
         if self.drain_relevant_events(app.workspace.build_dir.as_deref()) {
@@ -93,33 +119,6 @@ impl SourceGitPoller {
             changed = true;
         }
         changed
-    }
-
-    fn install_watcher(&mut self, source: Option<&Path>, build_dir: Option<&Path>) {
-        self.watcher = None;
-        self.watch_events = None;
-        let Some(source) = source else {
-            return;
-        };
-        let (send, receive) = std::sync::mpsc::channel();
-        let Ok(mut watcher) = notify::recommended_watcher(move |event| {
-            let _ = send.send(event);
-        }) else {
-            return;
-        };
-        let mut installed = watcher.watch(source, RecursiveMode::NonRecursive).is_ok();
-        if let Ok(entries) = source.read_dir() {
-            for path in entries.flatten().map(|entry| entry.path()) {
-                if !path.is_dir() || build_dir.is_some_and(|build| build.starts_with(&path)) {
-                    continue;
-                }
-                installed |= watcher.watch(&path, RecursiveMode::Recursive).is_ok();
-            }
-        }
-        if installed {
-            self.watcher = Some(watcher);
-            self.watch_events = Some(receive);
-        }
     }
 
     fn drain_relevant_events(&mut self, build_dir: Option<&Path>) -> bool {

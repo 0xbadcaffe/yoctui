@@ -103,7 +103,7 @@ fn next_generation_palette_is_explicit_in_accessible_modes() {
         app.focus = FocusTarget::CommandPalette;
         app.command_palette_query = "Open Settings".into();
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("▶ Open Settings"), "{output}");
+        assert!(output.contains("▶ Preferences"), "{output}");
         assert!(output.contains("✓ Ready"), "{output}");
         assert!(output.contains("Available: yes"), "{output}");
         assert!(output.contains("[EDITING]") && output.contains("Esc close"), "{output}");
@@ -350,6 +350,7 @@ fn compact_resource_meters_distinguish_unknown_zero_and_accessibility() {
 fn dashboard_renders_host_cpu_and_build_disk_space() {
     let mut terminal = Terminal::new(TestBackend::new(300, 40)).unwrap();
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.host_telemetry.cpu_utilization_percent = Some(42);
     app.host_telemetry.disk_available_bytes = Some(8 * 1024 * 1024 * 1024);
     app.host_telemetry.disk_total_bytes = Some(16 * 1024 * 1024 * 1024);

@@ -206,7 +206,8 @@ pub(crate) fn concept_editor_menu_app() -> App {
     }
     let _ = update(&mut app, Action::OpenApplicationMenu);
     let _ = update(&mut app, Action::SelectMenuGroup { delta: 1 });
-    let _ = update(&mut app, Action::SelectMenuItem { delta: 2 });
+    let cancel = app.active_menu_items().iter().position(|item| item.action_id.as_str() == "tasks.cancel").unwrap();
+    let _ = update(&mut app, Action::SelectMenuItem { delta: cancel as isize });
     app
 }
 

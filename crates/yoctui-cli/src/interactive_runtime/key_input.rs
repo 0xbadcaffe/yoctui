@@ -24,6 +24,13 @@ impl InteractiveRuntime {
             runtime.render_scheduler.invalidate(RenderCause::State);
             return Ok(true);
         }
+        if let Some(action) = input_from_key(k)
+            .and_then(|input| yoctui_app::inspector_toggle_action(&runtime.app, input))
+        {
+            let _ = compatibility_workspace_action(&mut runtime.app, action);
+            runtime.render_scheduler.invalidate(RenderCause::State);
+            return Ok(true);
+        }
         if let Some(effect) = platform_menuconfig_key(&mut runtime.app, k) {
             if let Some(effect) = effect {
                 let _ =
