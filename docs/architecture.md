@@ -30,6 +30,15 @@ outside input/render loops. Requests/results bind workspace, selection, full dae
 instance, and generation; stale results cannot install. Reconnect replays retained
 events or obtains a snapshot.
 
+Source Git status uses asynchronous read-only probes. Watch discovery reads the
+Git index (8 MiB/5-second command limits), never recursively walks the source or
+generated build tree, and installs non-recursive watches on a blocking worker.
+There are at most 4096 tracked-source directory watches plus ten Git metadata
+paths, with a bounded 256-event queue. Access-only events do not trigger refresh.
+Workspace replacement/drop cancels pending setup and prevents stale installation;
+the existing 30-second status fallback covers missed/overflowed events, additional
+directories, Git worktrees and unavailable watcher resources.
+
 ## Builds and bounded state
 
 Aggregate counters are independent of retained rows; unknown totals stay unknown.

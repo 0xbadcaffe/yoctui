@@ -63,6 +63,13 @@ prefixes, reserved routes, and removal of critical navigation. Launch-only flags
 preserve saved color. Daemon build/instance/generation capability authority gates
 results/actions; client PATH and stale results cannot enable them.
 
+Attaching does not wait for recursive filesystem watcher registration. Git status
+starts as scanning while source watches initialize in the background; existing
+status remains visible on refresh. Tracked-directory and Git metadata edits
+request refresh, while new/unwatched directories and unavailable/overflowed
+watchers retain a 30-second polling fallback. Generated build output is not
+recursively watched. A workspace change discards stale watcher setup.
+
 ## Rendering and validation
 
 Input/resize is independent of dirty-frame cadence: normally 4 Hz; saturated

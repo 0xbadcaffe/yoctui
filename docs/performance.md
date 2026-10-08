@@ -16,6 +16,32 @@ PID/daemon, host/kernel/CPU/affinity/RAM/filesystem/free space/load and dimensio
 Changed PID, missing metadata/window, or exit invalidates the run. Startup has
 an eight-second first-frame limit, measured separately.
 
+Measure real attach startup with a private session, without restarting the daemon:
+
+```bash
+python3 scripts/measure-attach-startup.py --binary target/release/yoctui
+```
+
+This records time to the first composed workspace, binary SHA256, daemon
+connection and inotify watch count at 160x50; graphics probing/desktop handoff
+are disabled for a repeatable comparison. It signals only its owned client and
+leaves the existing daemon/builds/terminals untouched. Report traced timing
+separately: syscall tracing significantly inflates filesystem traversal time.
+
+### Attach fix in 0.1.319
+
+On the existing OpenBMC daemon, controlled warm-cache first frames improved
+from 3.52 seconds (installed 0.1.315) to 0.035–0.041 seconds; the normal terminal
+graphics probe took 0.48 seconds. Watches fell from 64,889 to 4,101. The previous
+watcher implementation also matches the 0.1.318 branch base. Syscall tracing
+identified 60,179 watches inside generated build output before the fix and zero
+afterward; its 41.7-second old startup is diagnostic, not an unprofiled result.
+Setup now runs asynchronously with bounded tracked-directory watches instead
+of a recursive filesystem walk. Existing event refresh and 30-second fallback
+remain; builds and terminal sessions do not need to restart.
+See the [measurement receipt](performance/attach-startup-0.1.319.json) for exact
+binary/source hashes, installed-client measurement, methods and focused checks.
+
 ## Scenario thresholds
 
 | Scenario | Workload | CPU ceiling |
