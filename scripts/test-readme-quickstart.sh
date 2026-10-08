@@ -78,7 +78,12 @@ assert "https://crates.io/crates/yoctui" in header_targets
 assert "#license" in header_targets and blob_base + "LICENSE" in readme
 for section in ("features", "install", "quickstart", "documentation", "contributing", "license"):
     assert "#" + section in header_targets, f"Missing README navigation: {section}"
-assert any("/actions/workflows/ci.yml/badge.svg" in target for target in header_targets)
+ci_badges = [urlsplit(target) for target in header_targets if "/actions/workflows/ci.yml/badge.svg" in target]
+assert len(ci_badges) == 1
+ci_query = parse_qs(ci_badges[0].query)
+assert ci_query.get("branch") == ["master"]
+assert ci_query.get("event") == ["push"]
+assert re.fullmatch(r"\d+\.\d+\.\d+", ci_query.get("refresh", [""])[0])
 version_badges = [urlsplit(target) for target in header_targets if urlsplit(target).netloc == "img.shields.io" and urlsplit(target).path == "/crates/v/yoctui"]
 assert len(version_badges) == 1
 query = parse_qs(version_badges[0].query)
