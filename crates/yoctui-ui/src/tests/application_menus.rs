@@ -1,6 +1,29 @@
 use super::*;
 
 #[test]
+fn application_menu_border_matches_centered_mouse_bounds() {
+    let mut app = App::new(10, 1024);
+    update(&mut app, Action::OpenApplicationMenu);
+    for (width, height) in [(80, 24), (101, 31), (160, 50), (240, 80)] {
+        let (left, top, menu_width, menu_height) =
+            yoctui_app::application_menu_bounds(&app, width, height, app.active_menu_items().len())
+                .unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &app, literal_now()))
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        assert_eq!(buffer[(left, top)].symbol(), "╔");
+        assert_eq!(buffer[(left + menu_width - 1, top)].symbol(), "╗");
+        assert_eq!(buffer[(left, top + menu_height - 1)].symbol(), "╚");
+        assert_eq!(
+            buffer[(left + menu_width - 1, top + menu_height - 1)].symbol(),
+            "╝"
+        );
+    }
+}
+
+#[test]
 fn every_application_menu_group_and_selected_action_is_visible_on_laptop_terminals() {
     let mut app = App::new(10, 1024);
     update(&mut app, Action::OpenApplicationMenu);

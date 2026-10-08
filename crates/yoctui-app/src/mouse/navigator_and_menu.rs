@@ -41,9 +41,9 @@ pub(crate) fn literal_navigator_selection_at_row(
         .and_then(App::navigator_selection_for_destination)
 }
 
-/// Shared concept-menu bounds for rendering and mouse hit testing.
+/// Centered application-menu bounds shared by rendering and mouse hit testing.
 pub fn application_menu_bounds(
-    app: &App,
+    _app: &App,
     width: u16,
     height: u16,
     _items: usize,
@@ -53,14 +53,9 @@ pub fn application_menu_bounds(
     }
     let menu_width = 100.min(width.saturating_sub(4));
     let menu_height = 28.min(height.saturating_sub(6));
-    let top = workbench_chrome_heights(app, width, height)[0];
-    let centered_expansion = menu_width.saturating_sub(60) / 2;
     Some((
-        (width / 4)
-            .saturating_sub(centered_expansion)
-            .min(width.saturating_sub(menu_width).saturating_sub(2))
-            .max(2),
-        top,
+        width.saturating_sub(menu_width) / 2,
+        height.saturating_sub(menu_height) / 2,
         menu_width,
         menu_height,
     ))

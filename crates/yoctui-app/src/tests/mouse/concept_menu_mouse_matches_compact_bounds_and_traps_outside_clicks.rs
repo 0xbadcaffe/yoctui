@@ -11,6 +11,8 @@ fn concept_menu_mouse_matches_compact_bounds_and_traps_outside_clicks() {
         let (left, top, menu_width, menu_height) =
             application_menu_bounds(&app, width, height, app.active_menu_items().len()).unwrap();
         assert_eq!((menu_width, menu_height), (expected_width, expected_height));
+        assert_eq!(left, (width - menu_width) / 2);
+        assert_eq!(top, (height - menu_height) / 2);
         assert!(left >= 2);
         assert!(left + menu_width + 2 <= width);
         let action = mouse_action_for_app(
@@ -54,6 +56,24 @@ fn concept_menu_mouse_matches_compact_bounds_and_traps_outside_clicks() {
         assert_eq!(app.menu.item_selection, 1);
         assert_eq!(app.focus, FocusTarget::Dialog);
     }
+}
+
+#[test]
+fn application_menu_stays_centered_across_resize_and_chrome_preferences() {
+    let mut app = App::new(10, 1024);
+    yoctui_model::update(&mut app, Action::OpenApplicationMenu);
+    for inspector in [false, true] {
+        app.set_inspector_visible(inspector);
+        for (width, height) in [(64, 16), (80, 24), (101, 31), (160, 50), (240, 80)] {
+            let (left, top, menu_width, menu_height) =
+                application_menu_bounds(&app, width, height, app.active_menu_items().len())
+                    .unwrap();
+            assert!((left as i32 - (width - left - menu_width) as i32).abs() <= 1);
+            assert!((top as i32 - (height - top - menu_height) as i32).abs() <= 1);
+        }
+    }
+    assert!(application_menu_bounds(&app, 63, 16, 0).is_none());
+    assert!(application_menu_bounds(&app, 64, 15, 0).is_none());
 }
 
 #[test]

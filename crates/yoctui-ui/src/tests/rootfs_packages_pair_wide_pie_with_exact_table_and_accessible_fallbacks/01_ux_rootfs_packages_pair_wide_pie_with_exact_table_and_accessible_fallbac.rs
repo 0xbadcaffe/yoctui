@@ -135,22 +135,20 @@ fn concept_rootfs_composition_keeps_chart_table_selection_and_tree_visible() {
 
 #[test]
 fn concept_editor_application_menu_composes_focus_validation_and_diff() {
-    let app = concept_editor_menu_app();
+    let mut app = concept_editor_menu_app();
     assert_eq!(app.focus, FocusTarget::Dialog);
     assert_eq!(app.menu.kind, Some(yoctui_model::MenuKind::Application));
     assert!(matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))));
+    // A centered popup may cover editor metadata; validate the underlying
+    // editor independently, then check the visible menu and retained rail.
+    update(&mut app, Action::CloseMenu);
     let output = rendered_text_at(&app, 160, 50, literal_now());
-
     for anchor in [
         "Recipe Inspector",
         "Name: bash",
         "File: bash_5.2.bb",
         "Language: BitBake",
         "State: modified",
-        "Yoctui Application Menu",
-        "Build  Actions  Navigate  Config  View",
-        "Cancel active build",
-        "No active build is avai",
         "Validation and diff state",
         "Local validation: ✕ line 9: assignment has no value",
         "Diff preview: loaded → buffer",
@@ -159,6 +157,20 @@ fn concept_editor_application_menu_composes_focus_validation_and_diff() {
         "Ctrl+S save",
         "Ctrl+B build",
         "Tab files",
+    ] {
+        assert!(output.contains(anchor), "missing {anchor:?}: {output}");
+    }
+    update(&mut app, Action::OpenApplicationMenu);
+    update(&mut app, Action::SelectMenuGroup { delta: 1 });
+    let cancel = app.active_menu_items().iter()
+        .position(|item| item.action_id.as_str() == "tasks.cancel")
+        .unwrap();
+    update(&mut app, Action::SelectMenuItem { delta: cancel as isize });
+    let output = rendered_text_at(&app, 160, 50, literal_now());
+    for anchor in [
+        "Yoctui Application Menu", "Build  Actions  Navigate  Config  View",
+        "Cancel active build", "No active build is avai",
+        "Ctrl+S save", "Ctrl+B build", "Tab files",
     ] {
         assert!(output.contains(anchor), "missing {anchor:?}: {output}");
     }

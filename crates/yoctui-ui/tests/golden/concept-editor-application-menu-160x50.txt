@@ -1,42 +1,42 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.321 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.322 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌Navigator──────────╔Yoctui Application Menu═══════════════════════════════════════════════════════════════════════════╗───────────────────────────────────────┐
-│▾ OVERVIEW         ║ Workspace  Build  Actions  Navigate  Config  View  Devtool  Tools  Help                          ║────┐┌Recipe Inspector────────────────┐│
-│  ▱ Dashboard      ║Cancel active build · No active build is available to cancel.                                     ║    ││Recipe                          ││
-│  ▱ Insights       ║  Build image                               Alt+b      No current environment capability snaps    ║    ││Name: bash                      ││
-│▾ CONTENT          ║  Select image                              i          No current environment capability snaps    ║    ││Layer: poky                     ││
-│    Layers         ║  Build selected recipe                     b          No current environment capability snaps    ║    ││File: bash_5.2.bb               ││
-│    Recipes        ║> Cancel active build                       c          No active build is available to cancel.    ║    ││Language: BitBake               ││
-│    Packages       ║                                                                                                  ║    ││State: modified                 ││
-│    Images         ║                                                                                                  ║    ││                                ││
-│  ▱ Hardware       ║                                                                                                  ║    ││Git                             ││
-│    Kernel         ║                                                                                                  ║    ││Git status: unavailable; refresh││
-│    U-Boot / BIOS  ║                                                                                                  ║    ││Devtool status                  ││
-│    SDK            ║                                                                                                  ║    ││                                ││
-│▾ BUILD            ║                                                                                                  ║    ││Actions                         ││
-│    Tasks          ║                                                                                                  ║    ││[v] Validate                    ││
-│  ▱ Logs        LIV║                                                                                                  ║    ││[p] Preview diff                ││
-│  ▱ Errors         ║                                                                                                  ║    ││[Ctrl+S] Save                   ││
-│    Configuration  ║                                                                                                  ║    ││[Ctrl+B] Build recipe           ││
-│    Dependencies   ║                                                                                                  ║    ││[e] External editor             ││
-│▾ VALIDATE         ║                                                                                                  ║    ││[Alt+g] Open repository in GitUI││
-│    Testing        ║                                                                                                  ║    ││                                ││
-│    Security       ║                                                                                                  ║    ││                                ││
-│    QA             ║                                                                                                  ║    ││                                ││
-│▾ TOOLS            ║                                                                                                  ║    ││                                ││
-│    Raw Mode       ║                                                                                                  ║    ││                                ││
-│    Terminal Sessio║                                                                                                  ║    ││                                ││
-│    Devtool        ║Esc/F12 close · Enter open · ↑/↓ select · ←/→ groups                                              ║    ││                                ││
-│    QEMU / Wic     ╚══════════════════════════════════════════════════════════════════════════════════════════════════╝    ││                                ││
-│    Maintenance     │││                      ││                                                                            ││                                ││
-│  ▱ Build environmen│││                      ││                                                                            ││                                ││
-│  ▱ Compatibility   │││                      ││                                                                            ││                                ││
-│  ▱ Settings        │││                      │└────────────────────────────────────────────────────────────────────────────┘│                                ││
-│                    │││                      │┌Validation and diff state───────────────────────────────────────────────────┐│                                ││
-│                    │││                      ││Local validation: ✕ line 9: assignment has no value                         ││                                ││
+┌Navigator───────────┐┌Recipe editor: bash─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│▾ OVERVIEW          ││┌Files 1/2─────────────┐┌▶ bash_5.2.bb — BitBake · INSERT · modified · Ln 10 Col 1───────────────────┐┌Recipe Inspector────────────────┐│
+│  ▱ Dashboard       │││▶ bash_5.2.bb         ││ 1 │ SUMMARY = "GNU Bourne Again Shell"                                     ││Recipe                          ││
+│  ▱ Insights        │││  files/0001-fix-build││ 2 │ LICENSE = "GPL-3.0-only"                                               ││Name: bash                      ││
+│▾ CONTENT           │││.patch                ││ 3 │ SRC_URI = "https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz"               ││Layer: poky                     ││
+│    Layers          │││                      ││ 4 │ inherit autotools                                                      ││File: bash_5.2.bb               ││
+│    Recipes         │││      ╔Yoctui Application Menu═══════════════════════════════════════════════════════════════════════════╗uage: BitBake               ││
+│    Packages        │││      ║ Workspace  Build  Actions  Navigate  Config  View  Devtool  Tools  Help                          ║e: modified                 ││
+│    Images          │││      ║Cancel active build · No active build is available to cancel.                                     ║                            ││
+│  ▱ Hardware        │││      ║  Build image                               Alt+b      No current environment capability snaps    ║                            ││
+│    Kernel          │││      ║  Select image                              i          No current environment capability snaps    ║status: unavailable; refresh││
+│    U-Boot / BIOS   │││      ║  Build selected recipe                     b          No current environment capability snaps    ║ool status                  ││
+│    SDK             │││      ║> Cancel active build                       c          No active build is available to cancel.    ║                            ││
+│▾ BUILD             │││      ║                                                                                                  ║ons                         ││
+│    Tasks           │││      ║                                                                                                  ║Validate                    ││
+│  ▱ Logs        LIVE│││      ║                                                                                                  ║Preview diff                ││
+│  ▱ Errors          │││      ║                                                                                                  ║l+S] Save                   ││
+│    Configuration   │││      ║                                                                                                  ║l+B] Build recipe           ││
+│    Dependencies    │││      ║                                                                                                  ║External editor             ││
+│▾ VALIDATE          │││      ║                                                                                                  ║+g] Open repository in GitUI││
+│    Testing         │││      ║                                                                                                  ║                            ││
+│    Security        │││      ║                                                                                                  ║                            ││
+│    QA              │││      ║                                                                                                  ║                            ││
+│▾ TOOLS             │││      ║                                                                                                  ║                            ││
+│    Raw Mode        │││      ║                                                                                                  ║                            ││
+│    Terminal Session│││      ║                                                                                                  ║                            ││
+│    Devtool         │││      ║                                                                                                  ║                            ││
+│    QEMU / Wic      │││      ║                                                                                                  ║                            ││
+│    Maintenance     │││      ║                                                                                                  ║                            ││
+│  ▱ Build environmen│││      ║                                                                                                  ║                            ││
+│  ▱ Compatibility   │││      ║                                                                                                  ║                            ││
+│  ▱ Settings        │││      ║                                                                                                  ║                            ││
+│                    │││      ║Esc/F12 close · Enter open · ↑/↓ select · ←/→ groups                                              ║                            ││
+│                    │││      ╚══════════════════════════════════════════════════════════════════════════════════════════════════╝                            ││
 │                    │││                      ││Diff preview: loaded → buffer                                               ││                                ││
 │                    │││                      ││+  10 BROKEN_OVERRIDE =                                                     ││                                ││
 │                    │││                      ││Structural diagnostics only; BitBake/compiler output remains authoritative  ││                                ││
