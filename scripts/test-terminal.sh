@@ -25,6 +25,7 @@ exec 3<>"$terminal_input"
 XDG_CONFIG_HOME="$terminal_config_dir" \
 XDG_RUNTIME_DIR="$terminal_runtime_dir" \
 XDG_STATE_HOME="$terminal_state_dir" \
+YOCTUI_TERMINAL_GRAPHICS=none \
   timeout --kill-after=2s 10s \
   script -qec 'target/debug/yoctui --backend bridge' /dev/null \
   <"$terminal_input" >"$capture" &
