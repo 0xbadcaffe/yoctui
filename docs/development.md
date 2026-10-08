@@ -12,8 +12,8 @@ build; see the [user guide](user-guide.md). Use release builds for performance.
 
 ## Build from source
 
-The published release may lag the source repository. For development or
-unpublished changes, install Git and clone into a new directory:
+For development or building a specific checkout, install the
+[prerequisites](https://github.com/0xbadcaffe/yoctui#install) and clone into a new directory:
 
 ```bash
 mkdir -p "$HOME/projects"

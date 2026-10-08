@@ -62,17 +62,35 @@ for a closer look.
 
 Linux, an 80×24+ terminal, Python 3, a C compiler/linker, and
 [stable Rust/Cargo](https://www.rust-lang.org/tools/install) are required.
-Install the official release:
+Install the prerequisites on Ubuntu/Debian (use equivalent packages on other
+Linux distributions):
+
+```bash
+sudo apt update
+sudo apt install -y build-essential pkg-config curl ca-certificates python3 git
+```
+
+Install Rust and Cargo using [rustup](https://rust-lang.org/tools/install/),
+then make Cargo available in the current shell:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+rustc --version
+cargo --version
+```
+
+Install the official Yoctui release:
 
 ```bash
 cargo install yoctui --locked -j 2
-export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+yoctui --version
 ```
 
-The published crate may lag the source repository. For the latest checkout,
-follow [Build from source](https://github.com/0xbadcaffe/yoctui/blob/master/docs/development.md#build-from-source).
+For source builds, follow [Build from source](https://github.com/0xbadcaffe/yoctui/blob/master/docs/development.md#build-from-source).
 QEMU, GDB, GitUI, and document viewers are optional tools needed for their
-respective workflows.
+respective workflows. Live builds also need your Yocto release's host dependencies;
+see [workspace setup](https://github.com/0xbadcaffe/yoctui/blob/master/docs/user-guide.md#start-a-workspace-safely).
 
 ## Quickstart
 

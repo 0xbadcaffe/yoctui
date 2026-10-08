@@ -116,6 +116,8 @@ for name, markdown in {"README.md": readme, **manuals}.items():
         syntax = subprocess.run(["bash", "-n"], input=example, text=True, capture_output=True)
         assert syntax.returncode == 0, f"{name}: {syntax.stderr}"
 for command in (
+    "sudo apt install -y build-essential pkg-config curl ca-certificates python3 git",
+    "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
     "cargo install yoctui --locked -j 2",
     "yoctui daemon status", "yoctui daemon start", "yoctui --backend bridge",
 ):
@@ -126,7 +128,8 @@ for command in ('export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"', 'export B
     assert command in user, f"Missing workspace setup instruction: {command}"
 for command in ("cargo build --release --locked -p yoctui --bin yoctui -j 2", "cargo install --locked --path crates/yoctui-cli --force --bin yoctui -j 2"):
     assert command in development, f"Missing optimized source installation: {command}"
-assert "may lag the source repository" in development
+assert "may lag the source repository" not in readme + development
+assert readme.index('export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"') < readme.index("cargo install yoctui --locked -j 2")
 assert "do not change BitBake/make parallelism" in development
 assert "boot/.debug" in manuals["docs/kernel-and-firmware.md"]
 assert "Readable text of any extension" in manuals["docs/hardware-projects.md"]
