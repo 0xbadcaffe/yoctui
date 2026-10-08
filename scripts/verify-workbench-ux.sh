@@ -47,7 +47,6 @@ PY
 # the real-PTY, performance, dependency, live, and documentation gates retain
 # their environment-specific assertions.
 ./scripts/verify-workbench-design.sh
-./scripts/verify-m21-concept-pack.py
 ./scripts/verify-widget-dependencies.sh
 ./scripts/verify-third-party-notices.sh
 

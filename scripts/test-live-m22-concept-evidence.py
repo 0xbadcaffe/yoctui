@@ -39,7 +39,7 @@ class LiveM22EvidenceTests(unittest.TestCase):
             "label": "supported-live-m22-concept-parity",
             "scenarios": {},
         }
-        raster = next((ROOT / "docs/design/m22").rglob("*.png"))
+        raster = next((ROOT / "docs/design/screenshots").rglob("*.png"))
         for scenario in (
             "idle-dashboard",
             "active-build-tasks",

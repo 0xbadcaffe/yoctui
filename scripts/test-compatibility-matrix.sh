@@ -56,7 +56,7 @@ for kind, record in records.items():
     if support_end < today.replace(day=1):
         raise SystemExit(f"compatibility matrix: {kind} support policy has expired")
 
-matrix = (root / "docs" / "compatibility-matrix.md").read_text(encoding="utf-8")
+matrix = (root / "docs" / "supported-releases.md").read_text(encoding="utf-8")
 for required in (
     "compatibility-evidence/latest.toml",
     "compatibility-evidence/older.toml",

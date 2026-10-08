@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-test -f docs/ui-spec.md
+test -f docs/interface-behavior.md
 
 for required in \
   'FocusTarget' \

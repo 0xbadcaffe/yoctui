@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
-catalog="$repo_root/docs/utility-catalog.md"
+catalog="$repo_root/docs/tools-and-workflows.md"
 test -s "$catalog"
 required=(oe-init-build-env bitbake devtool recipetool bitbake-layers runqemu wic kas oe-pkgdata-util bitbake-getvar bitbake-diffsigs bitbake-dumpsig oe-find-native-sysroot sstate-cache-management.sh buildhistory-diff yocto-check-layer yocto-layer yocto-bsp yocto-kernel pybootchartgui toaster resulttool oe-selftest bitbake-selftest)
 for utility in "${required[@]}"; do

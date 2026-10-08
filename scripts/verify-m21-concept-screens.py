@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify real-Yoctui acceptance artifacts for the six M21 concept scenes."""
+"""Verify production UI cells, semantic anchors, features, and raster evidence."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "docs" / "design" / "m21" / "concepts" / "manifest.toml"
+MANIFEST = ROOT / "docs" / "design" / "ui-scenes.toml"
 REGISTRY = ROOT / "docs" / "design" / "acceptance-contracts.toml"
 WIDTH = 160
 HEIGHT = 50
@@ -175,7 +175,7 @@ def main(*, fixtures_only: bool = False) -> None:
     if not isinstance(scenarios, list) or len(scenarios) != 6:
         fail("manifest must contain exactly six scenarios")
     if manifest.get("exact_pixel_golden") is not False:
-        fail("generated concepts must remain non-authoritative for exact pixels")
+        fail("scenario metadata must not replace exact production cell goldens")
 
     ids: set[str] = set()
     golden_paths: set[Path] = set()

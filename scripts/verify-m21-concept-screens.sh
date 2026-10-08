@@ -8,4 +8,3 @@ cargo test -p yoctui-ui concept_screen_contracts
 python3 scripts/test-m21-concept-screen-verifier.py
 python3 scripts/test_cell_graphics.py
 ./scripts/verify-m21-concept-screens.py --fixtures-only
-./scripts/verify-m21-concept-pack.py

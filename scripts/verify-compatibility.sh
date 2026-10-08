@@ -62,9 +62,9 @@ for task_id in sorted(required_ids):
     if task.get("milestone") != "M18" or task.get("required") is not True:
         raise SystemExit(f"compatibility gate: {task_id} must be required in M18")
 
-matrix = root / "docs/compatibility-matrix.md"
+matrix = root / "docs/supported-releases.md"
 if not matrix.is_file() or matrix.stat().st_size == 0:
-    raise SystemExit("compatibility gate: docs/compatibility-matrix.md is missing or empty")
+    raise SystemExit("compatibility gate: docs/supported-releases.md is missing or empty")
 matrix_text = matrix.read_text(encoding="utf-8")
 for heading in ("## Classification vocabulary", "## Current matrix", "## Support window", "## Evidence policy"):
     if heading not in matrix_text:
@@ -101,13 +101,14 @@ if not matrix_rows:
 
 compatibility = root / "docs/compatibility.md"
 readme = root / "README.md"
-for path in (compatibility, readme):
+manual = root / "docs/user-guide.md"
+for path in (compatibility, manual, readme):
     if not path.is_file() or path.stat().st_size == 0:
         raise SystemExit(f"compatibility gate: {path.relative_to(root)} is missing or empty")
-    if "Yoctui functionality is Yocto-feature-correlated" not in path.read_text(encoding="utf-8"):
-        raise SystemExit(
-            f"compatibility gate: {path.relative_to(root)} lacks the product compatibility rule"
-        )
+if "Yoctui functionality is Yocto-feature-correlated" not in compatibility.read_text(encoding="utf-8"):
+    raise SystemExit("compatibility gate: docs/compatibility.md lacks the product compatibility rule")
+if "docs/user-guide.md" not in readme.read_text(encoding="utf-8") or "compatibility.md" not in manual.read_text(encoding="utf-8"):
+    raise SystemExit("compatibility gate: README/manual must expose the compatibility guide")
 
 if mode == "--structure-only":
     print("compatibility milestone structure is valid")

@@ -6,7 +6,7 @@ use crate::{
 use std::collections::BTreeSet;
 
 const REFERENCE: &str =
-    include_str!("../../../../../docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md");
+    include_str!("../../../../../docs/reference/bitbake-raw-wrynose-6.0-bitbake-2.18.md");
 
 #[derive(Debug)]
 struct ReferenceEntry<'a> {

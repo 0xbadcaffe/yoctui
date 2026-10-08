@@ -46,17 +46,48 @@ def product_path(path: str) -> bool:
     )
 
 
+def unchanged_reference_include(previous: bytes, current: bytes, path: str, revision: str) -> bool:
+    if "/src/tests/" not in path:
+        return False
+    include = re.compile(rb'^\s*include_str!\("([^"\\]+)"\);?[^\S\n]*$', re.M)
+    before, after = include.findall(previous), include.findall(current)
+    if not before or len(before) != len(after) or before == after:
+        return False
+    normalize = lambda match: match.group(0).replace(match[1], b"<reference>")
+    if include.sub(normalize, previous) != include.sub(normalize, current):
+        return False
+    try:
+        for old, new in zip(before, after):
+            old_target = (ROOT / path).parent.joinpath(old.decode()).resolve()
+            new_target = (ROOT / path).parent.joinpath(new.decode()).resolve()
+            old_target.relative_to(ROOT / "docs/reference")
+            new_target.relative_to(ROOT / "docs/reference")
+            content = subprocess.run(
+                ["git", "show", f"{revision}:{old_target.relative_to(ROOT)}"],
+                cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            )
+            if content.returncode or content.stdout != new_target.read_bytes():
+                return False
+    except (OSError, UnicodeError, ValueError):
+        return False
+    return True
+
+
 def product_changed(paths: list[str], revision: str) -> bool:
     for path in paths:
         if not product_path(path):
             continue
-        if path.endswith(".py"):
+        if path.endswith((".py", ".rs")):
             previous = subprocess.run(
                 ["git", "show", f"{revision}:{path}"], cwd=ROOT,
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             )
             try:
-                if previous.returncode == 0 and ast.dump(ast.parse(previous.stdout)) == ast.dump(ast.parse((ROOT / path).read_bytes())):
+                current = (ROOT / path).read_bytes()
+                if previous.returncode == 0 and path.endswith(".rs"):
+                    if unchanged_reference_include(previous.stdout, current, path, revision):
+                        continue  # Test-only documentation rename; identical included bytes.
+                if previous.returncode == 0 and path.endswith(".py") and ast.dump(ast.parse(previous.stdout)) == ast.dump(ast.parse(current)):
                     continue  # Formatting/comments only; runtime AST identical.
             except (OSError, SyntaxError, UnicodeError):
                 pass
