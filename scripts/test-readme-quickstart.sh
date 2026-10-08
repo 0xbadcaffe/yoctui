@@ -5,6 +5,7 @@ cd "$repo_root"
 
 python3 - <<'PY'
 from pathlib import Path
+from html import unescape
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlsplit
 import hashlib
@@ -32,12 +33,18 @@ def heading_slug(title):
     return re.sub(r"[^\w -]", "", title).replace(" ", "-")
 
 def links_in(markdown):
-    return re.findall(r'(?:src|href)="([^"]+)"|\]\(([^)\s]+)\)', markdown)
+    return [(unescape(html), unescape(link)) for html, link in
+            re.findall(r'(?:src|href)="([^"]+)"|\]\(([^)\s]+)\)', markdown)]
 
 assert prose_headings("# Title\n```bash\n# shell comment\n```\n", "#") == ["Title"]
 assert prose_headings("# Title\n# Duplicate\n", "#") == ["Title", "Duplicate"]
 assert prose_headings(readme, "#") == ["Yoctui"], "README title must not contain a version"
-assert prose_headings(readme, "##") == ["Install", "Quickstart", "Documentation"]
+assert prose_headings(readme, "##") == [
+    "Features", "Install", "Quickstart", "Documentation", "Contributing", "License",
+]
+assert links_in('<a href="https://example.org/?a=1&amp;b=2">') == [
+    ("https://example.org/?a=1&b=2", ""),
+]
 assert "Current source version:" not in readme, "Use the dynamic published-version badge"
 
 # README URLs must work on crates.io as well as GitHub. Validate relocated manual
@@ -68,7 +75,9 @@ assert "<!-- yoctui-header -->" in header
 header_targets = {html or markdown for html, markdown in links_in(header)}
 assert "https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml" in header_targets
 assert "https://crates.io/crates/yoctui" in header_targets
-assert blob_base + "LICENSE" in header_targets
+assert "#license" in header_targets and blob_base + "LICENSE" in readme
+for section in ("features", "install", "quickstart", "documentation", "contributing", "license"):
+    assert "#" + section in header_targets, f"Missing README navigation: {section}"
 assert any("/actions/workflows/ci.yml/badge.svg" in target for target in header_targets)
 version_badges = [urlsplit(target) for target in header_targets if urlsplit(target).netloc == "img.shields.io" and urlsplit(target).path == "/crates/v/yoctui"]
 assert len(version_badges) == 1
@@ -91,6 +100,8 @@ class Images(HTMLParser):
 
 header_images = Images()
 header_images.feed(header)
+assert len(header_images.sources) == 9, "Keep the banner and eight status/info badges"
+assert "Contributions are welcome" in readme and "MIT License" in readme
 banner = Path("docs/media/yoctui-header.png")
 assert raw_base + str(banner) in header_images.sources
 png = banner.read_bytes()
