@@ -132,9 +132,9 @@ Opening Yoctui does not start a build; exiting leaves daemon-owned work running.
 
 ## Contributing
 
-Contributions are welcome, whether you're fixing your first typo or bringing
-experience from a new board or Yocto release. Bug reports, documentation,
-workflow feedback, tests, and code all help make Yoctui better.
+Contributions are welcome. Share a bug report, suggest a workflow improvement,
+help with documentation, or contribute tests and code. Feedback from different
+boards and Yocto releases helps improve Yoctui for everyone.
 
 [Open an issue](https://github.com/0xbadcaffe/yoctui/issues) with reproduction
 steps and your Yocto/build environment, or send a focused
