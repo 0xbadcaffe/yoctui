@@ -292,12 +292,14 @@ if [[ "$doctor_output" != *"bridge protocol: ok"* ]]; then
   printf '%s\n' 'documentation check: isolated doctor did not validate the bridge protocol' >&2
   exit 1
 fi
-doctor_json="$(XDG_CONFIG_HOME="$docs_config_dir" cargo run -q -p yoctui -- doctor --json)"
-python3 - "$doctor_json" <<'PY'
+doctor_json_path="$docs_config_dir/doctor.json"
+XDG_CONFIG_HOME="$docs_config_dir" cargo run -q -p yoctui -- doctor --json >"$doctor_json_path"
+python3 - "$doctor_json_path" <<'PY'
 import json
 import sys
+from pathlib import Path
 
-report = json.loads(sys.argv[1])
+report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 if report.get("schema") != "yoctui.doctor.compatibility.v1":
     raise SystemExit("documentation check: Doctor JSON schema is missing")
 if report.get("authority") not in {"current", "unavailable", "invalid"}:
