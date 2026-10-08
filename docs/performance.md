@@ -53,6 +53,24 @@ unoptimized read-only test measurements, not end-to-end UI or cold-cache claims.
 The chart and list remain usable while details load; no persistent cache is used.
 See the [benchmark receipt](performance/rootfs-packages-0.1.320.json).
 
+### Rootfs Files in 0.1.321
+
+The lazy Files tree can open before filesystem/service inventory finishes. Exact
+deployed testdata, validated against recipe/machine/image name and build containment,
+avoids repeated BitBake queries when the matching rootfs is retained. Missing or
+invalid metadata keeps the existing query fallback; completion preserves navigation.
+The real OpenBMC Romulus `.static.mtd` test opened the tree through the CLI background
+pipeline in 52.5 ms; source/preview/root-directory samples took 42.6–48.4 ms.
+Opening `/etc` and previewing `/etc/passwd` also passed. These are unoptimized,
+read-only warm-cache measurements excluding terminal redraw; the rootfs belongs to
+the MTD build, not a mounted/decoded flash image. See the
+[measurement receipt](performance/rootfs-files-0.1.321.json).
+
+The laptop's active OpenBMC build also passed: its background tree load took
+30.1 ms, and the installed optimized client displayed `3 Files` in 0.35 seconds
+in a real 200x60 attached terminal. Target ownership/permissions, keyboard
+directory expansion and `/etc/passwd` preview were verified; daemon PID was unchanged.
+
 ## Scenario thresholds
 
 | Scenario | Workload | CPU ceiling |

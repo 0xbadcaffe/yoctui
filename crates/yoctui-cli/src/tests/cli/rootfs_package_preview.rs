@@ -127,3 +127,105 @@ async fn rootfs_live_package_loading_benchmark() {
         }
     }
 }
+
+#[tokio::test]
+#[ignore = "read-only live MTD benchmark; requires explicit YOCTUI_ROOTFS_BENCH_* paths"]
+async fn rootfs_live_mtd_files_loading_benchmark() {
+    let path = |suffix: &str| {
+        PathBuf::from(std::env::var(format!("YOCTUI_ROOTFS_BENCH_{suffix}")).unwrap())
+    };
+    let build = path("BUILD");
+    let request = RootfsCompositionRequest {
+        generation: 1,
+        image: yoctui_model::ImageArtifactIdentity {
+            machine: std::env::var("YOCTUI_ROOTFS_BENCH_MACHINE").unwrap(),
+            image: std::env::var("YOCTUI_ROOTFS_BENCH_IMAGE").unwrap(),
+            path: path("ARTIFACT"),
+        },
+    };
+    assert!(request.image.path.to_str().unwrap().ends_with(".mtd"));
+    let manifest = path("MANIFEST");
+    for run in 0..3 {
+        let started = std::time::Instant::now();
+        let sources =
+            yoctui_bitbake::rootfs_sources_from_deployed_metadata(&build, &request, &manifest)
+                .unwrap();
+        let source_ms = started.elapsed().as_secs_f64() * 1000.0;
+        let preview = RootfsCompositionAdapter::new(build.clone(), sources, 1)
+            .scan_preview_with_cancellation(
+                request.clone(),
+                RootfsCompositionCancellation::default(),
+            )
+            .await
+            .unwrap();
+        let root = preview.composition.root_directory.unwrap();
+        let entries = yoctui_bitbake::scan_rootfs_browser_directory(&root, &root).unwrap();
+        assert!(
+            entries
+                .iter()
+                .any(|entry| entry.path == root.join("etc") && entry.is_dir)
+        );
+        let first_directory_ms = started.elapsed().as_secs_f64() * 1000.0;
+        let etc = yoctui_bitbake::scan_rootfs_browser_directory(&root, &root.join("etc")).unwrap();
+        let (text, kind, _) =
+            yoctui_bitbake::read_rootfs_browser_preview(&root, &root.join("etc/passwd")).unwrap();
+        assert_eq!(kind, yoctui_model::PreviewKind::Text);
+        assert!(text.contains("root:"));
+        println!(
+            "mtd run={run} source_ms={source_ms:.3} first_directory_ms={first_directory_ms:.3} root_entries={} etc_entries={} navigation_and_preview_ms={:.3}",
+            entries.len(),
+            etc.len(),
+            started.elapsed().as_secs_f64() * 1000.0
+        );
+    }
+    let sources =
+        yoctui_bitbake::rootfs_sources_from_deployed_metadata(&build, &request, &manifest).unwrap();
+    let mut app = App::new(16, 4096);
+    app.screen = Screen::Images;
+    app.images_view = yoctui_model::ImagesView::RootfsFilesystem;
+    app.rootfs_composition = yoctui_model::RootfsCompositionState::Loading {
+        request: request.clone(),
+    };
+    let mut operation = None;
+    let started = std::time::Instant::now();
+    begin_rootfs_composition_operation_with_sources(
+        &mut app,
+        &build,
+        &mut operation,
+        request,
+        sources,
+    );
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while app.rootfs_browser().is_none() {
+            poll_rootfs_composition_operation(&mut app, &mut operation).await;
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(matches!(
+        app.rootfs_composition,
+        yoctui_model::RootfsCompositionState::LoadingDetails { .. }
+    ));
+    println!(
+        "mtd client_pipeline_first_tree_ms={:.3} entries={} details_still_loading=true",
+        started.elapsed().as_secs_f64() * 1000.0,
+        app.rootfs_browser().unwrap().entries.len()
+    );
+    tokio::time::timeout(Duration::from_secs(5), async {
+        while operation.is_some() {
+            poll_rootfs_composition_operation(&mut app, &mut operation).await;
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap();
+    assert!(app.rootfs_browser().is_some());
+    assert!(
+        app.rootfs_composition
+            .composition()
+            .unwrap()
+            .filesystem_tree()
+            .is_some()
+    );
+}

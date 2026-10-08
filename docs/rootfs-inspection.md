@@ -24,6 +24,14 @@ image checks reject stale replies. Lazy traversal is bounded, cancellable, and
 contained; symlinks/special files cannot expose host data. Limits/unreadable entries
 produce Partial. rm_work may leave packages available but rootfs Unavailable (cleaned).
 
+Files opens before the complete filesystem/service inventory finishes. Matching
+build-generated `.testdata.json` beside the exact deployed manifest can supply
+IMAGE_ROOTFS without starting BitBake queries; recipe, machine, image name and
+build containment must match. Missing/invalid/cleaned metadata falls back to the
+normal query. Finishing the inventory preserves the folder and selection.
+This also works for MTD artifacts with a retained build rootfs: it does **not**
+mount or unpack a flash image, or claim to inspect bytes changed inside that image.
+
 Arrows or h/j/k/l navigate; Enter expands/previews; Left returns; `.` shows hidden
 files; `/` searches; `e` edits. Rows report on-disk ownership/permissions, not fakeroot
 ownership. Saves check conflicts/containment; later BitBake tasks may replace edits.

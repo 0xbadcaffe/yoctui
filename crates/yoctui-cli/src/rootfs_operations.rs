@@ -33,7 +33,15 @@ pub(crate) fn begin_rootfs_composition_operation_with_sources(
     let cancellation = RootfsCompositionCancellation::default();
     let worker_cancellation = cancellation.clone();
     let worker_request = request.clone();
+    let (preview_sender, package_preview) = tokio::sync::oneshot::channel();
     let handle = tokio::spawn(async move {
+        publish_rootfs_preview(
+            &adapter,
+            &worker_request,
+            &worker_cancellation,
+            preview_sender,
+        )
+        .await;
         match adapter
             .scan_with_cancellation(worker_request.clone(), worker_cancellation)
             .await
@@ -56,7 +64,7 @@ pub(crate) fn begin_rootfs_composition_operation_with_sources(
         #[cfg(unix)]
         authority: None,
         _cancellation: cancellation,
-        package_preview: None,
+        package_preview: Some(package_preview),
         handle,
     });
 }
@@ -110,56 +118,66 @@ pub(crate) async fn begin_rootfs_composition_operation(
         let worker_query = query.clone();
         let (preview_sender, package_preview) = tokio::sync::oneshot::channel();
         let handle = tokio::spawn(async move {
+            let metadata_build = build.clone();
+            let metadata_request = worker_request.clone();
+            let manifest = fallback.manifest.clone();
+            let deployed = tokio::task::spawn_blocking(move || {
+                manifest.and_then(|manifest| {
+                    yoctui_bitbake::rootfs_sources_from_deployed_metadata(
+                        &metadata_build,
+                        &metadata_request,
+                        &manifest,
+                    )
+                })
+            })
+            .await
+            .ok()
+            .flatten();
             let query_build = build.clone();
             let query_cancel = worker_cancellation.clone();
-            let metadata = tokio::task::spawn_blocking(move || {
-                daemon_rootfs::request_sources(&worker_query, &query_build, &query_cancel)
+            let metadata_fallback = fallback.clone();
+            let metadata = deployed.is_none().then(|| {
+                tokio::task::spawn_blocking(move || {
+                    daemon_rootfs::request_sources(&worker_query, &query_build, &query_cancel).map(
+                        |sources| RootfsCompositionSources {
+                            image: metadata_fallback.image,
+                            manifest: metadata_fallback
+                                .manifest
+                                .or_else(|| sources.image_manifest.map(PathBuf::from)),
+                            pkgdata_directory: sources
+                                .pkgdata_dir
+                                .map(PathBuf::from)
+                                .or(metadata_fallback.pkgdata_directory),
+                            image_rootfs: sources.image_rootfs.map(PathBuf::from),
+                        },
+                    )
+                })
             });
-            // Paint packages from exact deployed sources without waiting for
-            // BitBake or walking the image filesystem.
-            if fallback.manifest.is_some()
-                && fallback.pkgdata_directory.is_some()
-                && let Ok(mut preview) = RootfsCompositionAdapter::new(
-                    build.clone(),
-                    fallback.clone(),
-                    worker_request.generation,
-                )
-                .scan_with_cancellation(worker_request.clone(), worker_cancellation.clone())
-                .await
-                && preview.composition.package_inventory().is_some()
-            {
-                preview.composition.filesystem_tree = yoctui_model::RootfsAuthority::Unavailable {
-                    reason: "Filesystem details are still loading.".into(),
-                };
-                preview.composition.system_inventory = yoctui_model::RootfsAuthority::Unavailable {
-                    reason: "System inventory is still loading.".into(),
-                };
-                preview
-                    .limitations
-                    .push("Filesystem and system inventory are still loading.".into());
-                let _ = preview_sender.send(preview);
-            }
-            let result = metadata
-                .await
-                .map_err(|error| format!("rootfs source worker was lost: {error}"))
-                .and_then(|result| {
-                    result.map_err(|error| format!("rootfs source lookup failed: {error:#}"))
-                });
+            let preview_adapter = RootfsCompositionAdapter::new(
+                build.clone(),
+                deployed.clone().unwrap_or_else(|| fallback.clone()),
+                worker_request.generation,
+            );
+            publish_rootfs_preview(
+                &preview_adapter,
+                &worker_request,
+                &worker_cancellation,
+                preview_sender,
+            )
+            .await;
+            let result = if let Some(sources) = deployed {
+                Ok(sources)
+            } else {
+                metadata
+                    .unwrap()
+                    .await
+                    .map_err(|error| format!("rootfs source worker was lost: {error}"))
+                    .and_then(|result| {
+                        result.map_err(|error| format!("rootfs source lookup failed: {error:#}"))
+                    })
+            };
             let (sources, metadata_limitation) = match result {
-                Ok(sources) => (
-                    RootfsCompositionSources {
-                        image: worker_request.image.clone(),
-                        manifest: fallback
-                            .manifest
-                            .or_else(|| sources.image_manifest.map(PathBuf::from)),
-                        pkgdata_directory: sources
-                            .pkgdata_dir
-                            .map(PathBuf::from)
-                            .or(fallback.pkgdata_directory),
-                        image_rootfs: sources.image_rootfs.map(PathBuf::from),
-                    },
-                    None,
-                ),
+                Ok(sources) => (sources, None),
                 Err(message) => (
                     fallback,
                     Some(format!(
@@ -306,7 +324,7 @@ pub(crate) async fn poll_rootfs_composition_operation(
         && let Some(receiver) = pending.package_preview.as_mut()
         && let Ok(preview) = receiver.try_recv()
     {
-        let _ = update(
+        let effect = update(
             app,
             Action::RootfsCompositionPreview {
                 request: preview.request,
@@ -315,6 +333,14 @@ pub(crate) async fn poll_rootfs_composition_operation(
             },
         );
         pending.package_preview = None;
+        if let Some(Effect::LoadLayerBrowserDirectory {
+            layer,
+            root,
+            directory,
+        }) = effect
+        {
+            load_layer_browser_directory(app, layer, root, directory).await;
+        }
     }
     if !operation
         .as_ref()
@@ -355,5 +381,24 @@ pub(crate) async fn poll_rootfs_composition_operation(
         }) = update(app, action)
     {
         load_layer_browser_directory(app, layer, root, directory).await;
+    }
+}
+
+async fn publish_rootfs_preview(
+    adapter: &RootfsCompositionAdapter,
+    request: &RootfsCompositionRequest,
+    cancellation: &RootfsCompositionCancellation,
+    sender: tokio::sync::oneshot::Sender<yoctui_bitbake::RootfsCompositionResponse>,
+) {
+    if let Ok(mut preview) = adapter
+        .scan_preview_with_cancellation(request.clone(), cancellation.clone())
+        .await
+        && (preview.composition.package_inventory().is_some()
+            || preview.composition.root_directory.is_some())
+    {
+        preview
+            .limitations
+            .push("Filesystem and system inventory are still loading.".into());
+        let _ = sender.send(preview);
     }
 }

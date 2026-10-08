@@ -173,7 +173,7 @@ pub use raw_job::{
 };
 pub use rootfs::{
     RootfsCompositionAdapter, RootfsCompositionAdapterError, RootfsCompositionCancellation,
-    RootfsCompositionResponse, RootfsCompositionSources,
+    RootfsCompositionResponse, RootfsCompositionSources, rootfs_sources_from_deployed_metadata,
 };
 pub use sdk::{
     SdkArtifactAdapter, SdkArtifactAdapterError, SdkArtifactCancellation, SdkArtifactResponse,

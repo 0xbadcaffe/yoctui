@@ -39,6 +39,7 @@ include!("rootfs/types_and_adapter.rs");
 include!("rootfs/source_and_system_scan.rs");
 include!("rootfs/manifest_and_pkgdata.rs");
 include!("rootfs/package_and_filesystem.rs");
+include!("rootfs/deployed_sources.rs");
 
 #[cfg(test)]
 #[path = "tests/rootfs/mod.rs"]

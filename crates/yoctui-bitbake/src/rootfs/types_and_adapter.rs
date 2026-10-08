@@ -92,6 +92,24 @@ impl RootfsCompositionAdapter {
         request: RootfsCompositionRequest,
         cancellation: RootfsCompositionCancellation,
     ) -> Result<RootfsCompositionResponse, RootfsCompositionAdapterError> {
+        self.scan_scope(request, cancellation, true).await
+    }
+
+    /// Validate the root and load packages without walking filesystem/services.
+    pub async fn scan_preview_with_cancellation(
+        &self,
+        request: RootfsCompositionRequest,
+        cancellation: RootfsCompositionCancellation,
+    ) -> Result<RootfsCompositionResponse, RootfsCompositionAdapterError> {
+        self.scan_scope(request, cancellation, false).await
+    }
+
+    async fn scan_scope(
+        &self,
+        request: RootfsCompositionRequest,
+        cancellation: RootfsCompositionCancellation,
+        details: bool,
+    ) -> Result<RootfsCompositionResponse, RootfsCompositionAdapterError> {
         request
             .validate()
             .map_err(|message| RootfsCompositionAdapterError::InvalidRequest(message.into()))?;
@@ -112,7 +130,7 @@ impl RootfsCompositionAdapter {
         let deadline = Instant::now() + self.timeout;
         let timeout = self.timeout;
         let worker = tokio::task::spawn_blocking(move || {
-            scan_sources(request, build_directory, sources, cancellation, deadline)
+            scan_sources(request, build_directory, sources, cancellation, deadline, details)
         });
         match tokio::time::timeout(timeout, worker).await {
             Ok(Ok(result)) => result,

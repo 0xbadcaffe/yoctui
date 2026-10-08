@@ -91,6 +91,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         composition: composition.clone(),
                         limitations: limitations.clone(),
                     };
+                    if app.images_view == ImagesView::RootfsFilesystem {
+                        return update(app, Action::BrowseRootfsFilesystem);
+                    }
                 }
             }
         }
