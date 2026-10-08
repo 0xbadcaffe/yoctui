@@ -178,7 +178,8 @@ See [Hardware projects](hardware-projects.md) for imports, schematics, and manua
 ## View Hardware PDFs
 
 Select a PDF and press Enter. Native pages need SIXEL and document tools;
-Yoctui can hand off to a suitable XTerm. `+`/`-` zoom, arrows pan, PgUp/PgDn
+Yoctui can hand off to a suitable XTerm. `=` or `+` zooms in, `-` zooms out,
+`0` resets to fit-to-page; arrows pan, PgUp/PgDn
 change page, `v` shows embedded text, Esc returns. Missing prerequisites are explained.
 
 ## Application menu

@@ -5,7 +5,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::RootfsCompositionFailed { request, message } => {
             if matches!(
                 &app.rootfs_composition,
-                RootfsCompositionState::Loading { request: pending } if pending == &request
+                RootfsCompositionState::Loading { request: pending }
+                | RootfsCompositionState::LoadingDetails { request: pending, .. } if pending == &request
             ) {
                 app.rootfs_composition = RootfsCompositionState::Failed { request, message };
             }

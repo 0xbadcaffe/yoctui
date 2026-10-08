@@ -6,6 +6,8 @@ pub(crate) struct RootfsCompositionBackgroundOperation {
     #[cfg(unix)]
     pub(crate) authority: Option<yoctui_protocol::rootfs::RootfsSourcesRequestData>,
     pub(crate) _cancellation: RootfsCompositionCancellation,
+    pub(crate) package_preview:
+        Option<tokio::sync::oneshot::Receiver<yoctui_bitbake::RootfsCompositionResponse>>,
     pub(crate) handle: tokio::task::JoinHandle<BackendEvent>,
 }
 
@@ -54,6 +56,7 @@ pub(crate) fn begin_rootfs_composition_operation_with_sources(
         #[cfg(unix)]
         authority: None,
         _cancellation: cancellation,
+        package_preview: None,
         handle,
     });
 }
@@ -105,17 +108,43 @@ pub(crate) async fn begin_rootfs_composition_operation(
         let worker_cancellation = cancellation.clone();
         let worker_request = request.clone();
         let worker_query = query.clone();
+        let (preview_sender, package_preview) = tokio::sync::oneshot::channel();
         let handle = tokio::spawn(async move {
             let query_build = build.clone();
             let query_cancel = worker_cancellation.clone();
-            let result = tokio::task::spawn_blocking(move || {
+            let metadata = tokio::task::spawn_blocking(move || {
                 daemon_rootfs::request_sources(&worker_query, &query_build, &query_cancel)
-            })
-            .await
-            .map_err(|error| format!("rootfs source worker was lost: {error}"))
-            .and_then(|result| {
-                result.map_err(|error| format!("rootfs source lookup failed: {error:#}"))
             });
+            // Paint packages from exact deployed sources without waiting for
+            // BitBake or walking the image filesystem.
+            if fallback.manifest.is_some()
+                && fallback.pkgdata_directory.is_some()
+                && let Ok(mut preview) = RootfsCompositionAdapter::new(
+                    build.clone(),
+                    fallback.clone(),
+                    worker_request.generation,
+                )
+                .scan_with_cancellation(worker_request.clone(), worker_cancellation.clone())
+                .await
+                && preview.composition.package_inventory().is_some()
+            {
+                preview.composition.filesystem_tree = yoctui_model::RootfsAuthority::Unavailable {
+                    reason: "Filesystem details are still loading.".into(),
+                };
+                preview.composition.system_inventory = yoctui_model::RootfsAuthority::Unavailable {
+                    reason: "System inventory is still loading.".into(),
+                };
+                preview
+                    .limitations
+                    .push("Filesystem and system inventory are still loading.".into());
+                let _ = preview_sender.send(preview);
+            }
+            let result = metadata
+                .await
+                .map_err(|error| format!("rootfs source worker was lost: {error}"))
+                .and_then(|result| {
+                    result.map_err(|error| format!("rootfs source lookup failed: {error:#}"))
+                });
             let (sources, metadata_limitation) = match result {
                 Ok(sources) => (
                     RootfsCompositionSources {
@@ -169,6 +198,7 @@ pub(crate) async fn begin_rootfs_composition_operation(
             request,
             authority: Some(query),
             _cancellation: cancellation,
+            package_preview: Some(package_preview),
             handle,
         });
         return;
@@ -269,6 +299,22 @@ pub(crate) async fn poll_rootfs_composition_operation(
                 != Some(authority))
     {
         pending._cancellation.cancel();
+    }
+    if let Some(pending) = operation.as_mut()
+        && !pending._cancellation.is_cancelled()
+        && !pending.handle.is_finished()
+        && let Some(receiver) = pending.package_preview.as_mut()
+        && let Ok(preview) = receiver.try_recv()
+    {
+        let _ = update(
+            app,
+            Action::RootfsCompositionPreview {
+                request: preview.request,
+                composition: preview.composition,
+                limitations: preview.limitations,
+            },
+        );
+        pending.package_preview = None;
     }
     if !operation
         .as_ref()

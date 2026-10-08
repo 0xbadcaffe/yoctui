@@ -5,6 +5,17 @@ fn ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks() 
     let mut app = ux_rootfs_ui_app();
     app.images_view = ImagesView::RootfsPackages;
     let wide = rendered_text(&app, 200, 60);
+    let original = app.rootfs_composition.clone();
+    app.rootfs_composition = RootfsCompositionState::LoadingDetails {
+        request: original.request().unwrap().clone(),
+        composition: original.composition().unwrap().clone(),
+        limitations: vec!["Filesystem details are still loading.".into()],
+    };
+    let preview = rendered_text(&app, 200, 60);
+    assert!(preview.contains("Rootfs packages · installed bytes"), "{preview}");
+    assert!(preview.contains("Exact bytes"), "{preview}");
+    assert!(preview.contains("loading filesystem details"), "{preview}");
+    app.rootfs_composition = original;
     assert!(wide.contains("Rootfs packages · installed bytes"), "{wide}");
     assert!(wide.contains("Exact bytes"), "{wide}");
     assert!(wide.contains("Other"), "{wide}");

@@ -11,6 +11,12 @@ Exact image manifest plus machine-scoped PKGDATA_DIR supplies package membership
 bytes, and file counts. Runtime names map to build-package metadata; missing data
 stays unavailable. Package totals are separate from filesystem bytes.
 
+When the selected deployed manifest and workspace pkgdata are available, the pie
+chart and package list load first, without waiting for BitBake metadata or the
+filesystem/service scan. The inspector labels details still loading; those views
+fill in when the same image/daemon generation finishes. Refresh reacquires data;
+stale or cancelled replies cannot replace the current image.
+
 ## Logical filesystem
 
 The recipe's exact IMAGE_ROOTFS supplies filesystem content. Instance/generation/

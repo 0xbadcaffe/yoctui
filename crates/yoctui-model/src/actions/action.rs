@@ -128,6 +128,7 @@ pub enum Action {
     ImageArtifactViewed { root: PathBuf, path: PathBuf, result: Result<ImageArtifactView, String> },
     ShiftImagesView { delta: isize, },
     RefreshRootfsComposition,
+    RootfsCompositionPreview { request: RootfsCompositionRequest, composition: RootfsComposition, limitations: Vec<String>, },
     RootfsCompositionLoaded { request: RootfsCompositionRequest, composition: RootfsComposition, },
     RootfsCompositionPartial { request: RootfsCompositionRequest, composition: RootfsComposition, limitations: Vec<String>, },
     RootfsCompositionUnavailable { request: RootfsCompositionRequest, reason: String, },

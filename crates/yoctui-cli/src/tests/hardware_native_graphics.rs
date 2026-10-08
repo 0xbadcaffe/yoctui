@@ -1,6 +1,69 @@
 use super::*;
 
 #[test]
+fn hardware_native_pdf_zoom_and_pan_survive_pixel_cap() {
+    use yoctui_model::*;
+    let raster = HardwareRaster {
+        width: 512,
+        height: 512,
+        pixels: (0..512 * 512)
+            .map(|index| HardwareRgb {
+                red: (index % 512 / 2) as u8,
+                green: (index / 512 / 2) as u8,
+                blue: 0,
+            })
+            .collect(),
+    };
+    let mut viewer = HardwareViewerState {
+        document: HardwareDocument {
+            path: "/tmp/board.pdf".into(),
+            category: HardwareCategory::Board,
+            kind: HardwareDocumentKind::Pdf,
+        },
+        generation: 1,
+        page: 1,
+        page_count: 1,
+        zoom_percent: 100,
+        presentation: HardwarePresentation::Page,
+        pan_x: 0,
+        pan_y: 0,
+        loading: false,
+        preview: None,
+        searchable_text: Vec::new(),
+        query: String::new(),
+        searching: false,
+        matches: Vec::new(),
+        match_selection: 0,
+        error: None,
+    };
+    // A high-DPI viewport exceeds the cap even at fit-to-page zoom.
+    let area = Rect::new(0, 0, 200, 100);
+    let render =
+        |viewer: &HardwareViewerState| native_page(viewer, &raster, area, 20, 40).unwrap().image;
+    let fitted = render(&viewer);
+    for zoom in [125, 200, 400] {
+        viewer.zoom_percent = zoom;
+        let enlarged = render(&viewer);
+        assert!((enlarged.width() as usize * enlarged.height() as usize) <= MAX_NATIVE_PIXELS);
+        assert_ne!(enlarged, fitted, "zoom {zoom} must change PDF content");
+        assert!(
+            enlarged.get_pixel(enlarged.width() - 1, 0)[0]
+                < fitted.get_pixel(fitted.width() - 1, 0)[0]
+        );
+    }
+    let enlarged = render(&viewer);
+    viewer.pan_x = 10;
+    viewer.pan_y = 10;
+    assert_ne!(render(&viewer), enlarged);
+    viewer.zoom_percent = 100;
+    viewer.pan_x = 0;
+    viewer.pan_y = 0;
+    assert_eq!(render(&viewer), fitted);
+    viewer.zoom_percent = 50;
+    assert!(render(&viewer).width() < fitted.width());
+}
+
+#[test]
 fn sixel_encoder_is_bounded_and_declares_raster_geometry() {
     let image = RgbImage::from_fn(8, 7, |x, y| {
         if (x + y) % 2 == 0 {

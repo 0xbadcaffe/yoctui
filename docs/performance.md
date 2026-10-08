@@ -42,6 +42,17 @@ remain; builds and terminal sessions do not need to restart.
 See the [measurement receipt](performance/attach-startup-0.1.319.json) for exact
 binary/source hashes, installed-client measurement, methods and focused checks.
 
+### Rootfs packages in 0.1.320
+
+Packages no longer wait behind the BitBake metadata lookup and filesystem/service
+scan when an exact deployed manifest and workspace pkgdata are already available.
+On the retained OpenBMC Romulus image, the package-only adapter scan took 219 ms
+initially and 45–46 ms on repeats for 228 packages. The full scan took 158–272 ms
+for 2,631 entries, **excluding** the previously blocking BitBake lookup. These are
+unoptimized read-only test measurements, not end-to-end UI or cold-cache claims.
+The chart and list remain usable while details load; no persistent cache is used.
+See the [benchmark receipt](performance/rootfs-packages-0.1.320.json).
+
 ## Scenario thresholds
 
 | Scenario | Workload | CPU ceiling |

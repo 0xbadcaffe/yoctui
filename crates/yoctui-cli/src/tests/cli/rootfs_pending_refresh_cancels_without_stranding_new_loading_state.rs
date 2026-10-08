@@ -24,6 +24,7 @@ async fn rootfs_pending_refresh_cancels_without_stranding_new_loading_state() {
         },
         authority: None,
         _cancellation: cancellation.clone(),
+        package_preview: None,
         handle: tokio::spawn(std::future::pending()),
     });
     let mut backend = ProcessBackend::new("/build".into());

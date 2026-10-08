@@ -240,7 +240,9 @@ pub(crate) fn rootfs_state_lines(app: &App) -> Option<Vec<Line<'static>>> {
             )),
             Line::from("No installed packages or filesystem entries were reported."),
         ],
-        RootfsCompositionState::Available { .. } | RootfsCompositionState::Partial { .. } => {
+        RootfsCompositionState::LoadingDetails { .. }
+        | RootfsCompositionState::Available { .. }
+        | RootfsCompositionState::Partial { .. } => {
             return None;
         }
     };

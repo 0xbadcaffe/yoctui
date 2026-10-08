@@ -198,6 +198,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BeginSelectedImageArtifactBuild | Action::OpenSelectedImageArtifact | Action::OpenSelectedImageArtifactAssociation(..)
         | Action::ImageArtifactViewed { .. }
         | Action::BeginSelectedRootfsComposition | Action::ShiftImagesView { .. } | Action::RefreshRootfsComposition
+        | Action::RootfsCompositionPreview { .. }
         | Action::RootfsCompositionLoaded { .. } | Action::RootfsCompositionPartial { .. } | Action::RootfsCompositionUnavailable { .. }
         | Action::RootfsCompositionFailed { .. } | Action::SelectRootfsGroup { .. } | Action::SelectRootfsPackage { .. }
         | Action::SelectRootfsEntry { .. } | Action::SelectRootfsSystemdService { .. } | Action::SelectRootfsDbusService { .. }
