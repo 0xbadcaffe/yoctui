@@ -119,9 +119,13 @@ for command in (
     "sudo apt install -y build-essential pkg-config curl ca-certificates python3 git",
     "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
     "cargo install yoctui --locked -j 2",
+    'export POKY_DIR="$HOME/src/poky"',
+    'source "$POKY_DIR/oe-init-build-env" "$BUILDDIR"',
     "yoctui daemon status", "yoctui daemon start", "yoctui --backend bridge",
 ):
     assert command in readme, f"Missing install/quickstart command: {command}"
+for instruction in ("`F8`", "`i` to choose an image", "`core-image-minimal`", "`b` to review the build"):
+    assert instruction in readme, f"Missing image-build quickstart instruction: {instruction}"
 user = manuals["docs/user-guide.md"]
 development = manuals["docs/development.md"]
 for command in ('export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"', 'export BUILDDIR="$POKY_DIR/build-yoctui"', 'source "$POKY_DIR/oe-init-build-env" "$BUILDDIR"', 'test -f "$POKY_DIR/oe-init-build-env"'):

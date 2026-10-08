@@ -17,6 +17,10 @@ F1, contextual Help, and the footer show the current view's exact bindings.
 F5 opens logs, not a build. Recipe `b` builds the selected recipe after review.
 Uppercase action aliases generally have Alt+lowercase equivalents.
 
+In Images (F8), `i` opens the image picker. On the Artifacts tab (`1`), `b`
+reviews the selected image build; Enter confirms it and Esc cancels the review.
+Use Tab to focus the workspace. These keys do not override editors or terminals.
+
 ## Focus and collection movement
 
 | Intent | Keys |

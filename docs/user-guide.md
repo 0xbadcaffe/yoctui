@@ -57,8 +57,10 @@ Inspector is off by default; Alt+i toggles it. Below 80x24, resize the terminal.
 ## Daily image-build loop
 
 1. Check build directory, MACHINE, DISTRO, and compatibility.
-2. Press Alt+b, then `e` to choose a target such as `core-image-minimal`.
-3. Review target/task/options; final Enter starts the build, Esc cancels the draft.
+2. Press F8 for Images, `1` for Artifacts, then `i` to select an image such as
+   `core-image-minimal`; Enter accepts the selection. Tab focuses the workspace.
+3. Press `b` to review the image build; final Enter starts it, Esc cancels the draft.
+   For task/options selection, use Alt+b, then `e` to choose the target.
 4. Follow Tasks, Logs (F5), and Errors. Cancel through the owning build controls.
 
 Unknown totals stay unknown. Success, failure, cancellation, timeout, and loss

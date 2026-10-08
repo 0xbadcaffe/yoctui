@@ -94,13 +94,18 @@ see [workspace setup](https://github.com/0xbadcaffe/yoctui/blob/master/docs/user
 
 ## Quickstart
 
-Use a shell initialized for your Yocto build
-([workspace setup](https://github.com/0xbadcaffe/yoctui/blob/master/docs/user-guide.md#start-a-workspace-safely)).
-Check the daemon's workspace first:
+From an existing Poky checkout, initialize a build directory (adjust the paths):
 
 ```bash
+export POKY_DIR="$HOME/src/poky"
+export BUILDDIR="$POKY_DIR/build-yoctui"
+source "$POKY_DIR/oe-init-build-env" "$BUILDDIR"
 yoctui daemon status
 ```
+
+Check `conf/local.conf` for your desired `MACHINE`, such as `qemux86-64`.
+See [workspace setup](https://github.com/0xbadcaffe/yoctui/blob/master/docs/user-guide.md#start-a-workspace-safely)
+for Yocto host dependencies and other source layouts.
 
 If no daemon is running, or it already uses this build:
 
@@ -115,7 +120,18 @@ To reconnect to an already-running daemon:
 yoctui attach
 ```
 
-Press `Alt+b` to choose/review a build, `F1` for Help, or `F12` for the menu.
+To build a Poky image inside Yoctui:
+
+1. Press `F8` to open **Images**, then `1` for the **Artifacts** tab.
+2. Press `i` to choose an image, select `core-image-minimal`, and press `Enter`.
+3. Press `b` to review the build. Check the target, then press `Enter` to confirm
+   and start building; `Esc` cancels the review.
+4. Follow progress in **Tasks** (`F2`), build output in **Logs** (`F5`), and failures
+   in **Errors**.
+
+Use `Tab` to focus the workspace if the Navigator has focus. These `i` and `b`
+shortcuts belong to Images; editors and terminal sessions have their own keys.
+`Alt+b` opens additional build options, `F1` opens Help, and `F12` opens the menu.
 Opening Yoctui does not start a build; exiting leaves daemon-owned work running.
 
 ## Documentation
