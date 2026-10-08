@@ -333,6 +333,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         UiDensity::Compact => UiDensity::Comfortable,
                     }
                 }
+                Setting::Inspector => {
+                    app.preferences.inspector_visible = !app.preferences.inspector_visible;
+                    app.set_inspector_visible(app.preferences.inspector_visible);
+                }
                 Setting::Symbols => {
                     app.preferences.symbols = match app.preferences.symbols {
                         SymbolPreference::Unicode => SymbolPreference::Ascii,
@@ -389,6 +393,40 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 }
             }
             app.preferences = app.effective_preferences();
+            app.settings_dirty = true;
+            return Some(Effect::PersistSettings);
+        }
+        Action::ResetSelectedPreference => {
+            let row = app.preference_rows().get(app.settings_selection)?.clone();
+            if let Some(reason) = row.disabled_reason {
+                app.notification = Some(reason.into());
+                return None;
+            }
+            let mut preferences = app.effective_preferences();
+            preferences.reset_setting(row.setting);
+            match row.setting {
+                Setting::Theme => app.theme = preferences.theme,
+                Setting::AnimationSpeed => app.animation_speed = preferences.animation_speed,
+                Setting::ReducedMotion => app.reduced_motion = preferences.reduced_motion,
+                Setting::Color => app.color_enabled = preferences.color_enabled,
+                Setting::Inspector => app.set_inspector_visible(preferences.inspector_visible),
+                Setting::LogWrap => app.logs.wrap = preferences.log_wrap,
+                Setting::LogFollow => {
+                    app.logs.follow = preferences.log_follow;
+                    app.logs.paused_len = None;
+                    app.logs.selection = app.logs.filtered().count().saturating_sub(1);
+                    app.logs.scroll_offset = 0;
+                }
+                Setting::Keybindings => {
+                    app.effective_keymap =
+                        crate::EffectiveKeymap::from_preferences(&preferences.keymap)
+                            .expect("built-in keybindings are valid");
+                    app.keymap_preferences = preferences.keymap.clone();
+                    app.keymap_chord.clear();
+                }
+                _ => {}
+            }
+            app.preferences = preferences;
             app.settings_dirty = true;
             return Some(Effect::PersistSettings);
         }

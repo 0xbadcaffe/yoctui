@@ -6,8 +6,8 @@ fn ux_action_catalog_is_unique_complete_and_safe() {
     let catalog = operator_action_catalog();
     assert_eq!(
         catalog.len(),
-        209,
-        "current global and workspace actions, including hardware projects"
+        220,
+        "current global and workspace actions, including every screen and application commands"
     );
     assert!(
         catalog

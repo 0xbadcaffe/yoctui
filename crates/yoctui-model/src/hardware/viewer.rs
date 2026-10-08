@@ -32,6 +32,10 @@ pub(super) fn open(
     let request = viewer.request();
     state.viewer = Some(viewer);
     state.project_view_root = root;
+    app.focus = FocusTarget::Workspace;
+    if app.zoomed_pane.is_some() {
+        app.zoomed_pane = Some(FocusTarget::Workspace);
+    }
     Some(load_effect(state, request))
 }
 

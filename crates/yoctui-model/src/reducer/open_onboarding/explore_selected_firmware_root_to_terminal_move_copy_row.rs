@@ -65,7 +65,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             if s == Screen::BuildHistory {
                 app.saved_builds.reload_requested = true;
             }
-            app.focus = if s == Screen::BuildHistory {
+            app.focus = if matches!(s, Screen::BuildHistory | Screen::Settings) {
                 FocusTarget::Workspace
             } else {
                 FocusTarget::Navigator

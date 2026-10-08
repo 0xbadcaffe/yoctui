@@ -13,7 +13,15 @@ fn ux_focus_menu_activation_and_outward_escape_use_the_same_typed_reducer() {
     let _ = update(&mut app, Action::ResetPaneSubfocus);
 
     let _ = update(&mut app, Action::OpenApplicationMenu);
-    let _ = update(&mut app, Action::SelectMenuGroup { delta: 4 });
+    let _ = update(
+        &mut app,
+        Action::SelectMenuGroup {
+            delta: yoctui_model::ApplicationMenuGroup::ALL
+                .iter()
+                .position(|g| *g == yoctui_model::ApplicationMenuGroup::View)
+                .unwrap() as isize,
+        },
+    );
     let inspector_index = app
         .active_menu_items()
         .iter()

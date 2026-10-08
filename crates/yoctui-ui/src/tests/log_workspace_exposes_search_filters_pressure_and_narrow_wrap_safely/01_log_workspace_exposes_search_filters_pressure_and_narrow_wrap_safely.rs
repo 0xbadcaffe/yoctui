@@ -44,6 +44,7 @@ fn disk_guard_failed_build_renders_failure_without_successful_full_progress() {
 #[test]
 fn log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely() {
     let mut app = App::new(20, 4_000);
+    app.inspector_visible = true;
     app.screen = Screen::Logs;
     app.logs.wrap = true;
     app.logs.searching = true;
@@ -80,6 +81,7 @@ fn log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely() {
 #[test]
 fn next_generation_log_viewer_exposes_context_positions_hits_and_real_actions() {
     let mut app = App::new(20, 4_000);
+    app.inspector_visible = true;
     app.screen = Screen::Logs;
     app.logs.insert(yoctui_model::LogEntry {
         id: 0,
@@ -153,6 +155,7 @@ fn next_generation_log_viewer_exposes_context_positions_hits_and_real_actions() 
     assert!(no_source.contains("C Copy"), "{no_source}");
 
     let mut empty = App::new(20, 4_000);
+    empty.inspector_visible = true;
     empty.screen = Screen::Logs;
     let output = rendered_text(&empty, 100, 24);
     assert!(output.contains("No retained log entries."), "{output}");
@@ -242,6 +245,7 @@ fn next_generation_log_activity_is_compact_complete_and_embedded() {
 #[test]
 fn ux_logs_workspace_renders_virtualized_bookmarks_filter_chips_and_bounded_actions() {
     let mut app = App::new(1_000, 500_000);
+    app.inspector_visible = true;
     app.screen = Screen::Logs;
     app.focus = FocusTarget::Workspace;
     for index in 0..300 {
@@ -364,6 +368,7 @@ fn ux_internal_log_view_is_separate_bounded_responsive_and_nonvisual() {
 #[test]
 fn error_workspace_renders_structured_columns_inspector_and_related_entries() {
     let mut app = App::new(20, 4_000);
+    app.inspector_visible = true;
     app.screen = Screen::Errors;
     app.focus = FocusTarget::Workspace;
     app.build.target = Some("core-image-minimal".into());

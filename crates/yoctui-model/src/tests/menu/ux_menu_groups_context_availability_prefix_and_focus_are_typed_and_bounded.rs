@@ -14,15 +14,22 @@ fn ux_menu_groups_context_availability_prefix_and_focus_are_typed_and_bounded() 
             "Build",
             "Actions",
             "Navigate",
+            "Config",
             "View",
             "Devtool",
             "Tools",
             "Help"
         ]
     );
-    assert_eq!(app.active_menu_items()[0].label, "Edit BBMASK");
+    assert_eq!(app.active_menu_items()[0].label, "Open Build Environment");
+    assert!(app.active_menu_items()[0].enabled());
+    let bbmask = app
+        .application_menu_items(ApplicationMenuGroup::Configuration)
+        .into_iter()
+        .find(|item| item.label == "Edit BBMASK")
+        .unwrap();
     assert_eq!(
-        app.active_menu_items()[0].disabled_reason.as_deref(),
+        bbmask.disabled_reason.as_deref(),
         Some("Load a Yocto workspace first")
     );
 

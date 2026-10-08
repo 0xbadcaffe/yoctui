@@ -24,7 +24,17 @@ fn ux_menu_traps_input_over_recipe_editor_and_preserves_editor_state() {
 
     let _ = yoctui_model::update(&mut app, Action::OpenApplicationMenu);
     let _ = yoctui_model::update(&mut app, Action::SelectMenuGroup { delta: 1 });
-    let _ = yoctui_model::update(&mut app, Action::SelectMenuItem { delta: 2 });
+    let cancel = app
+        .active_menu_items()
+        .iter()
+        .position(|item| item.action_id.as_str() == "tasks.cancel")
+        .unwrap();
+    let _ = yoctui_model::update(
+        &mut app,
+        Action::SelectMenuItem {
+            delta: cancel as isize,
+        },
+    );
     assert_eq!(app.focus, FocusTarget::Dialog);
     assert_eq!(app.menu.group(), yoctui_model::ApplicationMenuGroup::Build);
     assert_eq!(

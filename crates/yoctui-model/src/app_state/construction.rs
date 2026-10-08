@@ -34,6 +34,7 @@ impl App {
             workspace_subfocus: WorkspaceSubfocus::Main,
             inspector_subfocus: InspectorSubfocus::Facts,
             zoomed_pane: None,
+            inspector_visible: false,
             navigator_selection: 0,
             navigator_groups_expanded: [true; NAVIGATOR_GROUPS.len()],
             backend: "unknown".into(),

@@ -51,6 +51,8 @@ fn size(columns: u16, rows: u16) -> Option<yoctui_model::PtyDimensions> {
 #[test]
 fn terminal_ordinary_dimensions_include_prefix_search_and_history_rows() {
     let mut app = fixture();
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 32));
+    app.inspector_visible = true;
     assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(98, 32));
     app.daemon.pty_screens[0].scrollback_lines = 20;
     assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(98, 31));
@@ -63,6 +65,7 @@ fn terminal_ordinary_dimensions_include_prefix_search_and_history_rows() {
 #[test]
 fn terminal_dimensions_follow_focused_pane_not_global_history_index() {
     let mut app = fixture();
+    app.inspector_visible = true;
     for id in 1..=25 {
         let mut session = app.daemon.pty_sessions[0].clone();
         session.id = id;

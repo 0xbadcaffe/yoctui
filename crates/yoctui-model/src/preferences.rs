@@ -51,6 +51,8 @@ pub struct WorkbenchPreferences {
     pub reduced_motion: bool,
     pub color_enabled: bool,
     pub density: UiDensity,
+    /// Saved startup choice; the session toggle does not overwrite it.
+    pub inspector_visible: bool,
     pub symbols: SymbolPreference,
     pub mouse_enabled: bool,
     pub footer_shortcuts: bool,
@@ -72,6 +74,7 @@ impl Default for WorkbenchPreferences {
             reduced_motion: false,
             color_enabled: true,
             density: UiDensity::default(),
+            inspector_visible: false,
             symbols: SymbolPreference::default(),
             mouse_enabled: true,
             footer_shortcuts: true,
@@ -87,6 +90,28 @@ impl Default for WorkbenchPreferences {
 }
 
 impl WorkbenchPreferences {
+    pub fn reset_setting(&mut self, setting: Setting) {
+        let defaults = Self::default();
+        match setting {
+            Setting::Theme => self.theme = defaults.theme,
+            Setting::Density => self.density = defaults.density,
+            Setting::Inspector => self.inspector_visible = defaults.inspector_visible,
+            Setting::Symbols => self.symbols = defaults.symbols,
+            Setting::AnimationSpeed => self.animation_speed = defaults.animation_speed,
+            Setting::ReducedMotion => self.reduced_motion = defaults.reduced_motion,
+            Setting::Color => self.color_enabled = defaults.color_enabled,
+            Setting::Mouse => self.mouse_enabled = defaults.mouse_enabled,
+            Setting::FooterShortcuts => self.footer_shortcuts = defaults.footer_shortcuts,
+            Setting::LogWrap => self.log_wrap = defaults.log_wrap,
+            Setting::LogFollow => self.log_follow = defaults.log_follow,
+            Setting::RememberPaneSizes => self.remember_pane_sizes = defaults.remember_pane_sizes,
+            Setting::Charts => self.charts = defaults.charts,
+            Setting::ImagePreviews => self.image_previews = defaults.image_previews,
+            Setting::TerminalPrefix => self.terminal_prefix = defaults.terminal_prefix,
+            Setting::Keybindings => self.keymap = defaults.keymap,
+        }
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self.schema_version != WORKBENCH_PREFERENCES_SCHEMA_VERSION {
             return Err(format!(
@@ -109,6 +134,7 @@ impl WorkbenchPreferences {
 pub enum Setting {
     Theme,
     Density,
+    Inspector,
     Symbols,
     AnimationSpeed,
     ReducedMotion,
@@ -124,9 +150,10 @@ pub enum Setting {
     Keybindings,
 }
 
-pub const SETTINGS: [Setting; 15] = [
+pub const SETTINGS: [Setting; 16] = [
     Setting::Theme,
     Setting::Density,
+    Setting::Inspector,
     Setting::Symbols,
     Setting::AnimationSpeed,
     Setting::ReducedMotion,
@@ -147,6 +174,8 @@ pub struct PreferenceRow {
     pub setting: Setting,
     pub label: &'static str,
     pub value: String,
+    pub default_value: String,
+    pub is_modified: bool,
     pub disabled_reason: Option<&'static str>,
 }
 
@@ -157,6 +186,23 @@ impl PreferenceRow {
 }
 
 impl App {
+    pub fn set_inspector_visible(&mut self, visible: bool) {
+        self.inspector_visible = visible;
+        if !visible {
+            if self.focus == crate::FocusTarget::Inspector {
+                self.focus = if crate::focus_target_is_relevant(self, crate::FocusTarget::Workspace)
+                {
+                    crate::FocusTarget::Workspace
+                } else {
+                    crate::FocusTarget::Navigator
+                };
+            }
+            if self.zoomed_pane == Some(crate::FocusTarget::Inspector) {
+                self.zoomed_pane = None;
+            }
+        }
+    }
+
     pub fn effective_preferences(&self) -> WorkbenchPreferences {
         let mut preferences = self.preferences.clone();
         preferences.theme = self.theme;
@@ -188,13 +234,34 @@ impl App {
         self.logs.paused_len = (!preferences.log_follow).then_some(self.logs.entries.len());
         self.keymap_preferences = preferences.keymap.clone();
         self.effective_keymap = effective;
+        self.set_inspector_visible(preferences.inspector_visible);
         self.preferences = preferences;
         self.keymap_chord.clear();
         Ok(())
     }
 
     pub fn preference_rows(&self) -> Vec<PreferenceRow> {
+        let defaults = self.preference_rows_for(&WorkbenchPreferences::default(), false);
         let preferences = self.effective_preferences();
+        let mut rows = self.preference_rows_for(&preferences, true);
+        for (row, default) in rows.iter_mut().zip(defaults) {
+            row.default_value = default.value.clone();
+            row.is_modified = if row.setting == Setting::Keybindings {
+                preferences.keymap != WorkbenchPreferences::default().keymap
+            } else if row.setting == Setting::Color {
+                preferences.color_enabled != WorkbenchPreferences::default().color_enabled
+            } else {
+                row.value != default.value
+            };
+        }
+        rows
+    }
+
+    fn preference_rows_for(
+        &self,
+        preferences: &WorkbenchPreferences,
+        launch_overrides: bool,
+    ) -> Vec<PreferenceRow> {
         let custom = preferences.keymap.overrides.len();
         SETTINGS
             .into_iter()
@@ -204,6 +271,9 @@ impl App {
                     Setting::Density => {
                         ("Visual density", format!("{:?}", preferences.density), None)
                     }
+                    Setting::Inspector => (
+                        "Inspector at startup", preferences.inspector_visible.to_string(), None,
+                    ),
                     Setting::Symbols => {
                         ("Symbols", format!("{:?}", preferences.symbols), None)
                     }
@@ -217,7 +287,7 @@ impl App {
                         preferences.reduced_motion.to_string(),
                         None,
                     ),
-                    Setting::Color if self.color_forced_off => (
+                    Setting::Color if launch_overrides && self.color_forced_off => (
                         "Color",
                         "false (--no-color launch override)".into(),
                         Some("Disabled by --no-color for this launch; the stored choice is preserved."),
@@ -272,6 +342,8 @@ impl App {
                     setting,
                     label,
                     value,
+                    default_value: String::new(),
+                    is_modified: false,
                     disabled_reason,
                 }
             })

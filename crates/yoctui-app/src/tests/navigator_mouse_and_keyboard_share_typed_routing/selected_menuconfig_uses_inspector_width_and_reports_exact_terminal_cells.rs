@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells() {
     let mut app = yoctui_model::App::new(16, 4096);
+    app.inspector_visible = true; // Verify menuconfig consumes even an enabled inspector pane.
     app.screen = Screen::TerminalSessions;
     app.daemon
         .pty_sessions

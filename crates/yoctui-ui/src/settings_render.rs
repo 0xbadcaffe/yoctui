@@ -3,16 +3,30 @@ use super::*;
 
 pub(crate) fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let rows = app.preference_rows();
-    let control_height = if app.preferences.density == yoctui_model::UiDensity::Compact {
-        4
-    } else {
-        5
-    };
-    let chunks =
-        Layout::vertical([Constraint::Min(8), Constraint::Length(control_height)]).split(area);
+    let chunks = Layout::vertical([Constraint::Min(5), Constraint::Length(9)]).split(area);
     let visible = usize::from(chunks[0].height.saturating_sub(3)).max(1);
     let range =
         yoctui_model::centered_viewport_range(Some(app.settings_selection), rows.len(), visible);
+    let wide = chunks[0].width >= 76;
+    let widths = if wide {
+        vec![
+            Constraint::Percentage(34),
+            Constraint::Percentage(24),
+            Constraint::Percentage(24),
+            Constraint::Percentage(18),
+        ]
+    } else {
+        vec![
+            Constraint::Percentage(48),
+            Constraint::Percentage(32),
+            Constraint::Percentage(20),
+        ]
+    };
+    let header = if wide {
+        vec!["Setting", "Current", "Default", "State"]
+    } else {
+        vec!["Setting", "Current", "State"]
+    };
     frame.render_widget(
         Table::new(
             rows.iter()
@@ -20,29 +34,22 @@ pub(crate) fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
                 .skip(range.start)
                 .take(visible)
                 .map(|(index, row)| {
-                    Row::new([
-                        row.label.to_owned(),
-                        row.value.clone(),
-                        if row.enabled() { "editable" } else { "locked" }.into(),
-                    ])
-                    .style(selected_style(app, index == app.settings_selection))
+                    let mut cells = vec![row.label.to_owned(), row.value.clone()];
+                    if wide {
+                        cells.push(row.default_value.clone());
+                    }
+                    cells.push(if row.is_modified { "custom" } else { "default" }.into());
+                    Row::new(cells).style(selected_style(app, index == app.settings_selection))
                 }),
-            [
-                Constraint::Percentage(42),
-                Constraint::Percentage(40),
-                Constraint::Percentage(18),
-            ],
+            widths,
         )
-        .header(
-            Row::new(["Setting", "Active value", "State"])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
-        )
+        .header(Row::new(header).style(Style::default().add_modifier(Modifier::BOLD)))
         .block(
             Block::default()
                 .title(if app.settings_dirty {
-                    "Settings (not saved)"
+                    "Preferences (not saved)"
                 } else {
-                    "Settings"
+                    "Preferences"
                 })
                 .borders(Borders::ALL),
         ),
@@ -50,18 +57,26 @@ pub(crate) fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
     let selected_detail = rows
         .get(app.settings_selection)
+        .map(|row| {
+            format!(
+                "{}: {} · default: {} · {}",
+                row.label,
+                row.value,
+                row.default_value,
+                if row.is_modified { "custom" } else { "default" }
+            )
+        })
+        .unwrap_or_default();
+    let status = rows
+        .get(app.settings_selection)
         .and_then(|row| row.disabled_reason)
-        .unwrap_or("Changes preview immediately and are saved atomically for the next launch.");
+        .unwrap_or("Changes apply immediately and are saved for the next launch.");
     frame.render_widget(
         Paragraph::new(format!(
-            "↑/↓ or j/k select  ←/→ or Enter change/open  Alt+r reset all  r retry\n{selected_detail}\nBuild actions stay disabled until the environment connection is verified."
+            "{selected_detail}\n↑/↓ select  ←/→ or Enter change/open\nBackspace reset selected  Alt+r reset all  r retry\n{status}"
         ))
-        .block(
-            Block::default()
-                .title("Settings controls")
-                .borders(Borders::ALL)
-                .style(ThemePalette::for_app(app).base()),
-        )
+        .block(Block::default().title("Preferences controls").borders(Borders::ALL)
+            .style(ThemePalette::for_app(app).base()))
         .wrap(Wrap { trim: true }),
         chunks[1],
     );

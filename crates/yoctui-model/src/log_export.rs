@@ -326,6 +326,16 @@ pub const THEMES: [Theme; 8] = [
 
 pub fn command_action(app: &App, id: CommandId) -> Action {
     match id {
+        CommandId::OpenInsights => Action::Open(Screen::Insights),
+        CommandId::OpenBuildHistory => Action::Open(Screen::BuildHistory),
+        CommandId::OpenSignatures => Action::Open(Screen::Signatures),
+        CommandId::OpenLayerRelationships => Action::Open(Screen::LayerRelationships),
+        CommandId::OpenDevtoolWorkspace => Action::Open(Screen::Devtool),
+        CommandId::OpenKernel => Action::Open(Screen::Kernel),
+        CommandId::OpenFirmware => Action::Open(Screen::Firmware),
+        CommandId::OpenBbmask => Action::Open(Screen::Bbmask),
+        CommandId::OpenCommandPalette => Action::OpenCommandPalette,
+        CommandId::Quit => Action::Quit,
         CommandId::BuildImage => Action::OpenBuildOptions,
         CommandId::SelectImage => Action::OpenImagePicker(
             app.workspace
@@ -418,6 +428,7 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::PreviousSubfocus => Action::CyclePaneSubfocus { backwards: true },
         CommandId::NextSubfocus => Action::CyclePaneSubfocus { backwards: false },
         CommandId::TogglePaneZoom => Action::TogglePaneZoom,
+        CommandId::ToggleInspector => Action::ToggleInspector,
         CommandId::ScrollFirst => Action::ScrollCurrent { to_end: false },
         CommandId::ScrollLast => Action::ScrollCurrent { to_end: true },
         CommandId::OpenOnboarding => Action::OpenOnboarding,

@@ -88,82 +88,127 @@ pub(crate) fn render_rootfs_package_table(
     total: u64,
     area: Rect,
 ) {
-    let mut lines = vec![
-        Line::from(format!(
-            "Installed-package authority · {} packages · {} exact bytes",
-            inventory.packages.len(),
-            total
-        )),
-        Line::from("h/l group · j/k package · r refresh · Tab filesystem"),
-        Line::from("Category                     Packages   Exact bytes        Percent"),
-    ];
-    for group in groups {
-        let selected = app.rootfs_group_selection.as_ref() == Some(&group.identity);
-        let bar_width = usize::from(area.width.saturating_sub(66).min(20));
-        let filled = usize::from(group.percent_basis_points) * bar_width / 10_000;
-        let bar = if bar_width == 0 {
-            String::new()
-        } else {
-            format!(" {}{}", "#".repeat(filled), ".".repeat(bar_width - filled))
-        };
-        lines.push(
+    let group_height = (area.height.saturating_sub(4) / 2)
+        .min(groups.len().saturating_add(1) as u16)
+        .max(2);
+    let sections = Layout::vertical([
+        Constraint::Length(2),
+        Constraint::Length(group_height),
+        Constraint::Min(3),
+    ])
+    .split(area);
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::from("Installed-package authority"),
             Line::from(format!(
-                "{:<28} {:>8} {:>13} {:>6}.{:02}%{}",
-                rootfs_group_label(&group.identity),
-                group.package_count,
-                group.installed_size_bytes,
-                group.percent_basis_points / 100,
-                group.percent_basis_points % 100,
-                bar
-            ))
-            .style(selected_style(app, selected)),
-        );
-    }
+                "{} packages · {} exact bytes",
+                inventory.packages.len(),
+                total
+            )),
+        ]),
+        sections[0],
+    );
     let selected_group = app
         .rootfs_group_selection
         .as_ref()
-        .and_then(|identity| groups.iter().find(|group| &group.identity == identity));
-    lines.push(Line::from(""));
-    if let Some(group) = selected_group {
-        let selected_position = app
-            .rootfs_package_selection
-            .as_ref()
-            .and_then(|selected| group.members.iter().position(|member| member == selected))
-            .unwrap_or(0);
-        lines.push(Line::from(format!(
-            "Packages in {} · {} of {} · Other membership remains inspectable",
-            rootfs_group_label(&group.identity),
-            selected_position.saturating_add(1).min(group.members.len()),
-            group.members.len()
-        )));
-        lines.push(Line::from(
-            "Package                       Recipe                 Exact bytes   Files",
-        ));
-        let remaining = usize::from(area.height).saturating_sub(lines.len()).max(1);
-        let start = selected_position
-            .saturating_sub(remaining / 2)
-            .min(group.members.len().saturating_sub(remaining));
-        for identity in group.members.iter().skip(start).take(remaining) {
-            if let Some(package) = inventory
-                .packages
-                .iter()
-                .find(|package| &package.identity == identity)
-            {
-                let selected = app.rootfs_package_selection.as_ref() == Some(identity);
-                lines.push(
-                    Line::from(format!(
-                        "{:<29} {:<22} {:>11} {:>7}",
-                        package.identity.name,
-                        package.recipe.as_deref().unwrap_or("unavailable"),
-                        package.installed_size_bytes,
-                        package.file_count
-                    ))
-                    .style(selected_style(app, selected)),
-                );
-            }
-        }
-    } else {
-        lines.push(Line::from("No installed-package groups were reported."));
-    }
-    frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), area);
+        .and_then(|identity| groups.iter().position(|group| &group.identity == identity));
+    let viewport = yoctui_model::centered_viewport_range(
+        selected_group,
+        groups.len(),
+        usize::from(sections[1].height.saturating_sub(1)).max(1),
+    );
+    let rows = groups[viewport].iter().map(|group| {
+        Row::new([
+            Cell::from(rootfs_group_label(&group.identity)),
+            Cell::from(group.package_count.to_string()),
+            Cell::from(group.installed_size_bytes.to_string()),
+            Cell::from(format!(
+                "{}.{:02}%",
+                group.percent_basis_points / 100,
+                group.percent_basis_points % 100
+            )),
+        ])
+        .style(selected_style(
+            app,
+            app.rootfs_group_selection.as_ref() == Some(&group.identity),
+        ))
+    });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Min(10),
+                Constraint::Length(5),
+                Constraint::Length(11),
+                Constraint::Length(7),
+            ],
+        )
+        .header(
+            Row::new(["Category", "Pkgs", "Exact bytes", "%"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        ),
+        sections[1],
+    );
+    let Some(group) = selected_group.map(|index| &groups[index]) else {
+        frame.render_widget(
+            Paragraph::new("No installed-package groups were reported."),
+            sections[2],
+        );
+        return;
+    };
+    let selected = app
+        .rootfs_package_selection
+        .as_ref()
+        .and_then(|identity| group.members.iter().position(|member| member == identity));
+    let capacity = usize::from(sections[2].height.saturating_sub(3)).max(1);
+    let viewport = yoctui_model::centered_viewport_range(selected, group.members.len(), capacity);
+    let rows = group.members[viewport].iter().filter_map(|identity| {
+        let package = inventory
+            .packages
+            .iter()
+            .find(|package| &package.identity == identity)?;
+        Some(
+            Row::new([
+                Cell::from(package.identity.name.clone()),
+                Cell::from(
+                    package
+                        .recipe
+                        .clone()
+                        .unwrap_or_else(|| "unavailable".into()),
+                ),
+                Cell::from(package.installed_size_bytes.to_string()),
+                Cell::from(package.file_count.to_string()),
+            ])
+            .style(selected_style(
+                app,
+                app.rootfs_package_selection.as_ref() == Some(identity),
+            )),
+        )
+    });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Min(12),
+                Constraint::Min(8),
+                Constraint::Length(11),
+                Constraint::Length(5),
+            ],
+        )
+        .header(
+            Row::new(["Package", "Recipe", "Exact bytes", "Files"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(
+            Block::bordered()
+                .title(format!(
+                    "Packages in {} · {}/{} · Other membership",
+                    rootfs_group_label(&group.identity),
+                    selected.map_or(0, |index| index + 1),
+                    group.members.len()
+                ))
+                .title_bottom("h/l group · j/k package · Tab files"),
+        ),
+        sections[2],
+    );
 }

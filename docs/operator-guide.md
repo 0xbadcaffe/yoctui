@@ -398,18 +398,41 @@ Use `Ctrl+B ?` for the complete prefix map. The inherited shell opened by `!`
 is a separate compatibility route; see [Embedded shells and terminal
 sessions](embedded-shell.md).
 
+## Application menu
+
+`F12` opens Workspace first: Build Environment, Compatibility, Terminal Sessions,
+Command palette, then Quit (with confirmation). Build groups image selection,
+image and recipe builds, and cancellation. Actions contains the current
+workspace’s operations. Navigate lists every screen, including saved builds,
+signatures, layer relationships, Kernel, Firmware, and the Devtool workspace.
+Config contains Configuration, BBMASK inspection/editing, build configuration,
+and configuration export/setup tools. View starts with Preferences, theme,
+inspector visibility, and zoom. Devtool puts the workspace and status/search
+commands first; Tools groups GitUI, Maintenance, Raw Mode, and layer utilities.
+Help contains Help, the operator guide, and About.
+
+Use Left/Right to choose a group, Up/Down to select, type a prefix to jump, and
+Enter to open. Unavailable operations show their reason and keep their existing
+confirmation requirements. Mouse and keyboard use the same menu ordering.
+
 ## Settings, configuration, and sessions
 
-Settings supports theme, comfortable/compact density, Unicode/ASCII symbols,
+Open `F12` → View → Preferences (or search for Preferences with `Ctrl+P`).
+The menu shows current values, built-in defaults, and custom changes; on narrow
+terminals the selected row’s details always include its default. Preferences
+supports theme, comfortable/compact density, inspector startup visibility, Unicode/ASCII symbols,
 animation speed, reduced motion, color, mouse input, footer shortcuts, log
 wrapping/following, pane-size restoration, automatic/accessible-text charts,
 image-preview policy, the fixed terminal prefix, and keybindings. `Up`/`Down`
 selects and `Left`/`Right` or `Enter` changes or opens a value. Locked rows show
 why the choice is unavailable. Changes apply immediately and are atomically
 saved to `session.toml`; `r` retries a failed save and `R` resets the complete
-preference set and pane layout.
+preference set and pane layout. `Backspace` resets only the selected preference;
+`Alt+r` also resets all preferences. The inspector is off by default. Change
+“Inspector at startup” to save a different default; `Alt+i` toggles it only for
+the current session and leaves the saved startup choice intact.
 
-Open Settings → Keybindings to inspect the effective command catalog. Search
+Open Preferences → Keybindings to inspect the effective command catalog. Search
 by action, menu, scope, or binding; `Enter`/`c` captures up to three strokes,
 `Ctrl+S` validates and saves, `x` removes, `r` resets one, `R` resets all, and
 `e` exports the effective map. Reserved terminal-prefix collisions, ambiguous

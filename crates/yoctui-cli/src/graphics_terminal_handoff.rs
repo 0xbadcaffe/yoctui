@@ -11,17 +11,7 @@ pub(crate) fn uses_interactive_terminal(cli: &Cli) -> bool {
             None | Some(Command::Attach | Command::Build { .. })
         )
 }
-const XTERM_ARGUMENTS: [&str; 9] = [
-    "-ti",
-    "vt340",
-    "-fa",
-    "Monospace",
-    "-fs",
-    "14",
-    "-geometry",
-    "140x40",
-    "-e",
-];
+const XTERM_ARGUMENTS: [&str; 6] = ["-ti", "vt340", "-fa", "Monospace", "-fs", "14"];
 
 pub(crate) fn handoff_if_needed() -> Result<Option<std::process::ExitStatus>> {
     if handoff_disabled_by_environment()
@@ -34,7 +24,8 @@ pub(crate) fn handoff_if_needed() -> Result<Option<std::process::ExitStatus>> {
         return Ok(None);
     };
     let executable = env::current_exe().context("could not resolve the Yoctui executable")?;
-    let status = graphics_terminal_command(&xterm, &executable, env::args_os().skip(1))
+    let size = crossterm::terminal::size().unwrap_or((80, 24));
+    let status = graphics_terminal_command(&xterm, &executable, env::args_os().skip(1), size)
         .status()
         .with_context(|| format!("could not open graphics terminal {}", xterm.display()))?;
     if !status.success() {
@@ -49,7 +40,12 @@ fn handoff_disabled_by_environment() -> bool {
         || env::var_os("DISPLAY").is_none()
 }
 
-fn graphics_terminal_command<I, S>(xterm: &Path, executable: &Path, arguments: I) -> ProcessCommand
+fn graphics_terminal_command<I, S>(
+    xterm: &Path,
+    executable: &Path,
+    arguments: I,
+    size: (u16, u16),
+) -> ProcessCommand
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
@@ -57,6 +53,11 @@ where
     let mut command = ProcessCommand::new(xterm);
     command
         .args(XTERM_ARGUMENTS)
+        .args([
+            "-geometry",
+            &format!("{}x{}", size.0.clamp(80, 140), size.1.clamp(24, 40)),
+            "-e",
+        ])
         .arg(executable)
         .args(arguments)
         .env(HANDOFF_ENV, "1");

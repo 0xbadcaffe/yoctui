@@ -283,6 +283,7 @@ fn raw_accessibility_help_is_bounded_empty_no_color_and_responsive() {
 #[test]
 fn raw_category_browser_renders_pinned_order_classification_and_bounds() {
     let mut app = App::new(16, 4096);
+    app.inspector_visible = true;
     let _ = update(&mut app, Action::Open(Screen::RawMode));
     app.focus = FocusTarget::Workspace;
     let wide = rendered_text(&app, 160, 50);
@@ -367,6 +368,7 @@ fn raw_category_browser_exposes_column_state_and_no_color_text() {
 #[test]
 fn raw_responsive_navigation_renders_with_exact_shell_help() {
     let mut app = App::new(16, 4096);
+    app.inspector_visible = true;
     let _ = update(&mut app, Action::Open(Screen::RawMode));
     app.focus = FocusTarget::Workspace;
     for (width, height) in [(160, 40), (100, 30), (80, 24)] {

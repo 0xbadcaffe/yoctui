@@ -131,6 +131,7 @@ pub fn compatibility_ui_command_action_definition(
         | CommandId::PreviousSubfocus
         | CommandId::NextSubfocus
         | CommandId::TogglePaneZoom
+        | CommandId::ToggleInspector
         | CommandId::ScrollFirst
         | CommandId::ScrollLast
         | CommandId::OpenOnboarding
@@ -141,6 +142,15 @@ pub fn compatibility_ui_command_action_definition(
         | CommandId::OpenSettings
         | CommandId::OpenHelp
         | CommandId::OpenAbout => CompatibilityUiActionDefinition::local(),
+        CommandId::OpenInsights => compatibility_ui_destination_action_definition(Screen::Insights),
+        CommandId::OpenBuildHistory => compatibility_ui_destination_action_definition(Screen::BuildHistory),
+        CommandId::OpenSignatures => compatibility_ui_destination_action_definition(Screen::Signatures),
+        CommandId::OpenLayerRelationships => compatibility_ui_destination_action_definition(Screen::LayerRelationships),
+        CommandId::OpenDevtoolWorkspace => compatibility_ui_destination_action_definition(Screen::Devtool),
+        CommandId::OpenKernel => compatibility_ui_destination_action_definition(Screen::Kernel),
+        CommandId::OpenFirmware => compatibility_ui_destination_action_definition(Screen::Firmware),
+        CommandId::OpenBbmask => compatibility_ui_destination_action_definition(Screen::Bbmask),
+        CommandId::OpenCommandPalette | CommandId::Quit => CompatibilityUiActionDefinition::local(),
         CommandId::OpenHardware => CompatibilityUiActionDefinition::local(),
         CommandId::OpenLayers => compatibility_ui_destination_action_definition(Screen::Layers),
         CommandId::OpenRecipes => compatibility_ui_destination_action_definition(Screen::Recipes),

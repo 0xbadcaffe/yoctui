@@ -11,6 +11,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             };
             app.image_artifact_selection = Some(image.clone());
             app.images_view = ImagesView::RootfsPackages;
+            app.focus = FocusTarget::Workspace;
+            if app.zoomed_pane.is_some() {
+                app.zoomed_pane = Some(FocusTarget::Workspace);
+            }
             return begin_rootfs_composition(app, image);
         }
         Action::ShiftImagesView { delta } => {
@@ -34,6 +38,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     app.images_view = ImagesView::Artifacts;
                     return None;
                 };
+                app.focus = FocusTarget::Workspace;
+                if app.zoomed_pane.is_some() {
+                    app.zoomed_pane = Some(FocusTarget::Workspace);
+                }
                 app.image_artifact_selection = Some(image.clone());
                 let is_current = app
                     .rootfs_composition

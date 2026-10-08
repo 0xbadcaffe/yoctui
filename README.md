@@ -32,7 +32,7 @@ builds, shows tasks and logs, edits recipes and sources, inspects generated
 images, and manages development terminals.
 
 <!-- yoctui-contents -->
-[Install](#install) · [Build from source](#build-from-source) ·
+[Install](#install) ·
 [Poky quickstart](#quickstart-poky-build-environment) · [Navigation](#navigation) ·
 [Screenshots](#screenshots)
 
@@ -48,7 +48,8 @@ images, and manages development terminals.
 [Daemon and remote use](#daemon-and-remote-use) · [Settings and profiles](#settings-and-team-profiles) ·
 [Features](#features) · [Troubleshooting](#compatibility-and-troubleshooting) ·
 [Performance](#performance-evidence) · [Hardware bring-up](#hardware-projects-and-manual-bring-up) ·
-[Development and license](#development-and-license) · [Operator guide](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md)
+[Build from source](#build-from-source) · [Development and license](#development-and-license) ·
+[Operator guide](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md)
 <!-- /yoctui-contents -->
 
 <p align="center">
@@ -65,7 +66,7 @@ recent stable Rust/Cargo ([Rust setup](https://www.rust-lang.org/tools/install))
 Install your chosen release's [Yocto host requirements](https://docs.yoctoproject.org/brief-yoctoprojectqs/index.html)
 separately; Yoctui does not install BitBake, BSP layers or target tools.
 
-Install the latest **published** release (which may lag the source repository):
+Install the official release from [crates.io](https://crates.io/crates/yoctui):
 
 ```bash
 cargo install yoctui --locked -j 2
@@ -74,28 +75,8 @@ yoctui --version
 yoctui --help
 ```
 
-### Build from source
-
-For the latest repository code, install Git and clone into a new directory:
-
-```bash
-mkdir -p "$HOME/projects"
-export YOCTUI_DIR="$HOME/projects/yoctui"
-git clone https://github.com/0xbadcaffe/yoctui.git "$YOCTUI_DIR"
-cd "$YOCTUI_DIR"
-cargo build --release --locked -p yoctui --bin yoctui -j 2
-# Optional: install this checkout's optimized binary on PATH.
-cargo install --locked --path crates/yoctui-cli --force --bin yoctui -j 2
-export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
-type -a yoctui
-yoctui --version
-```
-
-The build output is `target/release/yoctui` unless Cargo's target directory is
-overridden. `cargo install` uses release mode by default. These examples limit
-**Cargo** to two compile jobs; they do not change BitBake/make parallelism.
-Persist the PATH setting in your shell configuration if needed (custom Cargo
-install roots use their own `bin` directory).
+Persist the PATH setting in your shell configuration if needed.
+For the latest repository code, see [Build from source](#build-from-source) below.
 
 An already-running client or daemon keeps its old executable. Reopen the client
 after updating; restart the daemon **only after its builds and sessions finish**.
@@ -154,6 +135,7 @@ the daemon started from an initialized shell.
 | `F5` / `F6` / `F7` / `F8` | Logs / Layers / Recipes / Images |
 | `F9` / `Ctrl+P` | Command palette |
 | `F12` / `a` | Application menu / context actions |
+| `Alt+i` | Toggle the Inspector for this session (off by default) |
 | `Tab` / `Shift+Tab` | Change focus; some workspaces use Tab for their views |
 | Arrows, `PageUp`/`PageDown`, `Home`/`End` | Move within lists and trees |
 | `Right` / `Enter` in Navigator | Expand a group, then open and focus its workspace |
@@ -177,7 +159,8 @@ terminals keep their own paste/key behavior.
 
 ## Screenshots
 
-Screens use fixture values rendered through Yoctui at `160x50`. GitUI panes
+Screens use fixture values rendered through Yoctui at `160x50`, with the optional
+inspector enabled. GitUI panes
 replay native output from a demo repository. For live build captures and image
 checksums, see [Raster provenance](https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/manifest.toml),
 [Recorded live capture](https://github.com/0xbadcaffe/yoctui/blob/master/artifacts/release-quality/next-generation-ui/manifest.json),
@@ -443,7 +426,10 @@ For failures, inspect `yoctui daemon status` and
 
 ## Settings and team profiles
 
-Settings controls themes, mouse, reduced motion, ASCII/no-color and keybindings.
+Preferences (`F12` → View → Preferences) controls themes, mouse, reduced motion,
+ASCII/no-color, keybindings, and inspector startup visibility. The inspector
+starts off; `Alt+i` toggles it for the current session. Preferences shows defaults
+and custom values, with `Backspace` to reset one setting and `Alt+r` to reset all.
 Preferences are local. Optional `.yoctui/project.toml` profiles share favorites,
 build presets and workflows, not credentials/host paths/shell hooks.
 `yoctui --build-dir "$BUILDDIR" profile` inspects one without executing it;
@@ -546,9 +532,32 @@ Drivers, RootFS and Packages. Enter saves; Esc cancels. The overall bar averages
 these entries, not build-task progress.
 [Hardware text and viewer details](https://github.com/0xbadcaffe/yoctui/blob/master/docs/operator-guide.md#view-and-edit-hardware-text-files).
 
+## Build from source
+
+The published release may lag the source repository. For development or
+unpublished changes, install Git and clone into a new directory:
+
+```bash
+mkdir -p "$HOME/projects"
+export YOCTUI_DIR="$HOME/projects/yoctui"
+git clone https://github.com/0xbadcaffe/yoctui.git "$YOCTUI_DIR"
+cd "$YOCTUI_DIR"
+cargo build --release --locked -p yoctui --bin yoctui -j 2
+# Optional: install this checkout's optimized binary on PATH.
+cargo install --locked --path crates/yoctui-cli --force --bin yoctui -j 2
+export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+type -a yoctui
+yoctui --version
+```
+
+The build output is `target/release/yoctui` unless Cargo's target directory is
+overridden. `cargo install` uses release mode by default. Installation and build
+examples limit **Cargo** to two compile jobs; they do not change BitBake/make parallelism.
+Custom Cargo install roots use their own `bin` directory.
+
 ## Development and license
 
-From the repository root, build optimized for interactive use as shown above.
+From the repository root, [build optimized for interactive use](#build-from-source).
 Developer verification commands (not required to install/run):
 
 ```bash

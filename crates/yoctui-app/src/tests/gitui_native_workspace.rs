@@ -92,6 +92,7 @@ fn gitui_native_workspace_mouse_focus_and_writer_keys_use_exact_full_pane() {
 #[test]
 fn gitui_native_geometry_preserves_other_utilities_splits_and_narrow_terminals() {
     let mut app = app();
+    app.inspector_visible = true;
     app.focus = FocusTarget::Workspace;
     app.daemon.pty_sessions[0].name = "Show machines".into();
     assert_eq!(workbench_pane_widths(&app, 160, 50), [27, 100, 33]);

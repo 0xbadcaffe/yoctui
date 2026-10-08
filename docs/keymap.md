@@ -18,7 +18,7 @@ considered. Disabled actions stay visible with their exact prerequisite.
 | `F7` | Recipes |
 | `F8` | Images |
 | `F9` or `Ctrl+P` | Command palette |
-| `F12` | Workspace/Build/Navigate/View/Tools/Help application menu |
+| `F12` | Workspace/Build/Actions/Navigate/Config/View/Devtool/Tools/Help application menu |
 | `Alt+b` | Image build options |
 | `Alt+g` | GitUI (active workspace/editor repository or configured source) |
 | `a` or right-click | Context actions for the current selection |

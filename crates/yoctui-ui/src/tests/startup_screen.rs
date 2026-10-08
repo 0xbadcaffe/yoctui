@@ -13,7 +13,12 @@ fn startup_screen_renders_restored_destination_in_workspace_and_navigator() {
             let text = rendered_text_at(&app, width, height, literal_now());
             assert!(text.contains("Navigator"), "{width}x{height}: {text}");
             if width == 160 {
-                assert!(text.contains(inspector), "{text}");
+                assert!(!app.inspector_visible);
+                assert!(!text.contains("Inspector:"), "{text}");
+                app.inspector_visible = true;
+                let expanded = rendered_text_at(&app, width, height, literal_now());
+                assert!(expanded.contains(inspector), "{expanded}");
+                app.inspector_visible = false;
             }
             assert_eq!(app.screen, screen);
             assert_eq!(app.navigator_screen(), screen);

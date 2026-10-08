@@ -61,7 +61,7 @@ pub enum Action {
     ActivateNavigator,
     CycleFocus { backwards: bool, },
     CyclePaneSubfocus { backwards: bool, },
-    ResetPaneSubfocus, TogglePaneZoom,
+    ResetPaneSubfocus, TogglePaneZoom, ToggleInspector,
     ScrollCurrent { to_end: bool, },
     Focus(FocusTarget),
 
@@ -82,7 +82,7 @@ pub enum Action {
     CancelYoctoUtility,
     SelectSetting { delta: isize, },
     ChangeSelectedSetting { backwards: bool, },
-    ResetPreferences, RetrySettingsPersistence, OpenKeymapPreferences,
+    ResetSelectedPreference, ResetPreferences, RetrySettingsPersistence, OpenKeymapPreferences,
     CloseKeymapPreferences,
     SelectKeymapPreference { delta: isize, },
     BeginKeymapPreferenceSearch, AppendKeymapPreferenceQuery(char), BackspaceKeymapPreferenceQuery,

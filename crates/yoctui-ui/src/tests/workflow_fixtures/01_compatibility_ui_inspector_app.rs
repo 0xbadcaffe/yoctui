@@ -164,6 +164,7 @@ pub(crate) fn compatibility_ui_inspector_app() -> App {
     .normalize()
     .unwrap();
     let mut app = App::new(32, 8192);
+    app.inspector_visible = true;
     app.screen = Screen::Compatibility;
     app.focus = FocusTarget::Workspace;
     app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
@@ -273,6 +274,7 @@ pub(crate) fn security_workflow_ui_app() -> App {
     )
     .unwrap();
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.screen = Screen::Security;
     app.focus = FocusTarget::Workspace;
     app.security.scope = Some(scope);
@@ -339,6 +341,7 @@ pub(crate) fn security_session(status: SecuritySessionStatus) -> yoctui_model::S
 
 pub(crate) fn ux_rootfs_ui_app() -> App {
     let mut app = App::new(20, 20_000);
+    app.inspector_visible = true;
     app.screen = Screen::Images;
     app.focus = FocusTarget::Workspace;
     let image = yoctui_model::ImageArtifactIdentity {

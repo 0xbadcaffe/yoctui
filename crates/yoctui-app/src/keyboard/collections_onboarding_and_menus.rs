@@ -83,8 +83,14 @@ pub fn menu_action(app: &yoctui_model::App, key: Input) -> Option<MenuInputResul
         Input::Esc | Input::F12 => reduce(Action::CloseMenu),
         Input::Left => reduce(Action::SelectMenuGroup { delta: -1 }),
         Input::Right => reduce(Action::SelectMenuGroup { delta: 1 }),
-        Input::Up | Input::Char('k') => reduce(Action::SelectMenuItem { delta: -1 }),
-        Input::Down | Input::Char('j') => reduce(Action::SelectMenuItem { delta: 1 }),
+        Input::Up => reduce(Action::SelectMenuItem { delta: -1 }),
+        Input::Char('k') if app.menu.typed_prefix.is_empty() => {
+            reduce(Action::SelectMenuItem { delta: -1 })
+        }
+        Input::Down => reduce(Action::SelectMenuItem { delta: 1 }),
+        Input::Char('j') if app.menu.typed_prefix.is_empty() => {
+            reduce(Action::SelectMenuItem { delta: 1 })
+        }
         Input::Backspace => reduce(Action::BackspaceMenuPrefix),
         Input::Enter => {
             let item = app.selected_menu_item()?;

@@ -137,7 +137,7 @@ fn concept_editor_application_menu_composes_focus_validation_and_diff() {
         "Language: BitBake",
         "State: modified",
         "Yoctui Application Menu",
-        "Build  Actions  Navigate  View",
+        "Build  Actions  Navigate  Config  View",
         "Cancel active build",
         "No active build is avai",
         "Validation and diff state",

@@ -95,6 +95,8 @@ fn ux_onboarding_renders_real_typed_workflow_states_responsively_and_accessibly(
 fn ux_menu_renders_groups_context_disabled_safety_and_accessible_responsive_states() {
     let mut app = App::new(10, 1_000);
     let _ = update(&mut app, Action::OpenApplicationMenu);
+    let _ = update(&mut app, Action::SelectMenuGroup { delta: yoctui_model::ApplicationMenuGroup::ALL.iter().position(|g| *g == yoctui_model::ApplicationMenuGroup::Configuration).unwrap() as isize });
+    let _ = update(&mut app, Action::SelectMenuItem { delta: 2 });
     for (width, height) in [(160, 40), (100, 30), (80, 24)] {
         let output = rendered_text(&app, width, height);
         assert!(
@@ -144,6 +146,7 @@ fn ux_menu_renders_groups_context_disabled_safety_and_accessible_responsive_stat
 #[test]
 fn ux_viewport_chrome_reports_position_and_available_directions() {
     let mut navigator_app = App::new(10, 1_000);
+    navigator_app.inspector_visible = true;
     navigator_app.focus = FocusTarget::Navigator;
     let total_navigation_rows = navigator_app.navigator_visible_row_count();
     let first_navigation_row = navigator_app.navigator_visual_row() + 1;
@@ -173,6 +176,7 @@ fn ux_viewport_chrome_reports_position_and_available_directions() {
     );
 
     let mut palette_app = App::new(10, 1_000);
+    palette_app.inspector_visible = true;
     palette_app.command_palette_open = true;
     palette_app.focus = FocusTarget::CommandPalette;
     let command_count = palette_app.command_palette_commands().len();
@@ -192,6 +196,7 @@ fn ux_viewport_chrome_reports_position_and_available_directions() {
     assert!(!fitting.contains("Commands · 1/1 · rows"), "{fitting}");
 
     let mut menu_app = App::new(10, 1_000);
+    menu_app.inspector_visible = true;
     menu_app.screen = Screen::Recipes;
     menu_app.workspace.build_dir = Some("/work/build".into());
     let _ = update(&mut menu_app, Action::OpenContextMenu);

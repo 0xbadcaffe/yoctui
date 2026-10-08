@@ -152,6 +152,7 @@ pub fn settings_action(key: Input) -> Option<Action> {
         Input::Down | Input::Char('j') => Some(Action::SelectSetting { delta: 1 }),
         Input::Left => Some(Action::ChangeSelectedSetting { backwards: true }),
         Input::Right | Input::Enter => Some(Action::ChangeSelectedSetting { backwards: false }),
+        Input::Backspace => Some(Action::ResetSelectedPreference),
         Input::Char('r') => Some(Action::RetrySettingsPersistence),
         Input::Alt('r') | Input::Char('R') => Some(Action::ResetPreferences),
         _ => None,

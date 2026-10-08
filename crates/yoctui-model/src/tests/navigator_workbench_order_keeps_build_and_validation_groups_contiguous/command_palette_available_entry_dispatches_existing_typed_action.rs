@@ -11,5 +11,5 @@ fn command_palette_available_entry_dispatches_existing_typed_action() {
     assert_eq!(update(&mut app, Action::ActivateCommandPalette), None);
     assert_eq!(app.screen, Screen::Settings);
     assert!(!app.command_palette_open);
-    assert_eq!(app.focus, FocusTarget::Navigator);
+    assert_eq!(app.focus, FocusTarget::Workspace);
 }

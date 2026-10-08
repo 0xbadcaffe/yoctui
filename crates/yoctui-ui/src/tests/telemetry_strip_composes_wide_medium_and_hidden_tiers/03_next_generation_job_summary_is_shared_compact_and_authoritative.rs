@@ -1,6 +1,7 @@
 #[test]
 fn next_generation_job_summary_is_shared_compact_and_authoritative() {
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     for (index, status) in [
         BackgroundJobStatus::Queued,
         BackgroundJobStatus::Running,

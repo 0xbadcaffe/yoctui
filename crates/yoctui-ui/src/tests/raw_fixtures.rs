@@ -132,6 +132,7 @@ pub(crate) fn raw_output_app(interaction: yoctui_model::RawInteractionMode) -> A
     }
     let request_id = execution.request.id.clone();
     let mut app = App::new(16, 4096);
+    app.inspector_visible = true;
     app.screen = Screen::RawMode;
     app.focus = FocusTarget::Workspace;
     app.raw_mode.view = yoctui_model::RawModeView::Execution;
@@ -258,6 +259,7 @@ pub(crate) fn raw_command_list_app() -> App {
         .normalize()
         .unwrap();
     let mut app = App::new(16, 4096);
+    app.inspector_visible = true;
     app.workspace.build_dir = Some("/work/build".into());
     app.build.target = Some("busybox".into());
     yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
@@ -312,6 +314,7 @@ pub(crate) fn rendered_raw_preview(width: u16, height: u16) -> String {
 
 pub(crate) fn ux_terminal_render_fixture() -> App {
     let mut app = App::new(16, 4_096);
+    app.inspector_visible = true;
     app.screen = Screen::TerminalSessions;
     app.focus = FocusTarget::Workspace;
     app.daemon.status = yoctui_model::ClientReplicaStatus::Current;

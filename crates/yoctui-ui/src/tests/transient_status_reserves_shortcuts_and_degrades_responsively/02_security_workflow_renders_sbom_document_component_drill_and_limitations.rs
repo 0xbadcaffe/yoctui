@@ -372,14 +372,14 @@ fn settings_workspace_renders_typed_rows_and_controls_on_narrow_terminals() {
     app.logs.follow = false;
 
     let output = rendered_text(&app, 100, 30);
-    assert!(output.contains("Settings (not saved)"));
+    assert!(output.contains("Preferences (not saved)"));
     assert!(output.contains("Theme"));
     assert!(output.contains("Green"));
     assert!(!output.to_ascii_lowercase().contains("vscode"));
     assert!(output.contains("Animation speed"));
     assert!(output.contains("Reduced motion"));
-    assert!(output.contains("Log wrap"));
-    assert!(output.contains("Log follow"));
+    assert!(output.contains("default:"));
+    assert!(output.contains("custom"));
     assert!(output.contains("select"));
     assert!(output.contains("change"));
     app.settings_selection = app.preference_rows().iter()

@@ -6,7 +6,8 @@ pub fn global_operator_action_definitions() -> Vec<OperatorActionDefinition> {
 }
 
 pub fn global_operator_action_definition(command: CommandId) -> OperatorActionDefinition {
-    let metadata = global_metadata(command);
+    let mut metadata = global_metadata(command);
+    metadata.menu_path[0] = crate::ApplicationMenuGroup::for_command(command).label();
     OperatorActionDefinition {
         id: OperatorActionId::new(metadata.id),
         scope: metadata.scope,
@@ -28,10 +29,20 @@ pub fn global_operator_action_definition(command: CommandId) -> OperatorActionDe
 
 const fn global_shortcut_label(command: CommandId) -> &'static str {
     match command {
+        CommandId::OpenInsights
+        | CommandId::OpenSignatures
+        | CommandId::OpenLayerRelationships
+        | CommandId::OpenKernel
+        | CommandId::OpenFirmware => "F12 Navigate",
+        CommandId::OpenBbmask => "F12 Config",
+        CommandId::OpenDevtoolWorkspace => "F12 Devtool",
+        CommandId::OpenBuildHistory => "F3 / F12 Navigate",
+        CommandId::OpenCommandPalette => "F9 / Ctrl+P",
+        CommandId::Quit => "q",
         CommandId::BuildImage => "Alt+b",
         CommandId::SelectImage => "i",
         CommandId::BuildSelectedRecipe => "b",
-        CommandId::EditBbmask => "x then e",
+        CommandId::EditBbmask => "x then e / F12 Config",
         CommandId::OpenDashboard => "Esc / F4",
         CommandId::OpenLayers => "y / F6",
         CommandId::OpenRecipes => "r / F7",
@@ -51,7 +62,9 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenGitUi => "Alt+g / F12 Tools",
         CommandId::OpenDevtool(_) => "F12 Devtool",
         CommandId::OpenBitBakeConfigBuild
-        | CommandId::OpenBitBakeLayersShowLayers
+        | CommandId::OpenBitBakeLayersSaveBuildConf
+        | CommandId::OpenBitBakeLayersCreateLayersSetup => "F12 Config",
+        CommandId::OpenBitBakeLayersShowLayers
         | CommandId::OpenBitBakeLayersShowRecipes
         | CommandId::OpenBitBakeLayersShowOverlayed
         | CommandId::OpenBitBakeLayersShowAppends
@@ -62,14 +75,14 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         | CommandId::OpenBitBakeLayersLayerIndexFetch
         | CommandId::OpenBitBakeLayersLayerIndexShowDepends
         | CommandId::OpenBitBakeLayersCreateLayer
-        | CommandId::OpenBitBakeLayersShowMachines
-        | CommandId::OpenBitBakeLayersSaveBuildConf
-        | CommandId::OpenBitBakeLayersCreateLayersSetup => "F12 Tools",
+        | CommandId::OpenBitBakeLayersShowMachines => "F12 Tools",
         CommandId::OpenTerminalSessions => "Ctrl+B t",
-        CommandId::OpenMaintenance | CommandId::OpenBuildEnvironment => "none",
-        CommandId::OpenCompatibility => "none",
-        CommandId::OpenSettings => "none",
+        CommandId::OpenMaintenance => "F12 Tools",
+        CommandId::OpenBuildEnvironment => "F12 Workspace",
+        CommandId::OpenCompatibility => "F12 Workspace",
+        CommandId::OpenSettings => "F12 View",
         CommandId::ChooseTheme => "Ctrl+P theme",
+        CommandId::ToggleInspector => "Alt+i",
         CommandId::FocusNavigator
         | CommandId::FocusWorkspace
         | CommandId::FocusInspector
@@ -86,6 +99,27 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
 
 pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestination> {
     match command {
+        CommandId::OpenInsights => {
+            Some(crate::workspace_screen_destination(crate::Screen::Insights))
+        }
+        CommandId::OpenBuildHistory => Some(crate::workspace_screen_destination(
+            crate::Screen::BuildHistory,
+        )),
+        CommandId::OpenSignatures => Some(crate::workspace_screen_destination(
+            crate::Screen::Signatures,
+        )),
+        CommandId::OpenLayerRelationships => Some(crate::workspace_screen_destination(
+            crate::Screen::LayerRelationships,
+        )),
+        CommandId::OpenDevtoolWorkspace => {
+            Some(crate::workspace_screen_destination(crate::Screen::Devtool))
+        }
+        CommandId::OpenKernel => Some(crate::workspace_screen_destination(crate::Screen::Kernel)),
+        CommandId::OpenFirmware => {
+            Some(crate::workspace_screen_destination(crate::Screen::Firmware))
+        }
+        CommandId::OpenBbmask => Some(crate::workspace_screen_destination(crate::Screen::Bbmask)),
+        CommandId::OpenCommandPalette | CommandId::Quit => None,
         CommandId::OpenDashboard => Some(WorkspaceDestination::Dashboard),
         CommandId::OpenLayers => Some(WorkspaceDestination::Layers),
         CommandId::OpenRecipes => Some(WorkspaceDestination::Recipes),
@@ -105,6 +139,8 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         CommandId::OpenGitUi => None,
         CommandId::OpenDevtool(_) => None,
         CommandId::OpenBitBakeConfigBuild
+        | CommandId::OpenBitBakeLayersSaveBuildConf
+        | CommandId::OpenBitBakeLayersCreateLayersSetup
         | CommandId::OpenBitBakeLayersShowLayers
         | CommandId::OpenBitBakeLayersShowRecipes
         | CommandId::OpenBitBakeLayersShowOverlayed
@@ -116,9 +152,7 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         | CommandId::OpenBitBakeLayersLayerIndexFetch
         | CommandId::OpenBitBakeLayersLayerIndexShowDepends
         | CommandId::OpenBitBakeLayersCreateLayer
-        | CommandId::OpenBitBakeLayersShowMachines
-        | CommandId::OpenBitBakeLayersSaveBuildConf
-        | CommandId::OpenBitBakeLayersCreateLayersSetup => None,
+        | CommandId::OpenBitBakeLayersShowMachines => None,
         CommandId::OpenTerminalSessions => Some(WorkspaceDestination::TerminalSessions),
         CommandId::OpenMaintenance => Some(WorkspaceDestination::Maintenance),
         CommandId::OpenBuildEnvironment => Some(WorkspaceDestination::BuildEnvironment),
@@ -136,6 +170,7 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         | CommandId::PreviousSubfocus
         | CommandId::NextSubfocus
         | CommandId::TogglePaneZoom
+        | CommandId::ToggleInspector
         | CommandId::ScrollFirst
         | CommandId::ScrollLast
         | CommandId::OpenOnboarding => None,

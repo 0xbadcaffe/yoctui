@@ -169,6 +169,7 @@ fn bbmask_edit_preview_shows_the_exact_assignment() {
 #[test]
 fn live_tasks_renders_summary_states_filters_and_selected_inspector() {
     let mut app = App::new(20, 2_000);
+    app.inspector_visible = true;
     app.screen = Screen::Tasks;
     app.focus = FocusTarget::Workspace;
     app.build.completed = 2;

@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn next_generation_inspector_shell_names_modes_and_orders_typed_sections() {
     let mut app = App::new(10, 1_000);
+    app.inspector_visible = true;
     app.focus = FocusTarget::Inspector;
     app.screen = Screen::Logs;
     app.logs.insert(yoctui_model::LogEntry {

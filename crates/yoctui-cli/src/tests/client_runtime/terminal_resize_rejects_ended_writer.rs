@@ -91,7 +91,7 @@ fn terminal_resize_rejects_ended_writer_without_sending_a_request() {
         assert_eq!(
             resize.dimensions,
             TerminalDimensions {
-                columns: 98,
+                columns: 131,
                 rows: 32
             }
         );
