@@ -61,8 +61,11 @@ async fn hardware_desktop_launcher_does_not_wait_for_gui_owned_pipe_eof() {
     )
     .await;
     // Stop only the fixture's child, including when the EOF regression returns.
+    let mut isolated_group = false;
     if let Ok(pid) = fs::read_to_string(&gui_pid) {
         let pid: i32 = pid.trim().parse().unwrap();
+        let reader_group = unsafe { libc::getpgid(pid) };
+        isolated_group = reader_group > 0 && reader_group != unsafe { libc::getpgrp() };
         unsafe {
             libc::kill(pid, libc::SIGTERM);
         }
@@ -70,4 +73,8 @@ async fn hardware_desktop_launcher_does_not_wait_for_gui_owned_pipe_eof() {
     result
         .expect("launch must complete without waiting for GUI pipe EOF")
         .unwrap();
+    assert!(
+        isolated_group,
+        "GUI reader must not inherit the client terminal's foreground process group"
+    );
 }

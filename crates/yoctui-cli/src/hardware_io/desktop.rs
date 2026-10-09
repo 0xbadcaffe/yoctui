@@ -24,19 +24,21 @@ pub(super) async fn open(
 pub(super) async fn launch_reader(program: &str, path: &Path) -> Result<()> {
     // A graphical reader may inherit its launcher's descriptors and stay open
     // for hours. Wait for the launcher status, never for GUI-owned pipe EOF.
-    let status = tokio::time::timeout(
-        DOCUMENT_TOOL_TIMEOUT,
-        Command::new(program)
-            .arg("open")
-            .arg(path)
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .kill_on_drop(true)
-            .status(),
-    )
-    .await
-    .context("Desktop PDF launcher timed out")??;
+    let mut command = Command::new(program);
+    command
+        .arg("open")
+        .arg(path)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true);
+    // The reader must not share the terminal's foreground group: closing a
+    // graphics terminal sends SIGHUP to that group, including GUI children.
+    #[cfg(unix)]
+    command.process_group(0);
+    let status = tokio::time::timeout(DOCUMENT_TOOL_TIMEOUT, command.status())
+        .await
+        .context("Desktop PDF launcher timed out")??;
     if !status.success() {
         bail!("Desktop PDF launcher exited with {status}; check your desktop PDF association.");
     }

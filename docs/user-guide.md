@@ -185,7 +185,8 @@ and `-` for centered zoom, `0` for fit-to-page and `w` for fit-to-width.
 Arrows or mouse dragging pan; the wheel pans a magnified page (changes pages
 when fitted), and Ctrl+wheel zooms. PgUp/PgDn always change page; `v` shows
 embedded text and Esc returns. Press `o` to open the PDF in your desktop's
-registered reader (GLib `gio` and, for example, Evince or Okular). This gives
+registered reader (GLib `gio` and, for example, Papers, Evince or Okular).
+Its separate window stays open when you close Yoctui. This gives
 full-resolution reading, selection, printing and the reader's available tools;
 the embedded terminal raster viewer is not a PDF editor. Missing prerequisites are explained.
 
