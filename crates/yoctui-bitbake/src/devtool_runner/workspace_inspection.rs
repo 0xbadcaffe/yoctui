@@ -110,6 +110,25 @@ impl DevtoolInspector {
             }
         }
         let mut process = TokioCommand::new(command.executable());
+        // An attached client need not have sourced oe-init-build-env. Vendor
+        // layouts cannot find BitBake relative to the canonical devtool script;
+        // use only tool directories from the validated environment authority.
+        let mut tool_paths = compatibility
+            .snapshot
+            .environment
+            .available_tools
+            .value()
+            .into_iter()
+            .flatten()
+            .filter(|tool| matches!(tool.id.as_str(), "bitbake" | "devtool"))
+            .filter_map(|tool| tool.executable.parent().map(Path::to_path_buf))
+            .collect::<Vec<_>>();
+        if let Some(path) = std::env::var_os("PATH") {
+            tool_paths.extend(std::env::split_paths(&path));
+        }
+        if let Ok(path) = std::env::join_paths(tool_paths) {
+            process.env("PATH", path);
+        }
         process
             .args(command.arguments())
             .current_dir(build_dir)

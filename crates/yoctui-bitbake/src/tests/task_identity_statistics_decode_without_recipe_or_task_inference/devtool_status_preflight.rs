@@ -19,6 +19,47 @@ fn inspector_fixture(name: &str) -> (PathBuf, DevtoolInspector, RecipeIdentity) 
 }
 
 #[tokio::test]
+async fn devtool_status_uses_authoritative_bitbake_path_for_unsourced_attach_clients() {
+    let (root, inspector, identity) = inspector_fixture("devtool-status-attached-path");
+    initialized_devtool_workspace(&root);
+    let tools = root.join("vendor-bitbake-bin");
+    fs::create_dir(&tools).unwrap();
+    let bitbake = tools.join("bitbake");
+    fs::write(&bitbake, "#!/bin/sh\nexit 0\n").unwrap();
+    fs::set_permissions(&bitbake, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::write(root.join("devtool"), format!(
+        "#!/bin/sh\n[ \"$1\" = status ] || exit 9\n[ \"$(command -v bitbake)\" = '{}' ] || exit 10\ntouch spawned\n",
+        bitbake.display()
+    )).unwrap();
+    let mut compatibility = devtool_compatibility(&root, &root.join("devtool"));
+    let mut tools = compatibility
+        .snapshot
+        .environment
+        .available_tools
+        .value()
+        .unwrap()
+        .clone();
+    tools.push(yoctui_model::ToolIdentity {
+        id: "bitbake".into(),
+        executable: bitbake,
+        version: None,
+    });
+    compatibility.snapshot.environment.available_tools = yoctui_model::AuthoritativeValue::detected(
+        tools,
+        yoctui_model::IdentityAuthority::InitializedEnvironment,
+    );
+    let original = fs::read(root.join("conf/bblayers.conf")).unwrap();
+    let status = inspector
+        .inspect_with_compatibility(&root, identity, &compatibility, 1)
+        .await;
+    assert_eq!(status.capability, DevtoolCapability::Available);
+    assert!(status.error.is_none(), "{:?}", status.error);
+    assert!(root.join("spawned").exists());
+    assert_eq!(fs::read(root.join("conf/bblayers.conf")).unwrap(), original);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[tokio::test]
 async fn devtool_status_preserves_fixed_sdk_status_without_default_workspace_inference() {
     let (root, inspector, identity) = inspector_fixture("devtool-status-fixed-sdk");
     fs::write(root.join(".devtoolbase"), "").unwrap();

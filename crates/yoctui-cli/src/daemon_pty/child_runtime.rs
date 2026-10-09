@@ -27,6 +27,7 @@ impl DaemonPtySupervisor {
             tokio::sync::mpsc::UnboundedReceiver<ControlMessage>,
         ) = tokio::sync::mpsc::unbounded_channel();
         let event_tx = self.tx.clone();
+        let state_tx = self.state_tx.clone();
         let session_id = spec.id;
         let acknowledge_failure = spec.kind == PtySessionKind::Menuconfig;
         tokio::spawn(async move {
@@ -48,7 +49,7 @@ impl DaemonPtySupervisor {
                 }
             };
             if let Ok(snapshot) = session.snapshot(0) {
-                let _ = event_tx.send(DaemonPtyEvent::Started {
+                let _ = state_tx.send(DaemonPtyEvent::Started {
                     session_id,
                     snapshot: snapshot_to_wire(&snapshot.listing),
                 });
@@ -109,7 +110,7 @@ impl DaemonPtySupervisor {
                         };
                         let _ = response.send(result.map_err(|error| error.to_string()));
                         if let Ok(snapshot) = session.snapshot(0) {
-                            let _ = event_tx.send(DaemonPtyEvent::Changed { session_id, snapshot: snapshot_to_wire(&snapshot.listing) });
+                            let _ = state_tx.send(DaemonPtyEvent::Changed { session_id, snapshot: snapshot_to_wire(&snapshot.listing) });
                         }
                     }
                     event = session.next_event() => {

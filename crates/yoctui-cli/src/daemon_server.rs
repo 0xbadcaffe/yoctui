@@ -265,14 +265,8 @@ pub(crate) async fn run_daemon_foreground(
 
         let mut remaining_clients = Vec::with_capacity(clients.len());
         let mut encoded_event_frames = HashMap::<u64, Vec<u8>>::new();
-        for (
-            mut connection,
-            negotiated,
-            attached,
-            mut last_sequence,
-            client_id,
-            mut rootfs_query,
-        ) in clients.drain(..)
+        for (mut connection, negotiated, attached, last_sequence, client_id, mut rootfs_query) in
+            clients.drain(..)
         {
             match connection.flush_event_frame() {
                 Ok(true) => {}
@@ -301,7 +295,36 @@ pub(crate) async fn run_daemon_foreground(
                     continue;
                 }
             }
-            let mut keep_client = true;
+            // Complete an in-flight frame first, then service control before
+            // starting more fan-out. Continuous console output must not make
+            // every tick skip writer/input requests behind another partial frame.
+            let mut client = DaemonClient {
+                connection,
+                negotiated,
+                attached,
+                last_sequence,
+                client_id,
+                rootfs_query,
+            };
+            let mut keep_client = client_requests::service(&mut services, &mut client, &record)?;
+            let DaemonClient {
+                mut connection,
+                negotiated,
+                attached,
+                mut last_sequence,
+                client_id,
+                mut rootfs_query,
+            } = client;
+            if !keep_client {
+                services
+                    .pty_supervisor
+                    .disconnect_client(yoctui_model::PtyClientId(client_id.0));
+                if let Some(mut query) = rootfs_query {
+                    query.cancel();
+                    retired_rootfs_queries.push(query);
+                }
+                continue;
+            }
             if let Some(result) = rootfs_query.as_mut().and_then(|query| query.try_result()) {
                 let query = rootfs_query.take().expect("completed rootfs query");
                 let result = result.and_then(|sources| {
@@ -410,47 +433,14 @@ pub(crate) async fn run_daemon_foreground(
                 }
                 continue;
             }
-            if connection.event_write_pending() {
-                remaining_clients.push((
-                    connection,
-                    negotiated,
-                    attached,
-                    last_sequence,
-                    client_id,
-                    rootfs_query,
-                ));
-                continue;
-            }
-            let mut client = DaemonClient {
+            remaining_clients.push((
                 connection,
                 negotiated,
                 attached,
                 last_sequence,
                 client_id,
                 rootfs_query,
-            };
-            let keep_client = client_requests::service(&mut services, &mut client, &record)?;
-            let DaemonClient {
-                connection,
-                negotiated,
-                attached,
-                last_sequence,
-                client_id,
-                rootfs_query,
-            } = client;
-            if keep_client {
-                remaining_clients.push((
-                    connection,
-                    negotiated,
-                    attached,
-                    last_sequence,
-                    client_id,
-                    rootfs_query,
-                ));
-            } else if let Some(mut query) = rootfs_query {
-                query.cancel();
-                retired_rootfs_queries.push(query);
-            }
+            ));
         }
         clients = remaining_clients;
     }

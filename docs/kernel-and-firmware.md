@@ -39,6 +39,12 @@ Host mode operates on the Yoctui host. Native diagnostics retain target failures
 GDB init/auto-load/debuginfod and crashrc are disabled. No automatic sudo, installs,
 kernel changes, tracing configuration, or reboot. Debuggers can pause execution.
 
+Managed QEMU debugging maps Yocto's `/usr/src/kernel` debug prefix to retained
+`tmp/work-shared/<machine>/kernel-source` when the selected qemuboot artifact and
+source belong to that build. The terminal reports the mapping; sources outside
+the build are not followed. Custom debug prefixes/layouts still need an explicit
+GDB `set substitute-path OLD NEW` command. Always use sources matching vmlinux.
+
 ## Serial KGDB for an already configured board
 
 Choose KGDB → GDB · serial board. Supply matching ELF/DWARF vmlinux, exact .config,

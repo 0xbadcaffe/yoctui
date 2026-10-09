@@ -256,7 +256,21 @@ impl DaemonClientSnapshot {
         ) && app.build.started == build.build.started
             && app.build.target == build.build.target;
         app.backend = build.backend;
+        let selected_recipe = app.workspace.recipes.get(app.recipe_selection).cloned();
+        // A replacement snapshot can reorder inventory. Keep the actual
+        // provider selected, not the old row number (which could target a
+        // different recipe for a later Devtool operation).
         app.workspace = build.workspace;
+        app.recipe_selection = selected_recipe
+            .and_then(|selected| {
+                app.workspace.recipes.iter().position(|recipe| {
+                    recipe.name == selected.name && recipe.file == selected.file
+                })
+            })
+            .unwrap_or_else(|| {
+                app.recipe_selection
+                    .min(app.workspace.recipes.len().saturating_sub(1))
+            });
         app.build = build.build;
         app.tasks = build.tasks;
         app.completed_tasks = build.completed_tasks;

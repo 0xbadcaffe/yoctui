@@ -39,6 +39,7 @@ Global `/` searches commands and source/config/log/pkgdata/deploy/rootfs content
 using case-insensitive Rust regex. Enter opens a hit or action. At most 500 hits;
 binary/oversized files, symlinks, .git, downloads, sstate, and caches are excluded.
 Editors, terminals, and contextual searches keep their own `/` handling.
+In Devtool, `/` filters the recipe list; Enter/Esc finishes typing and Ctrl+U clears it.
 Ctrl+V pastes into fields/editors with wl-paste, xclip, or xsel available;
 native terminals retain their own paste behavior.
 

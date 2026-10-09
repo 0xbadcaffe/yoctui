@@ -6,9 +6,19 @@ pub(super) fn service(
     record: &DaemonRuntimeRecord,
 ) -> Result<bool> {
     let mut keep_client = true;
-    loop {
+    // A chatty client must also yield to other clients and background jobs.
+    for _ in 0..16 {
         if !client.connection.is_readable()? {
             break;
+        }
+        if client.attached && client.last_sequence < services.daemon_journal.snapshot().sequence {
+            // Commands can publish direct events. Bring a lagging replica to
+            // the current cursor first; never skip old state or send an event
+            // with a sequence gap just to prioritize writer control.
+            let snapshot = services.daemon_journal.snapshot().clone();
+            let sequence = snapshot.sequence;
+            client.connection.send(&ServerMessage::Snapshot(snapshot))?;
+            client.last_sequence = sequence;
         }
         match client.connection.receive::<ClientMessage>() {
                 Ok(ClientMessage::Hello(hello)) => {

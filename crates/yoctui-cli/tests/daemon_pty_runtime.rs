@@ -17,6 +17,9 @@ use yoctui_protocol::{
     daemon_ipc::{DaemonConnection, runtime_paths_for},
 };
 
+#[path = "daemon_pty_runtime/busy_console.rs"]
+mod busy_console;
+
 struct DaemonGuard {
     binary: PathBuf,
     runtime: PathBuf,
@@ -34,6 +37,10 @@ impl Drop for DaemonGuard {
 }
 
 fn attach(runtime: &Path) -> (DaemonConnection, u64) {
+    attach_client(runtime, ClientId([7; 16]))
+}
+
+fn attach_client(runtime: &Path, client_id: ClientId) -> (DaemonConnection, u64) {
     let paths = runtime_paths_for(runtime.to_path_buf(), unsafe { libc::geteuid() }).unwrap();
     let mut connection = DaemonConnection::connect(&paths, Duration::from_secs(2)).unwrap();
     connection
@@ -43,7 +50,7 @@ fn attach(runtime: &Path) -> (DaemonConnection, u64) {
         .send(&ClientMessage::Hello(ClientHello {
             minimum_version: ProtocolVersion::CURRENT,
             maximum_version: ProtocolVersion::CURRENT,
-            client_id: ClientId([7; 16]),
+            client_id,
             client_name: "pty-runtime-test".into(),
             capabilities: vec![
                 Capability::StateSnapshots,

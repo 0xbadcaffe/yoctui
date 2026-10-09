@@ -143,6 +143,7 @@ impl InteractiveRuntime {
             let effect = devtool_modify_confirmation_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
             if let Some(Effect::DevtoolModify(identity)) = effect {
+                let known_jobs = runtime.app.daemon.jobs.iter().map(|job| job.id).collect();
                 if submit_daemon_effect(
                     &mut runtime.daemon_runtime,
                     &mut runtime.app,
@@ -150,7 +151,7 @@ impl InteractiveRuntime {
                 )
                 .is_some()
                 {
-                    runtime.pending_daemon_devtool_modify = Some(identity);
+                    runtime.pending_daemon_devtool_modify = Some((identity, known_jobs));
                     return Ok(Some(KeyRouteOutcome::ContinueLoop));
                 }
                 let recipe = identity.name.clone();

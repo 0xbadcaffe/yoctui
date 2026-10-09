@@ -242,6 +242,7 @@ pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Actio
         || app.command_palette_open
         || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
         || app.screen == yoctui_model::Screen::TerminalSessions
+        || app.screen == yoctui_model::Screen::Devtool
         || app.platform_menuconfig_visible()
         || workspace_text_input_active(app)
     {
@@ -277,6 +278,7 @@ pub fn workspace_text_input_active(app: &yoctui_model::App) -> bool {
             yoctui_model::Screen::Recipes
                 | yoctui_model::Screen::Layers
                 | yoctui_model::Screen::Configuration
+                | yoctui_model::Screen::Devtool
         ) && app.metadata_searching)
         || (app.screen == yoctui_model::Screen::Dependencies && app.dependency_graph_searching)
         || (app.screen == yoctui_model::Screen::Packages && app.package_searching)

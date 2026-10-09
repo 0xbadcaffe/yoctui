@@ -109,10 +109,15 @@ Enter loads details; `b` reviews a recipe build, `f` chooses a task, `e` opens
 its provider, `o` selects a task log, and `p` selects a patch. `A` opens Dependencies;
 `Z` opens signature comparison. Tasks and paths require current metadata.
 
-Devtool: `t` status, `d` modify/open, `u` update-recipe, `F` finish, `P` deploy,
-`D` reviewed reset. Editor Ctrl+B refuses dirty content before recipe-build review.
+Devtool: `/` filters recipes, `t` refreshes status, `d` modifies/opens,
+`u` creates patches, Alt+f finishes, Alt+p deploys, and Alt+d reviews reset.
+Editor Ctrl+B refuses dirty content before recipe-build review.
 Alt+w opens the selected source workspace; save/build, commit source changes,
 then Alt+f reviews finishing the patch into a layer. Inspect it and rebuild.
+Include the appropriate `Upstream-Status` in source commit messages before
+exporting patches; Yocto's patch QA may reject patches without it.
+Attached clients use the daemon's validated tool paths for status refresh;
+modify, patch update and finish refresh automatically when their new job completes.
 Managed GitUI needs writer control (Ctrl+B o); Ctrl+B e returns to the retained editor.
 
 ### Source Git

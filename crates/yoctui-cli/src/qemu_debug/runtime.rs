@@ -88,7 +88,12 @@ pub(super) async fn run(spec: &QemuDebugSpec) -> Result<()> {
             _ = interrupt.recv() => bail!("Debug startup cancelled"),
         }
         println!("QEMU socket ready; attaching GDB. Use break/bt/continue; quit stops this guest.");
-        let mut debugger = Command::new(&spec.gdb).args(spec.gdb_arguments(&socket))
+        if let Some(source) = super::source_map::discover(spec) {
+            println!("GDB source mapping: /usr/src/kernel → {}", source.display());
+        } else {
+            println!("Kernel sources not found in the selected build; set substitute-path manually if needed.");
+        }
+        let mut debugger = Command::new(&spec.gdb).args(super::source_map::arguments(spec, &socket))
             .current_dir(&spec.build_dir).kill_on_drop(true).spawn().context("Could not start GDB")?;
         // SIGINT belongs to native GDB (interrupting the guest), not VM termination.
         let result: Result<()> = tokio::select! {

@@ -137,11 +137,11 @@ impl InteractiveRuntime {
                 Err(error) => tracing::debug!(%error, "daemon reattach not yet available"),
             }
         }
-        if let Some(identity) = runtime.pending_daemon_devtool_modify.as_ref() {
-            match daemon_devtool_modify_completion(&runtime.app, identity) {
+        if let Some((identity, known_jobs)) = runtime.pending_daemon_devtool_modify.as_ref() {
+            match daemon_devtool_modify_completion(&runtime.app, identity, known_jobs) {
                 DaemonDevtoolModifyCompletion::Pending => {}
                 DaemonDevtoolModifyCompletion::Succeeded => {
-                    let identity = runtime
+                    let (identity, _) = runtime
                         .pending_daemon_devtool_modify
                         .take()
                         .expect("daemon Devtool identity was present");
@@ -150,7 +150,7 @@ impl InteractiveRuntime {
                     runtime.render_scheduler.invalidate(RenderCause::State);
                 }
                 DaemonDevtoolModifyCompletion::Failed => {
-                    let identity = runtime
+                    let (identity, _) = runtime
                         .pending_daemon_devtool_modify
                         .take()
                         .expect("daemon Devtool identity was present");
@@ -162,8 +162,8 @@ impl InteractiveRuntime {
                 }
             }
         }
-        if let Some((_, known_jobs)) = runtime.pending_daemon_devtool_update.as_ref() {
-            match daemon_devtool_completion_after(&runtime.app, known_jobs) {
+        if let Some((identity, known_jobs)) = runtime.pending_daemon_devtool_update.as_ref() {
+            match daemon_devtool_completion_after(&runtime.app, identity, known_jobs) {
                 DaemonDevtoolModifyCompletion::Pending => {}
                 DaemonDevtoolModifyCompletion::Succeeded => {
                     let (identity, _) = runtime
@@ -183,6 +183,28 @@ impl InteractiveRuntime {
                         "Devtool patch update for {} failed in the daemon; inspect Jobs and Logs.",
                         identity.name
                     ));
+                    runtime.render_scheduler.invalidate(RenderCause::State);
+                }
+            }
+        }
+        if let Some((identity, known_jobs)) = runtime.pending_daemon_devtool_finish.as_ref() {
+            match daemon_devtool_completion_after(&runtime.app, identity, known_jobs) {
+                DaemonDevtoolModifyCompletion::Pending => {}
+                outcome => {
+                    let (identity, _) = runtime.pending_daemon_devtool_finish.take().unwrap();
+                    if outcome == DaemonDevtoolModifyCompletion::Succeeded {
+                        complete_devtool_finish(
+                            &mut runtime.app,
+                            &runtime.session_build_dir,
+                            identity,
+                        )
+                        .await;
+                    } else {
+                        runtime.app.notification = Some(format!(
+                            "Devtool finish for {} failed in the daemon; inspect Jobs and Logs.",
+                            identity.name
+                        ));
+                    }
                     runtime.render_scheduler.invalidate(RenderCause::State);
                 }
             }

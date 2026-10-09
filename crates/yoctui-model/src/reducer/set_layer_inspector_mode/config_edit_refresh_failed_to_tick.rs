@@ -107,7 +107,18 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::WorkspaceLoaded(w) => {
             let selected = selected_config_identity(app);
+            let selected_recipe = app.workspace.recipes.get(app.recipe_selection).cloned();
             app.workspace = w;
+            app.recipe_selection = selected_recipe
+                .and_then(|selected| {
+                    app.workspace.recipes.iter().position(|recipe| {
+                        recipe.name == selected.name && recipe.file == selected.file
+                    })
+                })
+                .unwrap_or_else(|| {
+                    app.recipe_selection
+                        .min(app.workspace.recipes.len().saturating_sub(1))
+                });
             app.available_images = if app.build_environment.connected() {
                 app.workspace
                     .recipes

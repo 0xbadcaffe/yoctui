@@ -8,7 +8,7 @@ fn daemon_devtool_modify_completion_drives_client_editor_handoff() {
     };
     let mut app = yoctui_model::App::new(64, 64 * 1024);
     assert_eq!(
-        daemon_devtool_modify_completion(&app, &identity),
+        daemon_devtool_modify_completion(&app, &identity, &[]),
         DaemonDevtoolModifyCompletion::Pending
     );
     app.daemon.jobs.push(yoctui_model::ClientDaemonJobSummary {
@@ -21,12 +21,24 @@ fn daemon_devtool_modify_completion_drives_client_editor_handoff() {
         exit_code: Some(0),
     });
     assert_eq!(
-        daemon_devtool_modify_completion(&app, &identity),
+        daemon_devtool_modify_completion(&app, &identity, &[]),
         DaemonDevtoolModifyCompletion::Succeeded
+    );
+    assert_eq!(
+        daemon_devtool_modify_completion(&app, &identity, &[7]),
+        DaemonDevtoolModifyCompletion::Pending
+    );
+    let other_recipe = RecipeIdentity {
+        name: "another-recipe".into(),
+        ..identity.clone()
+    };
+    assert_eq!(
+        daemon_devtool_completion_after(&app, &other_recipe, &[]),
+        DaemonDevtoolModifyCompletion::Pending
     );
     app.daemon.jobs[0].lifecycle = yoctui_model::ClientDaemonLifecycle::Failed;
     assert_eq!(
-        daemon_devtool_modify_completion(&app, &identity),
+        daemon_devtool_modify_completion(&app, &identity, &[]),
         DaemonDevtoolModifyCompletion::Failed
     );
 }

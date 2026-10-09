@@ -1,5 +1,7 @@
 use super::*;
 use std::fs;
+#[path = "qemu_debug/source_map.rs"]
+mod source_map;
 struct TestDir(std::path::PathBuf);
 impl TestDir {
     fn new() -> Self {

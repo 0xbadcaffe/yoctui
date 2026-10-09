@@ -20,11 +20,14 @@ use super::{
 impl Default for DaemonPtySupervisor {
     fn default() -> Self {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (state_tx, state_rx) = tokio::sync::mpsc::unbounded_channel();
         Self {
             sessions: HashMap::new(),
             next_generic_id: 1,
             tx,
             rx,
+            state_tx,
+            state_rx,
         }
     }
 }
@@ -206,7 +209,13 @@ impl DaemonPtySupervisor {
         }
     }
     pub fn try_event(&mut self) -> Option<DaemonPtyEvent> {
-        self.rx.try_recv().ok()
+        // Worker-confirmed lease changes must not sit behind a console flood.
+        // Started and Changed retain their own FIFO order; output and exit
+        // events remain ordered in the regular queue.
+        self.state_rx
+            .try_recv()
+            .ok()
+            .or_else(|| self.rx.try_recv().ok())
     }
 
     fn request(&self, id: PtySessionId, control: Control) -> Result<Response, String> {

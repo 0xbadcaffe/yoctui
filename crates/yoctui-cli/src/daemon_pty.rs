@@ -73,6 +73,8 @@ pub struct DaemonPtySupervisor {
     next_generic_id: u64,
     tx: tokio::sync::mpsc::UnboundedSender<DaemonPtyEvent>,
     rx: tokio::sync::mpsc::UnboundedReceiver<DaemonPtyEvent>,
+    state_tx: tokio::sync::mpsc::UnboundedSender<DaemonPtyEvent>,
+    state_rx: tokio::sync::mpsc::UnboundedReceiver<DaemonPtyEvent>,
 }
 
 #[cfg(test)]

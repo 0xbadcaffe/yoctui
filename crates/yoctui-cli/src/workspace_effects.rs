@@ -18,26 +18,21 @@ pub(crate) enum DaemonDevtoolModifyCompletion {
 pub(crate) fn daemon_devtool_modify_completion(
     app: &App,
     identity: &RecipeIdentity,
+    known_jobs: &[u64],
 ) -> DaemonDevtoolModifyCompletion {
-    let label = format!("Devtool {}", identity.name);
-    let Some(job) = app.daemon.jobs.iter().rev().find(|job| job.label == label) else {
-        return DaemonDevtoolModifyCompletion::Pending;
-    };
-    match job.lifecycle {
-        yoctui_model::ClientDaemonLifecycle::Exited => DaemonDevtoolModifyCompletion::Succeeded,
-        yoctui_model::ClientDaemonLifecycle::Failed | yoctui_model::ClientDaemonLifecycle::Lost => {
-            DaemonDevtoolModifyCompletion::Failed
-        }
-        _ => DaemonDevtoolModifyCompletion::Pending,
-    }
+    daemon_devtool_completion_after(app, identity, known_jobs)
 }
 
 pub(crate) fn daemon_devtool_completion_after(
     app: &App,
+    identity: &RecipeIdentity,
     known_jobs: &[u64],
 ) -> DaemonDevtoolModifyCompletion {
+    let label = format!("Devtool {}", identity.name);
     let Some(job) = app.daemon.jobs.iter().rev().find(|job| {
-        job.kind == yoctui_model::ClientDaemonJobKind::Devtool && !known_jobs.contains(&job.id)
+        job.kind == yoctui_model::ClientDaemonJobKind::Devtool
+            && job.label == label
+            && !known_jobs.contains(&job.id)
     }) else {
         return DaemonDevtoolModifyCompletion::Pending;
     };

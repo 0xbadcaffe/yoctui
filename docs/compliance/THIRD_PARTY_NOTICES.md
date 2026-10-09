@@ -2,7 +2,7 @@
 
 This file is generated from the exact `Cargo.lock` graph. It inventories every non-workspace package, records the byte-authoritative SHA-256 of every packaged root-level license, notice, copying, and copyright file, and displays a Markdown-safe normalization of its content (UTF-8 text directly; non-UTF-8 data as hexadecimal). Packages with no packaged notice file remain listed with their manifest SPDX expression and authorship metadata in the SBOM.
 
-- Cargo.lock SHA-256: `71258e27d27369066f285e890c96671b14cc5f645dd18391603826523fcaaea6`
+- Cargo.lock SHA-256: `83429681a282472abfc3878b4ee56e00e77189f6179d94081bbccc3a921f6e51`
 - Third-party packages: 313
 - Unique packaged notice materials: 208
 

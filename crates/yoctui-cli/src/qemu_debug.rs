@@ -1,6 +1,7 @@
 //! Managed QEMU/GDB helper; launched only after the typed terminal review.
 use anyhow::{Context, Result, bail};
 use yoctui_model::QemuDebugSpec;
+mod source_map;
 mod validation;
 pub(crate) use validation::validate_files;
 pub(crate) use validation::validate_symbol_file;
