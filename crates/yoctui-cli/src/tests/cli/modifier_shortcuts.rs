@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn modifier_terminal_keys_decode_and_forward_without_losing_alt_or_text() {
-    for character in ['f', 'g', 'w', 'F', 'G'] {
+    for character in ['f', 'g', 'w', 'n', 'N', 'F', 'G'] {
         let key = KeyEvent::new(KeyCode::Char(character), KeyModifiers::ALT);
         assert_eq!(input_from_key(key), Some(Input::Alt(character)));
         assert_eq!(
@@ -52,4 +52,27 @@ fn modifier_terminal_keys_decode_and_forward_without_losing_alt_or_text() {
     let mut released = KeyEvent::new(KeyCode::Char('g'), KeyModifiers::ALT);
     released.kind = crossterm::event::KeyEventKind::Release;
     assert_eq!(input_from_key(released), None);
+}
+
+#[test]
+fn global_search_mode_keys_decode_without_rewriting_unicode_regex_text() {
+    let mut app = App::new(32, 4096);
+    yoctui_model::update(&mut app, Action::OpenGlobalSearch);
+    for (code, modifiers) in [
+        (KeyCode::Tab, KeyModifiers::NONE),
+        (KeyCode::BackTab, KeyModifiers::SHIFT),
+        (KeyCode::Char('n'), KeyModifiers::ALT),
+    ] {
+        let input = input_from_key(KeyEvent::new(code, modifiers)).unwrap();
+        assert!(matches!(
+            yoctui_app::global_search_target_action(&app, input),
+            Some(Action::ToggleGlobalSearchTarget)
+        ));
+    }
+    for character in ['ñ', '~', 'מ'] {
+        let input =
+            input_from_key(KeyEvent::new(KeyCode::Char(character), KeyModifiers::NONE)).unwrap();
+        assert_eq!(input, Input::Char(character));
+        assert!(yoctui_app::global_search_target_action(&app, input).is_none());
+    }
 }

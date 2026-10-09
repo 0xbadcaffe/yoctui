@@ -403,9 +403,9 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         Paragraph::new(bounded_cell_text(
             if global_search {
                 if app.global_search_target == yoctui_model::GlobalSearchTarget::FileNames {
-                    "File names · Alt+n contents · ↑↓ select · PgUp/Dn page · Enter open · Esc close"
+                    "File names · Tab/Alt+n contents · ↑↓ select · PgUp/Dn page · Enter open · Esc close"
                 } else {
-                    "File contents · Alt+n names · ↑↓ select · PgUp/Dn page · Enter open · Esc close"
+                    "File contents · Tab/Alt+n names · ↑↓ select · PgUp/Dn page · Enter open · Esc close"
                 }
             } else {
                 "Esc close · Enter run · ↑/↓ select · Type search · Backspace edit · Ctrl+U clear"

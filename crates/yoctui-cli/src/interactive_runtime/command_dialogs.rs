@@ -7,31 +7,21 @@ impl InteractiveRuntime {
     ) -> Result<Option<KeyRouteOutcome>> {
         let runtime = self;
         if runtime.app.command_palette_open {
+            let target_action = yoctui_app::global_search_target_action(&runtime.app, input);
             let global_search_edit = runtime.app.command_palette_mode
                 == yoctui_model::CommandPaletteMode::GlobalRegexSearch
-                && matches!(
-                    input,
-                    Input::Backspace | Input::CtrlU | Input::Char(_) | Input::Alt('n')
-                );
+                && (target_action.is_some()
+                    || matches!(input, Input::Backspace | Input::CtrlU | Input::Char(_)));
             let global_search_close = runtime.app.command_palette_mode
                 == yoctui_model::CommandPaletteMode::GlobalRegexSearch
                 && input == Input::Esc;
-            let effect = match command_palette_navigation_action(input) {
+            let effect = match target_action.or_else(|| command_palette_navigation_action(input)) {
                 Some(action) => compatibility_workspace_action(&mut runtime.app, action),
                 None => match input {
                     Input::Enter => compatibility_workspace_action(
                         &mut runtime.app,
                         Action::ActivateCommandPalette,
                     ),
-                    Input::Alt('n')
-                        if runtime.app.command_palette_mode
-                            == yoctui_model::CommandPaletteMode::GlobalRegexSearch =>
-                    {
-                        compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::ToggleGlobalSearchTarget,
-                        )
-                    }
                     Input::Esc => compatibility_workspace_action(
                         &mut runtime.app,
                         Action::CloseCommandPalette,

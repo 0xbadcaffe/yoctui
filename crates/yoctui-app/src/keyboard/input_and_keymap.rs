@@ -263,6 +263,18 @@ pub fn command_palette_navigation_action(key: Input) -> Option<Action> {
     Some(Action::SelectCommandPalette { delta })
 }
 
+/// Tab is portable even when a terminal/layout turns Alt+n into Unicode text.
+/// Never reinterpret literal regex characters as modifier shortcuts.
+pub fn global_search_target_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
+    (app.command_palette_open
+        && app.command_palette_mode == yoctui_model::CommandPaletteMode::GlobalRegexSearch
+        && !app.menu.is_open()
+        && !app.onboarding.open
+        && !app.keymap_preferences_ui.open
+        && matches!(key, Input::Tab | Input::BackTab | Input::Alt('n' | 'N')))
+    .then_some(Action::ToggleGlobalSearchTarget)
+}
+
 /// Screen-local editors and searches retain text, Escape and navigation keys.
 pub fn workspace_text_input_active(app: &yoctui_model::App) -> bool {
     (app.screen == yoctui_model::Screen::BuildEnvironment

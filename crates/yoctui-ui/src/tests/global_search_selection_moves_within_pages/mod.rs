@@ -62,12 +62,12 @@ fn streaming_search_renders_matches_while_scanning_and_explicit_file_names_mode(
         let text = rendered_text(&app, width, height);
         assert!(text.contains("scanning"), "{text}");
         assert!(text.contains("log-01"), "partial result missing: {text}");
-        assert!(text.contains("Alt+n names"), "{text}");
+        assert!(text.contains("Tab/Alt+n names"), "{text}");
     }
     app.global_search_target = yoctui_model::GlobalSearchTarget::FileNames;
     let text = rendered_text(&app, 160, 50);
     assert!(text.contains("File Names Regex Search"));
-    assert!(text.contains("Alt+n contents"));
+    assert!(text.contains("Tab/Alt+n contents"));
 }
 
 fn loading_search(workspace: bool) -> App {

@@ -39,8 +39,10 @@ Navigator Enter/Right opens and focuses a destination. Zoom preserves selection
 and scroll. Dialogs trap focus; writers retain child keys.
 
 Global `/` searches build/config/log/pkgdata/deploy/rootfs file contents using
-case-insensitive Rust regex. Alt+n switches between File contents and File names,
-keeping the expression. For example, `\.dts$` finds DTS filenames; filename mode
+case-insensitive Rust regex. Tab (or Shift+Tab) switches between File contents and File names;
+Alt+n also works when the terminal sends Alt as an escape-prefixed key. If Alt+n
+inserts a character because of your keyboard layout/terminal, use Tab instead.
+Switching modes keeps the expression. For example, `\.dts$` finds DTS filenames; filename mode
 also finds empty, binary and oversized files without reading them. Matches appear
 while scanning and append below existing results without changing selection.
 Enter opens a hit. At most 500 hits; content mode excludes binary/oversized files.
