@@ -81,14 +81,15 @@ for section in ("features", "install", "quickstart", "documentation", "contribut
 ci_badges = [urlsplit(target) for target in header_targets if "/actions/workflows/ci.yml/badge.svg" in target]
 assert len(ci_badges) == 1
 ci_query = parse_qs(ci_badges[0].query)
+source_version = tomllib.loads(Path("Cargo.toml").read_text())["workspace"]["package"]["version"]
 assert ci_query.get("branch") == ["master"]
 assert ci_query.get("event") == ["push"]
-assert re.fullmatch(r"\d+\.\d+\.\d+", ci_query.get("refresh", [""])[0])
+assert ci_query.get("refresh") == [source_version], "Refresh CI badge when releasing"
 version_badges = [urlsplit(target) for target in header_targets if urlsplit(target).netloc == "img.shields.io" and urlsplit(target).path == "/crates/v/yoctui"]
 assert len(version_badges) == 1
 query = parse_qs(version_badges[0].query)
 assert query.get("cacheSeconds") == ["300"]
-assert re.fullmatch(r"\d+\.\d+\.\d+", query.get("release", [""])[0])
+assert query.get("release") == [source_version], "Refresh crates.io badge when releasing"
 assert "codecov" not in header.lower() and "discord" not in header.lower()
 assert "92%" not in header and "1.81+" not in header
 

@@ -39,7 +39,7 @@ async fn qemu_workspace_cli_refreshes_capability_and_runs_exact_request_across_n
     assert!(
         job.output
             .iter()
-            .any(|entry| entry.message == "qemumemory=1024")
+            .any(|entry| entry.message == "qemuparams=-m 1024")
     );
 
     let effect = update(&mut app, Action::RefreshImageArtifactInventory).unwrap();

@@ -1,6 +1,24 @@
 use super::*;
 
 impl InteractiveRuntime {
+    pub(super) async fn cancel_build(&mut self) {
+        if submit_daemon_effect(&mut self.daemon_runtime, &mut self.app, &Effect::Cancel).is_some()
+        {
+            return;
+        }
+        if let Some(action) = self.build_jobs.request_cancellation() {
+            let _ = compatibility_workspace_action(&mut self.app, action);
+        }
+        if let Err(error) = self.backend.cancel_build().await {
+            for action in self
+                .build_jobs
+                .cancellation_failed(error.to_string(), SystemTime::now())
+            {
+                let _ = compatibility_workspace_action(&mut self.app, action);
+            }
+        }
+    }
+
     pub(super) async fn poll_jobs(&mut self) {
         let runtime = self;
         let devtool_was_active = runtime.devtool_runner.is_some();

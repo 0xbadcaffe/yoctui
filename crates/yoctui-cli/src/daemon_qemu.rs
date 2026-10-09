@@ -160,35 +160,8 @@ fn wire_preview(
         extra_arguments: w.extra_arguments,
     };
     req.validate().map_err(str::to_owned)?;
-    let mut argv = vec![
-        PathBuf::from(executable),
-        PathBuf::from(&req.machine),
-        req.image.path.clone(),
-        format!("qemumemory={}", req.memory_mib).into(),
-        match req.networking {
-            QemuNetworkingMode::Slirp => "slirp",
-            QemuNetworkingMode::Tap => "tap",
-            QemuNetworkingMode::None => "nonetwork",
-        }
-        .into(),
-        match req.display {
-            QemuDisplayMode::Graphical => "sdl",
-            QemuDisplayMode::Nographic => "nographic",
-        }
-        .into(),
-    ];
-    if let Some(p) = &req.kernel {
-        argv.push(p.clone())
-    }
-    if let Some(p) = &req.rootfs {
-        argv.push(p.clone())
-    }
-    match req.serial {
-        QemuSerialMode::Stdio => argv.push("serialstdio".into()),
-        QemuSerialMode::Telnet => argv.push("serialtelnet".into()),
-        QemuSerialMode::None => {}
-    }
-    argv.extend(req.extra_arguments.iter().map(PathBuf::from));
+    let mut argv = vec![PathBuf::from(executable)];
+    argv.extend(req.arguments());
     Ok((
         QemuLaunchPreview { request: req, argv },
         Path::new(&build_directory).to_path_buf(),

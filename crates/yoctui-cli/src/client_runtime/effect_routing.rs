@@ -40,7 +40,7 @@ impl InteractiveDaemonRuntime {
         };
         self.transport.command(CommandRequest {
             request_id,
-            expected_generation: Some(app.daemon.generation),
+            expected_generation: command.expected_generation(app.daemon.generation),
             command,
         })?;
         Ok(RuntimeEffectRoute::Daemon(request_id))
@@ -70,8 +70,7 @@ impl InteractiveDaemonRuntime {
             .ok_or(ClientRuntimeError::RequestSpaceExhausted)?;
         self.transport.command(CommandRequest {
             request_id,
-            expected_generation: (command != PrefixCommand::TakeControl)
-                .then_some(app.daemon.generation),
+            expected_generation: daemon_command.expected_generation(app.daemon.generation),
             command: daemon_command,
         })?;
         Ok(RuntimeEffectRoute::Daemon(request_id))
@@ -101,10 +100,11 @@ pub(super) fn daemon_command_for_effect(
                 .jobs
                 .iter()
                 .find(|job| {
-                    matches!(
-                        job.lifecycle,
-                        ClientDaemonLifecycle::Connecting | ClientDaemonLifecycle::Running
-                    )
+                    job.kind == yoctui_model::ClientDaemonJobKind::BitBakeBuild
+                        && matches!(
+                            job.lifecycle,
+                            ClientDaemonLifecycle::Connecting | ClientDaemonLifecycle::Running
+                        )
                 })
                 .ok_or(ClientRuntimeError::NoActiveDaemonJob)?;
             DaemonCommand::CancelJob {

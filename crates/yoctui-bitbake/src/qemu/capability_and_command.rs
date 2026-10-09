@@ -13,8 +13,8 @@ use tokio::{
     process::{Child, Command},
 };
 use yoctui_model::{
-    ImageArtifact, ImageArtifactIdentity, ImageArtifactKind, QemuCapability, QemuDisplayMode,
-    QemuLaunchPreview, QemuLaunchRequest, QemuNetworkingMode, QemuSerialMode,
+    ImageArtifact, ImageArtifactIdentity, ImageArtifactKind, QemuCapability, QemuLaunchPreview,
+    QemuLaunchRequest,
 };
 
 use crate::{QemuRunnerEvent, QemuRunnerOutputStream, output_text};
@@ -150,33 +150,11 @@ impl QemuCommandSpec {
 }
 
 fn command_arguments(request: &QemuLaunchRequest) -> Vec<OsString> {
-    let mut arguments = vec![
-        OsString::from(&request.machine),
-        request.image.path.as_os_str().to_owned(),
-        OsString::from(format!("qemumemory={}", request.memory_mib)),
-        OsString::from(match request.networking {
-            QemuNetworkingMode::Slirp => "slirp",
-            QemuNetworkingMode::Tap => "tap",
-            QemuNetworkingMode::None => "nonetwork",
-        }),
-        OsString::from(match request.display {
-            QemuDisplayMode::Graphical => "sdl",
-            QemuDisplayMode::Nographic => "nographic",
-        }),
-    ];
-    if let Some(kernel) = &request.kernel {
-        arguments.push(kernel.as_os_str().to_owned());
-    }
-    if let Some(rootfs) = &request.rootfs {
-        arguments.push(rootfs.as_os_str().to_owned());
-    }
-    match request.serial {
-        QemuSerialMode::Stdio => arguments.push("serialstdio".into()),
-        QemuSerialMode::Telnet => arguments.push("serialtelnet".into()),
-        QemuSerialMode::None => {}
-    }
-    arguments.extend(request.extra_arguments.iter().map(OsString::from));
-    arguments
+    request
+        .arguments()
+        .into_iter()
+        .map(PathBuf::into_os_string)
+        .collect()
 }
 
 fn resolve_executable(program: &Path) -> Result<Option<PathBuf>, String> {

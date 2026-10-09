@@ -6,13 +6,14 @@ impl InteractiveRuntime {
         &mut self,
         input: Input,
         replayed_context_action: bool,
+        key: crossterm::event::KeyEvent,
     ) -> Result<Option<KeyRouteOutcome>> {
         let runtime = self;
         if runtime.app.screen == Screen::TerminalSessions
             || runtime.app.platform_menuconfig_visible()
         {
             runtime
-                .route_terminal_workspace(input, replayed_context_action)
+                .route_terminal_workspace(input, replayed_context_action, key)
                 .await;
         } else if runtime.route_hardware_workspace(input) || runtime.route_notification_input(input)
         {

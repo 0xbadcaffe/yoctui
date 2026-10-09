@@ -16,6 +16,54 @@ fn paste(app: &mut App, text: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[test]
+fn clipboard_paste_dtc_destination_is_literal_and_editor_scoped() {
+    use yoctui_model::{
+        DtcDecompileAction, DtcDecompileDialog, PlatformComponent, PlatformFile, PlatformFileKind,
+    };
+    for source in [
+        TextAreaPasteSource::Clipboard,
+        TextAreaPasteSource::BracketedPaste,
+    ] {
+        let mut app = App::new(32, 4096);
+        app.dialogs
+            .push_back(Dialog::DtcDecompile(DtcDecompileDialog::new(
+                PlatformComponent::Kernel,
+                &PlatformFile {
+                    path: "/workspace/board.dtb".into(),
+                    root: "/workspace".into(),
+                    kind: PlatformFileKind::Dtb,
+                    size_bytes: 4,
+                },
+                "/usr/bin/dtc".into(),
+            )));
+        assert!(!text_paste_active(&app));
+        yoctui_model::update(&mut app, Action::DtcDecompile(DtcDecompileAction::Edit));
+        let actions = text_paste_actions(&app, "/workspace/猫 board.dts".into(), source)
+            .unwrap()
+            .unwrap();
+        assert_eq!(actions.len(), 1);
+        for action in actions {
+            assert!(yoctui_model::update(&mut app, action).is_none());
+        }
+        let Some(Dialog::DtcDecompile(dialog)) = app.active_dialog() else {
+            panic!()
+        };
+        assert_eq!(
+            dialog.editor.as_ref().unwrap().text,
+            "/workspace/猫 board.dts"
+        );
+        for invalid in ["bad\npath".into(), "\x1b[31m".into(), "x".repeat(4097)] {
+            assert!(text_paste_actions(&app, invalid, source).is_err());
+        }
+        yoctui_model::update(
+            &mut app,
+            Action::DtcDecompile(DtcDecompileAction::AcceptEdit),
+        );
+        assert!(!text_paste_active(&app));
+    }
+}
+
 fn kernel() -> App {
     let mut app = App::new(32, 4096);
     app.screen = Screen::Kernel;

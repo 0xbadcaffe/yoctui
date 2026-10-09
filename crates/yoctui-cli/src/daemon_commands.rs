@@ -378,7 +378,9 @@ pub(crate) fn daemon_session_command(command: SessionCliCommand) -> Result<()> {
             };
             connection.send(&ClientMessage::Command(CommandRequest {
                 request_id: RequestId(1),
-                expected_generation: Some(snapshot.generation),
+                // The confirmed ID is scoped to this daemon connection; output
+                // from another session must not invalidate an explicit kill.
+                expected_generation: None,
                 command: DaemonCommand::TerminatePty {
                     session_id: PtySessionId(id),
                     force: true,

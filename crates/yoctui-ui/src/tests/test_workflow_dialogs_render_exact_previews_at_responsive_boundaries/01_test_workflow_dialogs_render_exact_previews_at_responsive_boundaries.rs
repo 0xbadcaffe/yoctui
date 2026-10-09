@@ -322,7 +322,7 @@ fn qemu_workspace_renders_capability_dialogs_session_and_responsive_states() {
         confirmation.contains("Exact argument vector"),
         "{confirmation}"
     );
-    assert!(confirmation.contains("qemumemory=1024"), "{confirmation}");
+    assert!(confirmation.contains("qemuparams=-m 1024"), "{confirmation}");
 
     app.dialogs.clear();
     let _ = yoctui_model::update(&mut app, yoctui_model::Action::BeginSelectedQemuLaunch);

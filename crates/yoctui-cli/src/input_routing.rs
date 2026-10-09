@@ -2,7 +2,6 @@
 use super::*;
 mod menuconfig;
 pub(crate) use menuconfig::platform_menuconfig_key;
-#[cfg(test)]
 pub(crate) use menuconfig::terminal_key_bytes;
 
 pub(crate) fn direct_menu_shortcut_action(
@@ -244,6 +243,7 @@ pub(crate) fn interactive_frame_interval(configured_refresh: Duration) -> Durati
 }
 
 /// Use the selected terminal's mode in the general Sessions workspace too.
+#[cfg(test)]
 pub(crate) fn terminal_input_bytes_for_app(app: &App, input: Input) -> Option<Vec<u8>> {
     let mut bytes = terminal_input_bytes(input)?;
     if app

@@ -272,6 +272,24 @@ pub enum DaemonCommand {
     },
 }
 
+impl DaemonCommand {
+    /// PTY/job identifiers are immutable within this connection's daemon instance.
+    /// Their operations validate that identity (and writer epoch where applicable),
+    /// not the global journal generation, which also advances for unrelated output.
+    pub fn expected_generation(&self, generation: u64) -> Option<u64> {
+        match self {
+            Self::CreatePty { .. }
+            | Self::RenamePty { .. }
+            | Self::ClosePty { .. }
+            | Self::TerminatePty { .. }
+            | Self::TakePtyControl { .. }
+            | Self::ReleasePtyControl { .. }
+            | Self::CancelJob { .. } => None,
+            _ => Some(generation),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum DaemonDevtoolOperation {

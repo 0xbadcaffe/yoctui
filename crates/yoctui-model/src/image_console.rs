@@ -115,12 +115,13 @@ pub struct ImageConsoleDraft {
 
 impl ImageConsoleDraft {
     pub fn for_artifact(image: ImageArtifactIdentity, artifact_kind: ImageArtifactKind) -> Self {
+        let qemu = QemuLaunchDraft::for_artifact(image.clone(), artifact_kind);
         Self {
             mode: ImageConsoleMode::Qemu,
             image,
             artifact_kind,
-            networking: QemuNetworkingMode::Slirp,
-            memory_mib: "1024".into(),
+            networking: qemu.networking,
+            memory_mib: qemu.memory_mib,
             host: String::new(),
             user: "root".into(),
             port: "22".into(),

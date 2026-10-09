@@ -9,6 +9,7 @@ enum Target {
     FieldPopup,
     Recipe,
     Kernel,
+    Dtc,
     Setup,
     Raw(Box<yoctui_model::RawModeAction>),
     Single(fn(char) -> Action),
@@ -70,6 +71,11 @@ fn target(app: &App) -> Option<Target> {
         );
     }
     match app.active_dialog() {
+        Some(Dialog::DtcDecompile(dialog))
+            if dialog.editor.is_some() && dialog.browser.is_none() =>
+        {
+            return Some(Target::Dtc);
+        }
         Some(Dialog::KernelDebug(dialog))
             if app.kernel_debug.fields_editable()
                 && (dialog.draft.tool.program().is_some()
@@ -216,6 +222,9 @@ pub fn text_paste_actions(
             }
             match target {
                 Target::Kernel => vec![Action::KernelDebug(KernelDebugAction::Insert(text))],
+                Target::Dtc => vec![Action::DtcDecompile(
+                    yoctui_model::DtcDecompileAction::Insert(text),
+                )],
                 Target::Setup => vec![Action::EnvironmentSetup(
                     yoctui_model::EnvironmentSetupAction::Insert(text),
                 )],

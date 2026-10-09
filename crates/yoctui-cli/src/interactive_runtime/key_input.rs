@@ -40,6 +40,13 @@ impl InteractiveRuntime {
             return Ok(true);
         }
         let Some(mut input) = input_from_key(k) else {
+            if !runtime.prefix_state.pending()
+                && let Some(effect) =
+                    terminal_workspace::terminal_writer_key_effect(&runtime.app, k)
+            {
+                let _ =
+                    submit_daemon_effect(&mut runtime.daemon_runtime, &mut runtime.app, &effect);
+            }
             return Ok(true);
         };
         if input == Input::CtrlV && yoctui_app::text_paste_active(&runtime.app) {
@@ -326,7 +333,7 @@ impl InteractiveRuntime {
             return Ok(outcome.continues_loop());
         }
         if let Some(outcome) = runtime
-            .route_terminal_and_primary_workspaces(input, replayed_context_action)
+            .route_terminal_and_primary_workspaces(input, replayed_context_action, k)
             .await?
         {
             return Ok(outcome.continues_loop());

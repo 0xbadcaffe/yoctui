@@ -148,34 +148,10 @@ impl InteractiveRuntime {
                             let _ = compatibility_workspace_action(&mut runtime.app, action);
                         }
                     }
-                } else if let Some(effect @ Effect::Cancel) =
+                } else if let Some(Effect::Cancel) =
                     compatibility_workspace_action(&mut runtime.app, action)
                 {
-                    #[cfg(unix)]
-                    if let Some(daemon_client) = runtime.daemon_runtime.as_mut() {
-                        match daemon_client.route_effect(&runtime.app, &effect) {
-                            Ok(client_runtime::RuntimeEffectRoute::Daemon(_)) => {
-                                return Ok(Some(KeyRouteOutcome::ContinueLoop));
-                            }
-                            Ok(client_runtime::RuntimeEffectRoute::ClientLocal) => {}
-                            Err(error) => {
-                                runtime.app.notification =
-                                    Some(format!("Daemon cancellation was not sent: {error}"));
-                                return Ok(Some(KeyRouteOutcome::ContinueLoop));
-                            }
-                        }
-                    }
-                    if let Some(job_action) = runtime.build_jobs.request_cancellation() {
-                        let _ = compatibility_workspace_action(&mut runtime.app, job_action);
-                    }
-                    if let Err(error) = runtime.backend.cancel_build().await {
-                        for action in runtime
-                            .build_jobs
-                            .cancellation_failed(error.to_string(), SystemTime::now())
-                        {
-                            let _ = compatibility_workspace_action(&mut runtime.app, action);
-                        }
-                    }
+                    runtime.cancel_build().await;
                 }
             } else {
                 if let Some(effect) = compatibility_workspace_action(&mut runtime.app, action) {

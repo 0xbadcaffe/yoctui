@@ -309,6 +309,11 @@ fn classify(path: &Path) -> ImageArtifactKind {
             ".tar.xz",
             ".cpio",
             ".squashfs",
+            ".squashfs-xz",
+            ".squashfs-lzo",
+            ".squashfs-lz4",
+            ".squashfs-zst",
+            ".static.mtd",
             ".jffs2",
             ".ubi",
         ]

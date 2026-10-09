@@ -284,8 +284,11 @@ impl InteractiveRuntime {
             runtime.app.active_dialog(),
             Some(Dialog::BuildCancellationConfirmation)
         ) {
-            let _ = build_cancellation_confirmation_action(input)
-                .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
+            if let Some(Effect::Cancel) = build_cancellation_confirmation_action(input)
+                .and_then(|action| compatibility_workspace_action(&mut runtime.app, action))
+            {
+                runtime.cancel_build().await;
+            }
         } else if matches!(
             runtime.app.active_dialog(),
             Some(Dialog::ResolvedBuildRemovalConfirmation { .. })

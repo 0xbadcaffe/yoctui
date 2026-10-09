@@ -10,11 +10,39 @@ pub(crate) fn terminal_kill_review_key(
     })
 }
 
+pub(crate) fn terminal_writer_key_effect(
+    app: &App,
+    key: crossterm::event::KeyEvent,
+) -> Option<Effect> {
+    if app.screen != Screen::TerminalSessions
+        || app.focus != yoctui_model::FocusTarget::Workspace
+        || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live
+        || app.active_dialog().is_some()
+        || app.menu.is_open()
+        || app.command_palette_open
+        || app.onboarding.open
+        || app.keymap_preferences_ui.open
+        || !app.selected_terminal_is_writer()
+    {
+        return None;
+    }
+    let details = app.selected_terminal_details()?;
+    let application_cursor = app
+        .selected_terminal_screen()
+        .is_some_and(|screen| screen.application_cursor);
+    Some(Effect::Terminal(yoctui_model::TerminalEffect::Input {
+        session_id: details.id,
+        writer_epoch: details.writer_epoch,
+        bytes: terminal_key_bytes(key, application_cursor)?,
+    }))
+}
+
 impl InteractiveRuntime {
     pub(super) async fn route_terminal_workspace(
         &mut self,
         input: Input,
         replayed_context_action: bool,
+        key: crossterm::event::KeyEvent,
     ) {
         let runtime = self;
         let terminal_action = if replayed_context_action {
@@ -39,21 +67,11 @@ impl InteractiveRuntime {
         } else if runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation
         {
             // Unmapped review input must never reach the current writer.
-        } else if runtime.app.selected_terminal_is_writer() {
-            if let (Some(bytes), Some(session), Some(details)) = (
-                terminal_input_bytes_for_app(&runtime.app, input),
-                runtime.app.selected_terminal_session(),
-                runtime.app.selected_terminal_details(),
-            ) {
-                let effect = Effect::Terminal(yoctui_model::TerminalEffect::Input {
-                    session_id: session.id,
-                    writer_epoch: details.writer_epoch,
-                    bytes,
-                });
-                let _ =
-                    submit_daemon_effect(&mut runtime.daemon_runtime, &mut runtime.app, &effect);
-            }
-        } else {
+        } else if let Some(effect) = terminal_writer_key_effect(&runtime.app, key) {
+            let _ = submit_daemon_effect(&mut runtime.daemon_runtime, &mut runtime.app, &effect);
+        } else if runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
+            && !runtime.app.selected_terminal_is_writer()
+        {
             runtime.app.notification =
                 Some("Terminal is read-only; press o or Ctrl+B o to take writer control.".into());
         }

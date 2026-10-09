@@ -42,3 +42,47 @@ fn ux_terminal_runtime_prefix_maps_create_and_writer_commands() {
             .is_none()
     );
 }
+
+#[test]
+fn ux_terminal_runtime_scoped_commands_ignore_unrelated_journal_generations() {
+    use yoctui_protocol::daemon::{JobId, PtySessionId};
+    for command in [
+        DaemonCommand::TerminatePty {
+            session_id: PtySessionId(3),
+            force: true,
+            confirmation: None,
+        },
+        DaemonCommand::RenamePty {
+            session_id: PtySessionId(3),
+            name: "shell".into(),
+        },
+        DaemonCommand::ClosePty {
+            session_id: PtySessionId(3),
+        },
+        DaemonCommand::TakePtyControl {
+            session_id: PtySessionId(3),
+            expected_epoch: 7,
+        },
+        DaemonCommand::CancelJob { job_id: JobId(71) },
+    ] {
+        assert_eq!(command.expected_generation(10), None);
+        assert_eq!(command.expected_generation(11), None);
+    }
+    let app = App::new(16, 4096);
+    let mut app = app;
+    app.workspace.build_dir = Some("/build".into());
+    let command = prefix_daemon_command(&app, PrefixCommand::CreateSession)
+        .unwrap()
+        .unwrap();
+    assert_eq!(command.expected_generation(10), None);
+    for command in [
+        DaemonCommand::PrepareShutdown,
+        DaemonCommand::StartBuild {
+            targets: vec!["image".into()],
+            task: None,
+            force: false,
+        },
+    ] {
+        assert_eq!(command.expected_generation(10), Some(10));
+    }
+}

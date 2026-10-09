@@ -77,7 +77,7 @@ impl InteractiveDaemonRuntime {
                 let command = embedded_terminal_command(*kind, program, arguments)?;
                 self.transport.command(CommandRequest {
                     request_id,
-                    expected_generation: Some(app.daemon.generation),
+                    expected_generation: None,
                     command: DaemonCommand::CreatePty {
                         name: name.clone(),
                         kind: wire_terminal_kind(*kind),
@@ -143,7 +143,7 @@ impl InteractiveDaemonRuntime {
             TerminalEffect::Rename { session_id, name } => {
                 self.transport.command(CommandRequest {
                     request_id,
-                    expected_generation: Some(app.daemon.generation),
+                    expected_generation: None,
                     command: DaemonCommand::RenamePty {
                         session_id: PtySessionId(*session_id),
                         name: name.clone(),
@@ -153,7 +153,7 @@ impl InteractiveDaemonRuntime {
             TerminalEffect::Terminate { session_id } => {
                 self.transport.command(CommandRequest {
                     request_id,
-                    expected_generation: Some(app.daemon.generation),
+                    expected_generation: None,
                     command: DaemonCommand::TerminatePty {
                         session_id: PtySessionId(*session_id),
                         force: true,
@@ -164,7 +164,7 @@ impl InteractiveDaemonRuntime {
             TerminalEffect::Close { session_id } => {
                 self.transport.command(CommandRequest {
                     request_id,
-                    expected_generation: Some(app.daemon.generation),
+                    expected_generation: None,
                     command: DaemonCommand::ClosePty {
                         session_id: PtySessionId(*session_id),
                     },

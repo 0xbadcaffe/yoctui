@@ -267,16 +267,22 @@ impl QemuLaunchDialog {
 
 impl QemuLaunchDraft {
     pub fn for_artifact(image: ImageArtifactIdentity, artifact_kind: ImageArtifactKind) -> Self {
+        let flash = image.path.to_string_lossy().ends_with(".static.mtd");
+        let romulus_flash = flash && image.machine == "romulus";
         Self {
             machine: image.machine.clone(),
             image,
             artifact_kind,
             kernel: String::new(),
             rootfs: String::new(),
-            networking: QemuNetworkingMode::Slirp,
+            networking: if flash {
+                QemuNetworkingMode::None
+            } else {
+                QemuNetworkingMode::Slirp
+            },
             display: QemuDisplayMode::Graphical,
             serial: QemuSerialMode::Stdio,
-            memory_mib: "1024".into(),
+            memory_mib: if romulus_flash { "512" } else { "1024" }.into(),
             extra_arguments: String::new(),
         }
     }
@@ -308,11 +314,40 @@ impl QemuLaunchDraft {
                 .collect(),
         };
         request.validate()?;
-        let mut argv = vec![
-            executable,
-            PathBuf::from(&request.machine),
-            request.image.path.clone(),
-            PathBuf::from(format!("qemumemory={}", request.memory_mib)),
+        let mut argv = vec![executable];
+        argv.extend(request.arguments());
+        Ok(QemuLaunchPreview { request, argv })
+    }
+}
+
+impl QemuLaunchRequest {
+    /// Canonical shell-free arguments shared by previews and both runners.
+    pub fn arguments(&self) -> Vec<PathBuf> {
+        let request = self;
+        let flash_stem = request
+            .image
+            .path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .and_then(|name| name.strip_suffix(".static.mtd"));
+        let mut argv = Vec::new();
+        if let Some(stem) = flash_stem {
+            // Pin the flash and its matching boot configuration. Machine-only
+            // inference can otherwise choose a different deployed image.
+            argv.push(request.image.path.clone());
+            argv.push(
+                request
+                    .image
+                    .path
+                    .with_file_name(format!("{stem}.qemuboot.conf")),
+            );
+            argv.push("snapshot".into());
+        } else {
+            argv.push(PathBuf::from(&request.machine));
+            argv.push(request.image.path.clone());
+        }
+        argv.extend([
+            PathBuf::from(format!("qemuparams=-m {}", request.memory_mib)),
             PathBuf::from(match request.networking {
                 QemuNetworkingMode::Slirp => "slirp",
                 QemuNetworkingMode::Tap => "tap",
@@ -322,7 +357,7 @@ impl QemuLaunchDraft {
                 QemuDisplayMode::Graphical => "sdl",
                 QemuDisplayMode::Nographic => "nographic",
             }),
-        ];
+        ]);
         if let Some(kernel) = &request.kernel {
             argv.push(kernel.clone());
         }
@@ -335,7 +370,7 @@ impl QemuLaunchDraft {
             QemuSerialMode::None => {}
         }
         argv.extend(request.extra_arguments.iter().map(PathBuf::from));
-        Ok(QemuLaunchPreview { request, argv })
+        argv
     }
 }
 
