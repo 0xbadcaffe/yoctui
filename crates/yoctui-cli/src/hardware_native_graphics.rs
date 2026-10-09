@@ -3,6 +3,9 @@
 use super::*;
 use image::{Rgb, RgbImage, imageops::FilterType};
 use ratatui::layout::Rect;
+mod mouse;
+mod viewport;
+use viewport::*;
 
 const FALLBACK_CELL_WIDTH: u16 = 9;
 const FALLBACK_CELL_HEIGHT: u16 = 18;
@@ -16,6 +19,7 @@ struct NativeImageKey {
     generation: u64,
     page: usize,
     zoom_percent: u16,
+    fit_width: bool,
     pan_x: usize,
     pan_y: usize,
     area: Rect,
@@ -27,10 +31,28 @@ struct NativeImageKey {
 pub(crate) struct HardwareNativeGraphics {
     visible: Option<NativeImageKey>,
     pending: Option<NativeImageKey>,
+    drag_origin: Option<(u16, u16)>,
 }
 
 impl HardwareNativeGraphics {
-    pub(crate) fn prepare_frame(&mut self, app: &App, width: u16, height: u16) -> bool {
+    pub(crate) fn prepare_frame(&mut self, app: &mut App, width: u16, height: u16) -> bool {
+        let pan =
+            yoctui_ui::hardware_native_raster_projection(app, width, height).map(|projection| {
+                let cells = terminal_cell_pixels(width, height);
+                normalized_pan(
+                    projection.viewer,
+                    projection.raster,
+                    projection.area,
+                    cells,
+                    self.visible,
+                )
+            });
+        if let Some((x, y)) = pan
+            && let Some(viewer) = app.hardware.viewer.as_mut()
+        {
+            viewer.pan_x = x;
+            viewer.pan_y = y;
+        }
         let desired = desired_key(app, width, height);
         if desired == self.visible {
             self.pending = None;
@@ -72,6 +94,7 @@ fn desired_key(app: &App, width: u16, height: u16) -> Option<NativeImageKey> {
         generation: projection.viewer.generation,
         page: projection.viewer.page,
         zoom_percent: projection.viewer.zoom_percent,
+        fit_width: projection.viewer.fit_width,
         pan_x: projection.viewer.pan_x,
         pan_y: projection.viewer.pan_y,
         area: projection.area,
@@ -109,18 +132,15 @@ fn native_page(
     if viewport_width == 0 || viewport_height == 0 {
         return Err("native Hardware viewport is empty".into());
     }
-    // Bound the visible canvas, not the enlarged page. Capping the latter
-    // cancels zoom once the page reaches the pixel budget.
-    let mut canvas_width = viewport_width;
-    let mut canvas_height = viewport_height;
-    constrain_pixels(&mut canvas_width, &mut canvas_height);
-    let fit = (canvas_width as f64 / raster.width as f64)
-        .min(canvas_height as f64 / raster.height as f64);
-    let scale = fit * f64::from(viewer.zoom_percent) / 100.0;
-    let target_width = (raster.width as f64 * scale).round().max(1.0) as usize;
-    let target_height = (raster.height as f64 * scale).round().max(1.0) as usize;
-    let visible_width = target_width.min(canvas_width);
-    let visible_height = target_height.min(canvas_height);
+    let geometry = viewport_geometry(
+        raster,
+        area,
+        (cell_width, cell_height),
+        viewer.zoom_percent,
+        viewer.fit_width,
+    );
+    let (target_width, target_height) = (geometry.target_width, geometry.target_height);
+    let (visible_width, visible_height) = (geometry.visible_width, geometry.visible_height);
     let crop_x = viewer
         .pan_x
         .saturating_mul(usize::from(cell_width))
@@ -165,16 +185,6 @@ fn native_page(
         )
         .unwrap_or(0),
     })
-}
-
-fn constrain_pixels(width: &mut usize, height: &mut usize) {
-    let pixels = width.saturating_mul(*height);
-    if pixels <= MAX_NATIVE_PIXELS {
-        return;
-    }
-    let factor = (MAX_NATIVE_PIXELS as f64 / pixels as f64).sqrt();
-    *width = (*width as f64 * factor).floor().max(1.0) as usize;
-    *height = (*height as f64 * factor).floor().max(1.0) as usize;
 }
 
 fn write_sixel(

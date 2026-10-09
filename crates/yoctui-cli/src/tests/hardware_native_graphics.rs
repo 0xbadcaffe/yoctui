@@ -24,6 +24,7 @@ fn hardware_native_pdf_zoom_and_pan_survive_pixel_cap() {
         page: 1,
         page_count: 1,
         zoom_percent: 100,
+        fit_width: false,
         presentation: HardwarePresentation::Page,
         pan_x: 0,
         pan_y: 0,
@@ -94,4 +95,149 @@ fn hardware_large_native_page_is_tiled_without_losing_edges() {
     assert!(output.contains("\"1;1;477;468"));
     assert!(output.contains("\x1b[61;131H\x1bP0;1;0q\"1;1;46;164"));
     assert!(output.len() < MAX_SIXEL_BYTES);
+}
+
+fn pdf_viewer_fixture() -> yoctui_model::HardwareViewerState {
+    use yoctui_model::*;
+    let mut app = App::new(16, 1024);
+    app.hardware.documents.push(HardwareDocument {
+        path: "/tmp/board.pdf".into(),
+        category: HardwareCategory::Board,
+        kind: HardwareDocumentKind::Pdf,
+    });
+    let _ = update(&mut app, Action::Hardware(HardwareAction::OpenSelected));
+    app.hardware.viewer.take().unwrap()
+}
+
+#[test]
+fn hardware_native_zoom_keeps_center_and_pan_has_no_hidden_overscroll() {
+    let raster = yoctui_model::HardwareRaster {
+        width: 512,
+        height: 512,
+        pixels: Vec::new(),
+    };
+    let area = Rect::new(22, 7, 120, 30);
+    let mut viewer = pdf_viewer_fixture();
+    let previous = NativeImageKey {
+        generation: viewer.generation,
+        page: viewer.page,
+        zoom_percent: 100,
+        fit_width: false,
+        pan_x: 0,
+        pan_y: 0,
+        area,
+        cell_width: 9,
+        cell_height: 18,
+    };
+    viewer.zoom_percent = 200;
+    let pan = normalized_pan(&viewer, &raster, area, (9, 18), Some(previous));
+    assert_eq!(
+        pan,
+        (0, 15),
+        "zoom should retain the page's vertical center"
+    );
+    viewer.pan_x = usize::MAX;
+    viewer.pan_y = usize::MAX;
+    let clamped = normalized_pan(&viewer, &raster, area, (9, 18), None);
+    assert_eq!(clamped, (0, 30));
+    viewer.pan_x = clamped.0;
+    viewer.pan_y = clamped.1 - 2;
+    assert_eq!(
+        normalized_pan(&viewer, &raster, area, (9, 18), None),
+        (0, 28)
+    );
+    viewer.zoom_percent = 100;
+    viewer.pan_x = 0;
+    viewer.pan_y = 0;
+    assert_eq!(
+        normalized_pan(&viewer, &raster, area, (9, 18), Some(previous)),
+        (0, 0)
+    );
+}
+
+#[test]
+fn hardware_native_fit_width_uses_full_width_and_preserves_aspect() {
+    let raster = yoctui_model::HardwareRaster {
+        width: 512,
+        height: 512,
+        pixels: Vec::new(),
+    };
+    let area = Rect::new(22, 7, 120, 30);
+    let fitted = viewport_geometry(&raster, area, (9, 18), 100, false);
+    let width = viewport_geometry(&raster, area, (9, 18), 100, true);
+    assert_eq!((fitted.target_width, fitted.target_height), (540, 540));
+    assert_eq!((width.target_width, width.target_height), (1080, 1080));
+    assert_eq!((width.visible_width, width.visible_height), (1080, 540));
+}
+
+#[test]
+fn hardware_native_mouse_zoom_drag_respects_overlay_and_viewport_ownership() {
+    use crossterm::event::{KeyModifiers as M, MouseButton as B, MouseEvent, MouseEventKind as K};
+    use yoctui_model::*;
+    let mut app = App::new(16, 1024);
+    app.screen = Screen::Hardware;
+    app.hardware.graphics_capability = HardwareGraphicsCapability::Sixel;
+    let mut viewer = pdf_viewer_fixture();
+    viewer.loading = false;
+    viewer.preview = Some(HardwarePreview::Raster(HardwareRaster {
+        width: 1,
+        height: 1,
+        pixels: vec![HardwareRgb {
+            red: 255,
+            green: 255,
+            blue: 255,
+        }],
+    }));
+    app.hardware.viewer = Some(viewer);
+    let mut graphics = HardwareNativeGraphics::default();
+    let event = |kind, column, row, modifiers| MouseEvent {
+        kind,
+        column,
+        row,
+        modifiers,
+    };
+    assert_eq!(
+        graphics.mouse_action(&app, 160, 48, event(K::ScrollUp, 50, 15, M::CONTROL)),
+        Some(Action::Hardware(HardwareAction::Zoom { delta: 25 }))
+    );
+    assert!(
+        graphics
+            .mouse_action(&app, 160, 48, event(K::ScrollUp, 5, 15, M::CONTROL))
+            .is_none()
+    );
+    assert!(
+        graphics
+            .mouse_action(&app, 160, 48, event(K::Down(B::Left), 50, 15, M::NONE))
+            .is_none()
+    );
+    assert_eq!(
+        graphics.mouse_action(&app, 160, 48, event(K::Drag(B::Left), 46, 13, M::NONE)),
+        Some(Action::Hardware(HardwareAction::Pan {
+            horizontal: 4,
+            vertical: 2
+        }))
+    );
+    assert!(
+        graphics
+            .mouse_action(&app, 160, 48, event(K::Up(B::Left), 46, 13, M::NONE))
+            .is_none()
+    );
+    assert!(
+        graphics
+            .mouse_action(&app, 160, 48, event(K::Drag(B::Left), 40, 10, M::NONE))
+            .is_none()
+    );
+    app.command_palette_open = true;
+    assert!(
+        graphics
+            .mouse_action(&app, 160, 48, event(K::ScrollUp, 50, 15, M::CONTROL))
+            .is_none()
+    );
+    app.command_palette_open = false;
+    app.preferences.mouse_enabled = false;
+    assert!(
+        graphics
+            .mouse_action(&app, 160, 48, event(K::ScrollUp, 50, 15, M::CONTROL))
+            .is_none()
+    );
 }

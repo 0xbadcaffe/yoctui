@@ -42,6 +42,24 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
     }
     let state = &mut app.hardware;
     match action {
+        HardwareAction::OpenDesktop => {
+            let viewer = state.viewer.as_ref()?;
+            if viewer.document.kind != HardwareDocumentKind::Pdf {
+                app.notification =
+                    Some("Desktop PDF reader is available for PDF documents.".into());
+                return None;
+            }
+            return Some(Effect::Hardware(HardwareEffect::OpenDesktop {
+                document: viewer.document.clone(),
+                root: state.project_view_root.clone(),
+            }));
+        }
+        HardwareAction::DesktopOpened { result } => {
+            app.notification = Some(match result {
+                Ok(()) => "PDF opened in your desktop reader; Yoctui remains attached.".into(),
+                Err(message) => format!("Could not open desktop PDF reader: {message}"),
+            });
+        }
         HardwareAction::Project(_) => unreachable!("project actions are routed above"),
         HardwareAction::GraphicsCapabilityDetected(capability) => {
             state.graphics_capability = capability;
@@ -296,6 +314,14 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
         }
         HardwareAction::ResetZoom => {
             let viewer = state.viewer.as_mut()?;
+            viewer.zoom_percent = 100;
+            viewer.fit_width = false;
+            viewer.pan_x = 0;
+            viewer.pan_y = 0;
+        }
+        HardwareAction::FitWidth => {
+            let viewer = state.viewer.as_mut()?;
+            viewer.fit_width = true;
             viewer.zoom_percent = 100;
             viewer.pan_x = 0;
             viewer.pan_y = 0;

@@ -17,6 +17,15 @@ impl InteractiveRuntime {
         }
         let kind = mouse_kind_from_event(mouse.kind);
         let terminal_size = runtime.terminal.size()?;
+        if let Some(action) = runtime.hardware_native_graphics.mouse_action(
+            &runtime.app,
+            terminal_size.width,
+            terminal_size.height,
+            mouse,
+        ) {
+            let _ = compatibility_workspace_action(&mut runtime.app, action);
+            return Ok(());
+        }
         if let Some(kind) = kind
             && let Some(action) = mouse_action_for_app(
                 MouseInput {
@@ -69,6 +78,9 @@ impl InteractiveRuntime {
                     .await;
                 }
                 Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::Load(_)))
+                | Some(
+                    effect @ Effect::Hardware(yoctui_model::HardwareEffect::OpenDesktop { .. }),
+                )
                 | Some(
                     effect @ Effect::Hardware(yoctui_model::HardwareEffect::LoadProject { .. }),
                 ) => {

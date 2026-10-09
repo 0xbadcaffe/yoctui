@@ -103,7 +103,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         },
         Screen::Hardware => {
             if app.hardware.viewer.is_some() {
-                "Esc library | PgUp/PgDn page | +/- zoom | 0 fit | arrows pan | / search | n/Alt+n match | v view | r reload"
+                "Esc library | PgUp/PgDn page | +/- zoom | 0 fit | w width | arrows pan | o desktop PDF | / search | v text"
             } else if app.hardware.projects.form.is_some() {
                 "Enter save/create | Esc cancel | progress: ↑/↓ stage · ←/→ ±5 · digits 0–100"
             } else if app.hardware.projects.import_browser.is_some() {

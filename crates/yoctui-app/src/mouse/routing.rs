@@ -65,6 +65,7 @@ pub fn mouse_action_for_app(
         return Some(Action::OpenContextMenu);
     }
     if let Some(zoomed) = app.zoomed_pane
+        && !(app.screen == Screen::Hardware && app.hardware.viewer.is_some())
         && !((matches!(app.screen, Screen::TerminalSessions)
             || app.platform_menuconfig_visible())
             && !app.daemon.pty_sessions.is_empty())
@@ -136,6 +137,8 @@ pub fn mouse_action_for_app(
             let pages_pdf = app.screen == Screen::Hardware
                 && app.hardware.viewer.as_ref().is_some_and(|viewer| {
                     matches!(viewer.document.kind, yoctui_model::HardwareDocumentKind::Pdf | yoctui_model::HardwareDocumentKind::Altium | yoctui_model::HardwareDocumentKind::Expedition)
+                        && viewer.presentation == yoctui_model::HardwarePresentation::Page
+                        && viewer.zoom_percent <= 100 && !viewer.fit_width
                 });
             let key = if matches!(mouse.kind, MouseKind::ScrollUp) {
                 if pages_pdf { Input::PageUp } else { Input::Up }
@@ -147,6 +150,11 @@ pub fn mouse_action_for_app(
             return workspace_collection_action(app, key);
         }
         if matches!(mouse.kind, MouseKind::Down) {
+            if app.screen == Screen::Hardware && app.hardware.viewer.is_some()
+                && mouse.row == region.area.bottom().saturating_sub(2)
+            {
+                return crate::hardware_input::hardware_viewer_toolbar_action(mouse.column.saturating_sub(region.area.x));
+            }
             if let Some(action) = workspace_tab_click(app, region.area, mouse) {
                 return Some(action);
             }

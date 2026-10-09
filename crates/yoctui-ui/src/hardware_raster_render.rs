@@ -48,8 +48,12 @@ pub(crate) fn raster_geometry(
     let viewport_height = usize::from(area.height).saturating_mul(2).max(1);
     let source_width = raster.width.max(1);
     let source_height = raster.height.max(1);
-    let fit = (viewport_width as f64 / source_width as f64)
-        .min(viewport_height as f64 / source_height as f64);
+    let width_fit = viewport_width as f64 / source_width as f64;
+    let fit = if viewer.fit_width {
+        width_fit
+    } else {
+        width_fit.min(viewport_height as f64 / source_height as f64)
+    };
     let scale = fit * f64::from(viewer.zoom_percent) / 100.0;
     let target_width = (source_width as f64 * scale).round().max(1.0) as usize;
     let target_height = (source_height as f64 * scale).round().max(1.0) as usize;

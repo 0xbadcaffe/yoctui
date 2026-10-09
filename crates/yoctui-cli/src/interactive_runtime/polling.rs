@@ -383,10 +383,11 @@ impl InteractiveRuntime {
             .take_frame_with_interval(ordinary_frame_interval(&runtime.app))
         {
             let size = runtime.terminal.size()?;
-            if runtime
-                .hardware_native_graphics
-                .prepare_frame(&runtime.app, size.width, size.height)
-            {
+            if runtime.hardware_native_graphics.prepare_frame(
+                &mut runtime.app,
+                size.width,
+                size.height,
+            ) {
                 runtime.terminal.clear()?;
             }
             runtime.terminal.draw(|f| render(f, &runtime.app))?;

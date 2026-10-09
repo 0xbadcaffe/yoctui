@@ -229,6 +229,7 @@ pub struct HardwareViewerState {
     pub page: usize,
     pub page_count: usize,
     pub zoom_percent: u16,
+    pub fit_width: bool,
     pub presentation: HardwarePresentation,
     pub pan_x: usize,
     pub pan_y: usize,
@@ -366,6 +367,11 @@ pub enum HardwareAction {
         delta: i16,
     },
     ResetZoom,
+    FitWidth,
+    OpenDesktop,
+    DesktopOpened {
+        result: Result<(), String>,
+    },
     TogglePresentation,
     Pan {
         horizontal: isize,
@@ -386,6 +392,10 @@ pub enum HardwareAction {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HardwareEffect {
+    OpenDesktop {
+        document: HardwareDocument,
+        root: Option<PathBuf>,
+    },
     LoadProject {
         root: PathBuf,
         request: HardwareLoadRequest,

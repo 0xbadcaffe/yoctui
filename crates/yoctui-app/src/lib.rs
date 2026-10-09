@@ -3,7 +3,9 @@ mod environment_setup;
 mod hardware_input;
 mod keyboard_prefix;
 pub use environment_setup::*;
-pub use hardware_input::{hardware_project_owns_input, hardware_workspace_action};
+pub use hardware_input::{
+    HARDWARE_VIEWER_TOOLBAR, hardware_project_owns_input, hardware_workspace_action,
+};
 mod kernel_debug;
 mod text_paste;
 pub use kernel_debug::{kernel_debug_action, kernel_debug_owns_input};

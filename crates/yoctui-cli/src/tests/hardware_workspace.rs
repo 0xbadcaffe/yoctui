@@ -18,6 +18,7 @@ fn hardware_escape_reaches_open_viewer_while_navigator_owns_focus() {
         page: 1,
         page_count: 1,
         zoom_percent: 100,
+        fit_width: false,
         presentation: HardwarePresentation::Text,
         pan_x: 0,
         pan_y: 0,

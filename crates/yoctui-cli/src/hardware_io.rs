@@ -17,6 +17,7 @@ use yoctui_model::{
     MAX_HARDWARE_BROWSER_ENTRIES, MAX_HARDWARE_RASTER_EDGE, MAX_HARDWARE_RASTER_PIXELS,
     MAX_HARDWARE_TEXT_BYTES,
 };
+mod desktop;
 mod projects;
 mod schematics;
 pub(crate) mod text;

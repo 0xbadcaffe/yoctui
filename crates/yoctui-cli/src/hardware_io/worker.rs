@@ -1,6 +1,10 @@
 use super::*;
 
 enum HardwareWork {
+    OpenDesktop {
+        document: yoctui_model::HardwareDocument,
+        root: Option<PathBuf>,
+    },
     ProjectLoad {
         root: PathBuf,
         request: HardwareLoadRequest,
@@ -22,6 +26,9 @@ pub(crate) struct HardwareIo {
 impl HardwareIo {
     pub(crate) fn submit(&mut self, effect: Effect) {
         self.queued = match effect {
+            Effect::Hardware(HardwareEffect::OpenDesktop { document, root }) => {
+                Some(HardwareWork::OpenDesktop { document, root })
+            }
             Effect::Hardware(HardwareEffect::LoadProject { root, request }) => {
                 Some(HardwareWork::ProjectLoad { root, request })
             }
@@ -48,6 +55,12 @@ impl HardwareIo {
         self.worker = self.queued.take().map(|work| {
             tokio::spawn(async move {
                 match work {
+                    HardwareWork::OpenDesktop { document, root } => {
+                        let result = super::desktop::open(document, root).await;
+                        Action::Hardware(HardwareAction::DesktopOpened {
+                            result: result.map_err(|error| format!("{error:#}")),
+                        })
+                    }
                     HardwareWork::ProjectLoad { root, request } => {
                         let generation = request.generation;
                         let path = request.document.path.clone();

@@ -13,6 +13,7 @@ impl InteractiveRuntime {
             Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::Browse { .. }))
             | Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::Load(_)))
             | Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::Project(_)))
+            | Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::OpenDesktop { .. }))
             | Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::LoadProject { .. })) => {
                 runtime.hardware_io.submit(effect);
             }

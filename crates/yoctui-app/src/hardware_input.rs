@@ -5,6 +5,41 @@ use std::path::PathBuf;
 use yoctui_model::{Action, App, HardwareAction};
 mod projects;
 
+pub const HARDWARE_VIEWER_TOOLBAR: &str =
+    "[-] [+] [0 Fit page] [w Fit width] [o Desktop PDF] [PgUp Prev] [PgDn Next]";
+
+pub(crate) fn hardware_viewer_toolbar_action(column: u16) -> Option<Action> {
+    let keys = [
+        Input::Char('-'),
+        Input::Char('+'),
+        Input::Char('0'),
+        Input::Char('w'),
+        Input::Char('o'),
+        Input::PageUp,
+        Input::PageDown,
+    ];
+    let mut start = 0usize;
+    for (label, key) in HARDWARE_VIEWER_TOOLBAR.split_inclusive(']').zip(keys) {
+        let end = start + label.len();
+        if usize::from(column) >= start + label.len() - label.trim_start().len()
+            && usize::from(column) < end
+        {
+            return match key {
+                Input::Char('-') => hardware(HardwareAction::Zoom { delta: -25 }),
+                Input::Char('+') => hardware(HardwareAction::Zoom { delta: 25 }),
+                Input::Char('0') => hardware(HardwareAction::ResetZoom),
+                Input::Char('w') => hardware(HardwareAction::FitWidth),
+                Input::Char('o') => hardware(HardwareAction::OpenDesktop),
+                Input::PageUp => hardware(HardwareAction::ChangePage { delta: -1 }),
+                Input::PageDown => hardware(HardwareAction::ChangePage { delta: 1 }),
+                _ => None,
+            };
+        }
+        start = end;
+    }
+    None
+}
+
 pub fn hardware_project_owns_input(app: &App, input: Input) -> bool {
     app.screen == yoctui_model::Screen::Hardware
         && app.hardware.projects.visible
@@ -53,6 +88,8 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
             Input::Char('+' | '=') => hardware(HardwareAction::Zoom { delta: 25 }),
             Input::Char('-') => hardware(HardwareAction::Zoom { delta: -25 }),
             Input::Char('0') => hardware(HardwareAction::ResetZoom),
+            Input::Char('w') => hardware(HardwareAction::FitWidth),
+            Input::Char('o') => hardware(HardwareAction::OpenDesktop),
             Input::Char('v') => hardware(HardwareAction::TogglePresentation),
             Input::Left | Input::Char('h') => hardware(HardwareAction::Pan {
                 horizontal: -4,

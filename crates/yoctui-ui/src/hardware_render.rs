@@ -228,7 +228,7 @@ fn render_viewer(
     .split(area);
     frame.render_widget(
         Paragraph::new(format!(
-            "{} · {}{} · page {}/{} · zoom {}% · {}",
+            "{} · {}{} · page {}/{} · {} {}% · {}",
             viewer.document.name(),
             viewer.document.kind.label(),
             if matches!(
@@ -244,6 +244,7 @@ fn render_viewer(
             },
             viewer.page,
             viewer.page_count,
+            if viewer.fit_width { "width" } else { "zoom" },
             viewer.zoom_percent,
             presentation_label(app, viewer)
         ))
@@ -305,12 +306,12 @@ fn render_viewer(
         }
     }
     let search = if viewer.searching {
-        format!("Search: {}_", viewer.query)
+        format!("Tab Navigator · Search: {}_", viewer.query)
     } else if viewer.query.is_empty() {
-        String::new()
+        "Esc/Backspace library · Tab Navigator · Ctrl+wheel zoom · drag/arrows pan · v text".into()
     } else {
         format!(
-            "Search: {} · {}/{}",
+            "Tab Navigator · Search: {} · {}/{}",
             viewer.query,
             viewer
                 .match_selection
@@ -319,10 +320,13 @@ fn render_viewer(
             viewer.matches.len()
         )
     };
-    frame.render_widget(Paragraph::new(vec![
-        Line::from("Esc/Backspace library  e edit text  Tab Navigator  PgUp/PgDn or wheel page  +/- zoom  0 fit  arrows/hjkl pan  / search  n/Alt+n match  v view  r reload"),
-        Line::styled(search, Style::default().fg(palette.accent)),
-    ]), rows[2]);
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::from(yoctui_app::HARDWARE_VIEWER_TOOLBAR),
+            Line::styled(search, Style::default().fg(palette.accent)),
+        ]),
+        rows[2],
+    );
 }
 
 fn presentation_label(app: &App, viewer: &yoctui_model::HardwareViewerState) -> &'static str {
@@ -384,6 +388,7 @@ fn render_pdf_graphics_help(
             ),
             Line::from(""),
             Line::from(text),
+            Line::from("Press o to open this PDF in your desktop reader."),
             Line::from("Esc / Backspace returns to the Hardware library. Tab selects Navigator."),
         ])
         .wrap(Wrap { trim: false }),

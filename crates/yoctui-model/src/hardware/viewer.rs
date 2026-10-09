@@ -17,6 +17,7 @@ pub(super) fn open(
         page: 1,
         page_count: 1,
         zoom_percent: 100,
+        fit_width: false,
         presentation: HardwarePresentation::Page,
         pan_x: 0,
         pan_y: 0,

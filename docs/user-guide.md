@@ -180,9 +180,14 @@ See [Hardware projects](hardware-projects.md) for imports, schematics, and manua
 ## View Hardware PDFs
 
 Select a PDF and press Enter. Native pages need SIXEL and document tools;
-Yoctui can hand off to a suitable XTerm. `=` or `+` zooms in, `-` zooms out,
-`0` resets to fit-to-page; arrows pan, PgUp/PgDn
-change page, `v` shows embedded text, Esc returns. Missing prerequisites are explained.
+Yoctui can hand off to a suitable XTerm. Click the viewer toolbar, or use `=`/`+`
+and `-` for centered zoom, `0` for fit-to-page and `w` for fit-to-width.
+Arrows or mouse dragging pan; the wheel pans a magnified page (changes pages
+when fitted), and Ctrl+wheel zooms. PgUp/PgDn always change page; `v` shows
+embedded text and Esc returns. Press `o` to open the PDF in your desktop's
+registered reader (GLib `gio` and, for example, Evince or Okular). This gives
+full-resolution reading, selection, printing and the reader's available tools;
+the embedded terminal raster viewer is not a PDF editor. Missing prerequisites are explained.
 
 ## Application menu
 

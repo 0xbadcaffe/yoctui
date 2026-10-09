@@ -185,3 +185,87 @@ fn hardware_pdf_mouse_wheel_selects_pages_instead_of_panning() {
         Some(Action::Hardware(HardwareAction::ChangePage { delta: -1 }))
     );
 }
+
+#[test]
+fn hardware_zoomed_pdf_wheel_pans_without_changing_page_and_fit_reset_is_explicit() {
+    let mut app = hardware_app();
+    app.focus = FocusTarget::Workspace;
+    let _ = update(&mut app, Action::Hardware(HardwareAction::OpenSelected));
+    assert_eq!(
+        hardware_workspace_action(&app, Input::Char('w')),
+        Some(Action::Hardware(HardwareAction::FitWidth))
+    );
+    assert_eq!(
+        hardware_workspace_action(&app, Input::Char('o')),
+        Some(Action::Hardware(HardwareAction::OpenDesktop))
+    );
+    let _ = update(&mut app, Action::Hardware(HardwareAction::FitWidth));
+    let wheel = mouse_action_for_app(
+        MouseInput {
+            kind: MouseKind::ScrollDown,
+            column: 40,
+            row: 12,
+        },
+        &app,
+        160,
+        50,
+    );
+    assert_eq!(
+        wheel,
+        Some(Action::Hardware(HardwareAction::Pan {
+            horizontal: 0,
+            vertical: 2
+        }))
+    );
+    let _ = update(&mut app, Action::Hardware(HardwareAction::ResetZoom));
+    assert!(!app.hardware.viewer.as_ref().unwrap().fit_width);
+    let _ = update(
+        &mut app,
+        Action::Hardware(HardwareAction::Zoom { delta: 100 }),
+    );
+    assert_eq!(
+        mouse_action_for_app(
+            MouseInput {
+                kind: MouseKind::ScrollDown,
+                column: 40,
+                row: 12
+            },
+            &app,
+            160,
+            50
+        ),
+        wheel
+    );
+}
+
+#[test]
+fn hardware_pdf_toolbar_buttons_are_mouse_clickable() {
+    let mut app = hardware_app();
+    app.focus = FocusTarget::Workspace;
+    let _ = update(&mut app, Action::Hardware(HardwareAction::OpenSelected));
+    for (label, action) in [
+        ("[-]", HardwareAction::Zoom { delta: -25 }),
+        ("[+]", HardwareAction::Zoom { delta: 25 }),
+        ("[0 Fit page]", HardwareAction::ResetZoom),
+        ("[w Fit width]", HardwareAction::FitWidth),
+        ("[o Desktop PDF]", HardwareAction::OpenDesktop),
+        ("[PgUp Prev]", HardwareAction::ChangePage { delta: -1 }),
+        ("[PgDn Next]", HardwareAction::ChangePage { delta: 1 }),
+    ] {
+        let column = 22 + crate::HARDWARE_VIEWER_TOOLBAR.find(label).unwrap() as u16 + 1;
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column,
+                    row: 45
+                },
+                &app,
+                160,
+                50
+            ),
+            Some(Action::Hardware(action)),
+            "{label}"
+        );
+    }
+}
