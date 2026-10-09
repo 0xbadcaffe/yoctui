@@ -35,3 +35,39 @@ fn hardware_desktop_reader_rejects_links_non_pdf_and_unregistered_project_roots(
         assert!(validated_pdf(&document, None).is_err());
     }
 }
+
+#[cfg(unix)]
+#[tokio::test]
+async fn hardware_desktop_launcher_does_not_wait_for_gui_owned_pipe_eof() {
+    use std::os::unix::fs::PermissionsExt;
+    let temporary = tempfile::tempdir().unwrap();
+    let program = temporary.path().join("gio-fixture");
+    let gui_pid = temporary.path().join("gui-pid");
+    fs::write(
+        &program,
+        format!(
+            "#!/bin/sh\nsleep 10 &\necho $! > '{}'\nexit 0\n",
+            gui_pid.display()
+        ),
+    )
+    .unwrap();
+    fs::set_permissions(&program, fs::Permissions::from_mode(0o755)).unwrap();
+    let result = tokio::time::timeout(
+        Duration::from_secs(3),
+        launch_reader(
+            program.to_str().unwrap(),
+            Path::new("/tmp/board with spaces.pdf"),
+        ),
+    )
+    .await;
+    // Stop only the fixture's child, including when the EOF regression returns.
+    if let Ok(pid) = fs::read_to_string(&gui_pid) {
+        let pid: i32 = pid.trim().parse().unwrap();
+        unsafe {
+            libc::kill(pid, libc::SIGTERM);
+        }
+    }
+    result
+        .expect("launch must complete without waiting for GUI pipe EOF")
+        .unwrap();
+}
