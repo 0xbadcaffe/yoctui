@@ -37,6 +37,20 @@ fn ux_rootfs_images_tabs_keyboard_and_scroll_map_to_typed_drilldown_actions() {
         images_workspace_action_for_view(false, ImagesView::SystemDbus, Input::Down),
         Some(Action::SelectRootfsDbusService { delta: 1 })
     );
+    for (key, delta) in [
+        (Input::Char('j'), 1),
+        (Input::Up, -1),
+        (Input::Char('k'), -1),
+        (Input::PageDown, 10),
+        (Input::PageUp, -10),
+        (Input::End, isize::MAX),
+        (Input::Home, isize::MIN),
+    ] {
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::SystemDbus, key),
+            Some(Action::SelectRootfsDbusService { delta })
+        );
+    }
     assert_eq!(
         images_workspace_action_for_view(false, ImagesView::RootfsFilesystem, Input::BackTab),
         Some(Action::ShiftImagesView { delta: -1 })

@@ -5,6 +5,7 @@ mod completed_progress;
 mod gitui_native_workspace;
 mod image_artifact_viewport;
 mod rootfs_browser;
+mod rootfs_dbus;
 mod rootfs_systemd;
 mod runqueue_completion;
 mod saved_environment;

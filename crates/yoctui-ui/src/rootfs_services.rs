@@ -186,10 +186,30 @@ pub(crate) fn rootfs_dbus_workspace(frame: &mut Frame, app: &App, area: Rect) {
         );
         return;
     }
+    let capacity = usize::from(body.height.saturating_sub(3));
+    let viewport = yoctui_model::BoundedScroll::new(
+        app.rootfs_dbus_selection,
+        0,
+        capacity,
+        inventory.dbus_services.len(),
+    );
+    let cue = BoundedScrollIndicator::new(viewport.offset, capacity, viewport.total).title_label(
+        Some(viewport.selection),
+        true,
+        app.preferences.symbols == SymbolPreference::Unicode,
+    );
+    let title = cue.map_or_else(
+        || "Offline system-bus activation map · e edit · Enter/→ rootfs explorer".into(),
+        |cue| {
+            format!("Offline system-bus activation map · {cue} · e edit · Enter/→ rootfs explorer")
+        },
+    );
     let rows = inventory
         .dbus_services
         .iter()
         .enumerate()
+        .skip(viewport.offset)
+        .take(capacity)
         .map(|(index, service)| {
             Row::new([
                 service.name.clone(),
@@ -198,7 +218,7 @@ pub(crate) fn rootfs_dbus_workspace(frame: &mut Frame, app: &App, area: Rect) {
                 service.exec.as_deref().unwrap_or("—").to_owned(),
                 service.policy_files.len().to_string(),
             ])
-            .style(selected_style(app, index == app.rootfs_dbus_selection))
+            .style(selected_style(app, index == viewport.selection))
         });
     frame.render_widget(
         Table::new(
@@ -221,10 +241,7 @@ pub(crate) fn rootfs_dbus_workspace(frame: &mut Frame, app: &App, area: Rect) {
             ])
             .style(Style::default().add_modifier(Modifier::BOLD)),
         )
-        .block(
-            Block::bordered()
-                .title("Offline system-bus activation map · e edit · Enter/→ rootfs explorer"),
-        ),
+        .block(Block::bordered().title(title)),
         body,
     );
 }
