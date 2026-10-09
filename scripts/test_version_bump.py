@@ -120,23 +120,35 @@ class VersionBumpPolicyTests(unittest.TestCase):
         self.commit()
         self.check()
 
-    def test_test_reference_rename_with_changed_content_requires_bump(self) -> None:
+    def test_test_reference_rename_with_changed_content_keeps_version(self) -> None:
         self.prepare_reference_include()
         self.rename_reference_include()
         self.write("docs/reference/new.md", "# Changed reference\n")
-        self.check(failure=True)
+        self.check()
 
-    def test_test_reference_rename_with_other_test_changes_requires_bump(self) -> None:
+    def test_test_reference_rename_with_other_test_changes_keeps_version(self) -> None:
         self.prepare_reference_include()
         self.rename_reference_include()
         path = self.root / "crates/example/src/tests/reference.rs"
         path.write_text(path.read_text() + "fn changed_test() {}\n")
-        self.check(failure=True)
+        self.check()
 
-    def test_test_reference_rename_with_missing_target_requires_bump(self) -> None:
+    def test_test_reference_rename_with_missing_target_keeps_version(self) -> None:
         self.prepare_reference_include()
         self.rename_reference_include()
         (self.root / "docs/reference/new.md").unlink()
+        self.check()
+
+    def test_test_only_fixture_correction_keeps_version_but_runtime_change_does_not(self) -> None:
+        self.write("crates/example/src/tests/navigation.rs", "fn fixture() {}\n")
+        self.write("crates/example/tests/acceptance.rs", "fn acceptance() {}\n")
+        self.commit()
+        self.check()
+        self.write("crates/example/src/tests/navigation.rs", "fn corrected_fixture() {}\n")
+        self.check()
+        self.commit()
+        self.check()
+        self.write("crates/example/src/lib.rs", "fn changed_runtime() {}\n")
         self.check(failure=True)
 
     def test_nonproduct_commit_still_checks_internal_dependency_coherence(self) -> None:

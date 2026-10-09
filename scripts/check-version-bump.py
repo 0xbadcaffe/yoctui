@@ -40,6 +40,10 @@ def version_increased(current: tuple[int, int, int], previous: tuple[int, int, i
 
 
 def product_path(path: str) -> bool:
+    # Dedicated unit/integration test trees are not shipped runtime code.
+    # Inline tests remain part of their production source file and still count.
+    if path.startswith("crates/") and ("/src/tests/" in path or "/tests/" in path):
+        return False
     return path in {"Cargo.toml", "Cargo.lock", "fuzz/Cargo.toml"} or (
         path.startswith("crates/")
         and (path.endswith("/Cargo.toml") or "/src/" in path or "/bridge/" in path)
