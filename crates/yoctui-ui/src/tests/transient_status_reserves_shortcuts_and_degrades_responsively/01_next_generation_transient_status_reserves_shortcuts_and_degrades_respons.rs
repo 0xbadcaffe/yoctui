@@ -412,6 +412,12 @@ fn next_generation_navigator_renders_authoritative_badges_and_collapsed_groups()
     app.navigator_groups_expanded[2] = false;
     let collapsed = rendered_text(&app, 180, 40);
     assert!(collapsed.contains("▸ BUILD"), "{collapsed}");
+    assert!(collapsed.contains("Tasks          1"), "{collapsed}");
+    assert!(!collapsed.contains("Errors         3"), "{collapsed}");
+    assert!(!collapsed.contains("Logs        LIVE"), "{collapsed}");
+    app.navigator_groups_expanded[0] = false;
+    let collapsed = rendered_text(&app, 180, 40);
+    assert!(collapsed.contains("▸ OVERVIEW"), "{collapsed}");
     assert!(!collapsed.contains("Tasks          1"), "{collapsed}");
 }
 

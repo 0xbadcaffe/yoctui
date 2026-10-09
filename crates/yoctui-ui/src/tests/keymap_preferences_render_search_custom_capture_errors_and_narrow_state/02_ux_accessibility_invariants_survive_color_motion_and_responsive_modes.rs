@@ -305,7 +305,7 @@ fn images_workspace_renders_typed_artifacts_inspector_and_responsive_modes() {
         if width >= WIDE_WORKBENCH_MIN_WIDTH {
             assert!(output.contains("F12 Menu"), "{output}");
         } else {
-            assert!(output.contains("refresh"), "{output}");
+            assert!(output.contains("Enter view"), "{output}");
         }
     }
     let wide = rendered_text(&app, 180, 40);
