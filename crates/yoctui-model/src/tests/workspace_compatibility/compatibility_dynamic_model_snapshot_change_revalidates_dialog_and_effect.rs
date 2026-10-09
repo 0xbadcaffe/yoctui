@@ -40,7 +40,7 @@ fn compatibility_dynamic_model_snapshot_change_revalidates_dialog_and_effect() {
     assert!(revalidated.closed_dialog);
     assert!(app.active_dialog().is_none());
     assert_eq!(app.focus, crate::FocusTarget::Navigator);
-    assert_eq!(app.navigator_selection, 3);
+    assert_eq!(app.navigator_selection, 4);
     let denied = authorize_workspace_effect(&app, &start).unwrap_err();
     assert!(denied.reason().contains("cannot build"));
     assert!(matches!(
