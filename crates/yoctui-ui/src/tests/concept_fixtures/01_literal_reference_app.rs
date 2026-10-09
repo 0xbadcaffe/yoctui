@@ -7,7 +7,7 @@ pub(crate) fn literal_reference_app() -> App {
     let source_dir = PathBuf::from("/workspace/yocto");
     app.screen = Screen::Tasks;
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 10;
+    app.navigator_selection = 2;
     app.backend = "bridge".into();
     app.workspace.build_dir = Some(source_dir.join("build"));
     app.workspace.source_dir = Some(source_dir.clone());

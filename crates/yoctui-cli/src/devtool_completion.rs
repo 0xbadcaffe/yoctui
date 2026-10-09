@@ -31,15 +31,6 @@ pub(crate) async fn inspect_devtool_status_with_authority(
     }
 }
 
-pub(crate) async fn complete_devtool_modify(
-    app: &mut App,
-    build_dir: &Path,
-    identity: RecipeIdentity,
-) {
-    let status = inspect_devtool_status(app, build_dir, identity).await;
-    apply_completed_devtool_modify_status(app, status).await;
-}
-
 pub(crate) async fn apply_completed_devtool_modify_status(
     app: &mut App,
     status: yoctui_model::DevtoolStatus,

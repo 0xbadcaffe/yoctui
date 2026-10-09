@@ -96,6 +96,9 @@ pub(crate) fn generic_source_preview(
     if language == yoctui_model::SourceLanguage::DeviceTree {
         return device_tree_source_preview(content, &palette);
     }
+    if language == yoctui_model::SourceLanguage::Udev {
+        return udev_source_preview(content, &palette);
+    }
     let comment_prefix = match language {
         yoctui_model::SourceLanguage::C
         | yoctui_model::SourceLanguage::Cpp

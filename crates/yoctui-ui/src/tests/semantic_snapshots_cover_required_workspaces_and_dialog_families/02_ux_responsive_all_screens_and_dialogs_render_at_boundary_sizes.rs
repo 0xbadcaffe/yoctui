@@ -375,7 +375,7 @@ fn global_search_starts_empty_excludes_commands_and_renders_inline_errors() {
     assert!(output.contains("Global Regex Search"), "{output}");
     assert!(!output.contains("Open Packages"), "{output}");
     assert!(!output.contains("Open SDK"), "{output}");
-    assert!(output.contains("Content regex"), "{output}");
+    assert!(output.contains("File contents"), "{output}");
     app.command_palette_query.clear();
     for (width, height) in [(100, 25), (80, 24)] {
         let output = rendered_text(&app, width, height);

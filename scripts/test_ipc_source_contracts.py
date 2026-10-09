@@ -106,7 +106,8 @@ class IpcSourceContractTests(unittest.TestCase):
             (TRANSPORT_CONNECTION, "pub fn flush_event_frame", "bounded daemon transport"),
             (TRANSPORT_CONNECTION, "libc::MSG_DONTWAIT", "bounded daemon transport"),
             (TRANSPORT_CONNECTION, "Duration::from_secs(5)", "bounded daemon transport"),
-            (DAEMON, "event_write_pending()", "slow-client isolation"),
+            (DAEMON, "match connection.flush_event_frame()", "slow-client isolation"),
+            (DAEMON, "client_requests::service", "slow-client isolation"),
             (CLIENT_REQUESTS, "connection.is_readable()?", "slow-client isolation"),
             (DAEMON, "slow_client_disconnects", "slow-client isolation"),
         ):
@@ -119,6 +120,12 @@ class IpcSourceContractTests(unittest.TestCase):
     def test_missing_transport_module_content_is_not_silently_skipped(self) -> None:
         with self.assertRaisesRegex(SystemExit, "bounded daemon transport"):
             self.run_checker(**{TRANSPORT_CONNECTION: ""})
+
+    def test_control_after_fanout_fails_the_slow_client_contract(self) -> None:
+        mutated = self.sources[DAEMON].replace("client_requests::service", "service_requests", 1)
+        mutated += "\n// client_requests::service\n"
+        with self.assertRaisesRegex(SystemExit, "slow-client isolation"):
+            self.run_checker(**{DAEMON: mutated})
 
 
 if __name__ == "__main__":

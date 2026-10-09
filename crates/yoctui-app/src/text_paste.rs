@@ -56,6 +56,11 @@ fn target(app: &App) -> Option<Target> {
     {
         return None;
     }
+    // Workspace search overlays a retained editor. The visible search must own
+    // paste, not the document or dialog underneath it.
+    if app.command_palette_open {
+        return Some(Target::Single(Action::AppendCommandPaletteQuery));
+    }
     if popup_accepts_text_paste(app) {
         return Some(
             if matches!(
@@ -110,9 +115,6 @@ fn target(app: &App) -> Option<Target> {
         Some(_) => return None,
         None => {}
     }
-    if app.command_palette_open {
-        return Some(Target::Single(Action::AppendCommandPaletteQuery));
-    }
     if app.screen == Screen::RawMode
         && matches!(app.focus, FocusTarget::Workspace | FocusTarget::Dialog)
         && let Some(
@@ -150,7 +152,11 @@ fn target(app: &App) -> Option<Target> {
         Screen::Tasks if app.task_filter_editing => Action::AppendTaskFilter,
         Screen::Logs if app.internal_logs.searching => Action::AppendInternalLogQuery,
         Screen::Logs if app.logs.searching => Action::AppendLogQuery,
-        Screen::Recipes | Screen::Layers | Screen::Configuration | Screen::Images
+        Screen::Recipes
+        | Screen::Devtool
+        | Screen::Layers
+        | Screen::Configuration
+        | Screen::Images
             if app.metadata_searching =>
         {
             Action::AppendMetadataQuery

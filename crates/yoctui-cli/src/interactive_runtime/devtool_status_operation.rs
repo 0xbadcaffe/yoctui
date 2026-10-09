@@ -4,7 +4,31 @@ const DEVTOOL_STATUS_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub(super) struct DevtoolStatusOperation {
     identity: RecipeIdentity,
-    handle: tokio::task::JoinHandle<yoctui_model::DevtoolStatus>,
+    modify_completion: bool,
+    handle: tokio::task::JoinHandle<std::result::Result<yoctui_model::DevtoolStatus, String>>,
+}
+
+async fn status_with_deadline(
+    future: impl std::future::Future<Output = yoctui_model::DevtoolStatus>,
+    timeout: Duration,
+) -> std::result::Result<yoctui_model::DevtoolStatus, String> {
+    tokio::time::timeout(timeout, future).await.map_err(|_| {
+        "Devtool status timed out; refresh when BitBake is free. Existing workspace status was retained.".into()
+    })
+}
+
+fn spawn_status(
+    build_dir: PathBuf,
+    identity: RecipeIdentity,
+    authority: Option<yoctui_model::DaemonCompatibilitySnapshot>,
+) -> tokio::task::JoinHandle<std::result::Result<yoctui_model::DevtoolStatus, String>> {
+    tokio::spawn(async move {
+        status_with_deadline(
+            inspect_devtool_status_with_authority(&build_dir, identity, authority),
+            DEVTOOL_STATUS_TIMEOUT,
+        )
+        .await
+    })
 }
 
 impl InteractiveRuntime {
@@ -24,31 +48,28 @@ impl InteractiveRuntime {
         }
         let build_dir = self.session_build_dir.clone();
         let authority = self.app.workspace_compatibility.authority().cloned();
-        let worker_identity = identity.clone();
-        let handle = tokio::spawn(async move {
-            match tokio::time::timeout(
-                DEVTOOL_STATUS_TIMEOUT,
-                inspect_devtool_status_with_authority(
-                    &build_dir,
-                    worker_identity.clone(),
-                    authority,
-                ),
-            )
-            .await
-            {
-                Ok(status) => status,
-                Err(_) => yoctui_model::DevtoolStatus {
-                    identity: worker_identity,
-                    capability: yoctui_model::DevtoolCapability::Unavailable {
-                        reason: "Devtool status timed out after 30 seconds.".into(),
-                    },
-                    workspace: DevtoolWorkspace::NotMember,
-                    git: yoctui_model::DevtoolGitState::NotApplicable,
-                    error: None,
-                },
-            }
+        let handle = spawn_status(build_dir, identity.clone(), authority);
+        self.devtool_status_operation = Some(DevtoolStatusOperation {
+            identity,
+            handle,
+            modify_completion: false,
         });
-        self.devtool_status_operation = Some(DevtoolStatusOperation { identity, handle });
+    }
+
+    pub(super) fn begin_devtool_modify_completion(&mut self, identity: RecipeIdentity) {
+        if let Some(operation) = self.devtool_status_operation.take() {
+            operation.handle.abort();
+        }
+        let build_dir = self.session_build_dir.clone();
+        let authority = self.app.workspace_compatibility.authority().cloned();
+        let handle = spawn_status(build_dir, identity.clone(), authority);
+        self.devtool_status_operation = Some(DevtoolStatusOperation {
+            identity,
+            handle,
+            modify_completion: true,
+        });
+        self.app.notification =
+            Some("Devtool modify completed; checking workspace in the background.".into());
     }
 
     pub(super) async fn poll_devtool_status(&mut self) -> bool {
@@ -64,18 +85,26 @@ impl InteractiveRuntime {
             .take()
             .expect("finished Devtool status operation");
         let status = match operation.handle.await {
-            Ok(status) => status,
-            Err(error) => yoctui_model::DevtoolStatus {
-                identity: operation.identity,
-                capability: yoctui_model::DevtoolCapability::Unavailable {
-                    reason: format!("Devtool status task failed: {error}"),
-                },
-                workspace: DevtoolWorkspace::NotMember,
-                git: yoctui_model::DevtoolGitState::NotApplicable,
-                error: None,
-            },
+            Ok(Ok(status)) => status,
+            result => {
+                let message = match result {
+                    Ok(Err(message)) => message,
+                    Err(error) => format!("Devtool status task failed: {error}"),
+                    _ => unreachable!(),
+                };
+                self.app.notification = Some(format!("{}: {message}", operation.identity.name));
+                return true;
+            }
         };
-        let _ = compatibility_workspace_action(&mut self.app, Action::DevtoolStatusLoaded(status));
+        if operation.modify_completion
+            && matches!(self.app.screen, Screen::Recipes | Screen::Devtool)
+            && self.app.active_dialog().is_none()
+        {
+            apply_completed_devtool_modify_status(&mut self.app, status).await;
+        } else {
+            let _ =
+                compatibility_workspace_action(&mut self.app, Action::DevtoolStatusLoaded(status));
+        }
         true
     }
 
@@ -86,3 +115,7 @@ impl InteractiveRuntime {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/interactive_runtime/devtool_status_operation.rs"]
+mod tests;

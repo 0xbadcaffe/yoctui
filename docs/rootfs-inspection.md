@@ -44,6 +44,11 @@ ownership. Saves check conflicts/containment; later BitBake tasks may replace ed
 | System D-Bus | Activation/policy files, users, executables, associated units. |
 | udev (`6` or Tab) | Installed rules, overrides, /dev/null masks; `[`/`]` preview, `r` refresh. |
 
+Enter (or `e`) opens the selected systemd, D-Bus or udev file in the built-in
+source editor without switching to Files. Right opens the rootfs explorer.
+udev previews and editors highlight keys, operators, quoted values and comments;
+masked or unresolved rules cannot be opened as editable text.
+
 These are offline files, not running service/bus/device state. udev never executes
 RUN/IMPORT: at most 65,536 entries, 4,096 rules, and 8 KiB preview; truncation is labelled.
 

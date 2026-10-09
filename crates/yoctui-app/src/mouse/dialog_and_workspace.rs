@@ -40,6 +40,8 @@ pub(crate) fn dialog_mouse_action(
         MouseKind::Drag | MouseKind::Up | MouseKind::Down | MouseKind::ContextDown => return None,
     };
     match app.active_dialog()? {
+        yoctui_model::Dialog::RecipeEditor(editor) =>
+            recipe_editor_action(editor, if delta < 0 { Input::Up } else { Input::Down }),
         yoctui_model::Dialog::EnvironmentSetup(setup) if setup.editor.is_none() => {
             environment_setup_action(setup, if delta < 0 { Input::Up } else { Input::Down })
         }

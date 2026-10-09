@@ -83,7 +83,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         }
         Screen::Images => match app.images_view {
             ImagesView::Artifacts => {
-                "↑/↓ select | o/e view/decompile | v rootfs files | Enter/p rootfs | Tab view | Alt+q QEMU | Alt+w create Wic | Alt+d write device | x cancel | [/] output | Alt+o open output | / search | Alt+r refresh | b build | m manifest | l license | s SPDX | w Wic"
+                "↑/↓ select | Enter/o/e view/decompile | v rootfs files | p rootfs | Tab view | Alt+q QEMU | Alt+w create Wic | Alt+d write device | x cancel | [/] output | Alt+o open output | / search | Alt+r refresh | b build | m manifest | l license | s SPDX | w Wic"
             }
             ImagesView::RootfsPackages => {
                 "h/l group | j/k package | PgUp/PgDn page | r refresh | Tab filesystem | Shift+Tab artifacts"
@@ -92,13 +92,13 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
                 "j/k select path | Enter/→ explore actual IMAGE_ROOTFS | r refresh | Tab view"
             }
             ImagesView::SystemdServices => {
-                "j/k service | e edit unit | Enter/→ explore rootfs | r refresh | Tab view"
+                "j/k service | Enter/e view unit | → explore rootfs | r refresh | Tab view"
             }
             ImagesView::SystemDbus => {
-                "j/k bus name | e edit activation file | Enter/→ explore rootfs | r refresh | Tab view"
+                "j/k bus name | Enter/e view activation file | → explore rootfs | r refresh | Tab view"
             }
             ImagesView::UdevRules => {
-                "↑/↓ rule | PgUp/PgDn | [/] preview | Enter explore rootfs | r refresh | Tab view"
+                "↑/↓ rule | PgUp/PgDn | [/] preview | Enter/e view rule | → rootfs | r refresh | Tab view"
             }
         },
         Screen::Hardware => {
@@ -152,7 +152,11 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             }
         }
         Screen::TerminalSessions => {
-            "Ctrl+B prefix | Ctrl+B e editor | [ copy | / search | r rename | Alt+o release | Alt+k confirmed kill | z zoom | paste review | o take (viewer)"
+            if app.suspended_recipe_editor.is_some() {
+                "Ctrl+B prefix: editor (e) | control (o) | [ copy | / search | r rename | Alt+o release | z zoom | paste review"
+            } else {
+                "Ctrl+B prefix | o take control | [ copy | / search | r rename | Alt+o release | Alt+k confirmed kill | z zoom | paste review"
+            }
         }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | Alt+r relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
@@ -222,17 +226,17 @@ pub(crate) fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
     if app.screen == Screen::Images && width <= 129 {
         match app.images_view {
             ImagesView::Artifacts => {
-                "↑↓ select | Alt+r refresh | Enter/p rootfs | Tab view | Alt+q QEMU | Alt+w Wic | Alt+d write"
+                "↑↓ select | Enter view | p rootfs | Tab view | Alt+q QEMU | Alt+w Wic | Alt+d write"
                     .into()
             }
             ImagesView::RootfsPackages => {
                 "h/l group | j/k package | PgUp/PgDn | r refresh | Tab view".into()
             }
             ImagesView::RootfsFilesystem => "j/k path | PgUp/PgDn | r refresh | Tab view".into(),
-            ImagesView::SystemdServices => "j/k service | e edit | Enter explore | Tab view".into(),
-            ImagesView::SystemDbus => "j/k bus | e edit | Enter explore | Tab view".into(),
+            ImagesView::SystemdServices => "j/k service | Enter/e view | → rootfs | Tab view".into(),
+            ImagesView::SystemDbus => "j/k bus | Enter/e view | → rootfs | Tab view".into(),
             ImagesView::UdevRules => {
-                "↑↓ rule | [/] preview | Enter explore | r refresh | Tab view".into()
+                "↑↓ rule | [/] preview | Enter/e view | → rootfs | Tab view".into()
             }
         }
     } else if app.screen == Screen::Sdk && width < 100 {

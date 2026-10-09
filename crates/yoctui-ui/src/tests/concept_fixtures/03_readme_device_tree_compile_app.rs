@@ -258,7 +258,7 @@ pub(crate) fn readme_repaired_workflow_app(scene: &str) -> App {
         "cancelling" => {
             app = literal_reference_app();
             app.screen = Screen::Tasks;
-            app.navigator_selection = 10;
+            app.navigator_selection = 2;
             app.focus = FocusTarget::Workspace;
             app.build.status = BuildStatus::Cancelling;
             update(

@@ -6,12 +6,12 @@ fn next_generation_navigator_mouse_and_keyboard_share_typed_routing() {
     let click_layers = MouseInput {
         kind: MouseKind::Down,
         column: 5,
-        row: 10,
+        row: 11,
     };
     let select = mouse_action_for_app(click_layers, &app, 180, 40);
-    assert_eq!(select, Some(Action::SelectNavigatorAt { index: 2 }));
+    assert_eq!(select, Some(Action::SelectNavigatorAt { index: 3 }));
     let _ = yoctui_model::update(&mut app, select.unwrap());
-    assert_eq!(app.navigator_selection, 2);
+    assert_eq!(app.navigator_selection, 3);
     assert_eq!(app.focus, FocusTarget::Navigator);
     assert_eq!(
         mouse_action_for_app(click_layers, &app, 180, 40),
@@ -38,7 +38,7 @@ fn next_generation_navigator_mouse_and_keyboard_share_typed_routing() {
     let content_heading = MouseInput {
         kind: MouseKind::Down,
         column: 5,
-        row: 9,
+        row: 10,
     };
     assert_eq!(
         mouse_action_for_app(content_heading, &app, 180, 40),
@@ -47,7 +47,7 @@ fn next_generation_navigator_mouse_and_keyboard_share_typed_routing() {
     let collapse = mouse_action_for_app(content_heading, &app, 180, 40).unwrap();
     let _ = yoctui_model::update(&mut app, collapse);
     assert!(!app.navigator_groups_expanded[1]);
-    assert_eq!(app.navigator_selection, 2);
+    assert_eq!(app.navigator_selection, 3);
     assert_eq!(
         mouse_action_for_app(content_heading, &app, 180, 40),
         Some(Action::ToggleNavigatorGroup { group: 1 })

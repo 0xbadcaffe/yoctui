@@ -157,7 +157,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::Qa(..) | Action::Maintenance(..) | Action::Focus(..)
         | Action::OpenCommandPalette | Action::OpenGlobalSearch | Action::OpenRecipeEditorWorkspaceSearch | Action::SelectCommandPalette { .. }
         | Action::AppendCommandPaletteQuery(..) | Action::BackspaceCommandPaletteQuery | Action::ClearCommandPaletteQuery
-        | Action::BeginGlobalContentSearch | Action::GlobalContentSearchLoaded { .. } | Action::GlobalContentSearchFailed { .. }
+        | Action::BeginGlobalContentSearch | Action::ToggleGlobalSearchTarget | Action::GlobalContentSearchProgress { .. } | Action::GlobalContentSearchLoaded { .. } | Action::GlobalContentSearchFailed { .. }
         | Action::ActivateCommandPalette | Action::RestoreGlobalSearchResults | Action::CloseCommandPalette | Action::OpenApplicationMenu
         | Action::OpenContextMenu | Action::SelectMenuGroup { .. } | Action::SelectMenuItem { .. }
         | Action::AppendMenuPrefix(..) | Action::BackspaceMenuPrefix | Action::CloseMenu

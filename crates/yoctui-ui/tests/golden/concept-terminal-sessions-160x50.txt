@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.329 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.330 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -7,17 +7,17 @@
 │▾ OVERVIEW               │ 1:shell  │  2:devshell:busybox  │                                                                  │▾ PRIMARY FACTS                │
 │  ▱ Dashboard            │────────────────────────────────────────────────────────────────────────────────────────────────────│Session: shell (1)             │
 │  ▱ Insights             │CURRENT · LIVE · WRITER · scrollback 0                                                              │Identity: BuildShell           │
-│▾ CONTENT                │┌ shell #1 Running ────────────────────────────────────────────────────────────────────────────────┐│Lifecycle: Running             │
-│    Layers               ││BuildShell · writer · 2 viewer(s) · 88x18 · /workspace/yocto/build                                ││Role: Writer                   │
-│    Recipes              ││last search: busybox · 0 matches                                                                  ││(keyboard/paste/resize enabled)│
-│    Packages             ││build-shell$ bitbake-layers show-layers                                                           ││Writer: 01010101 · epoch 4     │
-│    Images               ││layer                 path                                                                        ││Viewers: 2                     │
-│  ▱ Hardware             ││meta                  /workspace/yocto/meta                                                       ││Dimensions: 88x18              │
-│    Kernel               ││meta-poky             /workspace/yocto/meta-poky                                                  ││Working directory:             │
-│    U-Boot / BIOS        ││meta-yocto-bsp        /workspace/yocto/meta-yocto-bsp                                             ││/workspace/yocto/build         │
-│    SDK                  ││build-shell$                                                                                      ││Restartable: yes               │
-│▾ BUILD                  ││                                                                                                  ││Exit code: unavailable         │
-│    Tasks                ││                                                                                                  ││                               │
+│    Tasks                │┌ shell #1 Running ────────────────────────────────────────────────────────────────────────────────┐│Lifecycle: Running             │
+│▾ CONTENT                ││BuildShell · writer · 2 viewer(s) · 88x18 · /workspace/yocto/build                                ││Role: Writer                   │
+│    Layers               ││last search: busybox · 0 matches                                                                  ││(keyboard/paste/resize enabled)│
+│    Recipes              ││build-shell$ bitbake-layers show-layers                                                           ││Writer: 01010101 · epoch 4     │
+│    Packages             ││layer                 path                                                                        ││Viewers: 2                     │
+│    Images               ││meta                  /workspace/yocto/meta                                                       ││Dimensions: 88x18              │
+│  ▱ Hardware             ││meta-poky             /workspace/yocto/meta-poky                                                  ││Working directory:             │
+│    Kernel               ││meta-yocto-bsp        /workspace/yocto/meta-yocto-bsp                                             ││/workspace/yocto/build         │
+│    U-Boot / BIOS        ││build-shell$                                                                                      ││Restartable: yes               │
+│    SDK                  ││                                                                                                  ││Exit code: unavailable         │
+│▾ BUILD                  ││                                                                                                  ││                               │
 │  ▱ Logs             LIVE││                                                                                                  ││Replica / history              │
 │  ▱ Errors               ││                                                                                                  ││Viewport offset: 0             │
 │    Configuration        ││                                                                                                  ││Retained scrollback: 0 lines   │
@@ -46,5 +46,5 @@
 │                         ││Ctrl+B then: %/" split · z zoom · [ copy · / search · d detach · x close · ? help                 ││                               │
 └─────────────────────────┘└──────────────────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│Tab Focus   Ctrl+B prefix   Ctrl+B e editor   [ copy   / search   r rename   Alt+o release   F2 Tasks   F3 History   F1 Help   F12 Menu   q Quit              │
+│Tab Focus   Ctrl+B prefix   o take control   [ copy   / search   r rename   Alt+o release   F2 Tasks   F3 History   F4 Dashboard   F1 Help   F12 Menu   q Quit│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

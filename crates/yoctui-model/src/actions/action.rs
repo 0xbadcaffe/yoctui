@@ -67,6 +67,8 @@ pub enum Action {
 
     // Menus, settings, and compatibility.
     OpenCommandPalette, OpenGlobalSearch, OpenRecipeEditorWorkspaceSearch, BeginGlobalContentSearch,
+    ToggleGlobalSearchTarget,
+    GlobalContentSearchProgress { generation: u64, query: String, hits: Vec<GlobalSearchHit>, },
     GlobalContentSearchLoaded { generation: u64, query: String, hits: Vec<GlobalSearchHit>, truncated: bool, searched_scopes: Vec<String>, },
     GlobalContentSearchFailed { generation: u64, query: String, message: String, },
     SelectCommandPalette { delta: isize, },

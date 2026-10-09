@@ -15,7 +15,9 @@ mod scanner;
 
 #[cfg(test)]
 pub(crate) use scanner::MAX_HITS_PER_CONTENT_KIND;
+#[cfg(test)]
 pub use scanner::scan_global_content;
+pub(crate) use scanner::scan_global_content_streaming;
 
 #[derive(Debug, Clone, Default)]
 pub struct GlobalSearchCancellation(Arc<AtomicBool>);
@@ -25,7 +27,7 @@ impl GlobalSearchCancellation {
         self.0.store(true, Ordering::Release);
     }
 
-    fn cancelled(&self) -> bool {
+    pub(crate) fn cancelled(&self) -> bool {
         self.0.load(Ordering::Acquire)
     }
 }
@@ -35,6 +37,8 @@ pub struct GlobalSearchPlan {
     pub query: String,
     pub build_dir: Option<PathBuf>,
     pub scope_label: String,
+    pub file: Option<PathBuf>,
+    pub target: yoctui_model::GlobalSearchTarget,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -59,6 +63,22 @@ impl GlobalSearchPlan {
             query,
             build_dir: safe_search_root(build_dir).then(|| build_dir.to_path_buf()),
             scope_label: scope.into(),
+            target: app.global_search_target,
+            file: app
+                .global_search_root
+                .as_ref()
+                .and_then(|_| match app.active_dialog() {
+                    Some(yoctui_model::Dialog::RecipeEditor(editor))
+                        if matches!(
+                            editor.context,
+                            yoctui_model::SourceEditorContext::DeviceTree
+                                | yoctui_model::SourceEditorContext::Rootfs
+                        ) =>
+                    {
+                        editor.selected_path()
+                    }
+                    _ => None,
+                }),
         }
     }
 }

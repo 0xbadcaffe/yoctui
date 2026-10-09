@@ -337,6 +337,7 @@ impl PaletteCommand {
 pub(crate) const NAVIGATOR_SCREENS: [Screen; 26] = [
     Screen::Dashboard,
     Screen::Insights,
+    Screen::Tasks,
     Screen::Layers,
     Screen::Recipes,
     Screen::Packages,
@@ -345,7 +346,6 @@ pub(crate) const NAVIGATOR_SCREENS: [Screen; 26] = [
     Screen::Kernel,
     Screen::Firmware,
     Screen::Sdk,
-    Screen::Tasks,
     Screen::Logs,
     Screen::Errors,
     Screen::Configuration,
@@ -365,6 +365,7 @@ pub(crate) const NAVIGATOR_SCREENS: [Screen; 26] = [
 pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 26] = [
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Dashboard,
+    WorkspaceDestination::Tasks,
     WorkspaceDestination::Layers,
     WorkspaceDestination::Recipes,
     WorkspaceDestination::Packages,
@@ -373,7 +374,6 @@ pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 26
     WorkspaceDestination::Kernel,
     WorkspaceDestination::Firmware,
     WorkspaceDestination::Sdk,
-    WorkspaceDestination::Tasks,
     WorkspaceDestination::Logs,
     WorkspaceDestination::Errors,
     WorkspaceDestination::Configuration,
@@ -402,16 +402,16 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "OVERVIEW",
         start: 0,
-        end: 2,
+        end: 3,
     },
     NavigatorGroupRange {
         label: "CONTENT",
-        start: 2,
-        end: 10,
+        start: 3,
+        end: 11,
     },
     NavigatorGroupRange {
         label: "BUILD",
-        start: 10,
+        start: 11,
         end: 15,
     },
     NavigatorGroupRange {

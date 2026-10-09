@@ -12,6 +12,10 @@ fn images_workspace_image_action_maps_search_refresh_build_cancel_and_open_actio
     );
     assert_eq!(
         images_workspace_action(false, Input::Enter),
+        Some(Action::OpenSelectedImageArtifact)
+    );
+    assert_eq!(
+        images_workspace_action(false, Input::Char('p')),
         Some(Action::BeginSelectedRootfsComposition)
     );
     for ch in ['e', 'v'] {

@@ -7,6 +7,7 @@ fn navigator_workbench_order_keeps_build_and_validation_groups_contiguous() {
         [
             Screen::Dashboard,
             Screen::Insights,
+            Screen::Tasks,
             Screen::Layers,
             Screen::Recipes,
             Screen::Packages,
@@ -15,7 +16,6 @@ fn navigator_workbench_order_keeps_build_and_validation_groups_contiguous() {
             Screen::Kernel,
             Screen::Firmware,
             Screen::Sdk,
-            Screen::Tasks,
             Screen::Logs,
             Screen::Errors,
             Screen::Configuration,

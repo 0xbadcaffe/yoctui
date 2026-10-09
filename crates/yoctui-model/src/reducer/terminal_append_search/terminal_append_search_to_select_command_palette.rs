@@ -361,6 +361,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.command_palette_query.clear();
             app.global_search_content = GlobalSearchContentState::Idle;
             app.global_search_root = None;
+            app.global_search_target = GlobalSearchTarget::Content;
         }
         Action::OpenRecipeEditorWorkspaceSearch => {
             let root = app.active_dialog().and_then(|dialog| match dialog {
@@ -378,6 +379,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.command_palette_query.clear();
             app.global_search_content = GlobalSearchContentState::Idle;
             app.global_search_root = Some(root);
+            app.global_search_target = GlobalSearchTarget::Content;
         }
         Action::SelectCommandPalette { delta } => {
             let count = app.filtered_command_palette_commands().len()

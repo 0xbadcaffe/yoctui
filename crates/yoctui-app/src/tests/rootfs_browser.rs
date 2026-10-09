@@ -90,8 +90,22 @@ fn rootfs_systemd_keys_keep_selection_edit_and_explorer_actions_typed() {
     );
     assert_eq!(
         images_workspace_action_for_view(false, ImagesView::SystemdServices, Input::Enter),
-        Some(Action::BrowseRootfsFilesystem)
+        Some(Action::EditSelectedRootfsSystemFile)
     );
+    for view in [
+        ImagesView::SystemdServices,
+        ImagesView::SystemDbus,
+        ImagesView::UdevRules,
+    ] {
+        assert_eq!(
+            images_workspace_action_for_view(false, view, Input::Enter),
+            Some(Action::EditSelectedRootfsSystemFile)
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, view, Input::Right),
+            Some(Action::BrowseRootfsFilesystem)
+        );
+    }
     let mut app = App::new(20, 2000);
     app.screen = Screen::Images;
     app.images_view = ImagesView::SystemdServices;

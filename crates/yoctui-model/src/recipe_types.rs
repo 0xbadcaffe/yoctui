@@ -183,6 +183,8 @@ pub enum RecipeEditorFocus {
 pub enum SourceEditorContext {
     #[default]
     Recipe,
+    DeviceTree,
+    Rootfs,
     HardwareLibrary,
     HardwareProject,
 }
@@ -203,6 +205,7 @@ pub enum SourceLanguage {
     Make,
     Markdown,
     DeviceTree,
+    Udev,
     #[default]
     PlainText,
 }
@@ -253,6 +256,7 @@ impl SourceLanguage {
             "yaml" | "yml" => Self::Yaml,
             "md" | "markdown" => Self::Markdown,
             "dts" | "dtsi" => Self::DeviceTree,
+            "rules" => Self::Udev,
             _ if name.ends_with(".wks.in") => Self::BitBake,
             _ if matches!(name.as_str(), "makefile" | "gnumakefile")
                 || name.starts_with("makefile.") =>
@@ -279,6 +283,7 @@ impl SourceLanguage {
             Self::Make => "Make",
             Self::Markdown => "Markdown",
             Self::DeviceTree => "Device Tree",
+            Self::Udev => "udev rules",
             Self::PlainText => "Plain text",
         }
     }

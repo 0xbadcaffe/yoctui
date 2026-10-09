@@ -61,7 +61,7 @@ fn demo_sdk_rail_respects_navigator_and_dialog_focus() {
     let mut app = App::new(32, 8192);
     app.screen = Screen::Sdk;
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 9;
+    app.navigator_selection = 10;
     let output = rendered_text(&app, 80, 24);
     assert!(!output.contains("s/Alt+e:SDK"), "{output}");
     assert!(!output.contains("c:cancel"), "{output}");

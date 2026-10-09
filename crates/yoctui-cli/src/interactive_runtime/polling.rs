@@ -145,8 +145,7 @@ impl InteractiveRuntime {
                         .pending_daemon_devtool_modify
                         .take()
                         .expect("daemon Devtool identity was present");
-                    complete_devtool_modify(&mut runtime.app, &runtime.session_build_dir, identity)
-                        .await;
+                    runtime.begin_devtool_modify_completion(identity);
                     runtime.render_scheduler.invalidate(RenderCause::State);
                 }
                 DaemonDevtoolModifyCompletion::Failed => {

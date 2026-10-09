@@ -1,5 +1,38 @@
 use super::*;
 
+mod bitbake_configuration;
+
+#[test]
+fn relay_configuration_overrides_cached_terminal_selection_and_cleans_up() {
+    let runtime = tempfile::tempdir().unwrap();
+    let socket = runtime.path().join("relay.sock");
+    let mut environment = std::collections::BTreeMap::new();
+    configure_environment(
+        &mut environment,
+        Path::new("/opt/Roy's tools/yoctui"),
+        &socket,
+    );
+    let (directory, config) = configuration::create(&environment, &socket).unwrap();
+    let contents = fs::read_to_string(&config).unwrap();
+    assert!(contents.starts_with("OE_TERMINAL = \"custom\"\n"));
+    assert!(contents.contains("\nOE_TERMINAL_CUSTOMCMD = \"${@bytes.fromhex('"));
+    assert!(contents.lines().all(|line| line.contains(" = \"")));
+    assert!(!contents.contains("__anonymous"));
+    assert!(contents.contains("PATH:prepend:task-devshell"));
+    assert!(!contents.contains("HOSTTOOLS_DIR"));
+    let path = directory.path().to_owned();
+    drop(directory);
+    assert!(!path.exists());
+    assert_eq!(
+        configuration::task_label(&["iw".into(), "-c".into(), "devshell".into()]),
+        "devshell"
+    );
+    assert_eq!(
+        configuration::task_label(&["virtual/kernel".into(), "-c".into(), "menuconfig".into()]),
+        "menuconfig"
+    );
+}
+
 #[test]
 fn relay_command_preserves_bitbake_arguments_without_a_shell() {
     let (program, arguments) = command(

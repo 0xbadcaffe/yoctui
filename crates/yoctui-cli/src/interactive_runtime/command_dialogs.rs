@@ -9,7 +9,10 @@ impl InteractiveRuntime {
         if runtime.app.command_palette_open {
             let global_search_edit = runtime.app.command_palette_mode
                 == yoctui_model::CommandPaletteMode::GlobalRegexSearch
-                && matches!(input, Input::Backspace | Input::CtrlU | Input::Char(_));
+                && matches!(
+                    input,
+                    Input::Backspace | Input::CtrlU | Input::Char(_) | Input::Alt('n')
+                );
             let global_search_close = runtime.app.command_palette_mode
                 == yoctui_model::CommandPaletteMode::GlobalRegexSearch
                 && input == Input::Esc;
@@ -20,6 +23,15 @@ impl InteractiveRuntime {
                         &mut runtime.app,
                         Action::ActivateCommandPalette,
                     ),
+                    Input::Alt('n')
+                        if runtime.app.command_palette_mode
+                            == yoctui_model::CommandPaletteMode::GlobalRegexSearch =>
+                    {
+                        compatibility_workspace_action(
+                            &mut runtime.app,
+                            Action::ToggleGlobalSearchTarget,
+                        )
+                    }
                     Input::Esc => compatibility_workspace_action(
                         &mut runtime.app,
                         Action::CloseCommandPalette,

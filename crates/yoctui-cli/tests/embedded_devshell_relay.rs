@@ -23,9 +23,24 @@ async fn fake_handoff(wrapper_exit: i32) {
     fs::write(
         &bitbake,
         r#"#!/usr/bin/python3
-import os, shlex, subprocess, sys, tempfile
+import os, re, shlex, subprocess, sys, tempfile
 from pathlib import Path
-assert sys.argv[1:] == ['qemu-helper-native', '-c', 'devshell']
+assert sys.argv[1:4] == ['qemu-helper-native', '-c', 'devshell']
+assert sys.argv[4] == '-R'
+config = Path(sys.argv[5]).read_text()
+assert 'OE_TERMINAL = "custom"' in config
+assignments = {}
+for line in config.splitlines():
+    match = re.fullmatch(r'([A-Za-z_:\-]+) = "(.*)"', line)
+    assert match, f'not a .conf assignment: {line}'
+    key, value = match.groups()
+    if value.startswith('${@bytes.fromhex('):
+        expression = re.fullmatch(r"\$\{@bytes.fromhex\('([0-9a-f]*)'\).decode\('utf-8'\)\}", value)
+        assert expression, value
+        value = bytes.fromhex(expression[1]).decode('utf-8')
+    assignments[key] = value
+assert assignments['OE_TERMINAL_CUSTOMCMD'] == os.environ['OE_TERMINAL_CUSTOMCMD']
+assert "PATH:prepend:task-devshell" in config
 assert os.environ['OE_TERMINAL'] == 'custom'
 additions = os.environ['BB_ENV_PASSTHROUGH_ADDITIONS'].split()
 assert all(item in additions for item in ['OE_TERMINAL', 'OE_TERMINAL_CUSTOMCMD'])
@@ -34,7 +49,7 @@ task = build / 'tmp/work/helper/sources'
 with tempfile.NamedTemporaryFile() as pidfile:
     command = shlex.join([str(build / 'oe-gnome-terminal-phonehome'), pidfile.name,
                           str(task / 'generated devshell wrapper')])
-    argv = shlex.split(os.environ['OE_TERMINAL_CUSTOMCMD'].replace('{command}', command))
+    argv = shlex.split(assignments['OE_TERMINAL_CUSTOMCMD'].replace('{command}', command))
     result = subprocess.run(argv, cwd=task, timeout=5)
 sys.exit(result.returncode)
 "#,
@@ -74,7 +89,7 @@ sys.exit(result.returncode)
     );
     assert!(stdout.contains(task.to_str().unwrap()), "{stdout}");
     if wrapper_exit != 0 {
-        assert!(stderr.contains("menuconfig exited"), "{stderr}");
+        assert!(stderr.contains("devshell exited"), "{stderr}");
     }
     assert!(
         !root
@@ -88,6 +103,8 @@ sys.exit(result.returncode)
         phonehome.is_file() && wrapper.is_file(),
         "source fixtures must not be deleted by cleanup"
     );
+    assert_eq!(fs::read_dir(runtime.join("yoctui")).unwrap().count(), 0);
+    assert!(stdout.contains("Preparing devshell"), "{stdout}");
 }
 
 #[tokio::test]

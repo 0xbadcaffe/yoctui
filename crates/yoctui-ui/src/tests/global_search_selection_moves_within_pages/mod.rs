@@ -46,7 +46,28 @@ fn global_search_selection_moves_within_pages() {
     assert_eq!(sixth, fifth + 1);
 
     let output = rendered_text(&search_app(6), 100, 25);
-    assert!(output.contains("PgUp/PgDn page"), "{output}");
+    assert!(output.contains("PgUp/Dn page"), "{output}");
+}
+
+#[test]
+fn streaming_search_renders_matches_while_scanning_and_explicit_file_names_mode() {
+    let mut app = search_app(1);
+    let hits = app.global_search_content.hits()[..3].to_vec();
+    app.global_search_content = yoctui_model::GlobalSearchContentState::Streaming {
+        generation: 1,
+        query: "match".into(),
+        hits,
+    };
+    for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+        let text = rendered_text(&app, width, height);
+        assert!(text.contains("scanning"), "{text}");
+        assert!(text.contains("log-01"), "partial result missing: {text}");
+        assert!(text.contains("Alt+n names"), "{text}");
+    }
+    app.global_search_target = yoctui_model::GlobalSearchTarget::FileNames;
+    let text = rendered_text(&app, 160, 50);
+    assert!(text.contains("File Names Regex Search"));
+    assert!(text.contains("Alt+n contents"));
 }
 
 fn loading_search(workspace: bool) -> App {

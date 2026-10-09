@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.329 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.330 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -7,17 +7,17 @@
 │▾ OVERVIEW               ││ 1 Artifacts  │  2 Packages  │  3 Files  │  4 systemd  │  5 D-Bus  │  6 udev         ││▾ PRIMARY FACTS                             │
 │  ▱ Dashboard            ││┌Rootfs packages · installed bytes────────────┐┌Exact composition table · 126400000 ┐││Rootfs composition                          │
 │  ▱ Insights             │││                  ⣀⣀⣀⣀⣄⣀⣀⣀⡀                  ││Category   Pkgs  Exact bytes %      │││View: Rootfs packages                       │
-│▾ CONTENT                │││             ⢀⣤⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣤⣄              ││● base sys 90    46800000    37.02% │││State: partial · 1 limitation(s)            │
-│    Layers               │││          ⢀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣀           ││● librarie 110   34100000    26.97% │││Image: core-image-minimal                   │
-│    Recipes              │││         ⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀         ││● kernel a 50    18900000    14.95% │││Path:                                       │
-│    Packages             │││       ⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣆        ││● locales  70    11400000    9.01%  │││/workspace/yocto/build/tmp/deploy/images/qem│
-│    Images               │││      ⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇       ││● utilitie 70    8800000     6.96%  │││ux86-64/core-image-minimal-qemux86-64.rootfs│
-│  ▱ Hardware             │││      ⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆      ││● Other    22    6400000     5.06%  │││.ext4                                       │
-│    Kernel               │││     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿      ││                                    │││Installed packages: available               │
-│    U-Boot / BIOS        │││     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿      ││                                    │││Filesystem tree: partial · 1 limitation(s)  │
-│    SDK                  │││     ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁     ││                                    │││Offline system map: available               │
-│▾ BUILD                  │││     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿      ││                                    │││                                            │
-│    Tasks                │││     ⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏      ││                                    │││Exact totals                                │
+│    Tasks                │││             ⢀⣤⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣤⣄              ││● base sys 90    46800000    37.02% │││State: partial · 1 limitation(s)            │
+│▾ CONTENT                │││          ⢀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣀           ││● librarie 110   34100000    26.97% │││Image: core-image-minimal                   │
+│    Layers               │││         ⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀         ││● kernel a 50    18900000    14.95% │││Path:                                       │
+│    Recipes              │││       ⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣆        ││● locales  70    11400000    9.01%  │││/workspace/yocto/build/tmp/deploy/images/qem│
+│    Packages             │││      ⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇       ││● utilitie 70    8800000     6.96%  │││ux86-64/core-image-minimal-qemux86-64.rootfs│
+│    Images               │││      ⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆      ││● Other    22    6400000     5.06%  │││.ext4                                       │
+│  ▱ Hardware             │││     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿      ││                                    │││Installed packages: available               │
+│    Kernel               │││     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿      ││                                    │││Filesystem tree: partial · 1 limitation(s)  │
+│    U-Boot / BIOS        │││     ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁     ││                                    │││Offline system map: available               │
+│    SDK                  │││     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿      ││                                    │││                                            │
+│▾ BUILD                  │││     ⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏      ││                                    │││Exact totals                                │
 │  ▱ Logs             LIVE│││      ⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟       ││                                    │││Package bytes: 126400000                    │
 │  ▱ Errors               │││       ⠙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠁       ││                                    │││Package files: 4735                         │
 │    Configuration        │││        ⠈⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠋         ││                                    │││Filesystem bytes: 1198305                   │

@@ -204,7 +204,7 @@ fn literal_shell_uses_reference_geometry_palette_and_command_rail() {
 #[test]
 fn literal_navigator_projects_typed_project_state_and_full_row_selection() {
     let mut app = literal_reference_app();
-    app.navigator_selection = 2; // Separate Layers selection fixture, not canonical Tasks identity.
+    app.navigator_selection = 3; // Separate Layers selection fixture, not canonical Tasks identity.
     let mut terminal = Terminal::new(TestBackend::new(LITERAL_WIDTH, LITERAL_HEIGHT)).unwrap();
     terminal
         .draw(|frame| render_at(frame, &app, literal_now()))

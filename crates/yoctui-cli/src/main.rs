@@ -233,9 +233,7 @@ mod render_scheduler;
 mod source_git;
 mod telemetry_scheduler;
 
-use global_search::{
-    GlobalSearchCancellation, GlobalSearchPlan, GlobalSearchScanResult, scan_global_content,
-};
+use global_search::{GlobalSearchCancellation, GlobalSearchPlan, GlobalSearchScanResult};
 
 // Two workers keep the reactor responsive while one worker is inside one of the
 // bounded synchronous terminal/listener polls. More workers add idle scheduler

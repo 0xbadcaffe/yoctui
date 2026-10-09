@@ -1,8 +1,7 @@
-use yoctui_app::PrefixCommand;
 use yoctui_model::{App, ClientDaemonLifecycle, Effect};
 use yoctui_protocol::daemon::{
-    ClientLayoutEvent, CommandRequest, DaemonCommand, DaemonDevtoolOperation,
-    DaemonTestSelftestRequest, JobId, PaneId, PtySessionId, RequestId, TerminalDimensions,
+    CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonTestSelftestRequest, JobId,
+    RequestId, TerminalDimensions,
 };
 
 use super::{
@@ -11,7 +10,6 @@ use super::{
         qa_capability_request, qemu_executable, sdk_context, wic_executable, wire_qemu_request,
         wire_sdk_operation, wire_wic_create,
     },
-    terminal_control::prefix_daemon_command,
 };
 
 impl InteractiveDaemonRuntime {
@@ -42,36 +40,6 @@ impl InteractiveDaemonRuntime {
             request_id,
             expected_generation: command.expected_generation(app.daemon.generation),
             command,
-        })?;
-        Ok(RuntimeEffectRoute::Daemon(request_id))
-    }
-
-    pub fn route_prefix(
-        &mut self,
-        app: &App,
-        command: PrefixCommand,
-    ) -> Result<RuntimeEffectRoute, ClientRuntimeError> {
-        let Some(daemon_command) = prefix_daemon_command(app, command)? else {
-            return Ok(RuntimeEffectRoute::ClientLocal);
-        };
-        if command == PrefixCommand::TakeControl
-            && let Some(session) = app.selected_terminal_session()
-        {
-            self.transport
-                .pty_layout(ClientLayoutEvent::AttachSession {
-                    pane_id: PaneId(app.pane_layout.focused.0),
-                    session_id: PtySessionId(session.id),
-                })?;
-        }
-        let request_id = RequestId(self.next_request);
-        self.next_request = self
-            .next_request
-            .checked_add(1)
-            .ok_or(ClientRuntimeError::RequestSpaceExhausted)?;
-        self.transport.command(CommandRequest {
-            request_id,
-            expected_generation: daemon_command.expected_generation(app.daemon.generation),
-            command: daemon_command,
         })?;
         Ok(RuntimeEffectRoute::Daemon(request_id))
     }

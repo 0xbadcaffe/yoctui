@@ -253,9 +253,14 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     app.notification =
                         Some("Terminal already has a writer; it remains read-only here.".into());
                 } else if let Some(details) = app.selected_terminal_details() {
+                    let session_id = session.id;
+                    let expected_epoch = details.writer_epoch;
+                    app.focus = FocusTarget::Workspace;
+                    app.focus_return = None;
+                    app.terminal.mode = TerminalWorkbenchMode::Live;
                     return Some(Effect::Terminal(TerminalEffect::TakeControl {
-                        session_id: session.id,
-                        expected_epoch: details.writer_epoch,
+                        session_id,
+                        expected_epoch,
                     }));
                 }
             }

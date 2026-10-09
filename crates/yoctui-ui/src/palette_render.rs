@@ -72,13 +72,19 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     let workspace_search = global_search && app.global_search_root.is_some();
     clear_popup(frame, app, popup);
     let outer = Block::default()
-        .title(if workspace_search {
-            "Workspace Regex Search"
-        } else if global_search {
-            "Global Regex Search"
-        } else {
-            "Command Palette"
-        })
+        .title(
+            if global_search
+                && app.global_search_target == yoctui_model::GlobalSearchTarget::FileNames
+            {
+                "File Names Regex Search"
+            } else if workspace_search {
+                "Workspace Regex Search"
+            } else if global_search {
+                "Global Regex Search"
+            } else {
+                "Command Palette"
+            },
+        )
         .borders(Borders::ALL)
         .style(palette.base())
         .border_style(palette.focus());
@@ -124,7 +130,12 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     let end = start.saturating_add(visible_count).min(total);
     let result_label = if global_search { "Results" } else { "Commands" };
     let content_state = match &app.global_search_content {
-        yoctui_model::GlobalSearchContentState::Loading { .. } if global_search => " · scanning…",
+        yoctui_model::GlobalSearchContentState::Loading { .. }
+        | yoctui_model::GlobalSearchContentState::Streaming { .. }
+            if global_search =>
+        {
+            " · scanning…"
+        }
         yoctui_model::GlobalSearchContentState::Ready {
             truncated: true, ..
         } if global_search => " · limit reached",
@@ -175,11 +186,16 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
             StateView {
                 kind: StateKind::Loading,
                 summary: format!(
-                    "Searching {} text files…",
+                    "Searching {} {}…",
                     if workspace_search {
                         "workspace"
                     } else {
                         "build and generated rootfs"
+                    },
+                    if app.global_search_target == yoctui_model::GlobalSearchTarget::FileNames {
+                        "file names"
+                    } else {
+                        "text files"
                     }
                 ),
                 detail: Some("Results are bounded and generated caches are excluded.".into()),
@@ -386,7 +402,11 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(
         Paragraph::new(bounded_cell_text(
             if global_search {
-                "Content regex · ↑/↓ select · PgUp/PgDn page · Enter open · Esc close"
+                if app.global_search_target == yoctui_model::GlobalSearchTarget::FileNames {
+                    "File names · Alt+n contents · ↑↓ select · PgUp/Dn page · Enter open · Esc close"
+                } else {
+                    "File contents · Alt+n names · ↑↓ select · PgUp/Dn page · Enter open · Esc close"
+                }
             } else {
                 "Esc close · Enter run · ↑/↓ select · Type search · Backspace edit · Ctrl+U clear"
             },

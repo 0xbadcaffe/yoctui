@@ -31,6 +31,23 @@ fn errors_history_routes_tabs_viewer_and_resolved_cleanup_keys() {
         Some(Action::ScrollErrorLog { delta: 20 })
     );
     assert_eq!(errors_action(&app, Input::Esc), Some(Action::CloseErrorLog));
+    app.screen = yoctui_model::Screen::Errors;
+    app.focus = FocusTarget::Workspace;
+    assert_eq!(
+        focus_action_for_app(&app, Input::Esc),
+        Some(Action::CloseErrorLog)
+    );
+    let _ = yoctui_model::update(&mut app, Action::CloseErrorLog);
+    assert!(app.error_workspace.viewer.is_none());
+    assert_eq!(app.focus, FocusTarget::Workspace);
+    assert_eq!(
+        app.error_workspace.view,
+        yoctui_model::ErrorWorkspaceView::History
+    );
+    assert_eq!(
+        focus_action_for_app(&app, Input::Esc),
+        Some(Action::Focus(FocusTarget::Navigator))
+    );
 }
 
 #[test]

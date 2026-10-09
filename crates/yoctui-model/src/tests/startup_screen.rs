@@ -46,7 +46,7 @@ fn startup_screen_restoration_preserves_non_catalog_screens_with_default_context
         Screen::Bbmask,
     ] {
         let mut app = App::new(16, 4096);
-        app.navigator_selection = 7;
+        app.navigator_selection = 8;
         app.restore_startup_screen(screen);
         assert_eq!(app.screen, screen);
         assert_eq!(app.navigator_screen(), Screen::Dashboard);

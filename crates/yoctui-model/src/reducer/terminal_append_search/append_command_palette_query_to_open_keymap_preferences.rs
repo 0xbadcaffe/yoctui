@@ -2,6 +2,19 @@ use super::*;
 
 pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
     match action {
+        Action::ToggleGlobalSearchTarget => {
+            if app.command_palette_open
+                && app.command_palette_mode == CommandPaletteMode::GlobalRegexSearch
+            {
+                app.global_search_target = match app.global_search_target {
+                    GlobalSearchTarget::Content => GlobalSearchTarget::FileNames,
+                    GlobalSearchTarget::FileNames => GlobalSearchTarget::Content,
+                };
+                app.global_search_generation = app.global_search_generation.wrapping_add(1).max(1);
+                app.global_search_content = GlobalSearchContentState::Idle;
+                app.command_palette_selection = 0;
+            }
+        }
         Action::AppendCommandPaletteQuery(character) if app.command_palette_open => {
             if !character.is_control()
                 && app.command_palette_query.chars().count() < MAX_COMMAND_PALETTE_QUERY_CHARS
@@ -105,6 +118,13 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BeginGlobalContentSearch
         | Action::AppendMetadataQuery(_)
         | Action::BackspaceMetadataQuery => {}
+        Action::GlobalContentSearchProgress {
+            generation,
+            query,
+            hits,
+        } => {
+            super::search_progress::append(app, generation, query, hits);
+        }
         Action::GlobalContentSearchLoaded {
             generation,
             query,
@@ -233,6 +253,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 && matches!(
                     app.global_search_content,
                     GlobalSearchContentState::Ready { .. }
+                        | GlobalSearchContentState::Streaming { .. }
                 )
             {
                 app.command_palette_open = true;
@@ -240,6 +261,15 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::CloseCommandPalette => {
             app.command_palette_open = false;
+            if app.global_search_content.loading() {
+                app.global_search_content = GlobalSearchContentState::Ready {
+                    generation: app.global_search_generation,
+                    query: app.command_palette_query.clone(),
+                    hits: app.global_search_content.hits().to_vec(),
+                    truncated: true,
+                    searched_scopes: vec!["Search cancelled; partial results retained".into()],
+                };
+            }
         }
         Action::OpenApplicationMenu => {
             app.command_palette_open = false;

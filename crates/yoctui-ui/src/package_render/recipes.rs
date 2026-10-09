@@ -33,8 +33,7 @@ pub(crate) fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     };
     let list = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(chunks[0]);
     let visible_rows = usize::from(list[1].height.saturating_sub(3));
-    let viewport =
-        yoctui_model::centered_viewport_range(filtered_selection, recipe_count, visible_rows);
+    let viewport = recipe_page_viewport(filtered_selection, recipe_count, visible_rows);
     frame.render_widget(
         Paragraph::new(search_line(
             app,
@@ -118,6 +117,17 @@ pub(crate) fn recipes(frame: &mut Frame, app: &App, area: Rect) {
             .scroll((app.recipe_preview_scroll.min(u16::MAX as usize) as u16, 0)),
         chunks[1],
     );
+}
+
+fn recipe_page_viewport(selection: Option<usize>, total: usize, rows: usize) -> std::ops::Range<usize> {
+    if total == 0 || rows == 0 {
+        return 0..0;
+    }
+    // Let the highlight traverse the visible page before changing the list.
+    // Selection is a filtered ordinal, not the backend inventory index.
+    let selection = selection.unwrap_or(0).min(total - 1);
+    let start = selection / rows * rows;
+    start..start.saturating_add(rows).min(total)
 }
 
 pub(crate) fn devtool_workspace(frame: &mut Frame, app: &App, area: Rect) {

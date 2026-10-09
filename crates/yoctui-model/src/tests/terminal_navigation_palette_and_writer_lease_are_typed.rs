@@ -22,6 +22,7 @@ fn ux_terminal_navigation_palette_and_writer_lease_are_typed() {
     );
 
     app.daemon.pty_details[0].writer = None;
+    app.focus = FocusTarget::Navigator;
     assert_eq!(
         update(&mut app, Action::TerminalTakeControl),
         Some(Effect::Terminal(TerminalEffect::TakeControl {
@@ -29,6 +30,8 @@ fn ux_terminal_navigation_palette_and_writer_lease_are_typed() {
             expected_epoch: 9,
         }))
     );
+    assert_eq!(app.focus, FocusTarget::Workspace);
+    assert_eq!(app.terminal.mode, TerminalWorkbenchMode::Live);
     app.daemon.pty_details[0].writer = Some([7; 16]);
     assert_eq!(
         update(&mut app, Action::TerminalReleaseControl),

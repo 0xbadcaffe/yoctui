@@ -3,8 +3,16 @@ use std::path::PathBuf;
 pub const MAX_GLOBAL_SEARCH_HITS: usize = 500;
 pub const MAX_GLOBAL_SEARCH_PREVIEW_CHARS: usize = 320;
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum GlobalSearchTarget {
+    #[default]
+    Content,
+    FileNames,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum GlobalSearchContentKind {
+    FileName,
     Recipe,
     Configuration,
     Class,
@@ -18,6 +26,7 @@ pub enum GlobalSearchContentKind {
 impl GlobalSearchContentKind {
     pub const fn label(self) -> &'static str {
         match self {
+            Self::FileName => "File name",
             Self::Recipe => "Recipe",
             Self::Configuration => "Configuration",
             Self::Class => "Class",
@@ -48,6 +57,11 @@ pub enum GlobalSearchContentState {
         generation: u64,
         query: String,
     },
+    Streaming {
+        generation: u64,
+        query: String,
+        hits: Vec<GlobalSearchHit>,
+    },
     Ready {
         generation: u64,
         query: String,
@@ -65,12 +79,12 @@ pub enum GlobalSearchContentState {
 impl GlobalSearchContentState {
     pub fn hits(&self) -> &[GlobalSearchHit] {
         match self {
-            Self::Ready { hits, .. } => hits,
+            Self::Ready { hits, .. } | Self::Streaming { hits, .. } => hits,
             Self::Idle | Self::Loading { .. } | Self::Failed { .. } => &[],
         }
     }
 
     pub const fn loading(&self) -> bool {
-        matches!(self, Self::Loading { .. })
+        matches!(self, Self::Loading { .. } | Self::Streaming { .. })
     }
 }

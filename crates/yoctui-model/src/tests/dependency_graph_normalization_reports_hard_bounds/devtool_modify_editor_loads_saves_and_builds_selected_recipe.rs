@@ -69,4 +69,21 @@ fn devtool_modify_editor_loads_saves_and_builds_selected_recipe() {
             force: false,
         }))
     );
+    let editor = app
+        .dialogs
+        .get(1)
+        .cloned()
+        .expect("workspace remains below review");
+    let _ = update(&mut app, Action::CancelRecipeTask);
+    assert_eq!(app.active_dialog(), Some(&editor));
+    let _ = update(&mut app, Action::BeginRecipeEditorBuild);
+    assert!(matches!(
+        update(&mut app, Action::ConfirmRecipeTask),
+        Some(Effect::Start(_))
+    ));
+    assert_eq!(app.active_dialog(), Some(&editor));
+    assert_eq!(app.build.status, BuildStatus::LoadingWorkspace);
+    // Closing the editor is explicit; no update-recipe/finish effect is emitted.
+    assert!(update(&mut app, Action::CloseRecipeEditor).is_none());
+    assert!(app.active_dialog().is_none());
 }

@@ -187,6 +187,7 @@ impl App {
             global_search_generation: 0,
             global_search_content: GlobalSearchContentState::Idle,
             global_search_root: None,
+            global_search_target: GlobalSearchTarget::Content,
             error_selection: 0,
             error_workspace: ErrorWorkspaceState::default(),
             recipe_selection: 0,

@@ -62,6 +62,9 @@ pub(crate) fn pane_focus_route(app: &App, input: Input) -> Option<Action> {
 
 pub(crate) fn workspace_owns_focus_key(app: &App, input: Input) -> bool {
     (input == Input::Esc && app.screen == Screen::Layers && app.layer_browser.is_some())
+        || (input == Input::Esc
+            && app.screen == Screen::Errors
+            && app.error_workspace.viewer.is_some())
         || (matches!(input, Input::Tab | Input::BackTab)
             && matches!(
                 app.screen,
@@ -74,6 +77,7 @@ pub(crate) fn global_search_return_action(app: &App) -> Option<Action> {
         && matches!(
             app.global_search_content,
             yoctui_model::GlobalSearchContentState::Ready { .. }
+                | yoctui_model::GlobalSearchContentState::Streaming { .. }
         ))
     .then_some(Action::RestoreGlobalSearchResults)
 }

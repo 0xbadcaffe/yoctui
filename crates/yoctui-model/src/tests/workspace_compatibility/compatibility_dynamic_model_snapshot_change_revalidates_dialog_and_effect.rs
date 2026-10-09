@@ -4,7 +4,7 @@ use super::*;
 fn compatibility_dynamic_model_snapshot_change_revalidates_dialog_and_effect() {
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Packages;
-    app.navigator_selection = 3;
+    app.navigator_selection = 4;
     app.dialogs.push_front(Dialog::BuildOptions);
     app.focus = crate::FocusTarget::Dialog;
     app.focus_return = Some(crate::FocusTarget::Inspector);

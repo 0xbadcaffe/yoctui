@@ -20,8 +20,12 @@ impl App {
     }
 
     pub fn overview_timeline(&self, now: SystemTime) -> Vec<OverviewTimelineRow> {
-        let mut tasks = self.tasks.values().collect::<Vec<_>>();
-        tasks.sort_by(|left, right| left.id.0.cmp(&right.id.0));
+        // Completion moves tasks out of the active map. Keep their observed
+        // timings visible after a build finishes and after snapshot replay.
+        let mut tasks = self.tasks.values()
+            .chain(self.completed_tasks.iter().map(|completed| &completed.task))
+            .collect::<Vec<_>>();
+        tasks.sort_by_key(|task| (std::cmp::Reverse(task.started), &task.id.0));
         tasks.truncate(MAX_OVERVIEW_ROWS);
         let origin = tasks.iter().filter_map(|task| task.started).min();
         let by_id = tasks
@@ -66,7 +70,9 @@ impl App {
                 duration_millis: task
                     .elapsed_at(now)
                     .map_or(0, |value| value.as_millis() as u64),
-                critical: critical.contains(&task.id.0),
+                timing_available: task.started.is_some()
+                    && (task.state == TaskState::Active || task.finished.is_some()),
+                critical: task.started.is_some() && critical.contains(&task.id.0),
             })
             .collect::<Vec<_>>();
         rows.sort_by_key(|row| (row.start_millis, row.label.clone()));

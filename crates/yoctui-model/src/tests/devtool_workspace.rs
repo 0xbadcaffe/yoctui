@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn devtool_workspace_is_a_distinct_navigator_screen_with_devtool_authority() {
-    assert_eq!(NAVIGATOR_SCREENS[3], Screen::Recipes);
+    assert_eq!(NAVIGATOR_SCREENS[4], Screen::Recipes);
     assert_eq!(NAVIGATOR_SCREENS[20], Screen::Devtool);
     assert_eq!(
         workspace_screen_destination(Screen::Devtool),

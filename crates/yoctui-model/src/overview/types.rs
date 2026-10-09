@@ -56,6 +56,7 @@ pub struct OverviewTimelineRow {
     pub state: TaskState,
     pub start_millis: u64,
     pub duration_millis: u64,
+    pub timing_available: bool,
     pub critical: bool,
 }
 

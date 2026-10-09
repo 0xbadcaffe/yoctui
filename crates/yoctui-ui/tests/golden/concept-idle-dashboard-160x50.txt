@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.329 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.330 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -7,17 +7,17 @@
 │▾ OVERVIEW               ││Overall  build not started · 0%                                                      ││Environment                                 │
 │  ▱ Dashboard            ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                                ││Project          : core-image-minimal       │
 │  ▱ Insights             ││Current Build : core-image-minimal        │Last Build / Job                          ││Machine          : qemux86-64               │
-│▾ CONTENT                ││Current Task  : none                      │✓ Succeeded core-image-minimal · 00:04:55 ││Distro           : poky                     │
-│    Layers               ││Build Status  : Idle · Exit code: none    │Work · core-image-minimal                 ││Yocto release    : scarthgap                │
-│    Recipes              ││Daemon Status : Connected                 │                                          ││Layers enabled   : 7                        │
-│    Packages             ││Warnings: 0  Errors: 0                    │                                          ││                                            │
-│    Images               │└─────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
-│  ▱ Hardware             │┌Recent Builds · Job History──────────────────────────────────────────────────────────┐│Source           : /workspace/yocto         │
-│    Kernel               ││#   Image / Operation                                       Result         Duration  ││Build directory  : /workspace/yocto/build   │
-│    U-Boot / BIOS        ││1   core-image-minimal                                      ✓ Succeeded    00:04:55  ││Disk             : 55.5 GiB free            │
-│    SDK                  ││2   busybox                                                 ✓ Succeeded    00:00:17  ││                                            │
-│▾ BUILD                  ││3   core-image-minimal                                      ✕ Failed       00:01:48  ││Enabled Actions                             │
-│    Tasks                ││4   virtual/kernel                                          ✓ Succeeded    00:00:54  ││[Alt+b] Build image                         │
+│    Tasks                ││Current Task  : none                      │✓ Succeeded core-image-minimal · 00:04:55 ││Distro           : poky                     │
+│▾ CONTENT                ││Build Status  : Idle · Exit code: none    │Work · core-image-minimal                 ││Yocto release    : scarthgap                │
+│    Layers               ││Daemon Status : Connected                 │                                          ││Layers enabled   : 7                        │
+│    Recipes              ││Warnings: 0  Errors: 0                    │                                          ││                                            │
+│    Packages             │└─────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
+│    Images               │┌Recent Builds · Job History──────────────────────────────────────────────────────────┐│Source           : /workspace/yocto         │
+│  ▱ Hardware             ││#   Image / Operation                                       Result         Duration  ││Build directory  : /workspace/yocto/build   │
+│    Kernel               ││1   core-image-minimal                                      ✓ Succeeded    00:04:55  ││Disk             : 55.5 GiB free            │
+│    U-Boot / BIOS        ││2   busybox                                                 ✓ Succeeded    00:00:17  ││                                            │
+│    SDK                  ││3   core-image-minimal                                      ✕ Failed       00:01:48  ││Enabled Actions                             │
+│▾ BUILD                  ││4   virtual/kernel                                          ✓ Succeeded    00:00:54  ││[Alt+b] Build image                         │
 │  ▱ Logs             LIVE││                                                                                     ││[F2] Monitor tasks                          │
 │  ▱ Errors               ││                                                                                     ││[l] View logs                               │
 │    Configuration        ││                                                                                     ││[e] View errors                             │

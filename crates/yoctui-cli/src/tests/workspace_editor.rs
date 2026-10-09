@@ -1,5 +1,29 @@
 use super::*;
 
+#[tokio::test]
+async fn decompiled_dts_opens_document_at_start_and_scopes_search_to_current_file() {
+    let fixture = tempfile::tempdir().unwrap();
+    let path = fixture.path().join("board.dts");
+    fs::write(&path, "/dts-v1/;\n/ { model = \"board\"; };\n").unwrap();
+    let mut app = App::new(32, 8192);
+    open_single_workspace_file(&mut app, "Images decompiled DTS".into(), path.clone()).await;
+    let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() else {
+        panic!("editor missing");
+    };
+    assert_eq!(
+        editor.context,
+        yoctui_model::SourceEditorContext::DeviceTree
+    );
+    assert_eq!(editor.focus, yoctui_model::RecipeEditorFocus::Document);
+    assert_eq!(editor.document.position().line, 0);
+    assert_eq!(editor.document.position().column, 0);
+    assert_eq!(editor.language, yoctui_model::SourceLanguage::DeviceTree);
+    assert!(!editor.is_dirty());
+    update(&mut app, Action::OpenRecipeEditorWorkspaceSearch);
+    let plan = GlobalSearchPlan::for_app(&app, fixture.path(), "board".into());
+    assert_eq!(plan.file, Some(path));
+}
+
 #[test]
 fn workspace_editor_discovers_more_than_the_old_visible_file_limit() {
     let root = std::env::temp_dir().join(format!(

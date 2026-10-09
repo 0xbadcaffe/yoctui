@@ -86,6 +86,12 @@ fn render_timeline(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         .iter()
         .take(usize::from(area.height.saturating_sub(2)))
         .map(|row| {
+            if !row.timing_available {
+                return Line::from(format!(
+                    "  {:<24.24} {:>7}   │ timing not retained",
+                    row.label, "--"
+                ));
+            }
             let start =
                 usize::try_from(u128::from(row.start_millis) * width as u128 / u128::from(total))
                     .unwrap_or(0)

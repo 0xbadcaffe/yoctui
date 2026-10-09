@@ -125,15 +125,24 @@ impl InteractiveRuntime {
                         command,
                         PrefixCommand::CreateSession | PrefixCommand::TakeControl
                     ) {
-                        if let Some(daemon_client) = runtime.daemon_runtime.as_mut() {
-                            if let Err(error) = daemon_client.route_prefix(&runtime.app, command) {
-                                runtime.app.notification =
-                                    Some(format!("Prefix command failed: {error}"));
-                            }
+                        // Use the same checked launch/control routes as direct keys.
+                        // The old shortcut bypassed new-session selection and then
+                        // replaced failures with a misleading "requested" notice.
+                        let action = if command == PrefixCommand::CreateSession {
+                            Action::TerminalCreateBuildShell
                         } else {
-                            runtime.app.notification =
-                                Some("Daemon is unavailable for terminal sessions.".into());
+                            Action::TerminalTakeControl
+                        };
+                        if let Some(effect) =
+                            compatibility_workspace_action(&mut runtime.app, action)
+                        {
+                            let _ = submit_daemon_effect(
+                                &mut runtime.daemon_runtime,
+                                &mut runtime.app,
+                                &effect,
+                            );
                         }
+                        return Ok(true);
                     }
                     if command == PrefixCommand::Detach
                         && let Some(daemon_client) = runtime.daemon_runtime.as_mut()

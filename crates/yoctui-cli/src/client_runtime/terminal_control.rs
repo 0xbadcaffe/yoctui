@@ -1,5 +1,8 @@
+#[cfg(test)]
 use yoctui_app::PrefixCommand;
-use yoctui_model::{App, ClientDaemonLifecycle, TerminalEffect};
+#[cfg(test)]
+use yoctui_model::ClientDaemonLifecycle;
+use yoctui_model::{App, TerminalEffect};
 use yoctui_protocol::daemon::{
     ClientLayoutEvent, CommandRequest, DaemonCommand, PaneId, PtyInput, PtyResize, PtySessionId,
     PtyViewport, RequestId, TerminalDimensions,
@@ -250,6 +253,7 @@ pub(super) fn wire_terminal_kind(
     }
 }
 
+#[cfg(test)]
 pub(super) fn prefix_daemon_command(
     app: &App,
     command: PrefixCommand,

@@ -327,7 +327,10 @@ pub(crate) fn source_structural_validation(
 
     if !matches!(
         language,
-        SourceLanguage::PlainText | SourceLanguage::Markdown | SourceLanguage::Yaml
+        SourceLanguage::PlainText
+            | SourceLanguage::Markdown
+            | SourceLanguage::Yaml
+            | SourceLanguage::Udev
     ) {
         for (open, close, label) in [
             ('{', '}', "braces"),

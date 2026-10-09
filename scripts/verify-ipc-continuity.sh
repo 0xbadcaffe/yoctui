@@ -146,12 +146,19 @@ for required in (
         raise SystemExit(f"bounded daemon transport contract is missing: {required}")
 for required in (
     "MAX_DAEMON_CLIENT_EVENTS_PER_TICK: usize = 32",
-    "connection.is_readable()?", "queue_event_frame(", "flush_event_frame()", "event_write_pending()",
+    "connection.is_readable()?", "queue_event_frame(", "match connection.flush_event_frame()",
+    "client_requests::service",
     "Duration::from_millis(2)", "Duration::from_secs(1)",
     "slow_client_disconnects", "forced_client_resynchronizations",
 ):
     if required not in daemon:
         raise SystemExit(f"slow-client isolation contract is missing: {required}")
+if not (
+    daemon.index("match connection.flush_event_frame()")
+    < daemon.index("client_requests::service")
+    < daemon.index("synchronize_bounded(")
+):
+    raise SystemExit("slow-client isolation requires pending-frame flush, then control, then event fan-out")
 print("bounded IPC source contracts valid")
 PY
   cargo test -q -p yoctui --bin yoctui bounded_priority_ingress_drops_only_cosmetic_events

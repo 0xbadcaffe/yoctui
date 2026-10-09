@@ -1,4 +1,5 @@
 use super::*;
+mod streaming;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn fixture_root() -> PathBuf {

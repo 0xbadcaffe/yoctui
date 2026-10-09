@@ -51,13 +51,16 @@ pub(crate) fn rootfs_udev_workspace(frame: &mut Frame, app: &App, area: Rect) {
         panes[0],
     );
     let rule = &inventory.udev_rules[selected];
-    let lines = rule
-        .preview
-        .lines()
-        .skip(app.rootfs_udev_preview_offset)
-        .take(usize::from(panes[1].height.saturating_sub(2)))
-        .map(Line::from)
-        .collect::<Vec<_>>();
+    let lines = source_preview(
+        &rule.preview,
+        &rule.logical_path.0.display().to_string(),
+        app,
+    )
+    .lines
+    .into_iter()
+    .skip(app.rootfs_udev_preview_offset)
+    .take(usize::from(panes[1].height.saturating_sub(2)))
+    .collect::<Vec<_>>();
     let preview = if lines.is_empty() {
         vec![Line::from(if rule.masked {
             "Masked by image /dev/null; no rules executed."
@@ -116,8 +119,8 @@ pub(crate) fn rootfs_systemd_workspace(frame: &mut Frame, app: &App, area: Rect)
         app.preferences.symbols == SymbolPreference::Unicode,
     );
     let title = cue.map_or_else(
-        || "Offline systemd service files · e edit · Enter/→ rootfs explorer".into(),
-        |cue| format!("Offline systemd service files · {cue} · e edit · Enter/→ rootfs explorer"),
+        || "Offline systemd service files · Enter/e view · → rootfs explorer".into(),
+        |cue| format!("Offline systemd service files · {cue} · Enter/e view · → rootfs explorer"),
     );
     let rows = inventory
         .systemd_services
@@ -199,9 +202,9 @@ pub(crate) fn rootfs_dbus_workspace(frame: &mut Frame, app: &App, area: Rect) {
         app.preferences.symbols == SymbolPreference::Unicode,
     );
     let title = cue.map_or_else(
-        || "Offline system-bus activation map · e edit · Enter/→ rootfs explorer".into(),
+        || "Offline system-bus activation map · Enter/e view · → rootfs explorer".into(),
         |cue| {
-            format!("Offline system-bus activation map · {cue} · e edit · Enter/→ rootfs explorer")
+            format!("Offline system-bus activation map · {cue} · Enter/e view · → rootfs explorer")
         },
     );
     let rows = inventory

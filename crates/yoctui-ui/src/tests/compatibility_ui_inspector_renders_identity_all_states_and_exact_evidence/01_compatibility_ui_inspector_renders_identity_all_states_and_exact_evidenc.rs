@@ -144,7 +144,7 @@ fn compatibility_ui_nav_actions_keep_navigation_local_and_gate_operations() {
     app.inspector_visible = true;
     app.screen = Screen::Logs;
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 2;
+    app.navigator_selection = 3;
     let navigator = rendered_text(&app, 180, 36);
     assert!(navigator.contains("Layers"), "{navigator}");
     assert!(!navigator.contains("? Layers"), "{navigator}");

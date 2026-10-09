@@ -182,6 +182,7 @@ pub struct App {
     pub global_search_generation: u64,
     pub global_search_content: GlobalSearchContentState,
     pub global_search_root: Option<PathBuf>,
+    pub global_search_target: GlobalSearchTarget,
     pub error_selection: usize,
     pub error_workspace: ErrorWorkspaceState,
     pub recipe_selection: usize,

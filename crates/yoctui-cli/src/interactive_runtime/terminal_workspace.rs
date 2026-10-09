@@ -72,8 +72,14 @@ impl InteractiveRuntime {
         } else if runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
             && !runtime.app.selected_terminal_is_writer()
         {
-            runtime.app.notification =
-                Some("Terminal is read-only; press o or Ctrl+B o to take writer control.".into());
+            runtime.app.notification = Some(match runtime.app.selected_terminal_session() {
+                Some(session) if session.lifecycle != yoctui_model::ClientDaemonLifecycle::Running =>
+                    "This terminal has exited; its history is read-only. Create a new shell with Ctrl+B c, or select a running session.".into(),
+                Some(_) if runtime.app.selected_terminal_details().is_some_and(|details| details.writer.is_some()) =>
+                    "Another client owns this terminal. Release control in that client before taking it here.".into(),
+                Some(_) => "Press o or Ctrl+B o to take writer control of this running terminal.".into(),
+                None => "Select a running terminal, or create a new shell with Ctrl+B c.".into(),
+            });
         }
     }
 }

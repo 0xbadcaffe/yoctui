@@ -155,6 +155,20 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     .and_then(RootfsComposition::system_inventory)
                     .and_then(|inventory| inventory.dbus_services.get(app.rootfs_dbus_selection))
                     .map(|service| service.host_path.clone()),
+                ImagesView::UdevRules => composition
+                    .and_then(RootfsComposition::system_inventory)
+                    .and_then(|inventory| inventory.udev_rules.get(app.rootfs_udev_selection))
+                    .filter(|rule| !rule.masked && rule.limitation.is_none())
+                    .and_then(|rule| {
+                        root.as_ref().map(|root| {
+                            root.join(
+                                rule.logical_path
+                                    .0
+                                    .strip_prefix("/")
+                                    .unwrap_or(&rule.logical_path.0),
+                            )
+                        })
+                    }),
                 _ => None,
             };
             if let (Some(root), Some(path)) = (root, path)

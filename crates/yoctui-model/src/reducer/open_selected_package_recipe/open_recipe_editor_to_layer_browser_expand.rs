@@ -17,6 +17,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             let language = files.first().map_or(SourceLanguage::PlainText, |path| {
                 SourceLanguage::from_path(path)
             });
+            let rootfs = recipe == "Rootfs system" || recipe.starts_with("Rootfs:");
             open_dialog(
                 app,
                 Dialog::RecipeEditor(RecipeEditor {
@@ -24,9 +25,17 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     root,
                     files,
                     file_inventory_truncated,
-                    context: SourceEditorContext::Recipe,
+                    context: if rootfs {
+                        SourceEditorContext::Rootfs
+                    } else {
+                        SourceEditorContext::Recipe
+                    },
                     selection: 0,
-                    focus: RecipeEditorFocus::Files,
+                    focus: if rootfs {
+                        RecipeEditorFocus::Document
+                    } else {
+                        RecipeEditorFocus::Files
+                    },
                     language,
                     document: TextAreaState::new(String::new()),
                     searching: false,
@@ -71,6 +80,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 editor.document.accept_external_text(content);
                 if let Some((line, column)) = editor.pending_search_position.take() {
                     editor.document.select_position(line, column, false);
+                } else if matches!(
+                    editor.context,
+                    SourceEditorContext::DeviceTree | SourceEditorContext::Rootfs
+                ) {
+                    editor.document.select_position(0, 0, false);
                 }
                 editor.document.set_mode(TextAreaMode::Normal);
                 editor.searching = false;
@@ -227,7 +241,6 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         Some("Save workspace changes before starting the recipe build.".into());
                 } else {
                     let recipe = editor.recipe;
-                    close_dialog(app);
                     begin_recipe_task_for(app, &recipe, None, false);
                 }
             }

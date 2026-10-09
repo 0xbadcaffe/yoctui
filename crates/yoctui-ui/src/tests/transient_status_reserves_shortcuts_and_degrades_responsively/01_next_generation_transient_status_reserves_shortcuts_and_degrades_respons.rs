@@ -408,7 +408,7 @@ fn next_generation_navigator_renders_authoritative_badges_and_collapsed_groups()
     assert!(expanded.contains("Errors         3"), "{expanded}");
     assert!(expanded.contains("Logs        LIVE"), "{expanded}");
 
-    app.navigator_selection = 10;
+    app.navigator_selection = 2;
     app.navigator_groups_expanded[2] = false;
     let collapsed = rendered_text(&app, 180, 40);
     assert!(collapsed.contains("▸ BUILD"), "{collapsed}");

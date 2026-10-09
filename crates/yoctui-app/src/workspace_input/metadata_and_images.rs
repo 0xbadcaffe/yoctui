@@ -193,7 +193,8 @@ pub fn images_workspace_action_for_view(
         return match key {
             Input::Char('[') => Some(Action::ScrollRootfsUdevPreview { delta: -1 }),
             Input::Char(']') => Some(Action::ScrollRootfsUdevPreview { delta: 1 }),
-            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
+            Input::Enter | Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
+            Input::Right => Some(Action::BrowseRootfsFilesystem),
             Input::Char('r') | Input::Alt('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
@@ -205,8 +206,8 @@ pub fn images_workspace_action_for_view(
         return match key {
             Input::Up | Input::Char('k') => Some(Action::SelectRootfsSystemdService { delta: -1 }),
             Input::Down | Input::Char('j') => Some(Action::SelectRootfsSystemdService { delta: 1 }),
-            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
-            Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
+            Input::Enter | Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
+            Input::Right => Some(Action::BrowseRootfsFilesystem),
             Input::Char('r') | Input::Alt('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
@@ -218,8 +219,8 @@ pub fn images_workspace_action_for_view(
         return match key {
             Input::Up | Input::Char('k') => Some(Action::SelectRootfsDbusService { delta: -1 }),
             Input::Down | Input::Char('j') => Some(Action::SelectRootfsDbusService { delta: 1 }),
-            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
-            Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
+            Input::Enter | Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
+            Input::Right => Some(Action::BrowseRootfsFilesystem),
             Input::Char('r') | Input::Alt('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
@@ -252,7 +253,7 @@ pub fn images_workspace_action_for_view(
         Input::Char('[') => Some(Action::SelectWicOutput { delta: -1 }),
         Input::Char(']') => Some(Action::SelectWicOutput { delta: 1 }),
         Input::Alt('o') | Input::Char('O') => Some(Action::OpenSelectedWicOutput),
-        Input::Char('o') | Input::Char('e') => Some(Action::OpenSelectedImageArtifact),
+        Input::Enter | Input::Char('o') | Input::Char('e') => Some(Action::OpenSelectedImageArtifact),
         Input::Char('v') => Some(Action::ShiftImagesView { delta: 2 }),
         Input::Char('m') => Some(Action::OpenSelectedImageArtifactAssociation(
             yoctui_model::ImageArtifactAssociation::Manifest,
@@ -266,7 +267,7 @@ pub fn images_workspace_action_for_view(
         Input::Char('w') => Some(Action::OpenSelectedImageArtifactAssociation(
             yoctui_model::ImageArtifactAssociation::Wic,
         )),
-        Input::Char('p') | Input::Enter => Some(Action::BeginSelectedRootfsComposition),
+        Input::Char('p') => Some(Action::BeginSelectedRootfsComposition),
         _ => None,
     }
 }

@@ -26,6 +26,24 @@ pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> 
         };
     }
 
+    if editor.context == yoctui_model::SourceEditorContext::DeviceTree
+        && editor.focus == Focus::Document
+        && editor.document.mode() != TextAreaMode::Insert
+    {
+        let line = match key {
+            Input::Home => Some(0),
+            Input::End => Some(usize::MAX),
+            _ => None,
+        };
+        if let Some(line) = line {
+            return Some(Action::EditRecipeEditor(yoctui_model::PopupEditorCommand::SelectPosition {
+                line,
+                column: 0,
+                extend: false,
+            }));
+        }
+    }
+
     if editor.focus == Focus::Files {
         return match key {
             Input::Esc | Input::Char('q') => Some(Action::CloseRecipeEditor),

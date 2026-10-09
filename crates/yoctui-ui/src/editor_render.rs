@@ -123,7 +123,12 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
         app,
         format!(
             "{} editor: {}",
-            if hardware { "Source" } else { "Recipe" },
+            match editor.context {
+                yoctui_model::SourceEditorContext::DeviceTree => "Device tree",
+                yoctui_model::SourceEditorContext::Rootfs => "Image file",
+                yoctui_model::SourceEditorContext::Recipe => "Recipe",
+                _ => "Source",
+            },
             editor.recipe
         ),
         DialogTone::Standard,
@@ -461,9 +466,10 @@ fn editor_pane_block<'a>(
 
 fn source_language_tree_style(language: SourceLanguage, palette: &ThemePalette) -> Style {
     let color = match language {
-        SourceLanguage::BitBake | SourceLanguage::Toml | SourceLanguage::Yaml => {
-            palette.syntax_name
-        }
+        SourceLanguage::BitBake
+        | SourceLanguage::Toml
+        | SourceLanguage::Yaml
+        | SourceLanguage::Udev => palette.syntax_name,
         SourceLanguage::C | SourceLanguage::Cpp | SourceLanguage::Rust => palette.syntax_keyword,
         SourceLanguage::Python | SourceLanguage::Shell | SourceLanguage::Make => {
             palette.syntax_operator

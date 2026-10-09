@@ -2,14 +2,17 @@
 
 use super::*;
 mod completed_progress;
+mod decompiled_dts;
 mod gitui_native_workspace;
 mod image_artifact_viewport;
+mod recipe_list_viewport;
 mod rootfs_browser;
 mod rootfs_dbus;
 mod rootfs_systemd;
 mod runqueue_completion;
 mod saved_environment;
 mod startup_screen;
+mod udev_syntax;
 use ratatui::{Terminal, backend::TestBackend};
 use std::{fs, path::PathBuf};
 use yoctui_model::{Action, BuildRequest, update};

@@ -88,6 +88,10 @@ pub(crate) fn begin_recipe_task_for(
     };
     if let Err(error) = request.validate() {
         app.notification = Some(error.to_string());
+    } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
+        // Review the build without discarding the user's editing session.
+        app.dialogs
+            .push_front(Dialog::RecipeTaskConfirmation(request));
     } else {
         open_dialog(app, Dialog::RecipeTaskConfirmation(request));
     }

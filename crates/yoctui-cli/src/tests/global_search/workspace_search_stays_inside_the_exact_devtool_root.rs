@@ -14,6 +14,8 @@ fn workspace_search_stays_inside_the_exact_devtool_root() {
         query: "workspace_needle".into(),
         build_dir: Some(workspace.clone()),
         scope_label: "workspace".into(),
+        file: None,
+        target: yoctui_model::GlobalSearchTarget::Content,
     };
     let result = scan_global_content(&plan, &GlobalSearchCancellation::default()).unwrap();
     assert_eq!(result.hits.len(), 1);

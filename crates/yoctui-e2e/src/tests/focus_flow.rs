@@ -22,7 +22,7 @@
             let mut app = yoctui_model::App::new(32, 8192);
             app.screen = AppScreen::Tasks;
             app.focus = FocusTarget::Navigator;
-            app.navigator_selection = 6;
+            app.navigator_selection = 7;
             app.task_progress_scroll = 3;
 
             for (input, expected) in [
@@ -50,7 +50,7 @@
                     _ => unreachable!(),
                 }
             }
-            assert_eq!(app.navigator_selection, 6);
+            assert_eq!(app.navigator_selection, 7);
             assert_eq!(app.task_progress_scroll, 3);
         }
 

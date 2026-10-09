@@ -15,6 +15,7 @@ use std::{
     time::Duration,
 };
 
+mod configuration;
 mod diagnostics;
 
 const MAX_HANDOFF_PATH_BYTES: usize = 16 * 1024;
@@ -49,11 +50,15 @@ pub(crate) fn run(bitbake: &Path, arguments: &[String]) -> Result<()> {
 
     let mut environment = std::env::vars().collect();
     configure_environment(&mut environment, &executable, &socket);
-    println!("Preparing menuconfig with BitBake…");
+    let task = configuration::task_label(arguments);
+    let (_configuration, config) = configuration::create(&environment, &socket)?;
+    println!("Preparing {task} with BitBake… (Ctrl+B returns to Yoctui controls)");
     std::io::stdout().flush()?;
     let mut bitbake_child = Command::new(bitbake);
     bitbake_child
         .args(arguments)
+        .arg("-R")
+        .arg(&config)
         .current_dir(&cwd)
         .env_clear()
         .envs(environment);
@@ -71,9 +76,9 @@ pub(crate) fn run(bitbake: &Path, arguments: &[String]) -> Result<()> {
                 if let Some(status) = bitbake_child.try_wait()? {
                     diagnostics.report();
                     if status.success() {
-                        bail!("BitBake finished without opening menuconfig");
+                        bail!("BitBake finished without opening embedded {task}");
                     }
-                    bail!("BitBake menuconfig failed with {status}");
+                    bail!("BitBake {task} failed with {status}");
                 }
                 thread::sleep(Duration::from_millis(50));
             }
@@ -97,10 +102,10 @@ pub(crate) fn run(bitbake: &Path, arguments: &[String]) -> Result<()> {
         diagnostics.report();
     }
     if !wrapper_status.success() {
-        bail!("menuconfig exited with {wrapper_status}");
+        bail!("{task} exited with {wrapper_status}");
     }
     if !bitbake_status.success() {
-        bail!("BitBake menuconfig failed with {bitbake_status}");
+        bail!("BitBake {task} failed with {bitbake_status}");
     }
     Ok(())
 }

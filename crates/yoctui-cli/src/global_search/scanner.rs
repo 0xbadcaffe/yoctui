@@ -3,6 +3,7 @@ use regex::RegexBuilder;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
+    io::{BufReader, Read},
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, Ordering},
@@ -32,6 +33,8 @@ struct SharedScanner<'a> {
     cancellation: &'a GlobalSearchCancellation,
     matches: Mutex<ScanMatches>,
     stop: AtomicBool,
+    on_hit: &'a (dyn Fn(&GlobalSearchHit) + Sync),
+    target: yoctui_model::GlobalSearchTarget,
 }
 
 impl SharedScanner<'_> {
@@ -40,6 +43,17 @@ impl SharedScanner<'_> {
     }
 
     fn search_file(&self, path: &Path, kind: GlobalSearchContentKind) {
+        let names = self.target == yoctui_model::GlobalSearchTarget::FileNames;
+        let kind = if names {
+            GlobalSearchContentKind::FileName
+        } else {
+            kind
+        };
+        let limit = if names {
+            MAX_GLOBAL_SEARCH_HITS
+        } else {
+            MAX_HITS_PER_CONTENT_KIND
+        };
         if self.done()
             || self
                 .matches
@@ -49,22 +63,39 @@ impl SharedScanner<'_> {
                 .get(&kind)
                 .copied()
                 .unwrap_or(0)
-                >= MAX_HITS_PER_CONTENT_KIND
+                >= limit
         {
             return;
         }
-        let Ok(metadata) = fs::metadata(path) else {
-            return;
+        let bytes = if names {
+            path.file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .as_bytes()
+                .to_vec()
+        } else {
+            let Ok(metadata) = fs::metadata(path) else {
+                return;
+            };
+            if metadata.len() == 0 || metadata.len() > MAX_SEARCH_FILE_BYTES {
+                return;
+            }
+            let Ok(file) = fs::File::open(path) else {
+                return;
+            };
+            let mut reader = BufReader::new(file).take(MAX_SEARCH_FILE_BYTES + 1);
+            let mut bytes = vec![0; metadata.len().min(8192) as usize];
+            if reader.read_exact(&mut bytes).is_err() || bytes.contains(&0) {
+                return;
+            }
+            if reader.read_to_end(&mut bytes).is_err()
+                || bytes.len() as u64 > MAX_SEARCH_FILE_BYTES
+                || bytes.contains(&0)
+            {
+                return;
+            }
+            bytes
         };
-        if metadata.len() == 0 || metadata.len() > MAX_SEARCH_FILE_BYTES {
-            return;
-        }
-        let Ok(bytes) = fs::read(path) else {
-            return;
-        };
-        if bytes.contains(&0) {
-            return;
-        }
         let Ok(content) = std::str::from_utf8(&bytes) else {
             return;
         };
@@ -74,11 +105,14 @@ impl SharedScanner<'_> {
             }
             for found in self.expression.find_iter(line) {
                 let line_number = index as u64 + 1;
-                let column = line[..found.start()].chars().count() as u64 + 1;
+                let column = if names {
+                    1
+                } else {
+                    line[..found.start()].chars().count() as u64 + 1
+                };
                 let identity = (path.to_path_buf(), line_number, column);
                 let mut matches = self.matches.lock().expect("global search match state");
-                if matches.kind_counts.get(&kind).copied().unwrap_or(0) >= MAX_HITS_PER_CONTENT_KIND
-                {
+                if matches.kind_counts.get(&kind).copied().unwrap_or(0) >= limit {
                     return;
                 }
                 if matches.seen.insert(identity) {
@@ -92,10 +126,12 @@ impl SharedScanner<'_> {
                             .then(|| image_name_for_rootfs_path(path))
                             .flatten(),
                     });
+                    // Serialize publication with insertion so subsequent batches never reorder rows.
+                    (self.on_hit)(matches.hits.last().expect("inserted search hit"));
                     let kind_limit = {
                         let count = matches.kind_counts.entry(kind).or_default();
                         *count += 1;
-                        *count >= MAX_HITS_PER_CONTENT_KIND
+                        *count >= limit
                     };
                     if matches.hits.len() >= MAX_GLOBAL_SEARCH_HITS {
                         matches.truncated = true;
@@ -104,6 +140,20 @@ impl SharedScanner<'_> {
                     }
                     if kind_limit {
                         matches.truncated = true;
+                        let kinds = [
+                            GlobalSearchContentKind::Recipe,
+                            GlobalSearchContentKind::Configuration,
+                            GlobalSearchContentKind::Class,
+                            GlobalSearchContentKind::BuildLog,
+                            GlobalSearchContentKind::GeneratedMetadata,
+                            GlobalSearchContentKind::ImageRootfs,
+                        ];
+                        if kinds.iter().all(|kind| {
+                            matches.kind_counts.get(kind).copied().unwrap_or(0)
+                                >= MAX_HITS_PER_CONTENT_KIND
+                        }) {
+                            self.stop.store(true, Ordering::Release);
+                        }
                         return;
                     }
                 }
@@ -133,7 +183,15 @@ impl DirectoryWalker<'_> {
         let Ok(entries) = fs::read_dir(directory) else {
             return;
         };
-        for entry in entries.flatten() {
+        // Configuration is small and useful; do not bury it behind a huge tmp/work tree.
+        let entries: Box<dyn Iterator<Item = fs::DirEntry>> = if self.visited_directories == 1 {
+            let mut entries = entries.flatten().collect::<Vec<_>>();
+            entries.sort_by_key(|entry| if entry.file_name() == "conf" { 0 } else { 1 });
+            Box::new(entries.into_iter())
+        } else {
+            Box::new(entries.flatten())
+        };
+        for entry in entries {
             if self.scanner.done() {
                 break;
             }
@@ -160,9 +218,22 @@ impl DirectoryWalker<'_> {
     }
 }
 
+#[cfg(test)]
 pub fn scan_global_content(
     plan: &GlobalSearchPlan,
     cancellation: &GlobalSearchCancellation,
+) -> Result<GlobalSearchScanResult, String> {
+    let mut result = scan_global_content_streaming(plan, cancellation, &|_| {})?;
+    result.hits.sort_unstable_by(|left, right| {
+        (&left.path, left.line, left.column).cmp(&(&right.path, right.line, right.column))
+    });
+    Ok(result)
+}
+
+pub fn scan_global_content_streaming(
+    plan: &GlobalSearchPlan,
+    cancellation: &GlobalSearchCancellation,
+    on_hit: &(dyn Fn(&GlobalSearchHit) + Sync),
 ) -> Result<GlobalSearchScanResult, String> {
     if plan.query.trim().is_empty() {
         return Ok(GlobalSearchScanResult {
@@ -192,6 +263,8 @@ pub fn scan_global_content(
             truncated: false,
         }),
         stop: AtomicBool::new(false),
+        on_hit,
+        target: plan.target,
     };
     let workers =
         thread::available_parallelism().map_or(1, |count| count.get().min(MAX_SEARCH_WORKERS));
@@ -218,16 +291,31 @@ pub fn scan_global_content(
             visited_directories: 0,
             truncated: false,
         };
-        walker.walk(build_dir);
+        if let Some(file) = &plan.file {
+            let relative = file.strip_prefix(build_dir).ok();
+            let mut path = build_dir.to_path_buf();
+            let safe = relative.is_some_and(|relative| {
+                relative.components().all(|part| {
+                    if !matches!(part, std::path::Component::Normal(_)) {
+                        return false;
+                    }
+                    path.push(part);
+                    fs::symlink_metadata(&path)
+                        .is_ok_and(|metadata| !metadata.file_type().is_symlink())
+                })
+            });
+            if safe && file.is_file() {
+                let _ = walker.sender.send((file.clone(), classify_content(file)));
+            }
+        } else {
+            walker.walk(build_dir);
+        }
         walker.truncated
     });
-    let mut matches = scanner
+    let matches = scanner
         .matches
         .into_inner()
         .expect("global search match state");
-    matches.hits.sort_unstable_by(|left, right| {
-        (&left.path, left.line, left.column).cmp(&(&right.path, right.line, right.column))
-    });
     Ok(GlobalSearchScanResult {
         hits: matches.hits,
         truncated: matches.truncated || walker_truncated,

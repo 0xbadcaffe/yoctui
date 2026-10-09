@@ -126,6 +126,12 @@ pub fn focus_action_for_app(app: &yoctui_model::App, key: Input) -> Option<Actio
         return focus_action(app.focus, key);
     }
     if key == Input::Esc {
+        if app.focus == FocusTarget::Workspace
+            && app.screen == Screen::Errors
+            && app.error_workspace.viewer.is_some()
+        {
+            return Some(Action::CloseErrorLog);
+        }
         if app.zoomed_pane.is_some() {
             return Some(Action::TogglePaneZoom);
         }

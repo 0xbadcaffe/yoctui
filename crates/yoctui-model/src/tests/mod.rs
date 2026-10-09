@@ -4,6 +4,7 @@ use super::*;
 mod rootfs_browser;
 mod runqueue_completion;
 mod startup_screen;
+mod streaming_search;
 mod terminal_kill_safety;
 use proptest::prelude::*;
 

@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.329 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:✕ Failed • Local 19:28│
+│yoctui v0.1.330 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:✕ Failed • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: ✕ Failed                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: --:--:--  |  Workers: 0                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -7,17 +7,17 @@
 │▾ OVERVIEW               ││▶ 1 Current build (2)      2 Past builds (0)    Tab switches                         ││Severity    : Error                         │
 │  ▱ Dashboard            │└─────────────────────────────────────────────────────────────────────────────────────┘│Task        : do_compile                    │
 │  ▱ Insights             │┌Build Result · Failed────────────────────────────────────────────────────────────────┐│Recipe      : bash_5.2.21-2                 │
-│▾ CONTENT                ││Target: core-image-minimal  ·  Result: Failed (exit 1)                               ││Current build exit : 1                      │
-│    Layers               ││Diagnostics: 1 error / 1 warning  ·  Selected: bash_5.2.21-2:do_compile              ││First seen  : 19:28:27                      │
-│    Recipes              ││                                                                                     ││Source log  :                               │
-│    Packages             │└─────────────────────────────────────────────────────────────────────────────────────┘│/workspace/yocto/build/tmp/log.do_compile.85│
-│    Images               │┌Errors and warnings (2 retained; 1 warning / 1 error records evicted)────────────────┐│873                                         │
-│  ▱ Hardware             ││Time     Severity  Recipe         Task             Summary                           ││                                            │
-│    Kernel               ││19:28:27 Warning   bash_5.2.21-2  do_compile       WARNING: bash:do_compile found a  ││Message                                     │
-│    U-Boot / BIOS        ││19:28:27 Error     bash_5.2.21-2  do_compile       ERROR: bash:do_compile failed wit ││ERROR: bash:do_compile failed with exit code│
-│    SDK                  ││                                                                                     ││1                                           │
+│    Tasks                ││Target: core-image-minimal  ·  Result: Failed (exit 1)                               ││Current build exit : 1                      │
+│▾ CONTENT                ││Diagnostics: 1 error / 1 warning  ·  Selected: bash_5.2.21-2:do_compile              ││First seen  : 19:28:27                      │
+│    Layers               ││                                                                                     ││Source log  :                               │
+│    Recipes              │└─────────────────────────────────────────────────────────────────────────────────────┘│/workspace/yocto/build/tmp/log.do_compile.85│
+│    Packages             │┌Errors and warnings (2 retained; 1 warning / 1 error records evicted)────────────────┐│873                                         │
+│    Images               ││Time     Severity  Recipe         Task             Summary                           ││                                            │
+│  ▱ Hardware             ││19:28:27 Warning   bash_5.2.21-2  do_compile       WARNING: bash:do_compile found a  ││Message                                     │
+│    Kernel               ││19:28:27 Error     bash_5.2.21-2  do_compile       ERROR: bash:do_compile failed wit ││ERROR: bash:do_compile failed with exit code│
+│    U-Boot / BIOS        ││                                                                                     ││1                                           │
+│    SDK                  ││                                                                                     ││                                            │
 │▾ BUILD                  ││                                                                                     ││                                            │
-│    Tasks                ││                                                                                     ││                                            │
 │  ▱ Logs            PAUSE│└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
 │  ▱ Errors              1│┌Correlated · Paused · match 3/3 · loss 2 W1 E1 ·    1-3/3────────────────────────────┐│                                            │
 │    Configuration        ││Time       Severity  Task          Message                                           ││                                            │

@@ -7,7 +7,7 @@ fn ux_rootfs_images_tabs_keyboard_and_scroll_map_to_typed_drilldown_actions() {
 
     assert_eq!(
         images_workspace_action_for_view(false, ImagesView::Artifacts, Input::Enter),
-        Some(Action::BeginSelectedRootfsComposition)
+        Some(Action::OpenSelectedImageArtifact)
     );
     assert_eq!(
         images_workspace_action_for_view(false, ImagesView::Artifacts, Input::Tab),

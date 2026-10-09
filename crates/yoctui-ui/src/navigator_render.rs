@@ -22,6 +22,7 @@ pub(crate) fn navigator(
             Screen::Insights,
             WorkspaceDestination::Dashboard,
         ),
+        ("Tasks", Screen::Tasks, WorkspaceDestination::Tasks),
         ("Layers", Screen::Layers, WorkspaceDestination::Layers),
         ("Recipes", Screen::Recipes, WorkspaceDestination::Recipes),
         ("Packages", Screen::Packages, WorkspaceDestination::Packages),
@@ -34,7 +35,6 @@ pub(crate) fn navigator(
             WorkspaceDestination::Firmware,
         ),
         ("SDK", Screen::Sdk, WorkspaceDestination::Sdk),
-        ("Tasks", Screen::Tasks, WorkspaceDestination::Tasks),
         ("Logs", Screen::Logs, WorkspaceDestination::Logs),
         ("Errors", Screen::Errors, WorkspaceDestination::Errors),
         (

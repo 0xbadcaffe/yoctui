@@ -73,6 +73,10 @@ pub(crate) async fn open_single_workspace_file(app: &mut App, label: String, pat
             files: vec![file],
         },
     ) {
+        if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+            editor.context = yoctui_model::SourceEditorContext::DeviceTree;
+            editor.focus = yoctui_model::RecipeEditorFocus::Document;
+        }
         load_recipe_editor_file(app, path).await;
     }
 }

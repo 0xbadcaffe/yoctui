@@ -3,6 +3,7 @@ use super::*;
 
 mod append_command_palette_query_to_open_keymap_preferences;
 mod close_keymap_preferences_to_backspace_keymap_capture;
+mod search_progress;
 mod terminal_append_search_to_select_command_palette;
 
 pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
@@ -38,6 +39,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BackspaceCommandPaletteQuery
         | Action::ClearCommandPaletteQuery
         | Action::BeginGlobalContentSearch
+        | Action::ToggleGlobalSearchTarget
         | Action::AppendInternalLogQuery(..)
         | Action::BackspaceInternalLogQuery
         | Action::AppendLogQuery(..)
@@ -47,6 +49,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::AppendMetadataQuery(..)
         | Action::BackspaceMetadataQuery
         | Action::GlobalContentSearchLoaded { .. }
+        | Action::GlobalContentSearchProgress { .. }
         | Action::GlobalContentSearchFailed { .. }
         | Action::ActivateCommandPalette
         | Action::RestoreGlobalSearchResults

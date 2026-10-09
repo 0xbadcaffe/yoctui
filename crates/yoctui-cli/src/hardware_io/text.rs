@@ -57,6 +57,15 @@ pub(crate) fn validate_editor_path(
     projects::validate_editor_directory(root)?;
     if context == yoctui_model::SourceEditorContext::HardwareProject {
         projects::validate_preview(root, path)?;
+    } else if matches!(
+        context,
+        yoctui_model::SourceEditorContext::DeviceTree | yoctui_model::SourceEditorContext::Rootfs
+    ) {
+        anyhow::ensure!(
+            path.is_absolute() && path.starts_with(root),
+            "source file escapes its editor root"
+        );
+        projects::validate_editor_directory(path.parent().context("source file has no parent")?)?;
     }
     source_editor_content(path)?;
     Ok(())

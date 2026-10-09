@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.329 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
+│yoctui v0.1.330 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
 │⣧ Build running · 1 active                                                                                                                                    │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -7,17 +7,17 @@
 │▾ OVERVIEW               ││█████████████████████████████████Overall  40%  4/10                                  ││Task        do_compile                      │
 │  ▱ Dashboard            ││Active 1  Waiting 5  Warnings 0  Errors 0  Elapsed 00:16:18                          ││Recipe      bash_5.2.21-2                   │
 │  ▱ Insights             ││Task               Recipe            Status        Time      Progress                ││PN          bash_5.2.21-2                   │
-│▾ CONTENT                ││ do_compile        bash_5.2.21-2     ▶ Running     00:09:50  ███████▏░░ 72%          ││PV          unavailable                     │
-│    Layers               ││5 waiting tasks    unavailable       ▫ Waiting     --        metadata unavailable    ││PR          unavailable                     │
-│    Recipes              ││  do_fetch         bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││State       ▶ Running                       │
-│    Packages             ││  do_unpack        bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││Progress    72%                             │
-│    Images               ││  do_patch         bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││                                            │
-│  ▱ Hardware             ││  do_configure     bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││Worker      worker-1                        │
-│    Kernel               ││                                                                                     ││PID         35421                           │
-│    U-Boot / BIOS        │└─────────────────────────────────────────────────────────────────────────────────────┘│Started     19:18:37                        │
-│    SDK                  │┌Log Viewer — do_compile (bash_5.2.21-2) · ▶ Follow───────────────────────────────────┐│Elapsed     00:09:50                        │
-│▾ BUILD                  │││ NOTE: Executing Tasks                                                              ││Workdir     unavailable                     │
-│    Tasks               1│││ NOTE: Started: do_compile                                                          ││Log file                                    │
+│    Tasks               1││ do_compile        bash_5.2.21-2     ▶ Running     00:09:50  ███████▏░░ 72%          ││PV          unavailable                     │
+│▾ CONTENT                ││5 waiting tasks    unavailable       ▫ Waiting     --        metadata unavailable    ││PR          unavailable                     │
+│    Layers               ││  do_fetch         bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││State       ▶ Running                       │
+│    Recipes              ││  do_unpack        bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││Progress    72%                             │
+│    Packages             ││  do_patch         bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││                                            │
+│    Images               ││  do_configure     bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││Worker      worker-1                        │
+│  ▱ Hardware             ││                                                                                     ││PID         35421                           │
+│    Kernel               │└─────────────────────────────────────────────────────────────────────────────────────┘│Started     19:18:37                        │
+│    U-Boot / BIOS        │┌Log Viewer — do_compile (bash_5.2.21-2) · ▶ Follow───────────────────────────────────┐│Elapsed     00:09:50                        │
+│    SDK                  │││ NOTE: Executing Tasks                                                              ││Workdir     unavailable                     │
+│▾ BUILD                  │││ NOTE: Started: do_compile                                                          ││Log file                                    │
 │  ▱ Logs             LIVE│││ |  CC     builtins/histfile.o                                                      ││/workspace/yocto/build/tmp/work/qemux86-64-p│
 │  ▱ Errors               │││ |  CC     builtins/jobs.o                                                          ││oky-linux/bash/5.2.21-r2/temp/log.do_compile│
 │    Configuration        │││ |  CC     execute_cmd.o                                                            ││.85873                                      │
