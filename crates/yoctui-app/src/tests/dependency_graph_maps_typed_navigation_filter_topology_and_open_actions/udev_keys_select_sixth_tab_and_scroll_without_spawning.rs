@@ -21,6 +21,10 @@ fn udev_keys_select_sixth_tab_and_scroll_without_spawning() {
     );
     assert_eq!(
         images_workspace_action_for_view(false, ImagesView::UdevRules, Input::Char('e')),
-        None
+        Some(Action::EditSelectedRootfsSystemFile)
+    );
+    assert_eq!(
+        images_workspace_action_for_view(false, ImagesView::UdevRules, Input::Enter),
+        Some(Action::EditSelectedRootfsSystemFile)
     );
 }

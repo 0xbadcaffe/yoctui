@@ -124,6 +124,12 @@ fn clipboard_paste_search_is_text_and_modal_menu_terminal_guards_hold() {
     paste(&mut app, "literal xyz").unwrap();
     assert_eq!(app.command_palette_query, "literal xyz");
     app.dialogs.push_back(Dialog::BuildOptions);
+    // The visible palette overlays retained dialogs and owns text input.
+    assert!(text_paste_active(&app));
+    paste(&mut app, " search").unwrap();
+    assert_eq!(app.command_palette_query, "literal xyz search");
+    assert!(matches!(app.active_dialog(), Some(Dialog::BuildOptions)));
+    app.command_palette_open = false;
     assert!(!text_paste_active(&app));
     app.dialogs.clear();
     app.command_palette_open = false;
