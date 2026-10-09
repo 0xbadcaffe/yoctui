@@ -183,6 +183,8 @@ for item in artifacts:
     png = image.read_bytes()
     assert hashlib.sha256(png).hexdigest() == item["sha256"]
     assert hashlib.sha256(source.read_bytes()).hexdigest() == item["source_sha256"]
+    version_cells = "".join(f"1:{char}" for char in f"yoctui v{source_version}")
+    assert version_cells in source.read_text(), f"Refresh screenshot version: {source}"
     assert png.startswith(b"\x89PNG\r\n\x1a\n") and png[12:16] == b"IHDR"
     assert struct.unpack(">II", png[16:24]) == (1600, 1000)
 assert "fixture values" in gallery_text and "Raster provenance" in gallery_text
