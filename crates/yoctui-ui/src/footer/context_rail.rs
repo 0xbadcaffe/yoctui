@@ -50,6 +50,13 @@ pub(crate) fn current_search_state(app: &App) -> Option<(bool, bool)> {
 }
 
 pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
+    if app.screen == Screen::Daemons && !app.menu.is_open() && !app.command_palette_open
+        && (app.focus == FocusTarget::Workspace || app.daemon_manager.editing || app.daemon_manager.review.is_some()) {
+        return if app.daemon_manager.editing { vec!["Tab field".into(), "Ctrl+V paste".into(), "Enter review".into(), "Esc cancel".into()] }
+        else if app.daemon_manager.review.is_some() { vec!["Enter confirm".into(), "Esc cancel".into()] }
+        else if app.focus == FocusTarget::Workspace { vec!["1 health".into(), "2 logs".into(), "r refresh".into(), "s start".into(), "x stop".into(), "t restart".into(), "c configure".into(), "PgUp/PgDn scroll".into()] }
+        else { vec!["Enter open".into(), "Tab focus".into(), "F12 Menu".into()] };
+    }
     if app.command_palette_open || app.focus == FocusTarget::CommandPalette {
         return [
             "Type search",

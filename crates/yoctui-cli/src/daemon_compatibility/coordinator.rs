@@ -48,15 +48,22 @@ impl DaemonCompatibilityCoordinator {
         &mut self,
         environment: &BTreeMap<String, String>,
     ) -> Result<Option<DaemonCompatibilitySnapshot>, DaemonCompatibilityError> {
+        let started = std::time::Instant::now();
         let Some(runtime) = DaemonCompatibilityRuntime::detect(environment).await? else {
             return Ok(None);
         };
-        match self.select_environment(runtime.key)? {
+        tracing::info!("daemon discovery: build identity ready; checking tool capabilities");
+        let result = match self.select_environment(runtime.key)? {
             DaemonCompatibilitySelection::Cached(snapshot) => Ok(Some(snapshot)),
             DaemonCompatibilitySelection::Probe(ticket) => {
                 self.probe(ticket, &runtime.context).await.map(Some)
             }
-        }
+        };
+        tracing::info!(
+            elapsed_ms = started.elapsed().as_millis() as u64,
+            "daemon discovery: compatibility discovery finished"
+        );
+        result
     }
 
     pub fn select_environment(
@@ -108,18 +115,15 @@ impl DaemonCompatibilityCoordinator {
             .map(|tool| (tool, Arc::new(tokio::sync::Semaphore::new(1))))
             .collect::<BTreeMap<_, _>>();
         let mut tasks = tokio::task::JoinSet::new();
+        let cached_runner = self.runner.clone().with_command_cache();
         for (index, probe) in unique_probes.iter().cloned().enumerate() {
             let semaphore = Arc::clone(&semaphore);
             let tool_semaphore = probe_tool(&probe)
                 .and_then(|tool| tool_semaphores.get(&tool))
                 .cloned();
-            let runner = self.runner.clone();
+            let runner = cached_runner.clone();
             let context = context.clone();
             tasks.spawn(async move {
-                let _permit = semaphore
-                    .acquire_owned()
-                    .await
-                    .map_err(|error| DaemonCompatibilityError::StartupProbe(error.to_string()))?;
                 // Help/version commands for one executable can share caches,
                 // locks, or workspace initialization. Running them in
                 // parallel makes individually bounded probes time each other
@@ -131,6 +135,12 @@ impl DaemonCompatibilityCoordinator {
                     })?),
                     None => None,
                 };
+                // A queue of Devtool requests must not consume every global
+                // slot while waiting for the same tool's single permit.
+                let _permit = semaphore
+                    .acquire_owned()
+                    .await
+                    .map_err(|error| DaemonCompatibilityError::StartupProbe(error.to_string()))?;
                 Ok::<_, DaemonCompatibilityError>((index, runner.probe(&context, &probe).await))
             });
         }
@@ -140,6 +150,10 @@ impl DaemonCompatibilityCoordinator {
                 .map_err(|error| DaemonCompatibilityError::StartupProbe(error.to_string()))??;
             completed[index] = Some(observation);
         }
+        tracing::info!(
+            probes = unique_probes.len(),
+            "daemon discovery: capability checks completed"
+        );
         let mut observations = BTreeMap::<CapabilityId, Vec<CapabilityProbeObservation>>::new();
         for entry in &self.catalog.entries {
             observations.insert(

@@ -96,6 +96,7 @@ impl WorkspaceDestination {
             Self::TerminalSessions => "Terminal Sessions",
             Self::BuildEnvironment => "Build Environment",
             Self::Compatibility => "Compatibility",
+            Self::Daemons => "Daemons",
             Self::Settings => "Settings",
             Self::Help => "Help",
         }

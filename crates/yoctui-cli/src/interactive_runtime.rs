@@ -4,6 +4,8 @@ use super::*;
 mod build_dialogs;
 mod build_options_dialogs;
 mod command_dialogs;
+#[cfg(unix)]
+mod daemon_workspace;
 mod dependency_workspace;
 mod devtool_status_operation;
 mod editor_dialogs;
@@ -359,6 +361,8 @@ pub(crate) async fn tui(
         #[cfg(unix)]
         next_daemon_reconnect,
         daemon_attached,
+        #[cfg(unix)]
+        daemon_manager_io: daemon_workspace::DaemonManagerIo::default(),
         backend_kind,
         backend,
         metadata_backend_authoritative,

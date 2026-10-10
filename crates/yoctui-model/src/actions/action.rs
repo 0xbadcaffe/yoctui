@@ -19,6 +19,7 @@ pub enum Action {
     ProjectProfileGenerated(ProjectProfile), ProjectProfileGenerationFailed(String),
     SelectProjectProfileItem { delta: isize, },
     ActivateProjectProfileItem, Open(Screen),
+    ScrollDaemonManager { delta: isize },
 
     // Platform workbenches.
     InspectKernel, KernelLoaded(PlatformInventory), KernelFailed(String),

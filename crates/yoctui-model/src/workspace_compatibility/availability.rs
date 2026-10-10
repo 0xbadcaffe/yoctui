@@ -266,6 +266,7 @@ pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestinatio
         Screen::Help => WorkspaceDestination::Help,
         Screen::BuildEnvironment => WorkspaceDestination::BuildEnvironment,
         Screen::Compatibility => WorkspaceDestination::Compatibility,
+        Screen::Daemons => WorkspaceDestination::Daemons,
         Screen::Settings => WorkspaceDestination::Settings,
     }
 }

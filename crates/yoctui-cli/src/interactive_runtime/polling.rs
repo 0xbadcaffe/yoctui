@@ -14,6 +14,21 @@ fn set_local_background_activity(
 impl InteractiveRuntime {
     pub(super) async fn poll_runtime(&mut self) -> Result<bool> {
         let runtime = self;
+        if runtime.app.screen == Screen::Daemons {
+            let size = runtime.terminal.size()?;
+            let [header, footer] =
+                yoctui_app::workbench_chrome_heights(&runtime.app, size.width, size.height);
+            let extra = u16::from(runtime.app.offline_notice().is_some()) * 2
+                + u16::from(runtime.app.zoomed_pane.is_some());
+            runtime.app.daemon_manager.visible_rows =
+                usize::from(size.height.saturating_sub(header + footer + 6 + extra)).max(1);
+            runtime.app.scroll_daemon_manager(0);
+        }
+        #[cfg(unix)]
+        runtime.render_scheduler.invalidate_if(
+            runtime.daemon_manager_io.poll(&mut runtime.app).await,
+            RenderCause::State,
+        );
         runtime.render_scheduler.invalidate_if(
             runtime.editor_gitui_io.poll(&mut runtime.app).await,
             RenderCause::State,

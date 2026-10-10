@@ -139,6 +139,7 @@ pub fn compatibility_ui_command_action_definition(
         | CommandId::OpenLogs
         | CommandId::OpenErrors
         | CommandId::OpenCompatibility
+        | CommandId::OpenDaemons
         | CommandId::OpenSettings
         | CommandId::OpenHelp
         | CommandId::OpenAbout => CompatibilityUiActionDefinition::local(),

@@ -11,7 +11,7 @@ pub(crate) fn navigator(
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 26] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 27] = [
         (
             "Dashboard",
             Screen::Dashboard,
@@ -73,6 +73,7 @@ pub(crate) fn navigator(
             Screen::Compatibility,
             WorkspaceDestination::Compatibility,
         ),
+        ("Daemons", Screen::Daemons, WorkspaceDestination::Daemons),
         ("Settings", Screen::Settings, WorkspaceDestination::Settings),
     ];
     enum NavigatorRow<'a> {

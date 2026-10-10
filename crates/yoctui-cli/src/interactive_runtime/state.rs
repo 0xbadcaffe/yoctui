@@ -11,6 +11,8 @@ pub(super) struct InteractiveRuntime {
     #[cfg(unix)]
     pub(super) next_daemon_reconnect: Instant,
     pub(super) daemon_attached: bool,
+    #[cfg(unix)]
+    pub(super) daemon_manager_io: super::daemon_workspace::DaemonManagerIo,
     pub(super) backend_kind: Backend,
     pub(super) backend: Box<dyn BitBakeBackend>,
     pub(super) metadata_backend_authoritative: bool,

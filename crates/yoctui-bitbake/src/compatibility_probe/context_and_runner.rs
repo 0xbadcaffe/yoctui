@@ -3,6 +3,7 @@ use std::{
     fs, io,
     path::{Component, Path, PathBuf},
     process::Stdio,
+    sync::Arc,
     time::Duration,
 };
 
@@ -173,11 +174,14 @@ pub struct CapabilityProbeObservation {
     pub evidence: CapabilityEvidence,
 }
 
+type ProbeCommandCache = Arc<tokio::sync::Mutex<BTreeMap<(PathBuf, Vec<String>), Arc<tokio::sync::OnceCell<ProbeProcessResult>>>>>;
+
 #[derive(Debug, Clone)]
 pub struct CapabilityProbeRunner {
     timeout: Duration,
     output_limit_per_stream: usize,
     background_priority: bool,
+    command_cache: Option<ProbeCommandCache>,
 }
 
 impl Default for CapabilityProbeRunner {
@@ -186,6 +190,7 @@ impl Default for CapabilityProbeRunner {
             timeout: DEFAULT_PROBE_TIMEOUT,
             output_limit_per_stream: DEFAULT_PROBE_OUTPUT_LIMIT,
             background_priority: false,
+            command_cache: None,
         }
     }
 }
@@ -205,6 +210,7 @@ impl CapabilityProbeRunner {
             timeout,
             output_limit_per_stream,
             background_priority: false,
+            command_cache: None,
         })
     }
 
@@ -212,6 +218,13 @@ impl CapabilityProbeRunner {
     /// scheduler precedence while capability discovery is running.
     pub fn with_background_priority(mut self) -> Self {
         self.background_priority = true;
+        self
+    }
+
+    /// Deduplicate command output within a single, unchanged probe context.
+    /// Call again to obtain a fresh cache for every discovery generation.
+    pub fn with_command_cache(mut self) -> Self {
+        self.command_cache = Some(Arc::new(tokio::sync::Mutex::new(BTreeMap::new())));
         self
     }
 
@@ -362,7 +375,7 @@ impl CapabilityProbeRunner {
         };
         let mut indexed = vec![path.display().to_string()];
         indexed.extend(arguments.iter().cloned());
-        let result = run_read_only(
+        let run = || run_read_only(
             &path,
             &arguments,
             &context.build_directory,
@@ -370,8 +383,14 @@ impl CapabilityProbeRunner {
             self.timeout,
             self.output_limit_per_stream,
             self.background_priority,
-        )
-        .await;
+        );
+        let result = if let Some(cache) = &self.command_cache {
+            let cell = cache.lock().await.entry((path.clone(), arguments.clone()))
+                .or_insert_with(|| Arc::new(tokio::sync::OnceCell::new())).clone();
+            cell.get_or_init(run).await.clone()
+        } else {
+            run().await
+        };
         match result {
             ProbeProcessResult::Completed {
                 success: _,

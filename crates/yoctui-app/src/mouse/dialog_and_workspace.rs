@@ -168,6 +168,8 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         Screen::Compatibility => {
             compatibility_ui_inspector_action(app.compatibility_ui.searching, key)
         }
+        Screen::Daemons if !app.daemon_manager.editing && app.daemon_manager.review.is_none() => Some(Action::ScrollDaemonManager { delta }),
+        Screen::Daemons => None,
         Screen::Settings => settings_action(key),
         Screen::LayerRelationships | Screen::Bbmask | Screen::Help => None,
     }

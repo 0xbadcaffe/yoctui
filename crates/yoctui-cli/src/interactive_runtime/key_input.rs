@@ -49,6 +49,11 @@ impl InteractiveRuntime {
             }
             return Ok(true);
         };
+        #[cfg(unix)]
+        if runtime.daemon_workspace_key(input).await? {
+            runtime.render_scheduler.invalidate(RenderCause::State);
+            return Ok(true);
+        }
         if input == Input::CtrlV && yoctui_app::text_paste_active(&runtime.app) {
             match crate::clipboard::read_system_clipboard().await {
                 Ok(text) => {

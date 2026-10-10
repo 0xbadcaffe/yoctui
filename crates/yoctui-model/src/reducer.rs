@@ -58,6 +58,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::ScrollDaemonManager { delta } => { app.scroll_daemon_manager(delta); None }
         Action::ToggleInspector => {
             app.set_inspector_visible(!app.inspector_visible);
             None

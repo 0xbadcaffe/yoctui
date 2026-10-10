@@ -63,36 +63,48 @@ impl DaemonCompatibilityRuntime {
 
         let mut datastore = BTreeMap::new();
         if let Some(getvar) = tools.get(&CapabilityToolId::BitBakeGetVar) {
-            for variable in [
-                "MACHINE",
-                "DISTRO",
-                "DISTRO_VERSION",
-                "DISTRO_CODENAME",
-                "OE_VERSION",
-                "COREBASE",
-                "LAYERSERIES_CORENAMES",
-                "BBLAYERS",
-                "BB_HASHSERVE",
-                "PRSERV_HOST",
-            ] {
-                if let Ok(value) = run_read_only(
-                    getvar,
-                    &["--value", variable],
-                    &build_directory,
-                    process_environment,
-                )
-                .await
-                    && let Some(value) = authoritative_value(&value)
+            let bundled_layout = getvar
+                .parent()
+                .and_then(Path::parent)
+                .is_some_and(|root| root.join("lib/bb/tinfoil.py").is_file());
+            if bundled_layout {
+                tracing::info!(
+                    "daemon discovery: querying build identity in one config-only connection"
+                );
+                match super::datastore_query::query(getvar, &build_directory, process_environment)
+                    .await
                 {
-                    let value = if matches!(
-                        variable,
-                        "MACHINE" | "DISTRO" | "DISTRO_VERSION" | "DISTRO_CODENAME" | "OE_VERSION"
-                    ) {
-                        authoritative_token(&value).unwrap_or(value)
-                    } else {
-                        value
-                    };
-                    datastore.insert(variable.to_owned(), value);
+                    Ok(values) => datastore = values,
+                    Err(error) => {
+                        tracing::warn!(%error, "batch identity query failed; identity remains unknown")
+                    }
+                }
+            } else {
+                // Preserve custom tool/wrapper support without assuming its Python layout.
+                for variable in super::datastore_query::VARIABLES {
+                    if let Ok(value) = run_read_only(
+                        getvar,
+                        &["--value", variable],
+                        &build_directory,
+                        process_environment,
+                    )
+                    .await
+                        && let Some(value) = authoritative_value(&value)
+                    {
+                        let value = if matches!(
+                            variable,
+                            "MACHINE"
+                                | "DISTRO"
+                                | "DISTRO_VERSION"
+                                | "DISTRO_CODENAME"
+                                | "OE_VERSION"
+                        ) {
+                            authoritative_token(&value).unwrap_or(value)
+                        } else {
+                            value
+                        };
+                        datastore.insert(variable.to_owned(), value);
+                    }
                 }
             }
         }

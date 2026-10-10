@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.331 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.332 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -34,8 +34,8 @@
 │    Maintenance          ││CPU Usage               18%│RAM Usage                42%│Build FS Usage           63%││Workbench Center                            │
 │  ▱ Build environment    ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫ ││Context: Work · core-image-minimal          │
 │  ▱ Compatibility        ││          4 cores          │        6.7/16.0 GiB        │        55.5 GiB free       ││Active: tasks 0 · jobs 0                    │
-│  ▱ Settings             ││Sstate: summary not reported                                                         ││Favorite: none                              │
-│                         ││Downloads: 0 completed, 0 failed, 0 active                                           ││Terminal: none                              │
+│  ▱ Daemons              ││Sstate: summary not reported                                                         ││Favorite: none                              │
+│  ▱ Settings             ││Downloads: 0 completed, 0 failed, 0 active                                           ││Terminal: none                              │
 │                         ││Network: unknown; offline readiness: unverified                                      ││[t] Terminal sessions                       │
 │                         │└─────────────────────────────────────────────────────────────────────────────────────┘│Artifact: none retained                     │
 │                         │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Recent: ✓ Succeeded core-image-minimal ·    │

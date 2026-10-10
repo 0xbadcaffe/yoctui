@@ -486,6 +486,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
         Destination::ProjectProfiles
         | Destination::BuildEnvironment
         | Destination::Compatibility
+        | Destination::Daemons
         | Destination::Settings
         | Destination::Help => Vec::new(),
     }

@@ -104,5 +104,6 @@ mod errors_history;
 use super::telemetry_strip::{TelemetryStripMode, telemetry_strip_mode};
 
 mod compact_workspaces;
+mod daemon_manager;
 
 mod application_menus;

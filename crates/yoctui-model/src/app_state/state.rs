@@ -10,6 +10,7 @@ pub struct App {
     pub source_git_status: SourceGitStatus,
     pub background_activities: std::collections::BTreeSet<BackgroundActivity>,
     pub daemon: ClientDaemonView,
+    pub daemon_manager: DaemonManagerState,
     pub client_access_origin: ClientAccessOrigin,
     pub workspace_compatibility: WorkspaceCompatibilityState,
     pub compatibility_ui: CompatibilityUiState,

@@ -61,6 +61,7 @@ fn hiding_inspector_expands_workspace_on_every_wide_screen() {
         Screen::Help,
         Screen::BuildEnvironment,
         Screen::Compatibility,
+        Screen::Daemons,
         Screen::Settings,
     ] {
         app.screen = screen;
