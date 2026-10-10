@@ -173,7 +173,9 @@ pub(crate) fn daemon_client_view(
                 }
             })
             .collect(),
-        connected_clients: snapshot.clients.len(),
+        connected_clients: telemetry.map_or(snapshot.clients.len(), |value| {
+            usize::from(value.connected_clients)
+        }),
         recent_logs: snapshot
             .recent_logs
             .iter()

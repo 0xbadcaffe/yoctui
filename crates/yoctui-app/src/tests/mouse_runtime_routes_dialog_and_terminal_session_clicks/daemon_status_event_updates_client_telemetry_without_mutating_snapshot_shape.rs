@@ -48,5 +48,14 @@ fn daemon_status_event_updates_client_telemetry_without_mutating_snapshot_shape(
     assert_eq!(telemetry.pressure.reliable_waits, 1);
     assert_eq!(telemetry.pressure.forced_resynchronizations, 2);
     assert_eq!(telemetry.pressure.slow_client_disconnects, 1);
+    let view = crate::daemon_view::daemon_client_view(
+        client.status,
+        client.snapshot.as_ref(),
+        client.telemetry,
+    );
+    assert_eq!(
+        view.connected_clients, 2,
+        "use fresh telemetry, not stale snapshot clients"
+    );
     assert_eq!(client.snapshot.unwrap().sequence, 1);
 }
