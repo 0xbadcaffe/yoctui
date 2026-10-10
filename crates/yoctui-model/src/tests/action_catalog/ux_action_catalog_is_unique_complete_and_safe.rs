@@ -6,7 +6,7 @@ fn ux_action_catalog_is_unique_complete_and_safe() {
     let catalog = operator_action_catalog();
     assert_eq!(
         catalog.len(),
-        220,
+        221,
         "current global and workspace actions, including every screen and application commands"
     );
     assert!(
