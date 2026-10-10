@@ -11,10 +11,13 @@ fn daemon_manager_renders_health_logs_review_and_configuration_at_boundary_sizes
     ];
     app.daemon_manager.build_directory = "/build".into();
     app.daemon_manager.source_directory = "/source".into();
+    app.daemon_manager.message = Some("Stop completed".into());
     app.daemon_manager.logs = vec!["daemon discovery: build identity ready".into()];
     for (width, height) in [(80, 24), (100, 30), (160, 48), (240, 80)] {
         let text = rendered_text(&app, width, height);
         assert!(text.contains("Host: demo-host"), "{width}x{height}: {text}");
+        assert!(text.contains("Stop completed"), "{width}x{height}: {text}");
+        assert!(text.contains("1 Health / activity"));
         app.daemon_manager.logs_visible = true;
         assert!(rendered_text(&app, width, height).contains("daemon discovery:"));
         app.daemon_manager.logs_visible = false;

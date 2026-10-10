@@ -21,7 +21,7 @@ impl InteractiveRuntime {
             let extra = u16::from(runtime.app.offline_notice().is_some()) * 2
                 + u16::from(runtime.app.zoomed_pane.is_some());
             runtime.app.daemon_manager.visible_rows =
-                usize::from(size.height.saturating_sub(header + footer + 6 + extra)).max(1);
+                usize::from(size.height.saturating_sub(header + footer + 7 + extra)).max(1);
             runtime.app.scroll_daemon_manager(0);
         }
         #[cfg(unix)]

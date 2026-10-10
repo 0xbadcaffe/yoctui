@@ -3,7 +3,7 @@ use super::*;
 pub(crate) fn daemon_manager_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let state = &app.daemon_manager;
     let palette = ThemePalette::for_app(app);
-    let sections = Layout::vertical([Constraint::Length(4), Constraint::Min(1)]).split(area);
+    let sections = Layout::vertical([Constraint::Length(5), Constraint::Min(1)]).split(area);
     let busy = app
         .daemon
         .jobs
