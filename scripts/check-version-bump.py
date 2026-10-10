@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 import ast
+import argparse
 import subprocess
 import sys
 import tomllib
@@ -99,7 +100,7 @@ def product_changed(paths: list[str], revision: str) -> bool:
     return False
 
 
-def baseline_cargo_toml() -> tuple[str, bytes, list[str]] | None:
+def baseline_cargo_toml(base_revision: str | None = None) -> tuple[str, bytes, list[str]] | None:
     changed = run_git("diff", "--name-only", "HEAD").splitlines()
     # New product files count, but unrelated untracked captures must not hide
     # the last committed product change by forcing a comparison against HEAD.
@@ -107,7 +108,7 @@ def baseline_cargo_toml() -> tuple[str, bytes, list[str]] | None:
         path for path in run_git("ls-files", "--others", "--exclude-standard").splitlines()
         if product_path(path)
     ]
-    revision = "HEAD" if any(product_path(path) for path in changed) else "HEAD^"
+    revision = base_revision or ("HEAD" if any(product_path(path) for path in changed) else "HEAD^")
     probe = subprocess.run(
         ["git", "show", f"{revision}:Cargo.toml"],
         cwd=ROOT,
@@ -115,8 +116,10 @@ def baseline_cargo_toml() -> tuple[str, bytes, list[str]] | None:
         stderr=subprocess.DEVNULL,
     )
     if probe.returncode:
+        if base_revision is not None:
+            fail(f"explicit baseline {base_revision} does not contain Cargo.toml")
         return None
-    if revision == "HEAD^":
+    if base_revision is not None or revision == "HEAD^":
         changed += run_git("diff", "--name-only", revision, "HEAD").splitlines()
     return revision, probe.stdout, changed
 
@@ -149,9 +152,9 @@ def check_internal_versions(version: str) -> None:
         fail(f"internal dependency versions must be {version}:\n  " + "\n  ".join(mismatches))
 
 
-def main() -> None:
+def main(base_revision: str | None = None) -> None:
     current, current_tuple = parse_version((ROOT / "Cargo.toml").read_bytes(), "Cargo.toml")
-    baseline = baseline_cargo_toml()
+    baseline = baseline_cargo_toml(base_revision)
     if baseline is not None:
         revision, baseline_text, changed = baseline
         previous, previous_tuple = parse_version(baseline_text, f"{revision}:Cargo.toml")
@@ -172,4 +175,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base", help="Validate the entire feature branch against this Git revision")
+    main(parser.parse_args().base)
