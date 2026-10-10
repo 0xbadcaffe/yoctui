@@ -20,7 +20,7 @@ required_features = [
   { id = "resource-state", description = "Typed telemetry and unavailable cache state", fixture_anchors = ["Resource Telemetry", "CPU Usage", "18%"] },
   { id = "discoverability", description = "Navigator and application-menu routes remain visible", fixture_anchors = ["Enter open", "F12 Menu"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/design/screenshots/01-idle-dashboard.png", sha256 = "3bfabecafbd9663cdaa7b786c7225b00a2746c3a29b342337524ab838b88ca76", source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells", source_sha256 = "8adc22723fb06da9ff57df40f1800ae708220d2284af616fcbff9efdfa66b2ed", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/01-idle-dashboard.png", sha256 = "fcbb68fa029ada23aa4fb09667dce9c10f04f5c52534c67761f985d32997f6d2", source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells", source_sha256 = "f13c29a8c4666122f4c1fa046b208038e5e5489a9413d99dabda75b173fb7e6f", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 implementation_tasks = ["UX-DASHBOARD-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001", "UX-TELEMETRY-DIAL-001"]
 open_gaps = []
@@ -39,7 +39,7 @@ required_features = [
   { id = "job-history", description = "Retained work remains visible", fixture_anchors = ["Job History", "Recent complete 4"] },
   { id = "context-actions", description = "Task actions expose availability", fixture_anchors = ["Actions", "Cancel active build"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/design/screenshots/02-active-build-tasks.png", sha256 = "d2cde412c628f5df996749a3e94db1da2b3437c46c09bf2da80d50665376e30d", source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells", source_sha256 = "3de82a7a2a2ea99c1a72e0268b54f11338d5d8175f3c6319ed80e41e5f01571e", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/02-active-build-tasks.png", sha256 = "df16db5faa44fc55504629c1617b359e056d1f69209439c620fbc53f91662aaf", source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells", source_sha256 = "3ed5caf775763d8e9ac4a2f9c6b84fed9ece2962dda4d41fde75f7a26ab69791", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 implementation_tasks = ["UX-PROGRESS-001", "UX-TELEMETRY-001", "UX-LOGS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = []
@@ -58,7 +58,7 @@ required_features = [
   { id = "textual-filters", description = "Warning, error, and related-context filters expose accessible checkbox state", fixture_anchors = ["Errors (checked)", "Warnings (checked)", "Related task context (indeterminate)"] },
   { id = "recovery-actions", description = "Recovery actions and confirmation requirements are visible", fixture_anchors = ["Recovery actions", "[Enter] Open matching log", "Alt+b rebuild options", "confirmation required"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/design/screenshots/03-failed-build-errors.png", sha256 = "4e8e9869b901973a19b9052c33fc86158ce4f4ad24cb39642e5da378c95fdc6a", source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells", source_sha256 = "b6a76fb7c9d0dc418426a4a9392adb2a4216689904bedb25735dfab2027b6313", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/03-failed-build-errors.png", sha256 = "094ac7ca0cf06ec15f3ffe4f4ec89ede6aec34e845bb4b80dd4aa24120582a84", source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells", source_sha256 = "33d1ce76d83b323b8ab8d9d55474e6804740bfa59766fff3af0edc1e727dcbe8", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 implementation_tasks = ["UX-LOGS-001", "UX-CHECKBOX-001", "UX-CONCEPT-ERRORS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = []
@@ -77,7 +77,7 @@ required_features = [
   { id = "accessible-selection", description = "Package selection and authority rows expose checked, unchecked, indeterminate, and disabled meaning", fixture_anchors = ["base system group · 90 packages (indeterminate)", "base-system-000 · 520000 B · 3 files (checked)", "base-system-001 · 520000 B · 4 files (unchecked)", "Filesystem ownership (disabled)"] },
   { id = "filesystem-drilldown", description = "Filesystem tree and textual position remain visible", fixture_anchors = ["Filesystem tree: partial", "2-4/9", "/bin/busybox", "Tab drill-down"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/design/screenshots/04-rootfs-composition.png", sha256 = "33b427f4451ee9ae5514974c7340072b6be91cbc193bec6acb47666394bafd48", source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells", source_sha256 = "6cae08cc71d01a1bf0a7dffa0ed48dc894ffb31b821b6f937e3c75a0ac9eb59c", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/04-rootfs-composition.png", sha256 = "9ce34fcdea0c0ae981682f674d421829a5f9c0c4e48459c6e9925acf29b6e83c", source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells", source_sha256 = "6808fbbaca3ce91c067edc1b4b92eb50b9337bbd617fb6a1e2fc09f9cdb94487", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 implementation_tasks = ["UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = []
@@ -96,7 +96,7 @@ required_features = [
   { id = "validation-diff", description = "Validation diagnostic and diff preview remain visible", fixture_anchors = ["Validation and diff state", "Local validation: ✕ line 9: assignment has no value", "Diff preview: loaded → buffer", "+  10 BROKEN_OVERRIDE =", "BitBake/compiler output remains authoritative"] },
   { id = "editor-actions", description = "Save, exact-recipe build, search, and file-focus actions remain discoverable", fixture_anchors = ["Ctrl+S save", "Ctrl+B build", "Ctrl+F file", "Alt+f workspace", "/ global", "Tab files"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/design/screenshots/05-editor-application-menu.png", sha256 = "1e96fa9c47214aa8759716460322d15d1dcd336d56648ccf12459e296b800656", source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells", source_sha256 = "201506cfb1ec199f0e217e2b0ca39f6b5f0ce2355ae2bff51d2cfaf2042c80f1", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/05-editor-application-menu.png", sha256 = "f90b5222b93aaf85bc20492a1a9bd3c7115a342a188be974de28721f23b54aa7", source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells", source_sha256 = "630f86bf26352f6fe16804517c74e87ae7cd3070e5ef57370fbef1f2e1a99a50", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 implementation_tasks = ["UX-MENU-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = []
@@ -115,7 +115,7 @@ required_features = [
   { id = "scrollback-search", description = "Lower-pane search exposes matches and dropped-history accounting", fixture_anchors = ["last search: busybox · 3 matches", "history 312 · dropped ≥14"] },
   { id = "prefix-help", description = "Prefix actions remain visible", fixture_anchors = ["Ctrl+B prefix", "[ copy", "/ search", "x close"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/design/screenshots/06-terminal-sessions.png", sha256 = "a9b29ceafefd0dfec8c62765359679f1d7d6abc6eee00becf9318aa509bd3cb5", source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells", source_sha256 = "a60153223976e1fb275882dd391db12cdecd9d7c2017cb9269a9b4171b3d68eb", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/design/screenshots/06-terminal-sessions.png", sha256 = "825448405341ce798aa6aa9b03f2931d042363c63ba10fddc37d689ff0af0b54", source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells", source_sha256 = "3d412c69a7ead2b75ba9240e404303d51774e5e2574296a257382e2e7d51dfda", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 implementation_tasks = ["UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001", "UX-CONCEPT-TERMINAL-LIVE-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = []

@@ -57,6 +57,9 @@ Health shows systemd status, PID, hostname/IP addresses, IPC state, startup
 readiness, active jobs/terminals, memory, uptime and queue-pressure counters.
 Logs are the latest 200 lines of the daemon's user-service journal, not the
 BitBake task log. Refresh uses `r`; arrows, Page Up/Down and Home/End scroll.
+Recovery notices and recent activity have distinct colors. Journal timestamps,
+hostnames, processes/PIDs and message severity are highlighted separately;
+monochrome mode preserves the text and uses heading emphasis.
 Inspection refreshes in the background while the screen is open.
 
 Use `s` start, `x` stop, `t` restart or `c` configure. Enter reviews/confirms;
