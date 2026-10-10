@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 enum ProbeProcessResult {
     Completed {
         success: bool,

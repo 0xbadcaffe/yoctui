@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.331 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:✕ Failed • Local 19:28│
+│yoctui v0.1.333 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:✕ Failed • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: ✕ Failed                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: --:--:--  |  Workers: 0                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -34,8 +34,8 @@
 │    Maintenance          ││                                                                                     ││                                            │
 │  ▱ Build environment    ││                                                                                     ││                                            │
 │  ▱ Compatibility        ││                                                                                     ││                                            │
-│  ▱ Settings             ││                                                                                     ││Recovery Actions────────────────────────────│
-│                         │└─────────────────────────────────────────────────────────────────────────────────────┘│[Enter] Open matching log                   │
+│  ▱ Daemons              ││                                                                                     ││Recovery Actions────────────────────────────│
+│  ▱ Settings             │└─────────────────────────────────────────────────────────────────────────────────────┘│[Enter] Open matching log                   │
 │                         │┌Recovery actions─────────────────────────────────────────────────────────────────────┐│[o] Open source log                         │
 │                         ││Alt+b rebuild options · Enter source log · l matching log · o external               ││[s] Cycle severity filter                   │
 │                         ││Rebuild: review + confirmation required.                                             ││[f] Pause / follow logs                     │

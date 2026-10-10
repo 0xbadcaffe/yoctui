@@ -50,13 +50,29 @@ class VersionBumpPolicyTests(unittest.TestCase):
         self.git("add", ".")
         self.git("commit", "-qm", "fixture")
 
-    def check(self, failure: bool = False) -> None:
+    def check(self, failure: bool = False, base: str | None = None) -> None:
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             if failure:
                 with self.assertRaises(SystemExit):
-                    POLICY.main()
+                    POLICY.main(base)
             else:
-                POLICY.main()
+                POLICY.main(base)
+
+    def test_branch_baseline_allows_followups_after_a_release_bump(self) -> None:
+        self.git("branch", "release-base")
+        self.write("crates/example/src/lib.rs", "fn feature() {}\n")
+        self.check(failure=True, base="release-base")
+        self.write("Cargo.toml", '[workspace]\n[workspace.package]\nversion = "0.1.2"\n')
+        self.write("scripts/verify-cratesio-package.sh", 'version="0.1.2"\n')
+        self.commit()
+        self.write("crates/example/src/lib.rs", "fn feature_followup() {}\n")
+        self.check(base="release-base")
+        self.commit()
+        self.check(failure=True)
+        self.check(base="release-base")
+
+    def test_explicit_missing_baseline_fails_closed(self) -> None:
+        self.check(failure=True, base="missing-revision")
 
     def test_clean_and_dirty_documentation_or_ci_changes_keep_version(self) -> None:
         self.write("README.md", "# documentation\n")

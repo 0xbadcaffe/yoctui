@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.331 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.333 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -34,8 +34,8 @@
 │    Maintenance          │││  ☐ base-system-003 · 520000 B · 6 files (unchecked)                               │││                                            │
 │  ▱ Build environment    │││  ☐ base-system-004 · 520000 B · 7 files (unchecked)                               │││Limitations                                 │
 │  ▱ Compatibility        │││  ☐ Filesystem ownership (disabled) — partial; Tab for evidence                    │││! package ownership is partial              │
-│  ▱ Settings             │││Other membership remains inspectable · exact bytes stay authoritative              │││                                            │
-│                         │││                                                                                   │││▾ RELATED PATHS                             │
+│  ▱ Daemons              │││Other membership remains inspectable · exact bytes stay authoritative              │││                                            │
+│  ▱ Settings             │││                                                                                   │││▾ RELATED PATHS                             │
 │                         ││└───────────────────────────────────────────────────────────────────────────────────┘││/workspace/yocto/build/tmp/deploy/images/qem│
 │                         ││┌Filesystem tree: partial · ↑↓ 2-4/9 · Tab drill-down───────────────────────────────┐││ux86-64/core-image-minimal-qemux86-64.rootfs│
 │                         │││Logical path                                       Kind    Exact B   Package       │││.ext4                                       │

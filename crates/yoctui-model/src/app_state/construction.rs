@@ -11,6 +11,7 @@ impl App {
             source_git_status: SourceGitStatus::default(),
             background_activities: Default::default(),
             daemon: ClientDaemonView::default(),
+            daemon_manager: DaemonManagerState::default(),
             client_access_origin: ClientAccessOrigin::default(),
             workspace_compatibility: WorkspaceCompatibilityState::default(),
             compatibility_ui: CompatibilityUiState::default(),

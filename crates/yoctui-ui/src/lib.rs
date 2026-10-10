@@ -243,6 +243,7 @@ mod emulation_inspector;
 use emulation_inspector::{qemu_capability_text, qemu_session_text, wic_inspector_text};
 
 mod compatibility_render;
+mod daemon_manager_render;
 use compatibility_render::{
     compatibility_inspector_text, compatibility_workspace, compatibility_workspace_state_label,
     compatibility_workspace_state_style,

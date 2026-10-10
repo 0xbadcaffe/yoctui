@@ -98,4 +98,5 @@ mod compatibility_probe_uncollected_inventory_is_inconclusive_not_negative;
 
 mod compatibility_probe_maps_typed_non_process_observations;
 
+mod command_cache;
 mod compatibility_probe_context_rejects_environment_and_tool_mismatch;

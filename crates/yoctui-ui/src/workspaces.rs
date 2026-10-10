@@ -65,6 +65,7 @@ pub(super) fn workspace(
         Screen::TerminalSessions => terminal_sessions_workspace(frame, app, area),
         Screen::Maintenance => maintenance_workspace(frame, app, area),
         Screen::Compatibility => compatibility_workspace(frame, app, area),
+        Screen::Daemons => daemon_manager_render::daemon_manager_workspace(frame, app, area),
         Screen::Help => help(frame, app, area),
         Screen::Settings => settings_workspace(frame, app, area),
         Screen::BuildEnvironment => build_environment_workspace(frame, app, area),

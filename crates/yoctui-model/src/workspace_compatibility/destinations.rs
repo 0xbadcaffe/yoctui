@@ -14,6 +14,7 @@ pub fn workspace_destination_requirement(
         | WorkspaceDestination::ProjectProfiles
         | WorkspaceDestination::BuildEnvironment
         | WorkspaceDestination::Compatibility
+        | WorkspaceDestination::Daemons
         | WorkspaceDestination::Settings
         | WorkspaceDestination::Help => WorkspaceEffectRequirement::ClientLocal,
         WorkspaceDestination::Recipes => {

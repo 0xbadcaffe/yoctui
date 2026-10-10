@@ -184,6 +184,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         Screen::Compatibility => {
             "↑/↓ or j/k select | 1 All | 2 Available | 3 Limited | 4 Unavailable | 5 Attention | / search | Tab focus"
         }
+        Screen::Daemons => "1 health | 2 logs | r refresh | s start | x stop | t restart | c configure | ↑/↓ PgUp/PgDn Home/End scroll | Esc back",
         Screen::Logs => match app.log_workspace_view {
             LogWorkspaceView::BitBake if app.logs.follow => {
                 "v diagnostics | ↑/↓ select | ←/→ horizontal | f pause | w wrap | s/Alt+r/Alt+t/Alt+b/Alt+s/Alt+i filters | / search | m bookmark | Alt+c copy | Alt+e export"

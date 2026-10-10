@@ -30,6 +30,7 @@ fn navigator_workbench_order_keeps_build_and_validation_groups_contiguous() {
             Screen::Maintenance,
             Screen::BuildEnvironment,
             Screen::Compatibility,
+            Screen::Daemons,
             Screen::Settings,
         ]
     );

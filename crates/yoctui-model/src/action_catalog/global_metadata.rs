@@ -300,6 +300,12 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             &[],
             40,
         ),
+        CommandId::OpenDaemons => GlobalMetadata {
+            menu_path: vec!["Tools", "Daemons"],
+            ..navigation("navigate.daemons", "Open Daemons",
+                "Inspect and control the local daemon, service health and debug logs",
+                &["daemon", "service"], &["daemon", "systemd", "health", "logs"], &[], 50)
+        },
         CommandId::OpenSettings => GlobalMetadata {
             menu_path: vec!["View", "Preferences"],
             ..navigation(

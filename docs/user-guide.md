@@ -49,6 +49,39 @@ separately; Yoctui does not install BitBake, BSP layers, or target tools.
 
 ## Understand the persistent shell
 
+### Daemon management
+
+Open **Tools → Daemons** in the navigator or **F12 → Tools → Daemons**.
+The single local daemon has two views: `1` health/activity and `2` debug logs.
+Health shows systemd status, PID, hostname/IP addresses, IPC state, startup
+readiness, active jobs/terminals, memory, uptime and queue-pressure counters.
+Logs are the latest 200 lines of the daemon's user-service journal, not the
+BitBake task log. Refresh uses `r`; arrows, Page Up/Down and Home/End scroll.
+Recovery notices and recent activity have distinct colors. Journal timestamps,
+hostnames, processes/PIDs and message severity are highlighted separately;
+monochrome mode preserves the text and uses heading emphasis.
+Inspection refreshes in the background while the screen is open.
+
+Use `s` start, `x` stop, `t` restart or `c` configure. Enter reviews/confirms;
+Escape cancels. Stop/restart/reconfiguration refuses active jobs or terminal
+sessions and disconnects clients when successful. Controls target only the local
+`yoctui.service`; install it first with `yoctui daemon service install` if needed.
+No remote/TCP daemon is supported here; the shown IPs identify the host only.
+
+Configuration uses Tab to switch between the absolute build and source paths;
+the build needs `conf/local.conf` and `conf/bblayers.conf`, and the source needs
+`oe-init-build-env`. Clipboard paste is supported. Confirmation writes a separate
+`yoctui.service.d/zz-yoctui-manager.conf` drop-in, reloads systemd and restarts the
+daemon. It overrides any existing custom launch command without deleting it.
+Vendor setup wrappers may need their own service configuration instead.
+The source path is passed as `YOCTUI_SOURCE_DIR`, allowing sibling source/build
+directories. Source trees, build outputs and Devtool workspaces are preserved.
+The client reconnects automatically. Background compatibility discovery is
+read-only, batches build-identity variables and reuses tool help output within
+one discovery generation; it does not skip required evidence checks.
+
+### Navigation
+
 Navigator selects workspaces. Tab switches visible panes, Enter activates, and
 Esc closes the innermost view. Ctrl+P searches commands; `a` opens context actions.
 Inspector is off by default; Alt+i toggles it. Below 80x24, resize the terminal.

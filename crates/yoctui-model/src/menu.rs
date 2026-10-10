@@ -93,6 +93,7 @@ impl ApplicationMenuGroup {
             | CommandId::OpenSettings => Self::View,
             CommandId::OpenDevtoolWorkspace | CommandId::OpenDevtool(_) => Self::Devtool,
             CommandId::OpenGitUi
+            | CommandId::OpenDaemons
             | CommandId::OpenBitBakeLayersShowLayers
             | CommandId::OpenBitBakeLayersShowRecipes
             | CommandId::OpenBitBakeLayersShowOverlayed

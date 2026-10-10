@@ -37,6 +37,8 @@ impl InteractiveRuntime {
             let _ = operation.handle.await;
         }
         runtime.stop_recipe_inspection().await;
+        #[cfg(unix)]
+        runtime.daemon_manager_io.abort();
         runtime.stop_devtool_status().await;
         runtime.stop_platform_inspection().await;
         if let Some(operation) = runtime.image_artifact_operation.take() {

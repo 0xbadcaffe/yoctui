@@ -4,7 +4,7 @@ impl App {
             return InspectorMode::Navigator;
         }
         match self.screen {
-            Screen::Dashboard | Screen::Insights => InspectorMode::DaemonSession,
+            Screen::Dashboard | Screen::Insights | Screen::Daemons => InspectorMode::DaemonSession,
             Screen::Tasks => InspectorMode::Task,
             Screen::BuildHistory => InspectorMode::Job,
             Screen::Dependencies | Screen::LayerRelationships => InspectorMode::Dependency,

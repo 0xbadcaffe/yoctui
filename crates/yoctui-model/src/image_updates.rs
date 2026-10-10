@@ -363,6 +363,8 @@ pub(crate) fn current_collection_edge_action(app: &App, to_end: bool) -> Option<
         Screen::BuildEnvironment => Action::SelectBuildEnvironmentField { delta },
         Screen::Compatibility => Action::SelectCompatibilityCapability { delta },
         Screen::Settings => Action::SelectSetting { delta },
-        Screen::LayerRelationships | Screen::Bbmask | Screen::Help => return None,
+        Screen::LayerRelationships | Screen::Bbmask | Screen::Help | Screen::Daemons => {
+            return None;
+        }
     })
 }

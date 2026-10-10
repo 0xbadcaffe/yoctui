@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
-    assert_eq!(WorkspaceDestination::ALL.len(), 29);
+    assert_eq!(WorkspaceDestination::ALL.len(), 30);
     for screen in [
         Screen::Dashboard,
         Screen::Insights,
@@ -31,6 +31,7 @@ fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
         Screen::Help,
         Screen::BuildEnvironment,
         Screen::Compatibility,
+        Screen::Daemons,
         Screen::Settings,
     ] {
         let _ = workspace_screen_destination(screen);

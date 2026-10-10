@@ -158,7 +158,8 @@ fn ux_viewport_chrome_reports_position_and_available_directions() {
         "{top}"
     );
 
-    navigator_app.navigator_selection = 25;
+    navigator_app.navigator_selection =
+        App::navigator_selection_for_destination(yoctui_model::WorkspaceDestination::Settings).unwrap();
     let bottom = rendered_text(&navigator_app, 80, 24);
     assert!(
         bottom.contains(&format!(

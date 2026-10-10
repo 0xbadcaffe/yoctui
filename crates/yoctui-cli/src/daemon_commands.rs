@@ -167,7 +167,7 @@ async fn daemon_launch_environment(
     }
     let current_dir = env::current_dir()?;
     let candidate = explicit_build_dir.unwrap_or(&current_dir);
-    let profile = inferred_build_environment_profile(candidate);
+    let profile = environment_profile::daemon_build_environment_profile(candidate);
     if profile.is_none() && explicit_build_dir.is_some() {
         anyhow::bail!(
             "cannot locate oe-init-build-env for the selected build directory {}",
@@ -189,12 +189,13 @@ fn use_inherited_daemon_environment(explicit: Option<&Path>, inherited: bool) ->
 pub(crate) async fn initialize_daemon_build_directory(
     build_dir: &Path,
 ) -> Result<BTreeMap<String, String>> {
-    let profile = inferred_build_environment_profile(build_dir).with_context(|| {
-        format!(
-            "cannot locate oe-init-build-env for the selected build directory {}",
-            build_dir.display()
-        )
-    })?;
+    let profile =
+        environment_profile::daemon_build_environment_profile(build_dir).with_context(|| {
+            format!(
+                "cannot locate oe-init-build-env for the selected build directory {}",
+                build_dir.display()
+            )
+        })?;
     initialize_daemon_build_environment(profile).await
 }
 

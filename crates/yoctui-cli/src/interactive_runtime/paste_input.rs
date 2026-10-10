@@ -41,6 +41,18 @@ impl InteractiveRuntime {
     }
 
     pub(super) fn handle_paste(&mut self, text: String) -> Result<()> {
+        #[cfg(unix)]
+        if self.app.screen == Screen::Daemons
+            && self.app.daemon_manager.editing
+            && !self.app.menu.is_open()
+            && !self.app.command_palette_open
+        {
+            super::daemon_workspace::append_configuration_paste(
+                &mut self.app.daemon_manager,
+                &text,
+            );
+            return Ok(());
+        }
         if yoctui_app::text_paste_active(&self.app) {
             return self.insert_text_paste(text, yoctui_model::TextAreaPasteSource::BracketedPaste);
         }

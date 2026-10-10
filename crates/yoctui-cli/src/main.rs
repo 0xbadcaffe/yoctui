@@ -388,6 +388,10 @@ mod daemon_publish_maintenance;
 use daemon_publish_maintenance::*;
 mod daemon_identity;
 use daemon_identity::*;
+#[cfg(unix)]
+mod daemon_manager_control;
+#[cfg(unix)]
+mod daemon_manager_io;
 mod daemon_service;
 use daemon_service::*;
 mod headless_build;
@@ -484,15 +488,12 @@ mod interactive_runtime;
 use interactive_runtime::*;
 mod termination;
 use termination::*;
-
 #[cfg(test)]
 #[path = "tests/firmware_workbench/mod.rs"]
 mod firmware_workbench_tests;
-
-#[cfg(test)]
-#[path = "tests/cli/mod.rs"]
-mod tests;
-
 #[cfg(test)]
 #[path = "tests/m68_focus/mod.rs"]
 mod m68_focus_tests;
+#[cfg(test)]
+#[path = "tests/cli/mod.rs"]
+mod tests;

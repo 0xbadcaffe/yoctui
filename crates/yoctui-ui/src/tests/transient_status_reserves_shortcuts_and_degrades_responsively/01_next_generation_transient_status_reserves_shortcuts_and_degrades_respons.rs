@@ -381,7 +381,8 @@ fn workbench_navigator_renders_grouped_hierarchy_and_full_row_selection() {
 fn workbench_navigator_scrolls_the_last_destination_into_view() {
     let mut app = App::new(32, 8192);
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 25;
+    app.navigator_selection =
+        App::navigator_selection_for_destination(yoctui_model::WorkspaceDestination::Settings).unwrap();
     let output = rendered_text(&app, 80, 24);
     assert!(output.contains("TOOLS"), "{output}");
     assert!(output.contains("Settings"), "{output}");
@@ -425,9 +426,11 @@ fn next_generation_navigator_renders_authoritative_badges_and_collapsed_groups()
 fn next_generation_navigator_reports_bounded_scroll_position() {
     let mut app = App::new(32, 8192);
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 25;
+    app.navigator_selection =
+        App::navigator_selection_for_destination(yoctui_model::WorkspaceDestination::Settings).unwrap();
     let output = rendered_text(&app, 80, 24);
-    assert!(output.contains("Navigator · 31/31 ↑"), "{output}");
+    let rows = app.navigator_visible_row_count();
+    assert!(output.contains(&format!("Navigator · {rows}/{rows} ↑")), "{output}");
     assert!(output.contains("Settings"), "{output}");
 }
 

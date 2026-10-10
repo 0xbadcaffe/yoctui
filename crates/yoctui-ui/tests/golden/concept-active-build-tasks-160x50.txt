@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.331 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
+│yoctui v0.1.333 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
 │⣧ Build running · 1 active                                                                                                                                    │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -34,8 +34,8 @@
 │    Maintenance          ││✓ Succeeded   busybox       Build        busybox                  19:11:42  00:00:17 ││✓ Open Logs            [l] — Local          │
 │  ▱ Build environment    ││✕ Failed      core-image-mi Build        core-image-minimal       19:08:33  00:01:48 ││✓ Build History        [h] — Local          │
 │  ▱ Compatibility        ││✓ Succeeded   virtual/kerne Build        virtual/kernel           19:07:18  00:00:54 ││? Build options        [Alt+b] — Unknown    │
-│  ▱ Settings             ││                                                                                     ││  Reason: No current environment capability │
-│                         ││                                                                                     ││                                            │
+│  ▱ Daemons              ││                                                                                     ││  Reason: No current environment capability │
+│  ▱ Settings             ││                                                                                     ││                                            │
 │                         │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
 │                         │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│                                            │
 │                         ││CPU Usage               24%│RAM ! unavailable           │BUILD FS ! unavailable      ││                                            │
