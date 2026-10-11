@@ -258,7 +258,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::TestJunitExportCancelled { .. } | Action::TestJunitExportTimedOut { .. } | Action::TestJunitExportLost { .. }
         | Action::InspectQemuCapability | Action::QemuCapabilityLoaded(..) | Action::SshClientCapabilityDetected(..)
         | Action::BeginSelectedImageConsole | Action::SelectImageConsoleField { .. } | Action::CycleImageConsoleChoice { .. }
-        | Action::AppendImageConsoleField(..) | Action::BackspaceImageConsoleField | Action::ConfirmImageConsole
+        | Action::AppendImageConsoleField(..) | Action::BackspaceImageConsoleField | Action::ClearImageConsoleField | Action::ConfirmImageConsole
+        | Action::ScrollQemuLaunchPreview { .. }
         | Action::CancelImageConsole | Action::BeginSelectedQemuLaunch | Action::UpdateQemuLaunchDraft(..)
         | Action::SelectQemuLaunchField { .. } | Action::ActivateQemuLaunchField | Action::CycleQemuLaunchChoice { .. }
         | Action::AppendQemuLaunchField(..) | Action::BackspaceQemuLaunchField | Action::FinishQemuLaunchFieldEdit

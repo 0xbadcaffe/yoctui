@@ -46,6 +46,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::CycleImageConsoleChoice { .. }
         | Action::AppendImageConsoleField(..)
         | Action::BackspaceImageConsoleField
+        | Action::ClearImageConsoleField
+        | Action::ScrollQemuLaunchPreview { .. }
         | Action::ConfirmImageConsole
         | Action::CancelImageConsole
         | Action::BeginSelectedQemuLaunch

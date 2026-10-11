@@ -46,16 +46,19 @@ pub(crate) fn testing_workspace(frame: &mut Frame, app: &App, area: Rect) {
             usize::from(area.height.saturating_sub(10)).max(1),
         ),
     }
-    frame.render_widget(
-        Paragraph::new(lines)
-            .block(pane_block(
-                app,
-                "Testing",
-                app.focus == FocusTarget::Workspace,
-            ))
-            .wrap(Wrap { trim: false }),
-        area,
-    );
+    let paragraph = Paragraph::new(lines).block(pane_block(
+        app,
+        "Testing",
+        app.focus == FocusTarget::Workspace,
+    ));
+    // Drilled case rows occupy one physical line so the logical viewport
+    // cannot hide the selected final case. Full paths remain in the inspector.
+    let paragraph = if app.test_view == TestWorkspaceView::Results && app.test_result_drilled {
+        paragraph
+    } else {
+        paragraph.wrap(Wrap { trim: false })
+    };
+    frame.render_widget(paragraph, area);
 }
 
 pub(crate) fn testing_inspector_text(app: &App) -> String {

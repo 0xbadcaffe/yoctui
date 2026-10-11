@@ -65,6 +65,12 @@ pub(crate) fn workspace_owns_focus_key(app: &App, input: Input) -> bool {
         || (input == Input::Esc
             && app.screen == Screen::Errors
             && app.error_workspace.viewer.is_some())
+        || (app.screen == Screen::Testing
+            && app.focus == yoctui_model::FocusTarget::Workspace
+            && (input == Input::Tab
+                || (input == Input::Esc
+                    && app.test_view == TestWorkspaceView::Results
+                    && (app.test_result_drilled || app.test_result_searching))))
         || (matches!(input, Input::Tab | Input::BackTab)
             && matches!(
                 app.screen,

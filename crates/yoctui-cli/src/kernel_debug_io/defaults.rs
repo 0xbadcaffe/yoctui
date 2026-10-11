@@ -1,4 +1,4 @@
-//! Read-only, bounded discovery in the selected build; never walks source/work trees.
+//! Read-only, bounded discovery in the selected build; never recursively walks source/work trees.
 use std::{
     collections::BTreeMap,
     fs::{self, File},
@@ -58,7 +58,8 @@ pub(super) fn discover_for_tool(
     } else {
         None
     }
-    .or_else(|| choose_symbols(&build, &[shared.join("vmlinux")]));
+    .or_else(|| choose_symbols(&build, &[shared.join("vmlinux")]))
+    .or_else(|| work_symbols(&build, &context.machine));
     if let Some(path) = symbols {
         put(&mut defaults, F::Symbols, &path);
     }
@@ -212,6 +213,63 @@ fn choose_symbols(build: &Path, paths: &[PathBuf]) -> Option<PathBuf> {
             })
             .collect(),
     )
+}
+
+fn work_symbols(build: &Path, machine: &str) -> Option<PathBuf> {
+    // Only inspect the machine's kernel recipe/version/build directories;
+    // never descend into sources, rootfs contents, or unrelated recipe work.
+    // Ambiguous versions deliberately require a manual choice.
+    let mut paths = Vec::new();
+    let mut remaining = MAX_ENTRIES;
+    for architecture in bounded_directories(build, &build.join("tmp/work"), &mut remaining)? {
+        let architecture_name = architecture.file_name()?.to_str()?;
+        if !architecture_name.starts_with(&format!("{machine}-"))
+            && !architecture_name.starts_with(&format!("{}-", machine.replace('-', "_")))
+        {
+            continue;
+        }
+        for recipe in bounded_directories(build, &architecture, &mut remaining)? {
+            if !recipe.file_name()?.to_str()?.starts_with("linux-") {
+                continue;
+            }
+            for version in bounded_directories(build, &recipe, &mut remaining)? {
+                for directory in bounded_directories(build, &version, &mut remaining)? {
+                    let name = directory.file_name()?.to_str()?;
+                    if (name.starts_with(&format!("linux-{machine}-"))
+                        || name.starts_with(&format!("linux-{}-", machine.replace('-', "_"))))
+                        && name.ends_with("-build")
+                    {
+                        paths.push(directory.join("vmlinux"));
+                    }
+                }
+            }
+        }
+    }
+    choose_symbols(build, &paths)
+}
+
+fn bounded_directories(
+    build: &Path,
+    directory: &Path,
+    remaining: &mut usize,
+) -> Option<Vec<PathBuf>> {
+    let directory = directory.canonicalize().ok()?;
+    if !directory.starts_with(build) {
+        return None;
+    }
+    let mut paths = Vec::new();
+    for entry in fs::read_dir(directory).ok()? {
+        *remaining = remaining.checked_sub(1)?;
+        let path = entry.ok()?.path();
+        if path.is_dir() {
+            let path = path.canonicalize().ok()?;
+            if !path.starts_with(build) {
+                return None;
+            }
+            paths.push(path);
+        }
+    }
+    Some(paths)
 }
 
 fn entries(build: &Path, directory: &Path) -> Result<Vec<PathBuf>, String> {

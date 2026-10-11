@@ -192,6 +192,32 @@ fn test_workflow_results_render_inventory_drill_partial_and_terminal_states() {
 }
 
 #[test]
+fn test_workflow_long_case_viewport_keeps_last_selected_row_visible() {
+    let (mut app, _baseline, mut candidate) = test_workflow_results_app();
+    let template = candidate.suites[0].cases[0].clone();
+    candidate.suites[0].identity = "very-long-suite-path/".repeat(8);
+    candidate.suites[0].cases = (0..75).map(|index| {
+        let mut case = template.clone();
+        case.outcome = if index == 74 { yoctui_model::TestCaseOutcome::Failed } else { yoctui_model::TestCaseOutcome::Passed };
+        case.identity = yoctui_model::TestCaseIdentity::new(
+            candidate.suites[0].identity.clone(), format!("Case{index:03}/{}", "long-path/".repeat(12))).unwrap();
+        case
+    }).collect();
+    app.test_result_drilled = true;
+    app.test_case_selection = Some(candidate.suites[0].cases[74].identity.clone());
+    let request = app.test_results.request().unwrap().clone();
+    app.test_results = TestResultInventoryState::Available { request, records: vec![candidate] };
+    for (width, height) in [(80, 24), (100, 30), (160, 48), (240, 80)] {
+        for inspector in [false, true] {
+            app.inspector_visible = inspector;
+            let rows = rendered_region_rows(if inspector { width * 2 / 3 } else { width }, height,
+                |frame, area| crate::testing_workspace(frame, &app, area));
+            assert!(rows.iter().any(|line| line.contains('▶') && line.contains("failed")), "{rows:?}");
+        }
+    }
+}
+
+#[test]
 fn test_workflow_comparison_renders_categories_limitations_and_outcomes() {
     let (mut app, baseline, candidate) = test_workflow_results_app();
     let request = yoctui_model::TestComparisonRequest::new(

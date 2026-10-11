@@ -252,6 +252,7 @@ pub fn image_console_dialog_action(
         Input::Backspace if dialog.selected_field.is_text() => {
             Some(Action::BackspaceImageConsoleField)
         }
+        Input::CtrlU if dialog.selected_field.is_text() => Some(Action::ClearImageConsoleField),
         Input::Char(character) if dialog.selected_field.is_text() => {
             Some(Action::AppendImageConsoleField(character))
         }
@@ -262,6 +263,16 @@ pub fn image_console_dialog_action(
 }
 
 pub fn qemu_launch_confirmation_action(key: Input) -> Option<Action> {
+    let delta = match key {
+        Input::Up | Input::Char('k') => Some(-1),
+        Input::Down | Input::Char('j') => Some(1),
+        Input::PageUp => Some(-10),
+        Input::PageDown => Some(10),
+        Input::Home => Some(isize::MIN),
+        Input::End => Some(isize::MAX),
+        _ => None,
+    };
+    if let Some(delta) = delta { return Some(Action::ScrollQemuLaunchPreview { delta }); }
     match key {
         Input::Enter => Some(Action::ConfirmQemuLaunchInTerminal),
         Input::Esc => Some(Action::CancelQemuLaunchPreview),

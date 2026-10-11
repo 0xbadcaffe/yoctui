@@ -26,6 +26,12 @@ impl InteractiveRuntime {
                         Action::BackspaceMetadataQuery,
                     );
                 }
+                Input::CtrlU => {
+                    let _ = compatibility_workspace_action(
+                        &mut runtime.app,
+                        Action::ClearMetadataQuery,
+                    );
+                }
                 _ => {}
             }
         } else if input == Input::Char('!') {

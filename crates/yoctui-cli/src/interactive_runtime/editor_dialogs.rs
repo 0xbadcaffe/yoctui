@@ -24,8 +24,15 @@ impl InteractiveRuntime {
             runtime.app.active_dialog(),
             Some(Dialog::QemuLaunchConfirmation(_))
         ) {
+            let size = runtime.terminal.size()?;
+            if let Some(Dialog::QemuLaunchConfirmation(preview)) = runtime.app.active_dialog_mut() {
+                yoctui_ui::clamp_qemu_launch_review_scroll(preview, size.width, size.height);
+            }
             let effect = qemu_launch_confirmation_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
+            if let Some(Dialog::QemuLaunchConfirmation(preview)) = runtime.app.active_dialog_mut() {
+                yoctui_ui::clamp_qemu_launch_review_scroll(preview, size.width, size.height);
+            }
             if let Some(effect @ Effect::Terminal(_)) = &effect {
                 let _ = submit_daemon_effect(&mut runtime.daemon_runtime, &mut runtime.app, effect);
             }
@@ -318,111 +325,13 @@ impl InteractiveRuntime {
                 .layer_browser
                 .as_ref()
                 .is_some_and(|browser| browser.preview_focused);
-            let effect = if runtime.app.screen == Screen::Images {
-                rootfs_browser_action(&runtime.app, input)
-                    .and_then(|action| compatibility_workspace_action(&mut runtime.app, action))
-            } else {
-                match (preview_focused, input) {
-                    (true, Input::Up) => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::ScrollLayerBrowserPreview { delta: -1 },
-                    ),
-                    (true, Input::Down) => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::ScrollLayerBrowserPreview { delta: 1 },
-                    ),
-                    (true, Input::PageUp) => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::ScrollLayerBrowserPreview { delta: -10 },
-                    ),
-                    (true, Input::PageDown) => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::ScrollLayerBrowserPreview { delta: 10 },
-                    ),
-                    (true, Input::Left) => compatibility_workspace_action(
-                        &mut runtime.app,
-                        Action::FocusLayerBrowserTree,
-                    ),
-                    (_, input) => match input {
-                        Input::Tab => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::CycleFocus { backwards: false },
-                        ),
-                        Input::BackTab => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::CycleFocus { backwards: true },
-                        ),
-                        Input::Up => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::SelectLayerBrowserEntry { delta: -1 },
-                        ),
-                        Input::Down => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::SelectLayerBrowserEntry { delta: 1 },
-                        ),
-                        Input::PageUp => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::SelectLayerBrowserEntry { delta: -10 },
-                        ),
-                        Input::PageDown => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::SelectLayerBrowserEntry { delta: 10 },
-                        ),
-                        Input::Enter => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::LayerBrowserEnter,
-                        ),
-                        Input::Right | Input::Char('l') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::LayerBrowserExpand,
-                        ),
-                        Input::Esc => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::CloseLayerBrowser,
-                        ),
-                        Input::Left | Input::Char('h') => {
-                            compatibility_workspace_action(&mut runtime.app, Action::LayerBrowserUp)
-                        }
-                        Input::Char('r') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::RefreshLayerBrowser,
-                        ),
-                        Input::Char('e') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::EditSelectedLayerBrowserFile,
-                        ),
-                        Input::Char('.') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::ToggleLayerBrowserHidden,
-                        ),
-                        Input::Char('/') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::BeginMetadataSearch,
-                        ),
-                        Input::Char('i') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
-                        ),
-                        Input::Char('[') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::ScrollLayerBrowserPreview { delta: -10 },
-                        ),
-                        Input::Char(']') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::ScrollLayerBrowserPreview { delta: 10 },
-                        ),
-                        Input::Char('m') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
-                        ),
-                        Input::Char('d') => compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
-                        ),
-                        _ => None,
-                    },
-                }
+            let action = browser_workspace_action(&runtime.app, preview_focused, input);
+            let Some(action) = action else {
+                // Unmapped keys belong to the global router (F-keys, menus,
+                // quit, etc.), not to the file browser.
+                return Ok(None);
             };
+            let effect = compatibility_workspace_action(&mut runtime.app, action);
             match effect {
                 Some(Effect::LoadLayerBrowserDirectory {
                     layer,
@@ -452,3 +361,30 @@ impl InteractiveRuntime {
         Ok(Some(KeyRouteOutcome::Handled))
     }
 }
+
+fn browser_workspace_action(app: &App, preview_focused: bool, input: Input) -> Option<Action> {
+    if app.screen == Screen::Images {
+        return rootfs_browser_action(app, input);
+    }
+    if preview_focused {
+        match input {
+            Input::Up => return Some(Action::ScrollLayerBrowserPreview { delta: -1 }),
+            Input::Down => return Some(Action::ScrollLayerBrowserPreview { delta: 1 }),
+            Input::PageUp => return Some(Action::ScrollLayerBrowserPreview { delta: -10 }),
+            Input::PageDown => return Some(Action::ScrollLayerBrowserPreview { delta: 10 }),
+            Input::Home => return Some(Action::ScrollLayerBrowserPreview { delta: isize::MIN }),
+            Input::End => return Some(Action::ScrollLayerBrowserPreview { delta: isize::MAX }),
+            Input::Left => return Some(Action::FocusLayerBrowserTree),
+            _ => {}
+        }
+    }
+    match input {
+        Input::Tab => Some(Action::CycleFocus { backwards: false }),
+        Input::BackTab => Some(Action::CycleFocus { backwards: true }),
+        _ => yoctui_app::layer_tree_action(app.metadata_searching, input),
+    }
+}
+
+#[cfg(test)]
+#[path = "../tests/interactive_runtime/browser_keys.rs"]
+mod browser_key_tests;

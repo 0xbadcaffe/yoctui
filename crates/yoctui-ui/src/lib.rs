@@ -214,6 +214,7 @@ use testing_render::{
 };
 
 mod sdk_render;
+pub use sdk_render::clamp_qemu_launch_review_scroll;
 use sdk_render::{
     image_console_dialog, platform_inspector_text, platform_workspace,
     qemu_cancellation_confirmation, qemu_launch_confirmation, qemu_launch_dialog,

@@ -109,6 +109,9 @@ fn target(app: &App) -> Option<Target> {
         Some(Dialog::QemuLaunch(dialog)) if dialog.editing => {
             return Some(Target::Single(Action::AppendQemuLaunchField));
         }
+        Some(Dialog::ImageConsole(dialog)) if dialog.selected_field.is_text() => {
+            return Some(Target::Single(Action::AppendImageConsoleField));
+        }
         Some(Dialog::WicCreate(dialog)) if dialog.editing => {
             return Some(Target::Single(Action::AppendWicCreateField));
         }

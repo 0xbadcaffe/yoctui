@@ -316,7 +316,11 @@ impl QemuLaunchDraft {
         request.validate()?;
         let mut argv = vec![executable];
         argv.extend(request.arguments());
-        Ok(QemuLaunchPreview { request, argv })
+        Ok(QemuLaunchPreview {
+            request,
+            argv,
+            scroll: 0,
+        })
     }
 }
 
@@ -345,6 +349,17 @@ impl QemuLaunchRequest {
         } else {
             argv.push(PathBuf::from(&request.machine));
             argv.push(request.image.path.clone());
+            // runqemu only accepts zstd filesystem images in snapshot mode.
+            // Honor an explicit rootfs override when choosing that mode.
+            if request
+                .rootfs
+                .as_ref()
+                .unwrap_or(&request.image.path)
+                .extension()
+                .is_some_and(|extension| extension == "zst")
+            {
+                argv.push("snapshot".into());
+            }
         }
         argv.extend([
             PathBuf::from(format!("qemuparams=-m {}", request.memory_mib)),
@@ -378,6 +393,7 @@ impl QemuLaunchRequest {
 pub struct QemuLaunchPreview {
     pub request: QemuLaunchRequest,
     pub argv: Vec<PathBuf>,
+    pub scroll: u16,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

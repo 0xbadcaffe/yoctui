@@ -279,6 +279,14 @@ fn classify(path: &Path) -> ImageArtifactKind {
         .and_then(|name| name.to_str())
         .unwrap_or_default()
         .to_ascii_lowercase();
+    // Modern OE deploy names include a timestamp before the filesystem suffix.
+    // Classify compressed filesystem payloads by their inner format, not by
+    // the optional `.rootfs.` marker. Keep compressed Wic out of the raw Wic
+    // writer's inventory.
+    let payload_name = [".zst", ".gz", ".xz", ".bz2", ".lz4", ".lzma", ".lzo"]
+        .iter()
+        .find_map(|suffix| name.strip_suffix(suffix))
+        .unwrap_or(&name);
     if name.ends_with(".sha256")
         || name.ends_with(".sha256sum")
         || name.ends_with(".sha512")
@@ -301,8 +309,12 @@ fn classify(path: &Path) -> ImageArtifactKind {
         ImageArtifactKind::Kernel
     } else if name.starts_with("u-boot") || name.starts_with("grub") {
         ImageArtifactKind::Bootloader
+    } else if name.ends_with(".qemuboot.conf") || name.ends_with(".testdata.json") {
+        ImageArtifactKind::Other
     } else if name.contains(".rootfs.")
         || [
+            ".ext2",
+            ".ext3",
             ".ext4",
             ".tar",
             ".tar.gz",
@@ -318,7 +330,7 @@ fn classify(path: &Path) -> ImageArtifactKind {
             ".ubi",
         ]
         .iter()
-        .any(|suffix| name.ends_with(suffix))
+        .any(|suffix| payload_name.ends_with(suffix))
     {
         ImageArtifactKind::RootFilesystem
     } else {

@@ -3,6 +3,14 @@ use super::*;
 #[test]
 fn qemu_workspace_maps_launch_edit_preview_and_cancellation_keys() {
     assert_eq!(
+        qemu_launch_confirmation_action(Input::End),
+        Some(Action::ScrollQemuLaunchPreview { delta: isize::MAX })
+    );
+    assert_eq!(
+        qemu_launch_confirmation_action(Input::Up),
+        Some(Action::ScrollQemuLaunchPreview { delta: -1 })
+    );
+    assert_eq!(
         images_workspace_action(false, Input::Char('Q')),
         Some(Action::BeginSelectedQemuLaunch)
     );

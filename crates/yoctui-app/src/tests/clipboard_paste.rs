@@ -17,6 +17,57 @@ fn paste(app: &mut App, text: &str) -> Result<(), String> {
 }
 
 #[test]
+fn clipboard_paste_image_console_text_fields_never_launch_or_edit_choices() {
+    use yoctui_model::{
+        ImageArtifactIdentity, ImageArtifactKind, ImageConsoleDialog, ImageConsoleDraft,
+        ImageConsoleField,
+    };
+    let mut app = App::new(32, 4096);
+    let mut dialog = ImageConsoleDialog::new(ImageConsoleDraft::for_artifact(
+        ImageArtifactIdentity {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            path: "/deploy/image.ext4.zst".into(),
+        },
+        ImageArtifactKind::RootFilesystem,
+    ));
+    assert!(!text_paste_active(&app));
+    dialog.selected_field = ImageConsoleField::Memory;
+    dialog.draft.memory_mib.clear();
+    app.dialogs.push_back(Dialog::ImageConsole(dialog));
+    for source in [
+        TextAreaPasteSource::Clipboard,
+        TextAreaPasteSource::BracketedPaste,
+    ] {
+        let actions = text_paste_actions(&app, "512".into(), source)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            actions,
+            vec![
+                Action::AppendImageConsoleField('5'),
+                Action::AppendImageConsoleField('1'),
+                Action::AppendImageConsoleField('2')
+            ]
+        );
+    }
+    paste(&mut app, "512").unwrap();
+    assert!(paste(&mut app, "512\n").is_err());
+    let Some(Dialog::ImageConsole(dialog)) = app.active_dialog_mut() else {
+        panic!()
+    };
+    assert_eq!(dialog.draft.memory_mib, "512");
+    let clear = image_console_dialog_action(dialog, Input::CtrlU).unwrap();
+    assert!(yoctui_model::update(&mut app, clear).is_none());
+    let Some(Dialog::ImageConsole(dialog)) = app.active_dialog_mut() else {
+        panic!()
+    };
+    assert!(dialog.draft.memory_mib.is_empty());
+    dialog.selected_field = ImageConsoleField::Networking;
+    assert!(!text_paste_active(&app));
+}
+
+#[test]
 fn clipboard_paste_dtc_destination_is_literal_and_editor_scoped() {
     use yoctui_model::{
         DtcDecompileAction, DtcDecompileDialog, PlatformComponent, PlatformFile, PlatformFileKind,

@@ -71,6 +71,14 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 dialog.validation_error = None;
             }
         }
+        Action::ClearImageConsoleField => {
+            if let Some(Dialog::ImageConsole(dialog)) = app.active_dialog_mut()
+                && let Some((text, _)) = dialog.selected_text_mut()
+            {
+                text.clear();
+                dialog.validation_error = None;
+            }
+        }
         Action::ConfirmImageConsole => {
             let Some(Dialog::ImageConsole(dialog)) = app.active_dialog().cloned() else {
                 app.notification = Some("No Image Console request is active.".into());
@@ -235,6 +243,16 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::CancelQemuLaunchPreview => {
             if matches!(app.active_dialog(), Some(Dialog::QemuLaunchConfirmation(_))) {
                 close_dialog(app);
+            }
+        }
+        Action::ScrollQemuLaunchPreview { delta } => {
+            if let Some(Dialog::QemuLaunchConfirmation(preview)) = app.active_dialog_mut() {
+                preview.scroll = if delta.is_negative() {
+                    usize::from(preview.scroll).saturating_sub(delta.unsigned_abs())
+                } else {
+                    usize::from(preview.scroll).saturating_add(delta as usize)
+                }
+                .min(usize::from(u16::MAX)) as u16;
             }
         }
         Action::ConfirmQemuLaunchInTerminal => {

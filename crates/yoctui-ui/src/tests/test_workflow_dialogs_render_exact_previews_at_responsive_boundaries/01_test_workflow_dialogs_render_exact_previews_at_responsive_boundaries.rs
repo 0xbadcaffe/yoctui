@@ -1,6 +1,36 @@
 use super::*;
 
 #[test]
+fn qemu_review_shows_tail_controls_and_scrolls_back_from_end() {
+    let mut app = qemu_workspace_app();
+    let artifact = app.selected_image_artifact().unwrap().clone();
+    let mut draft = yoctui_model::QemuLaunchDraft::for_artifact(artifact.identity, artifact.kind);
+    draft.extra_arguments = (0..30).map(|index| format!("argument-{index:02}-{}", "long-path/".repeat(8))).collect::<Vec<_>>().join(" ");
+    let preview = draft.preview(&app.qemu_capability).unwrap();
+    for (width, height) in [(80, 24), (100, 30), (160, 48), (240, 80)] {
+        app.dialogs.clear();
+        app.dialogs.push_front(Dialog::QemuLaunchConfirmation(preview.clone()));
+        assert!(update(&mut app, Action::ScrollQemuLaunchPreview { delta: isize::MAX }).is_none());
+        let Some(Dialog::QemuLaunchConfirmation(state)) = app.active_dialog_mut() else { panic!() };
+        clamp_qemu_launch_review_scroll(state, width, height);
+        let end = state.scroll;
+        if height <= 30 { assert!(end > 0); }
+        let output = rendered_text(&app, width, height);
+        assert!(output.contains("argument-29"), "{output}");
+        assert!(output.contains("Enter launch"), "{output}");
+        assert!(output.contains("Esc cancel"), "{output}");
+        assert!(update(&mut app, Action::ScrollQemuLaunchPreview { delta: -1 }).is_none());
+        let Some(Dialog::QemuLaunchConfirmation(state)) = app.active_dialog_mut() else { panic!() };
+        clamp_qemu_launch_review_scroll(state, width, height);
+        assert_eq!(state.scroll, end.saturating_sub(1));
+        update(&mut app, Action::ScrollQemuLaunchPreview { delta: isize::MIN });
+        let output = rendered_text(&app, width, height);
+        assert!(output.contains("Machine: qemux86-64"), "{output}");
+        assert!(app.daemon.pty_sessions.is_empty());
+    }
+}
+
+#[test]
 fn test_workflow_dialogs_render_exact_previews_at_responsive_boundaries() {
     let (mut app, baseline, candidate) = test_workflow_results_app();
     app.focus = FocusTarget::Dialog;

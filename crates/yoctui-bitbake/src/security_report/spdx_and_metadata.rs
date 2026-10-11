@@ -1,4 +1,7 @@
 fn parse_spdx(identity: SecurityReportIdentity, value: &Value) -> SpdxDocument {
+    if let Some(graph) = value.get("@graph").and_then(Value::as_array) {
+        return parse_spdx_graph(identity, graph);
+    }
     let mut limitations = Vec::new();
     let Some(object) = value.as_object() else {
         return SpdxDocument {
@@ -85,6 +88,95 @@ fn parse_spdx(identity: SecurityReportIdentity, value: &Value) -> SpdxDocument {
     }
 }
 
+fn parse_spdx_graph(identity: SecurityReportIdentity, graph: &[Value]) -> SpdxDocument {
+    let mut limitations = Vec::new();
+    let document = graph
+        .iter()
+        .find(|value| value.get("type").and_then(Value::as_str) == Some("SpdxDocument"));
+    let creation = document
+        .and_then(|value| value.get("creationInfo"))
+        .and_then(|value| {
+            value.as_object().or_else(|| {
+                let reference = value.as_str()?;
+                graph
+                    .iter()
+                    .find(|entry| entry.get("@id").and_then(Value::as_str) == Some(reference))?
+                    .as_object()
+            })
+        });
+    let version =
+        creation.and_then(|object| bounded_json_string(object, &["specVersion"], &mut limitations));
+    if version
+        .as_deref()
+        .is_none_or(|version| !version.starts_with("3."))
+    {
+        push_limitation(
+            &mut limitations,
+            "SPDX graph schema version is unavailable or unsupported".into(),
+        );
+    }
+    // Extract typed packages only. Files, relationships and agents must never
+    // become components just because they also have names and identifiers.
+    let package_values = || {
+        graph
+            .iter()
+            .filter(|value| value.get("type").and_then(Value::as_str) == Some("software_Package"))
+    };
+    let package_count = package_values().count();
+    let packages = package_values()
+        .take(MAX_SECURITY_COMPONENTS)
+        .cloned()
+        .collect::<Vec<_>>();
+    let components = spdx_components(&packages, &mut limitations);
+    if package_count > MAX_SECURITY_COMPONENTS {
+        push_limitation(
+            &mut limitations,
+            format!(
+                "{} SPDX components were omitted at the {MAX_SECURITY_COMPONENTS}-record bound",
+                package_count - MAX_SECURITY_COMPONENTS
+            ),
+        );
+    }
+    push_limitation(
+        &mut limitations,
+        "SPDX 3 package inventory imported; graph license/supplier relationships are not resolved"
+            .into(),
+    );
+    SpdxDocument {
+        identity,
+        scope: None,
+        kind: SpdxArtifactKind::Json,
+        spdx_version: version,
+        name: document
+            .and_then(Value::as_object)
+            .and_then(|object| bounded_json_string(object, &["name"], &mut limitations)),
+        namespace: document
+            .and_then(Value::as_object)
+            .and_then(|object| bounded_json_string(object, &["spdxId"], &mut limitations)),
+        data_license: None,
+        creators: creation
+            .and_then(|object| object.get("createdBy"))
+            .and_then(Value::as_array)
+            .map(|values| bounded_string_array(values, &mut limitations))
+            .unwrap_or_default(),
+        components,
+        file_count: Some(
+            graph
+                .iter()
+                .filter(|value| value.get("type").and_then(Value::as_str) == Some("software_File"))
+                .count() as u64,
+        ),
+        relationship_count: Some(
+            graph
+                .iter()
+                .filter(|value| value.get("type").and_then(Value::as_str) == Some("Relationship"))
+                .count() as u64,
+        ),
+        checksums: Vec::new(),
+        limitations,
+    }
+}
+
 fn spdx_components(values: &[Value], limitations: &mut Vec<String>) -> Vec<SpdxComponent> {
     let mut components = Vec::new();
     for value in values.iter().take(MAX_SECURITY_COMPONENTS) {
@@ -101,7 +193,11 @@ fn spdx_components(values: &[Value], limitations: &mut Vec<String>) -> Vec<SpdxC
         let component = SpdxComponent {
             identity,
             name,
-            version: bounded_json_string(object, &["versionInfo", "version"], limitations),
+            version: bounded_json_string(
+                object,
+                &["versionInfo", "version", "software_packageVersion"],
+                limitations,
+            ),
             supplier: bounded_json_string(object, &["supplier"], limitations),
             license: bounded_json_string(
                 object,

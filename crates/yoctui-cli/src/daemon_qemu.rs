@@ -163,7 +163,11 @@ fn wire_preview(
     let mut argv = vec![PathBuf::from(executable)];
     argv.extend(req.arguments());
     Ok((
-        QemuLaunchPreview { request: req, argv },
+        QemuLaunchPreview {
+            request: req,
+            argv,
+            scroll: 0,
+        },
         Path::new(&build_directory).to_path_buf(),
     ))
 }

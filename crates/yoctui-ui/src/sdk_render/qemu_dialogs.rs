@@ -265,8 +265,54 @@ pub(crate) fn qemu_launch_confirmation(
     preview: &QemuLaunchPreview,
     area: Rect,
 ) {
-    let popup = dialog_popup_rect(area, 100, 18);
+    let (popup, lines) = qemu_review_layout(preview, area);
     clear_popup(frame, app, popup);
+    let block = dialog_block(
+        app,
+        "Confirm managed runqemu launch",
+        DialogTone::Confirmation,
+    );
+    let inner = block.inner(popup);
+    frame.render_widget(block, popup);
+    let body = Rect::new(
+        inner.x,
+        inner.y,
+        inner.width,
+        inner.height.saturating_sub(2),
+    );
+    let max_scroll = lines.len().saturating_sub(usize::from(body.height));
+    let scroll = usize::from(preview.scroll)
+        .min(max_scroll)
+        .min(usize::from(u16::MAX)) as u16;
+    frame.render_widget(Paragraph::new(lines).scroll((scroll, 0)), body);
+    let controls = Rect::new(
+        inner.x,
+        inner.y + inner.height.saturating_sub(1),
+        inner.width,
+        1,
+    );
+    frame.render_widget(
+        Paragraph::new("↑/↓ PgUp/PgDn Home/End scroll · Enter launch · Esc cancel"),
+        controls,
+    );
+}
+
+pub fn clamp_qemu_launch_review_scroll(preview: &mut QemuLaunchPreview, width: u16, height: u16) {
+    let (popup, lines) = qemu_review_layout(preview, Rect::new(0, 0, width, height));
+    let max_scroll = lines
+        .len()
+        .saturating_sub(usize::from(popup.height.saturating_sub(4)));
+    preview.scroll = usize::from(preview.scroll)
+        .min(max_scroll)
+        .min(usize::from(u16::MAX)) as u16;
+}
+
+fn qemu_review_layout(preview: &QemuLaunchPreview, area: Rect) -> (Rect, Vec<Line<'static>>) {
+    let available = dialog_popup_rect(
+        area,
+        area.width.saturating_sub(4),
+        area.height.saturating_sub(2),
+    );
     let mut lines = vec![
         Line::from(format!("Machine: {}", preview.request.machine)),
         Line::from(format!("Image: {}", preview.request.image.image)),
@@ -283,20 +329,38 @@ pub(crate) fn qemu_launch_confirmation(
             .enumerate()
             .map(|(index, argument)| Line::from(format!("[{index}] {}", argument.display()))),
     );
-    lines.push(Line::from(""));
-    lines.push(Line::from(
-        "Enter confirms launch. Esc closes without launch.",
-    ));
-    frame.render_widget(
-        Paragraph::new(lines)
-            .block(dialog_block(
-                app,
-                "Confirm managed runqemu launch",
-                DialogTone::Confirmation,
-            ))
-            .wrap(Wrap { trim: false }),
-        popup,
-    );
+    // Size the review from the actual wrapped argv instead of a fixed height
+    // that hides the final arguments even on large terminals.
+    let inner_width = usize::from(available.width.saturating_sub(2)).max(1);
+    let lines = qemu_review_physical_lines(lines, inner_width);
+    let height = lines.len().saturating_add(4).min(usize::from(u16::MAX)) as u16;
+    let popup = dialog_popup_rect(area, available.width, height);
+    (popup, lines)
+}
+
+fn qemu_review_physical_lines(lines: Vec<Line<'static>>, width: usize) -> Vec<Line<'static>> {
+    use unicode_width::UnicodeWidthChar;
+    let mut output = Vec::new();
+    for line in lines {
+        let text = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        let mut row = String::new();
+        let mut columns = 0;
+        for character in text.chars() {
+            let character_width = character.width().unwrap_or_default();
+            if columns + character_width > width && !row.is_empty() {
+                output.push(Line::from(std::mem::take(&mut row)));
+                columns = 0;
+            }
+            row.push(character);
+            columns += character_width;
+        }
+        output.push(Line::from(row));
+    }
+    output
 }
 
 pub(crate) fn qemu_cancellation_confirmation(

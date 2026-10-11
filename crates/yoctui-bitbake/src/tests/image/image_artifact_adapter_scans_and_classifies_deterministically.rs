@@ -1,6 +1,32 @@
 use super::*;
 
 #[tokio::test]
+#[ignore = "explicit read-only Poky deploy scan, no build or guest launch"]
+async fn image_artifact_adapter_actual_poky_read_only_smoke() {
+    let build =
+        PathBuf::from(std::env::var("YOCTUI_LIVE_POKY_BUILD").expect("set YOCTUI_LIVE_POKY_BUILD"));
+    let response = ImageArtifactAdapter::new(build.join("tmp/deploy/images/qemux86-64"))
+        .scan(request())
+        .await
+        .unwrap();
+    let artifact = response
+        .inventory
+        .artifacts
+        .iter()
+        .find(|artifact| {
+            artifact.identity.image == "core-image-minimal"
+                && artifact
+                    .identity
+                    .path
+                    .to_string_lossy()
+                    .ends_with(".ext4.zst")
+        })
+        .expect("timestamped Poky ext4.zst image");
+    assert_eq!(artifact.kind, ImageArtifactKind::RootFilesystem);
+    println!("Read-only Poky artifact: {:?}", artifact.identity);
+}
+
+#[tokio::test]
 async fn image_artifact_adapter_scans_and_classifies_deterministically() {
     let fixture = fixture();
     let deploy = fixture.path().join("qemux86-64");

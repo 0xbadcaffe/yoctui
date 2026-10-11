@@ -1,6 +1,38 @@
 use super::*;
 
 #[test]
+fn image_console_qemu_zstd_filesystem_uses_snapshot_in_both_launch_routes() {
+    let mut image = image();
+    image.path = "/deploy/core-image-minimal-qemux86-64.rootfs-20261010172613.ext4.zst".into();
+    let capability = QemuCapability::Available {
+        executable: "/opt/poky/runqemu".into(),
+        compatible_images: vec![image.clone()],
+    };
+    let draft = ImageConsoleDraft::for_artifact(image.clone(), ImageArtifactKind::RootFilesystem);
+    let preview = draft
+        .preview(&capability, &SshClientCapability::Missing)
+        .unwrap();
+    assert!(
+        preview
+            .arguments
+            .iter()
+            .any(|argument| argument == "snapshot")
+    );
+    let advanced = QemuLaunchDraft::for_artifact(image, ImageArtifactKind::RootFilesystem);
+    assert_eq!(
+        advanced
+            .preview(&capability)
+            .unwrap()
+            .request
+            .arguments()
+            .iter()
+            .filter(|argument| **argument == PathBuf::from("snapshot"))
+            .count(),
+        1
+    );
+}
+
+#[test]
 fn image_console_qemu_enforces_serial_stdio_and_nographic() {
     let image = image();
     let draft = ImageConsoleDraft::for_artifact(image.clone(), ImageArtifactKind::RootFilesystem);

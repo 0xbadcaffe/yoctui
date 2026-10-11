@@ -1,6 +1,37 @@
 use super::*;
 
 #[test]
+fn testing_local_tabs_back_and_import_win_only_in_workspace() {
+    use yoctui_model::FocusTarget;
+    let mut app = App::new(10, 1_000);
+    app.screen = Screen::Testing;
+    app.focus = FocusTarget::Workspace;
+    app.test_view = TestWorkspaceView::Results;
+    app.test_result_drilled = true;
+    assert!(workspace_owns_focus_key(&app, Input::Tab));
+    assert!(workspace_owns_focus_key(&app, Input::Esc));
+    assert_eq!(
+        testing_screen_action(&app, Input::Esc),
+        Some(Action::LeaveTestResultCases)
+    );
+    assert_eq!(
+        yoctui_app::inspector_toggle_action(&app, Input::Alt('i')),
+        None
+    );
+    assert_eq!(
+        testing_screen_action(&app, Input::Alt('i')),
+        Some(Action::BeginTestResultImport)
+    );
+    app.focus = FocusTarget::Navigator;
+    assert!(!workspace_owns_focus_key(&app, Input::Tab));
+    assert!(!workspace_owns_focus_key(&app, Input::Esc));
+    assert_eq!(
+        yoctui_app::inspector_toggle_action(&app, Input::Alt('i')),
+        Some(Action::ToggleInspector)
+    );
+}
+
+#[test]
 fn focus_routing_passes_unmatched_global_and_workspace_keys_onward() {
     use yoctui_model::FocusTarget;
 

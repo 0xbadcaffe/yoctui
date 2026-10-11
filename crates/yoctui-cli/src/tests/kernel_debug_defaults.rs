@@ -35,6 +35,49 @@ const DEPLOY: &str = "tmp/deploy/images/romulus/";
 const CONFIG: &str = "[config_bsp]\nmachine=romulus\nimage_name=demo-romulus-123\nqb_system_name=qemu-system-arm\nqb_default_kernel=none\nkernel_imagetype=zImage\nqb_machine=-machine romulus-bmc\nqb_default_fstype=static.mtd\nqb_rootfs_opt=-drive file=@ROOTFS@,if=mtd,format=raw\nqb_mem=-m 512\n";
 
 #[test]
+fn kernel_debug_defaults_find_bounded_poky_work_symbols_and_reject_ambiguity() {
+    let f = Fixture::new();
+    let mut bytes = vec![0; 64 + 4 * 64];
+    bytes[..6].copy_from_slice(b"\x7fELF\x02\x01");
+    bytes[40..48].copy_from_slice(&64_u64.to_le_bytes());
+    bytes[58..60].copy_from_slice(&64_u16.to_le_bytes());
+    bytes[60..62].copy_from_slice(&4_u16.to_le_bytes());
+    bytes[62..64].copy_from_slice(&1_u16.to_le_bytes());
+    let strings = b"\0.shstrtab\0.symtab\0.debug_info\0";
+    bytes[128..132].copy_from_slice(&1_u32.to_le_bytes());
+    bytes[152..160].copy_from_slice(&320_u64.to_le_bytes());
+    bytes[160..168].copy_from_slice(&(strings.len() as u64).to_le_bytes());
+    bytes[192..196].copy_from_slice(&11_u32.to_le_bytes());
+    bytes[256..260].copy_from_slice(&19_u32.to_le_bytes());
+    bytes.extend(strings);
+    let symbols = f.write(
+        "tmp/work/qemux86_64-poky-linux/linux-yocto/7.2.8/linux-qemux86_64-standard-build/vmlinux",
+        "",
+    );
+    fs::write(&symbols, &bytes).unwrap();
+    let mut context = f.context();
+    context.machine = "qemux86-64".into();
+    let defaults = discover_for_tool(&context, yoctui_model::KernelDebugTool::GdbRemote).unwrap();
+    assert!(
+        defaults
+            .values
+            .contains(&(F::Symbols, symbols.display().to_string()))
+    );
+    let second = f.write(
+        "tmp/work/qemux86_64-poky-linux/linux-yocto/7.3.0/linux-qemux86-64-standard-build/vmlinux",
+        "",
+    );
+    fs::write(&second, &bytes).unwrap();
+    let defaults = discover_for_tool(&context, yoctui_model::KernelDebugTool::GdbRemote).unwrap();
+    assert!(
+        !defaults
+            .values
+            .iter()
+            .any(|(field, _)| *field == F::Symbols)
+    );
+}
+
+#[test]
 fn kernel_debug_defaults_find_split_dwarf_symbols_and_remote_does_not_require_qemuboot() {
     let f = Fixture::new();
     f.write(
@@ -249,4 +292,32 @@ fn kernel_debug_defaults_actual_openbmc_read_only_smoke() {
         );
         println!("Read-only {build}: {defaults:?}");
     }
+}
+
+#[test]
+#[ignore = "explicit read-only Poky artifact smoke, no BitBake or guest launch"]
+fn kernel_debug_defaults_actual_poky_read_only_smoke() {
+    let build = std::env::var("YOCTUI_LIVE_POKY_BUILD").expect("set YOCTUI_LIVE_POKY_BUILD");
+    let defaults = discover(&KernelDebugDefaultContext {
+        build_dir: build.into(),
+        machine: "qemux86-64".into(),
+        image: Some("core-image-minimal".into()),
+    })
+    .unwrap();
+    for field in [
+        F::Symbols,
+        F::KernelConfig,
+        F::Qemuboot,
+        F::KernelImage,
+        F::RootfsImage,
+    ] {
+        assert!(
+            defaults
+                .values
+                .iter()
+                .any(|(observed, _)| *observed == field),
+            "{defaults:?}"
+        );
+    }
+    println!("Read-only Poky defaults: {defaults:?}");
 }
