@@ -18,7 +18,7 @@ import time
 
 
 SCHEMA = "yoctui.performance.event-flood-observation.v1"
-DAEMON_PROTOCOL_VERSION = {"major": 1, "minor": 5}
+DAEMON_PROTOCOL_VERSION = {"major": 1, "minor": 6}
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "scripts/fixtures/bitbake-event-flood-bridge.py"
 CRITICAL_NAMES = {

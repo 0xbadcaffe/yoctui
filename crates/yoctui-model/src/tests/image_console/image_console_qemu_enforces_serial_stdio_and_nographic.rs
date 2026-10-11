@@ -26,7 +26,7 @@ fn image_console_qemu_zstd_filesystem_uses_snapshot_in_both_launch_routes() {
             .request
             .arguments()
             .iter()
-            .filter(|argument| **argument == PathBuf::from("snapshot"))
+            .filter(|argument| argument.as_os_str() == "snapshot")
             .count(),
         1
     );
