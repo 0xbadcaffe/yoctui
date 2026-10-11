@@ -35,6 +35,9 @@ pub(crate) fn literal_navigator_selection_at_row(
         Destination::Security,
         Destination::Maintenance,
     ];
+    if row == tasks_start + TASK_DESTINATIONS.len() + 2 {
+        return App::navigator_selection_for_destination(Destination::GitUi);
+    }
     TASK_DESTINATIONS
         .get(row - tasks_start - 1)
         .copied()

@@ -17,6 +17,8 @@ F1, contextual Help, and the footer show the current view's exact bindings.
 F5 opens logs, not a build. Recipe `b` builds the selected recipe after review.
 Uppercase action aliases generally have Alt+lowercase equivalents.
 Tasks lives under OVERVIEW with Dashboard and Insights; F2 is unchanged.
+Tools → GitUI in the navigator opens the same launcher as Alt+g or F12 → Tools → Open GitUI.
+Choose Embedded to run the full GitUI interface inside Yoctui.
 
 In Images (F8), `i` opens the image picker. On the Artifacts tab (`1`), `b`
 reviews the selected image build; Enter confirms it and Esc cancels the review.

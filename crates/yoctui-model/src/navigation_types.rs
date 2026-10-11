@@ -335,7 +335,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-pub(crate) const NAVIGATOR_SCREENS: [Screen; 27] = [
+pub(crate) const NAVIGATOR_SCREENS: [Screen; 28] = [
     Screen::Dashboard,
     Screen::Insights,
     Screen::Tasks,
@@ -362,9 +362,10 @@ pub(crate) const NAVIGATOR_SCREENS: [Screen; 27] = [
     Screen::BuildEnvironment,
     Screen::Compatibility,
     Screen::Daemons,
+    Screen::TerminalSessions,
     Screen::Settings,
 ];
-pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 27] = [
+pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 28] = [
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Tasks,
@@ -391,6 +392,7 @@ pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 27
     WorkspaceDestination::BuildEnvironment,
     WorkspaceDestination::Compatibility,
     WorkspaceDestination::Daemons,
+    WorkspaceDestination::GitUi,
     WorkspaceDestination::Settings,
 ];
 
@@ -425,7 +427,7 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "TOOLS",
         start: 18,
-        end: 27,
+        end: 28,
     },
 ];
 

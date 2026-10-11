@@ -94,6 +94,7 @@ impl WorkspaceDestination {
             Self::Maintenance => "Maintenance",
             Self::ProjectProfiles => "Project Profiles",
             Self::TerminalSessions => "Terminal Sessions",
+            Self::GitUi => "GitUI",
             Self::BuildEnvironment => "Build Environment",
             Self::Compatibility => "Compatibility",
             Self::Daemons => "Daemons",

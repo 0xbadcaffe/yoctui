@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
-    assert_eq!(WorkspaceDestination::ALL.len(), 30);
+    assert_eq!(WorkspaceDestination::ALL.len(), 31);
     for screen in [
         Screen::Dashboard,
         Screen::Insights,
@@ -40,6 +40,7 @@ fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
     assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::QemuWic));
     assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::ProjectProfiles));
     assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::TerminalSessions));
+    assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::GitUi));
     assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::Compatibility));
     assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::RawMode));
     for destination in WorkspaceDestination::ALL {

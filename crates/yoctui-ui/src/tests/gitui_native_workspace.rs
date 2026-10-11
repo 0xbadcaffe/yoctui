@@ -5,6 +5,75 @@ use yoctui_model::{
 };
 
 #[test]
+fn navigator_gitui_mouse_selects_and_launches_existing_embedded_view_at_all_sizes() {
+    use yoctui_app::{MouseInput, MouseKind, mouse_action_for_app};
+    use yoctui_model::{
+        Dialog, SourceGitStatus, SourceGitSummary, TerminalCreationKind, WorkspaceDestination,
+    };
+    for (screen, width, height) in [
+        (Screen::Dashboard, 160, 50),
+        (Screen::Dashboard, 100, 30),
+        (Screen::Dashboard, 80, 24),
+        (Screen::Tasks, 160, 48),
+        (Screen::Tasks, 120, 40),
+    ] {
+        let mut app = App::new(16, 4096);
+        app.onboarding.open = false;
+        app.screen = screen;
+        app.focus = FocusTarget::Navigator;
+        app.preferences.mouse_enabled = true;
+        app.gitui_program = Some("/usr/bin/gitui".into());
+        app.workspace.source_dir = Some("/source".into());
+        app.source_git_status = SourceGitStatus::Ready(SourceGitSummary::default());
+        app.navigator_selection =
+            App::navigator_selection_for_destination(WorkspaceDestination::Settings).unwrap();
+        let gitui = App::navigator_selection_for_destination(WorkspaceDestination::GitUi).unwrap();
+        for expected in [
+            Action::SelectNavigatorAt { index: gitui },
+            Action::ActivateNavigator,
+        ] {
+            let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+            terminal
+                .draw(|frame| render_at(frame, &app, literal_now()))
+                .unwrap();
+            let buffer = terminal.backend().buffer();
+            let row = (0..height)
+                .find(|row| {
+                    (0..26.min(width))
+                        .map(|col| buffer[(col, *row)].symbol())
+                        .collect::<String>()
+                        .contains("GitUI")
+                })
+                .unwrap_or_else(|| {
+                    panic!("missing navigator GitUI at {screen:?} {width}x{height}")
+                });
+            let action = mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 10,
+                    row,
+                },
+                &app,
+                width,
+                height,
+            )
+            .unwrap();
+            assert_eq!(action, expected, "{screen:?} {width}x{height}");
+            update(&mut app, action);
+        }
+        let Some(Dialog::TerminalLaunch(dialog)) = app.active_dialog() else {
+            panic!("GitUI navigator must open the existing terminal chooser");
+        };
+        assert_eq!(dialog.request.kind, TerminalCreationKind::GitUi);
+        assert_eq!(dialog.request.cwd, PathBuf::from("/source"));
+        assert!(
+            app.daemon.pty_sessions.is_empty(),
+            "selection alone must not create a process"
+        );
+    }
+}
+
+#[test]
 fn gitui_native_workspace_hides_passive_rails_and_matches_actual_rendered_cells() {
     let mut app = App::new(16, 4096);
     app.inspector_visible = true;

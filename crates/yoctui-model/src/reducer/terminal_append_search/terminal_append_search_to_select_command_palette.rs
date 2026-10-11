@@ -180,6 +180,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 app.navigator_groups_expanded[group] = true;
                 return None;
             }
+            if app.navigator_compatibility_destination() == WorkspaceDestination::GitUi {
+                // Reuse F12's launch chooser, scope and prerequisite checks.
+                return update(app, Action::OpenGitUi);
+            }
             app.screen = NAVIGATOR_SCREENS[app.navigator_selection];
             app.focus = if focus_target_is_relevant(app, FocusTarget::Workspace) {
                 FocusTarget::Workspace

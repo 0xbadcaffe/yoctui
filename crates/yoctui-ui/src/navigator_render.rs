@@ -11,7 +11,7 @@ pub(crate) fn navigator(
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 27] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 28] = [
         (
             "Dashboard",
             Screen::Dashboard,
@@ -74,6 +74,11 @@ pub(crate) fn navigator(
             WorkspaceDestination::Compatibility,
         ),
         ("Daemons", Screen::Daemons, WorkspaceDestination::Daemons),
+        (
+            "GitUI",
+            Screen::TerminalSessions,
+            WorkspaceDestination::GitUi,
+        ),
         ("Settings", Screen::Settings, WorkspaceDestination::Settings),
     ];
     enum NavigatorRow<'a> {
@@ -353,6 +358,14 @@ pub(crate) fn literal_project_navigator(
         ));
     }
 
+    lines.push(project_tree_group("Tools", width, palette));
+    lines.push(project_tree_child(
+        "GitUI",
+        "▱",
+        width,
+        app.navigator_compatibility_destination() == WorkspaceDestination::GitUi,
+        palette,
+    ));
     lines.push(project_tree_group("Targets", width, palette));
     let machine = app
         .workspace

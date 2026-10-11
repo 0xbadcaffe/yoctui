@@ -28,6 +28,7 @@ pub enum WorkspaceDestination {
     Maintenance,
     ProjectProfiles,
     TerminalSessions,
+    GitUi,
     BuildEnvironment,
     Compatibility,
     Daemons,
@@ -36,7 +37,7 @@ pub enum WorkspaceDestination {
 }
 
 impl WorkspaceDestination {
-    pub const ALL: [Self; 30] = [
+    pub const ALL: [Self; 31] = [
         Self::Dashboard,
         Self::Recipes,
         Self::Layers,
@@ -62,6 +63,7 @@ impl WorkspaceDestination {
         Self::Maintenance,
         Self::ProjectProfiles,
         Self::TerminalSessions,
+        Self::GitUi,
         Self::BuildEnvironment,
         Self::Compatibility,
         Self::Daemons,

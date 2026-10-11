@@ -80,4 +80,9 @@ fn tasks_navigator_literal_rows_keep_exact_visible_destinations() {
         assert_eq!(app.navigator_screen(), expected, "literal row{row}");
     }
     assert_eq!(literal_navigator_selection_at_row(&app, 15), None);
+    assert_eq!(
+        literal_navigator_selection_at_row(&app, 16),
+        App::navigator_selection_for_destination(yoctui_model::WorkspaceDestination::GitUi)
+    );
+    assert_eq!(literal_navigator_selection_at_row(&app, 17), None);
 }
