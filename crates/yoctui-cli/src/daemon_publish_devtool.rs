@@ -84,7 +84,7 @@ pub(crate) fn publish_daemon_devtool_event(
             id: job_id,
             kind: JobKind::Devtool,
             label,
-            lifecycle: LifecycleState::Exited,
+            lifecycle: LifecycleState::Cancelled,
             progress_current: None,
             progress_total: None,
             exit_code,

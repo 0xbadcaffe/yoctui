@@ -127,7 +127,8 @@ fn parse_spdx_graph(identity: SecurityReportIdentity, graph: &[Value]) -> SpdxDo
         .take(MAX_SECURITY_COMPONENTS)
         .cloned()
         .collect::<Vec<_>>();
-    let components = spdx_components(&packages, &mut limitations);
+    let mut components = spdx_components(&packages, &mut limitations);
+    resolve_spdx_graph_metadata(graph, &mut components, &mut limitations);
     if package_count > MAX_SECURITY_COMPONENTS {
         push_limitation(
             &mut limitations,
@@ -137,11 +138,6 @@ fn parse_spdx_graph(identity: SecurityReportIdentity, graph: &[Value]) -> SpdxDo
             ),
         );
     }
-    push_limitation(
-        &mut limitations,
-        "SPDX 3 package inventory imported; graph license/supplier relationships are not resolved"
-            .into(),
-    );
     SpdxDocument {
         identity,
         scope: None,
@@ -169,7 +165,12 @@ fn parse_spdx_graph(identity: SecurityReportIdentity, graph: &[Value]) -> SpdxDo
         relationship_count: Some(
             graph
                 .iter()
-                .filter(|value| value.get("type").and_then(Value::as_str) == Some("Relationship"))
+                .filter(|value| {
+                    matches!(
+                        value.get("type").and_then(Value::as_str),
+                        Some("Relationship" | "LifecycleScopedRelationship")
+                    )
+                })
                 .count() as u64,
         ),
         checksums: Vec::new(),

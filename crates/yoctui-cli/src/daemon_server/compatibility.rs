@@ -64,6 +64,14 @@ fn install(
     services: &mut DaemonServices,
     compatibility: DaemonCompatibilitySnapshot,
 ) -> Result<()> {
+    install_authority(services, compatibility.clone())?;
+    start_workspace_scan(services, compatibility)
+}
+
+pub(super) fn install_authority(
+    services: &mut DaemonServices,
+    compatibility: DaemonCompatibilitySnapshot,
+) -> Result<()> {
     services
         .devtool_supervisor
         .replace_compatibility(Some(compatibility.clone()))?;
@@ -86,6 +94,13 @@ fn install(
         .publish(yoctui_protocol::daemon::DaemonEvent::CompatibilityChanged(
             Box::new(wire),
         ))?;
+    Ok(())
+}
+
+fn start_workspace_scan(
+    services: &mut DaemonServices,
+    compatibility: DaemonCompatibilitySnapshot,
+) -> Result<()> {
     if !compatibility
         .snapshot
         .allows(CapabilityId::BitBakeWorkspaceInspection)
@@ -116,9 +131,26 @@ fn install(
         false,
     )?;
     let environment = services.startup_environment.clone();
+    let preferred_targets = services
+        .daemon_journal
+        .snapshot()
+        .build_events
+        .iter()
+        .rev()
+        .find_map(|event| match event {
+            yoctui_protocol::daemon::DaemonBuildEvent::Reset { targets } => Some(targets.clone()),
+            _ => None,
+        })
+        .unwrap_or_default();
     services.startup_metadata = Some(daemon_metadata::StartupMetadata::spawn(
         |cancelled| async move {
-            inspect_daemon_startup_workspace(&environment, Some(compatibility), cancelled).await
+            inspect_daemon_startup_workspace(
+                &environment,
+                Some(compatibility),
+                preferred_targets,
+                cancelled,
+            )
+            .await
         },
     ));
     Ok(())

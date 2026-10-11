@@ -1,6 +1,48 @@
 use super::*;
 
 #[tokio::test]
+async fn security_report_spdx3_resolves_only_local_unambiguous_license_and_supplier_references() {
+    let directory = TestDirectory::new();
+    let graph = serde_json::json!({"@graph": [
+        {"type": "CreationInfo", "@id": "_:creation", "specVersion": "3.0.1"},
+        {"type": "SpdxDocument", "spdxId": "doc", "creationInfo": "_:creation"},
+        {"type": "software_Package", "spdxId": "pkg", "name": "busybox", "suppliedBy": "supplier"},
+        {"type": "Organization", "spdxId": "supplier", "name": "Example vendor"},
+        {"type": "simplelicensing_LicenseExpression", "spdxId": "license", "simplelicensing_licenseExpression": "GPL-2.0-only"},
+        {"type": "Relationship", "from": "pkg", "relationshipType": "hasDeclaredLicense", "to": ["license"]},
+        {"type": "software_Package", "spdxId": "unresolved", "name": "unknown", "suppliedBy": "absent"},
+        {"type": "Relationship", "from": "unresolved", "relationshipType": "hasDeclaredLicense", "to": ["https://example/external"]}
+    ]});
+    fs::write(directory.path().join("image.spdx.json"), graph.to_string()).unwrap();
+    let response = SecurityReportAdapter::new()
+        .scan(request(directory.path()))
+        .await
+        .unwrap();
+    let SecurityReport::Spdx(report) = &response.outcome.reports()[0] else {
+        panic!()
+    };
+    let package = report
+        .components
+        .iter()
+        .find(|package| package.identity == "pkg")
+        .unwrap();
+    assert_eq!(package.license.as_deref(), Some("GPL-2.0-only"));
+    assert_eq!(package.supplier.as_deref(), Some("Example vendor"));
+    let missing = report
+        .components
+        .iter()
+        .find(|package| package.identity == "unresolved")
+        .unwrap();
+    assert!(missing.license.is_none() && missing.supplier.is_none());
+    assert!(
+        report
+            .limitations
+            .iter()
+            .any(|limitation| limitation.contains("not resolved"))
+    );
+}
+
+#[tokio::test]
 #[ignore = "explicit read-only Poky SPDX 3 scan, no report generation"]
 async fn security_report_actual_poky_spdx3_read_only_smoke() {
     let path = PathBuf::from(
@@ -54,12 +96,8 @@ async fn security_report_parses_poky_spdx3_packages_not_files_or_agents() {
     assert_eq!(report.components[0].version.as_deref(), Some("1.37.0"));
     assert_eq!(report.file_count, Some(1));
     assert_eq!(report.relationship_count, Some(1));
-    assert!(
-        report
-            .limitations
-            .iter()
-            .any(|value| value.contains("not resolved"))
-    );
+    assert!(report.components[0].license.is_none());
+    assert!(report.components[0].supplier.is_none());
 }
 
 #[tokio::test]

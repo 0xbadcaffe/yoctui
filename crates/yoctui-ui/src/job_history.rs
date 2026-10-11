@@ -54,6 +54,7 @@ pub(crate) fn daemon_job_status_label(
         yoctui_model::ClientDaemonLifecycle::Running => "▶ Running",
         yoctui_model::ClientDaemonLifecycle::Stopping => "! Cancelling",
         yoctui_model::ClientDaemonLifecycle::Exited => "✓ Succeeded",
+        yoctui_model::ClientDaemonLifecycle::Cancelled => "! Cancelled",
         yoctui_model::ClientDaemonLifecycle::Failed => "✕ Failed",
         yoctui_model::ClientDaemonLifecycle::Lost => "? Lost",
     }

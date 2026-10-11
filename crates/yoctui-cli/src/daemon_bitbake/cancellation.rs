@@ -24,7 +24,9 @@ impl DaemonBitBakeSupervisor {
             // authoritative cancellation terminal.
             while let Ok(stale) = self.reliable_rx.try_recv() {
                 if bitbake_event_is_diagnostic(&stale) {
-                    self.post_cancellation_diagnostics.push_back(stale);
+                    if let Some(diagnostic) = cancellation_diagnostic(stale) {
+                        self.post_cancellation_diagnostics.push_back(diagnostic);
+                    }
                 } else {
                     self.pressure
                         .cancellation_stale_discarded
@@ -38,7 +40,8 @@ impl DaemonBitBakeSupervisor {
             }
             let id = match event {
                 DaemonBitBakeEvent::Backend { job_id, .. }
-                | DaemonBitBakeEvent::Failed { job_id, .. } => job_id,
+                | DaemonBitBakeEvent::Failed { job_id, .. }
+                | DaemonBitBakeEvent::Cancelled { job_id, .. } => job_id,
             };
             self.active.remove(&id);
             return Some(event);
@@ -55,12 +58,13 @@ impl DaemonBitBakeSupervisor {
                     | BackendEvent::CommandFailed { .. }
                     | BackendEvent::Disconnected
             ),
-            DaemonBitBakeEvent::Failed { .. } => true,
+            DaemonBitBakeEvent::Failed { .. } | DaemonBitBakeEvent::Cancelled { .. } => true,
         };
         if terminal {
             let id = match event {
                 DaemonBitBakeEvent::Backend { job_id, .. }
-                | DaemonBitBakeEvent::Failed { job_id, .. } => job_id,
+                | DaemonBitBakeEvent::Failed { job_id, .. }
+                | DaemonBitBakeEvent::Cancelled { job_id, .. } => job_id,
             };
             self.active.remove(&id);
         }
@@ -84,4 +88,39 @@ impl DaemonBitBakeSupervisor {
             current_queue_depth,
         }
     }
+}
+
+fn cancellation_diagnostic(event: DaemonBitBakeEvent) -> Option<DaemonBitBakeEvent> {
+    let (job_id, message) = match event {
+        DaemonBitBakeEvent::Backend { job_id, event } => match *event {
+            BackendEvent::Log(entry) => {
+                return Some(DaemonBitBakeEvent::Backend {
+                    job_id,
+                    event: Box::new(BackendEvent::Log(entry)),
+                });
+            }
+            BackendEvent::CommandFailed { code, message } => (job_id, format!("{code}: {message}")),
+            BackendEvent::Disconnected => return None,
+            _ => return None,
+        },
+        DaemonBitBakeEvent::Failed { job_id, message } => (job_id, message),
+        DaemonBitBakeEvent::Cancelled { .. } => return None,
+    };
+    // Preserve the diagnostic text, not a stale terminal that would overwrite
+    // the already published authoritative cancellation and history outcome.
+    Some(DaemonBitBakeEvent::Backend {
+        job_id,
+        event: Box::new(BackendEvent::Log(yoctui_model::LogEntry {
+            id: 0,
+            severity: yoctui_model::Severity::Error,
+            message,
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
+            timestamp: std::time::SystemTime::now(),
+            protected: true,
+            diagnostic: None,
+        })),
+    })
 }

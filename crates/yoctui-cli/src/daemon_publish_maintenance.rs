@@ -83,7 +83,7 @@ pub(crate) fn publish_daemon_maintenance_event(
                 id: job_id,
                 kind: JobKind::Maintenance,
                 label,
-                lifecycle: LifecycleState::Exited,
+                lifecycle: LifecycleState::Cancelled,
                 progress_current: None,
                 progress_total: None,
                 exit_code,

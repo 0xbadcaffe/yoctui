@@ -157,7 +157,8 @@ pub(crate) fn system_status_projection(app: &App, width: u16) -> Vec<SystemStatu
             yoctui_model::ClientDaemonLifecycle::Failed
             | yoctui_model::ClientDaemonLifecycle::Lost => StatusTone::Error,
             yoctui_model::ClientDaemonLifecycle::Disconnected
-            | yoctui_model::ClientDaemonLifecycle::Exited => StatusTone::Disabled,
+            | yoctui_model::ClientDaemonLifecycle::Exited
+            | yoctui_model::ClientDaemonLifecycle::Cancelled => StatusTone::Disabled,
         }
     } else {
         StatusTone::Disabled

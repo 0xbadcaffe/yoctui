@@ -7,6 +7,7 @@ include!("security_report/manifest_and_cyclonedx.rs");
 include!("security_report/cve_parsing.rs");
 
 include!("security_report/spdx_and_metadata.rs");
+include!("security_report/spdx_graph_metadata.rs");
 
 #[cfg(test)]
 #[path = "tests/security_report/mod.rs"]

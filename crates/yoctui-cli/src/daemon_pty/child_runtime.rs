@@ -61,6 +61,7 @@ impl DaemonPtySupervisor {
             let mut failure_prompt = acknowledge_failure.then(MenuconfigFailurePrompt::default);
             loop {
                 tokio::select! {
+                    biased;
                     _ = tokio::time::sleep_until(
                         tokio::time::Instant::from_std(last_screen_publish + PTY_SCREEN_MIN_INTERVAL)
                     ), if screen_flush_pending => {
@@ -100,7 +101,9 @@ impl DaemonPtySupervisor {
                         let result = match control {
                             Control::Attach(client) => session.attach(client).map(|_| Response::Unit),
                             Control::Detach(client) => session.detach(client).map(|_| Response::Unit),
-                            Control::Take(client, epoch) => session.take_control(client, epoch).map(Response::Epoch),
+                            Control::Take(client, epoch) => session.take_control(client, epoch).and_then(|epoch| {
+                                session.snapshot(0).map(|snapshot| Response::Epoch(epoch, Box::new(snapshot_to_wire(&snapshot.listing))))
+                            }),
                             Control::Release(client, epoch) => session.release_control(client, epoch).map(|_| Response::Unit),
                             Control::Input(client, epoch, bytes) => session.input(client, epoch, &bytes).await.map(|_| Response::Unit),
                             Control::Resize(client, epoch, dimensions) => session.resize(client, epoch, dimensions).map(|_| Response::Unit),

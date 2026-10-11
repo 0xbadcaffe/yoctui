@@ -38,6 +38,7 @@ pub fn capture_saved_build(snapshot: &DaemonSnapshot, saved_unix_ms: u64) -> Opt
         outcome: match job.lifecycle {
             LifecycleState::Exited if job.exit_code == Some(0) => SavedBuildOutcome::Succeeded,
             LifecycleState::Failed => SavedBuildOutcome::Failed,
+            LifecycleState::Cancelled => SavedBuildOutcome::Cancelled,
             LifecycleState::Lost => SavedBuildOutcome::Lost,
             _ => SavedBuildOutcome::Incomplete,
         },
@@ -73,6 +74,13 @@ pub fn capture_saved_build(snapshot: &DaemonSnapshot, saved_unix_ms: u64) -> Opt
                         SavedBuildOutcome::Failed
                     };
                 }
+                None
+            }
+            Event::Cancelled {
+                finished_unix_ms, ..
+            } => {
+                result.finished_unix_ms = *finished_unix_ms;
+                result.outcome = SavedBuildOutcome::Cancelled;
                 None
             }
             Event::TaskQueued { recipe, task, .. } => {
@@ -227,7 +235,7 @@ pub fn legacy_saved_builds(
     state.job_history.iter().filter(|j|j.kind==JobKind::BitBakeBuild).rev().take(32).map(|j|SavedBuild {
         id:format!("{instance}-{}",j.id.0), target:text(&j.label), machine:None,
         source:state.workspace.as_ref().map(|w|text(&w.canonical_source)),build_dir:state.workspace.as_ref().map(|w|text(&w.canonical_build)),
-        outcome:match j.lifecycle { LifecycleState::Exited if j.exit_code==Some(0)=>SavedBuildOutcome::Succeeded, LifecycleState::Failed=>SavedBuildOutcome::Failed,LifecycleState::Lost=>SavedBuildOutcome::Lost,_=>SavedBuildOutcome::Incomplete },
+        outcome:match j.lifecycle { LifecycleState::Exited if j.exit_code==Some(0)=>SavedBuildOutcome::Succeeded, LifecycleState::Cancelled=>SavedBuildOutcome::Cancelled, LifecycleState::Failed=>SavedBuildOutcome::Failed,LifecycleState::Lost=>SavedBuildOutcome::Lost,_=>SavedBuildOutcome::Incomplete },
         saved_unix_ms:state.saved_unix_ms,started_unix_ms:None,finished_unix_ms:None,logs:Vec::new(),tasks:Vec::new(),
         limitations:vec!["Legacy summary only: logs, machine, duration and task details were not saved per build.".into()],
     }).collect()

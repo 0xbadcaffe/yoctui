@@ -21,6 +21,7 @@ pub(crate) fn daemon_lifecycle_label(
         yoctui_model::ClientDaemonLifecycle::Running => "Running",
         yoctui_model::ClientDaemonLifecycle::Stopping => "Stopping",
         yoctui_model::ClientDaemonLifecycle::Exited => "Exited",
+        yoctui_model::ClientDaemonLifecycle::Cancelled => "Cancelled",
         yoctui_model::ClientDaemonLifecycle::Failed => "Failed",
         yoctui_model::ClientDaemonLifecycle::Lost => "Lost",
     }
@@ -44,7 +45,8 @@ pub(crate) fn daemon_lifecycle_tone(lifecycle: yoctui_model::ClientDaemonLifecyc
             StatusTone::Error
         }
         yoctui_model::ClientDaemonLifecycle::Disconnected
-        | yoctui_model::ClientDaemonLifecycle::Exited => StatusTone::Disabled,
+        | yoctui_model::ClientDaemonLifecycle::Exited
+        | yoctui_model::ClientDaemonLifecycle::Cancelled => StatusTone::Disabled,
     }
 }
 

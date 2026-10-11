@@ -78,6 +78,7 @@ server = Server()
                     _ => {}
                 },
                 DaemonBitBakeEvent::Failed { message, .. } => panic!("{message}"),
+                DaemonBitBakeEvent::Cancelled { .. } => panic!("unexpected cancellation"),
             }
         }
         tokio::time::sleep(Duration::from_millis(10)).await;

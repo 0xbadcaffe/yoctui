@@ -195,7 +195,7 @@ pub fn recover_persisted_snapshot(
         .map(|mut job| {
             if !matches!(
                 job.lifecycle,
-                LifecycleState::Exited | LifecycleState::Failed | LifecycleState::Lost
+                LifecycleState::Exited | LifecycleState::Cancelled | LifecycleState::Failed | LifecycleState::Lost
             ) {
                 job.lifecycle = LifecycleState::Lost;
                 lost_jobs += 1;
@@ -241,7 +241,7 @@ pub fn recover_persisted_snapshot(
         .map(|session| {
             let lifecycle = if matches!(
                 session.previous_lifecycle,
-                LifecycleState::Exited | LifecycleState::Failed | LifecycleState::Lost
+                LifecycleState::Exited | LifecycleState::Cancelled | LifecycleState::Failed | LifecycleState::Lost
             ) {
                 session.previous_lifecycle
             } else {

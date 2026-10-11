@@ -29,7 +29,7 @@ enum Control {
 
 #[derive(Debug)]
 enum Response {
-    Epoch(u64),
+    Epoch(u64, Box<yoctui_protocol::daemon::PtySessionSummary>),
     Unit,
     Screen(Box<yoctui_protocol::daemon::PtyScreenSnapshot>),
 }

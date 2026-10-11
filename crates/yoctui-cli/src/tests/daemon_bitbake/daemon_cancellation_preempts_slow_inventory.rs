@@ -66,13 +66,11 @@ server = Server()
     while !terminal && Instant::now() < deadline {
         while let Some(event) = supervisor.try_event() {
             match event {
-                DaemonBitBakeEvent::Backend { event, .. } => {
-                    if let BackendEvent::BuildCompleted { success, exit_code } = *event {
-                        assert!(!success);
-                        assert_eq!(exit_code, Some(130));
-                        assert!(!terminal, "duplicate cancellation terminal");
-                        terminal = true;
-                    }
+                DaemonBitBakeEvent::Backend { .. } => {}
+                DaemonBitBakeEvent::Cancelled { exit_code, .. } => {
+                    assert_eq!(exit_code, Some(130));
+                    assert!(!terminal, "duplicate cancellation terminal");
+                    terminal = true;
                 }
                 DaemonBitBakeEvent::Failed { message, .. } => panic!("{message}"),
             }

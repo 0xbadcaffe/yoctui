@@ -125,12 +125,9 @@ impl DaemonBitBakeSupervisor {
             let workspace = tokio::select! {
                 biased;
                 Some(()) = cancel_rx.recv() => {
-                    let sent = cancellation_terminal_tx.send(DaemonBitBakeEvent::Backend {
+                    let sent = cancellation_terminal_tx.send(DaemonBitBakeEvent::Cancelled {
                         job_id,
-                        event: Box::new(BackendEvent::BuildCompleted {
-                            success: false,
-                            exit_code: Some(130),
-                        }),
+                        exit_code: Some(130),
                     }).await.is_ok();
                     if sent && let Some(activity) = &activity {
                         activity.signal();
@@ -223,12 +220,9 @@ impl DaemonBitBakeSupervisor {
                     // the authority that guarantees command priority.
                     biased;
                     _ = &mut cancellation_deadline, if cancellation_deadline_armed => {
-                        let sent = cancellation_terminal_tx.send(DaemonBitBakeEvent::Backend {
+                        let sent = cancellation_terminal_tx.send(DaemonBitBakeEvent::Cancelled {
                             job_id,
-                            event: Box::new(BackendEvent::BuildCompleted {
-                                success: false,
-                                exit_code: Some(130),
-                            }),
+                            exit_code: Some(130),
                         }).await.is_ok();
                         if sent && let Some(activity) = &activity {
                             activity.signal();
@@ -269,9 +263,14 @@ impl DaemonBitBakeSupervisor {
                         Ok(event) => {
                             let terminal = matches!(event, BackendEvent::BuildCompleted { .. } | BackendEvent::CommandFailed { .. } | BackendEvent::Disconnected);
                             if terminal {
-                                let event = DaemonBitBakeEvent::Backend {
-                                    job_id,
-                                    event: Box::new(event),
+                                let event = if terminate_server {
+                                    let exit_code = match event {
+                                        BackendEvent::BuildCompleted { exit_code, .. } => exit_code,
+                                        _ => None,
+                                    };
+                                    DaemonBitBakeEvent::Cancelled { job_id, exit_code }
+                                } else {
+                                    DaemonBitBakeEvent::Backend { job_id, event: Box::new(event) }
                                 };
                                 if terminate_server {
                                     // Cancellation is a control-plane

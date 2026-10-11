@@ -91,6 +91,11 @@ pub enum DaemonBuildEvent {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         finished_unix_ms: Option<u64>,
     },
+    Cancelled {
+        exit_code: Option<i32>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        finished_unix_ms: Option<u64>,
+    },
     CommandFailed {
         code: String,
         message: String,
@@ -180,6 +185,7 @@ pub enum LifecycleState {
     Running,
     Stopping,
     Exited,
+    Cancelled,
     Failed,
     Lost,
 }

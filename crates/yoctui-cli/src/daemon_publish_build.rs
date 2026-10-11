@@ -85,6 +85,32 @@ pub(crate) fn publish_daemon_bitbake_event(
                 }
             }
         },
+        DaemonBitBakeEvent::Cancelled { job_id, exit_code } => {
+            let mut bitbake = journal.snapshot().bitbake.clone();
+            bitbake.lifecycle = LifecycleState::Disconnected;
+            bitbake.diagnostic = None;
+            journal.publish(DaemonEvent::BitBakeChanged(bitbake))?;
+            journal.publish(DaemonEvent::Build(DaemonBuildEvent::Cancelled {
+                exit_code,
+                finished_unix_ms: Some(unix_ms()),
+            }))?;
+            let label = journal
+                .snapshot()
+                .jobs
+                .iter()
+                .find(|job| job.id == job_id)
+                .map(|job| job.label.clone())
+                .unwrap_or_else(|| "BitBake build".into());
+            journal.publish(DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::BitBakeBuild,
+                label,
+                lifecycle: LifecycleState::Cancelled,
+                progress_current: None,
+                progress_total: None,
+                exit_code,
+            }))?;
+        }
         DaemonBitBakeEvent::Failed { job_id, message } => {
             journal.publish(DaemonEvent::Build(DaemonBuildEvent::CommandFailed {
                 code: "daemon_backend".into(),

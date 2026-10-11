@@ -78,13 +78,10 @@ server = Server()
                 sent = true;
             } else if matches!(
                 &event,
-                DaemonBitBakeEvent::Backend {
-                    event,
+                DaemonBitBakeEvent::Cancelled {
+                    exit_code: Some(130),
                     ..
-                } if matches!(event.as_ref(), BackendEvent::BuildCompleted {
-                    success: false,
-                    exit_code: Some(130)
-                })
+                }
             ) {
                 terminals += 1;
             }

@@ -167,7 +167,10 @@ impl Recorder {
         let key = (job.id.0, job.lifecycle, job.exit_code);
         let terminal = matches!(
             job.lifecycle,
-            LifecycleState::Exited | LifecycleState::Failed | LifecycleState::Lost
+            LifecycleState::Exited
+                | LifecycleState::Cancelled
+                | LifecycleState::Failed
+                | LifecycleState::Lost
         );
         if self.previous == Some(key) && (terminal || Instant::now() < self.next) {
             return;

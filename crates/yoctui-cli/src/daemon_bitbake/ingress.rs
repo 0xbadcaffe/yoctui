@@ -77,25 +77,27 @@ fn bitbake_event_is_cosmetic(event: &DaemonBitBakeEvent) -> bool {
 }
 
 pub(super) fn bitbake_event_requires_immediate_wake(event: &DaemonBitBakeEvent) -> bool {
-    matches!(event, DaemonBitBakeEvent::Failed { .. })
-        || matches!(
-            event,
-            DaemonBitBakeEvent::Backend { event, .. }
-                if matches!(
-                    event.as_ref(),
-                    BackendEvent::DependencyGraphFailed { .. }
-                        | BackendEvent::SignatureDumpFailed { .. }
-                        | BackendEvent::SignatureComparisonFailed { .. }
-                        | BackendEvent::PackageInventoryFailed { .. }
-                        | BackendEvent::PackageDetailFailed { .. }
-                        | BackendEvent::ImageArtifactsFailed { .. }
-                        | BackendEvent::RootfsCompositionFailed { .. }
-                        | BackendEvent::TaskCompleted { success: false, .. }
-                        | BackendEvent::BuildCompleted { .. }
-                        | BackendEvent::CommandFailed { .. }
-                        | BackendEvent::Disconnected
-                )
-        )
+    matches!(
+        event,
+        DaemonBitBakeEvent::Failed { .. } | DaemonBitBakeEvent::Cancelled { .. }
+    ) || matches!(
+        event,
+        DaemonBitBakeEvent::Backend { event, .. }
+            if matches!(
+                event.as_ref(),
+                BackendEvent::DependencyGraphFailed { .. }
+                    | BackendEvent::SignatureDumpFailed { .. }
+                    | BackendEvent::SignatureComparisonFailed { .. }
+                    | BackendEvent::PackageInventoryFailed { .. }
+                    | BackendEvent::PackageDetailFailed { .. }
+                    | BackendEvent::ImageArtifactsFailed { .. }
+                    | BackendEvent::RootfsCompositionFailed { .. }
+                    | BackendEvent::TaskCompleted { success: false, .. }
+                    | BackendEvent::BuildCompleted { .. }
+                    | BackendEvent::CommandFailed { .. }
+                    | BackendEvent::Disconnected
+            )
+    )
 }
 
 pub(super) fn bitbake_event_is_diagnostic(event: &DaemonBitBakeEvent) -> bool {

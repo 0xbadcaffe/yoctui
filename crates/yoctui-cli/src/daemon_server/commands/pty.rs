@@ -49,12 +49,20 @@ pub(super) fn handle(
         DaemonCommand::TakePtyControl {
             session_id,
             expected_epoch,
-        } => match services.pty_supervisor.take(
+        } => match services.pty_supervisor.take_with_summary(
             yoctui_model::PtySessionId(session_id.0),
             yoctui_model::PtyClientId(client.client_id.0),
             expected_epoch,
         ) {
-            Ok(_) => CommandOutcome::Accepted,
+            Ok((_, summary)) => {
+                // Publish the worker-confirmed lease at the command boundary,
+                // rather than making its owner wait behind console output.
+                let event = services
+                    .daemon_journal
+                    .publish(yoctui_protocol::daemon::DaemonEvent::PtyChanged(summary))?;
+                client.connection.send(&ServerMessage::Event(event))?;
+                CommandOutcome::Accepted
+            }
             Err(message) => CommandOutcome::Rejected {
                 code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
                 message,

@@ -46,6 +46,7 @@ pub fn apply_sequenced_event(
                         event,
                         DaemonBuildEvent::Started { .. }
                             | DaemonBuildEvent::Completed { .. }
+                            | DaemonBuildEvent::Cancelled { .. }
                             | DaemonBuildEvent::Reset { .. }
                             | DaemonBuildEvent::Disconnected
                     )),
@@ -208,14 +209,14 @@ fn preserve_build_timing(snapshot: &DaemonSnapshot, event: &mut DaemonEvent) {
         }
         DaemonBuildEvent::Completed {
             finished_unix_ms, ..
-        } => {
+        } | DaemonBuildEvent::Cancelled { finished_unix_ms, .. } => {
             for previous in snapshot.build_events.iter().rev() {
                 match previous {
                     DaemonBuildEvent::Reset { .. } | DaemonBuildEvent::Started { .. } => break,
                     DaemonBuildEvent::Completed {
                         finished_unix_ms: first,
                         ..
-                    } => {
+                    } | DaemonBuildEvent::Cancelled { finished_unix_ms: first, .. } => {
                         *finished_unix_ms = *first;
                         break;
                     }

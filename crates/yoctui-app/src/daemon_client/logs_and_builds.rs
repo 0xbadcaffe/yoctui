@@ -84,11 +84,12 @@ pub(crate) fn apply_daemon_build_event(
     let finished = match &event {
         DaemonBuildEvent::Completed {
             finished_unix_ms, ..
-        } => Some(observed_daemon_time(*finished_unix_ms)),
+        } | DaemonBuildEvent::Cancelled { finished_unix_ms, .. } => Some(observed_daemon_time(*finished_unix_ms)),
         _ => None,
     };
     let disconnected = matches!(&event, DaemonBuildEvent::Disconnected);
     let action = match event {
+        DaemonBuildEvent::Cancelled { exit_code, .. } => yoctui_model::Action::BuildCancelled { exit_code },
         DaemonBuildEvent::Reset { targets } => yoctui_model::Action::BuildRequested {
             target: targets.into_iter().next(),
         },

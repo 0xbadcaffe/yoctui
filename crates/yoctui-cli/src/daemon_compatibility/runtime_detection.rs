@@ -268,14 +268,41 @@ impl DaemonCompatibilityRuntime {
         };
         let metadata_variables = datastore.keys().cloned().collect();
         let artifacts = [
-            ("pkgdata", build_directory.join("tmp/pkgdata")),
-            ("wic", build_directory.join("tmp/deploy/images")),
+            (
+                "pkgdata",
+                datastore
+                    .get("PKGDATA_DIR")
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|| build_directory.join("tmp/pkgdata")),
+            ),
+            (
+                "wic",
+                datastore
+                    .get("TMPDIR")
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_else(|| build_directory.join("tmp"))
+                    .join("deploy/images"),
+            ),
         ]
         .into_iter()
         .filter(|(_, path)| path.is_dir())
         .map(|(name, _)| name.to_owned())
         .collect();
-        let context = CapabilityProbeContext::new(
+        let devtool_bbpath = datastore
+            .get("BBPATH")
+            .filter(|value| !value.is_empty())
+            .filter(|_| {
+                tools
+                    .get(&CapabilityToolId::Devtool)
+                    .and_then(|path| read_bounded(path).ok())
+                    .is_some_and(|source| {
+                        let source = String::from_utf8_lossy(&source);
+                        source.contains("parser.add_argument('--bbpath',")
+                            || source.contains("parser.add_argument(\"--bbpath\",")
+                    })
+            })
+            .cloned();
+        let mut context = CapabilityProbeContext::new(
             identity.clone(),
             build_directory.clone(),
             tools,
@@ -287,6 +314,9 @@ impl DaemonCompatibilityRuntime {
             Some(artifacts),
             None,
         )?;
+        if let Some(bbpath) = devtool_bbpath {
+            context = context.with_devtool_bbpath(bbpath)?;
+        }
         let layer_configuration = read_bounded(&build_directory.join("conf/bblayers.conf"))?;
         let build_configuration = read_bounded(&build_directory.join("conf/local.conf"))?;
         let initialized_environment = fingerprint_environment(process_environment)?;

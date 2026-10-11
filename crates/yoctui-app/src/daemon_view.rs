@@ -243,6 +243,7 @@ pub(crate) fn client_daemon_lifecycle(
         yoctui_protocol::daemon::LifecycleState::Running => ClientDaemonLifecycle::Running,
         yoctui_protocol::daemon::LifecycleState::Stopping => ClientDaemonLifecycle::Stopping,
         yoctui_protocol::daemon::LifecycleState::Exited => ClientDaemonLifecycle::Exited,
+        yoctui_protocol::daemon::LifecycleState::Cancelled => ClientDaemonLifecycle::Cancelled,
         yoctui_protocol::daemon::LifecycleState::Failed => ClientDaemonLifecycle::Failed,
         yoctui_protocol::daemon::LifecycleState::Lost => ClientDaemonLifecycle::Lost,
     }

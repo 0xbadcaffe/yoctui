@@ -13,6 +13,7 @@ pub enum ClientDaemonLifecycle {
     Running,
     Stopping,
     Exited,
+    Cancelled,
     Failed,
     Lost,
 }
@@ -21,7 +22,7 @@ impl ClientDaemonLifecycle {
     pub fn is_terminal(self) -> bool {
         matches!(
             self,
-            Self::Disconnected | Self::Exited | Self::Failed | Self::Lost
+            Self::Disconnected | Self::Exited | Self::Cancelled | Self::Failed | Self::Lost
         )
     }
 }
@@ -188,4 +189,3 @@ impl Default for ClientDaemonView {
         }
     }
 }
-

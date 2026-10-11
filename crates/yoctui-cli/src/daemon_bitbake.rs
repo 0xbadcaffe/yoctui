@@ -34,6 +34,10 @@ pub enum DaemonBitBakeEvent {
         job_id: JobId,
         message: String,
     },
+    Cancelled {
+        job_id: JobId,
+        exit_code: Option<i32>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]

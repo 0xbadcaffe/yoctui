@@ -46,7 +46,56 @@ pub(super) fn arguments(spec: &QemuDebugSpec, socket: &Path) -> Vec<String> {
         arguments.extend([
             "-iex".into(),
             format!("set substitute-path /usr/src/kernel {}", source.display()),
+            "-iex".into(),
+            format!("directory {}", source.display()),
         ]);
+        if let Some((prefix, directory)) = build_mapping(spec) {
+            arguments.extend([
+                "-iex".into(),
+                format!("set substitute-path {prefix} {}", directory.display()),
+                "-iex".into(),
+                format!("directory {}", directory.display()),
+            ]);
+        }
     }
     arguments
+}
+
+fn build_mapping(spec: &QemuDebugSpec) -> Option<(String, PathBuf)> {
+    let build = spec.build_dir.canonicalize().ok()?;
+    let symbols = spec.symbols.canonicalize().ok()?;
+    if !symbols.is_file() || !symbols.starts_with(build.join("tmp/work")) {
+        return None;
+    }
+    let directory = symbols.parent()?.to_path_buf();
+    let version_dir = directory.parent()?;
+    let recipe_dir = version_dir.parent()?;
+    let machine = spec
+        .qemuboot
+        .canonicalize()
+        .ok()?
+        .parent()?
+        .file_name()?
+        .to_str()?
+        .replace('-', "_");
+    let architecture = recipe_dir.parent()?.file_name()?.to_str()?;
+    if !architecture.starts_with(&format!("{machine}-"))
+        && !architecture.starts_with(&format!("{}-", machine.replace('_', "-")))
+    {
+        return None;
+    }
+    let version = version_dir.file_name()?.to_str()?;
+    let recipe = recipe_dir.file_name()?.to_str()?;
+    if !recipe.starts_with("linux-")
+        || !safe_token(recipe)
+        || !safe_token(version)
+        || !directory
+            .to_str()?
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"/._-+".contains(&byte))
+        || !directory.join("include/generated/autoconf.h").is_file()
+    {
+        return None;
+    }
+    Some((format!("/usr/src/debug/{recipe}/{version}"), directory))
 }

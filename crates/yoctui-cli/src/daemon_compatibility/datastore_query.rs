@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, path::Path};
 
 use super::{DaemonCompatibilityError, process_helpers::run_read_only};
 
-pub(super) const VARIABLES: [&str; 10] = [
+pub(super) const VARIABLES: [&str; 17] = [
     "MACHINE",
     "DISTRO",
     "DISTRO_VERSION",
@@ -14,6 +14,13 @@ pub(super) const VARIABLES: [&str; 10] = [
     "BBLAYERS",
     "BB_HASHSERVE",
     "PRSERV_HOST",
+    "BBPATH",
+    "PKGDATA_DIR",
+    "SDK_DEPLOY",
+    "TMPDIR",
+    "TEST_SUITES",
+    "IMAGE_FEATURES",
+    "EXTRA_IMAGE_FEATURES",
 ];
 
 const QUERY: &str = r#"

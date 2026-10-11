@@ -112,7 +112,7 @@ pub(crate) fn publish_daemon_test_event(
             id: job_id,
             kind: JobKind::Testing,
             label,
-            lifecycle: LifecycleState::Exited,
+            lifecycle: LifecycleState::Cancelled,
             progress_current: None,
             progress_total: None,
             exit_code,

@@ -131,6 +131,7 @@ pub(crate) fn backend_event_from_daemon(
         DaemonBuildEvent::CommandFailed { code, message } => {
             BackendEvent::CommandFailed { code, message }
         }
+        DaemonBuildEvent::Cancelled { .. } => return None,
         DaemonBuildEvent::Disconnected => BackendEvent::Disconnected,
     })
 }

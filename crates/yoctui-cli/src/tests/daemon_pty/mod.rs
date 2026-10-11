@@ -18,3 +18,4 @@ mod raw_pty_namespace_never_changes_generic_identity_allocation;
 mod recovered_pty_identifiers_advance_generic_allocation;
 mod resource_limits_reject_oversized_pty_dimensions;
 mod ux_terminal_adapter_wire_is_sparse_exact_and_never_reparses_ansi;
+mod writer_control_under_output;

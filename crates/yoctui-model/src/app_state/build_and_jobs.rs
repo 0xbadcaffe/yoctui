@@ -191,6 +191,7 @@ impl App {
                         summary.recent_completed += 1;
                     }
                     ClientDaemonLifecycle::Exited
+                    | ClientDaemonLifecycle::Cancelled
                     | ClientDaemonLifecycle::Lost
                     | ClientDaemonLifecycle::Disconnected => summary.recent_completed += 1,
                 }

@@ -50,3 +50,4 @@ fn snapshot() -> DaemonSnapshot {
 mod archive_capture_excludes_other_builds_and_retains_bounded_text;
 mod archive_input_respects_modal_focus_and_preserves_live_state;
 mod archive_legacy_summaries_do_not_invent_logs_or_liveness;
+mod cancellation;

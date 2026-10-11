@@ -95,7 +95,7 @@ pub(crate) fn daemon_job_lifecycle(
         yoctui_model::BackgroundJobStatus::Cancelling => LifecycleState::Stopping,
         yoctui_model::BackgroundJobStatus::Succeeded => LifecycleState::Exited,
         yoctui_model::BackgroundJobStatus::Failed => LifecycleState::Failed,
-        yoctui_model::BackgroundJobStatus::Cancelled => LifecycleState::Exited,
+        yoctui_model::BackgroundJobStatus::Cancelled => LifecycleState::Cancelled,
         yoctui_model::BackgroundJobStatus::Lost => LifecycleState::Lost,
     }
 }

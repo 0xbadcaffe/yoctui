@@ -75,7 +75,7 @@ pub(crate) fn publish_daemon_sdk_event(
             id: job_id,
             kind: JobKind::Sdk,
             label,
-            lifecycle: LifecycleState::Exited,
+            lifecycle: LifecycleState::Cancelled,
             progress_current: None,
             progress_total: None,
             exit_code,

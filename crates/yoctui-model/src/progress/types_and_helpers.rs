@@ -166,6 +166,13 @@ fn daemon_job_progress(job: &ClientDaemonJobSummary) -> GaugeProjection {
             WidgetTerminalState::Failure,
             "daemon job failed",
         ),
+        ClientDaemonLifecycle::Cancelled => terminal_progress(
+            &job.label,
+            current,
+            valid_total,
+            WidgetTerminalState::Cancelled,
+            "daemon job cancelled",
+        ),
         ClientDaemonLifecycle::Disconnected => explicit(
             &job.label,
             WidgetState::Unavailable,
@@ -182,4 +189,3 @@ fn utilization(total: Option<u64>, available: Option<u64>) -> Option<u64> {
     }
     u64::try_from(u128::from(total - available) * 100 / u128::from(total)).ok()
 }
-

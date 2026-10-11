@@ -1,12 +1,18 @@
 //! Daemon startup.
 use super::*;
 
+pub(crate) struct StartupWorkspace {
+    pub workspace: yoctui_model::Workspace,
+    pub task_metadata: Vec<(yoctui_model::RecipeIdentity, Vec<String>)>,
+}
+
 #[cfg(unix)]
 pub(crate) async fn inspect_daemon_startup_workspace(
     startup_environment: &BTreeMap<String, String>,
     compatibility: Option<yoctui_model::DaemonCompatibilitySnapshot>,
+    preferred_targets: Vec<String>,
     mut cancelled: tokio::sync::oneshot::Receiver<()>,
-) -> Result<Option<yoctui_model::Workspace>> {
+) -> Result<Option<StartupWorkspace>> {
     let Some(compatibility) = compatibility else {
         return Ok(None);
     };
@@ -44,7 +50,34 @@ pub(crate) async fn inspect_daemon_startup_workspace(
             let mut workspace = backend.inspect_workspace().await?;
             workspace.recipes = backend.list_recipes(None).await?;
             workspace.layers = backend.list_layers().await?;
-            Ok::<_, anyhow::Error>(Some(workspace))
+            let mut candidates = preferred_targets;
+            // The default Poky validation image is a fallback only when it
+            // actually exists in this parsed inventory. No task is inferred
+            // from its name: the recipe datastore below supplies the proof.
+            if candidates.is_empty() {
+                candidates.push("core-image-minimal".into());
+            }
+            candidates.push("virtual/kernel".into());
+            candidates.truncate(3);
+            let mut task_metadata = Vec::new();
+            for candidate in candidates {
+                if candidate != "virtual/kernel"
+                    && !workspace.recipes.iter().any(|recipe| recipe.name == candidate) {
+                    continue;
+                }
+                match backend.get_recipe_metadata(candidate.clone()).await {
+                    Ok(metadata) => {
+                        if let (Some(tasks), Some(sources)) = (metadata.tasks, metadata.sources)
+                            && tasks.len() <= 1024
+                            && let Some(file) = sources.first()
+                        {
+                            task_metadata.push((yoctui_model::RecipeIdentity { name: candidate, file: file.clone() }, tasks));
+                        }
+                    }
+                    Err(error) => tracing::warn!(%error, recipe = %candidate, "task metadata unavailable; capability remains unknown"),
+                }
+            }
+            Ok::<_, anyhow::Error>(Some(StartupWorkspace { workspace, task_metadata }))
         }) => result.context("startup metadata scan exceeded ten minutes").and_then(|result| result),
     };
     if result.is_err()

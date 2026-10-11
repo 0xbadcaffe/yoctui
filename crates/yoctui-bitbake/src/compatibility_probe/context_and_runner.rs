@@ -63,6 +63,7 @@ pub struct CapabilityProbeContext {
     protocol_capabilities: Option<BTreeSet<String>>,
     artifacts: Option<BTreeSet<String>>,
     configurations: Option<BTreeSet<String>>,
+    devtool_bbpath: Option<String>,
 }
 
 impl CapabilityProbeContext {
@@ -130,11 +131,22 @@ impl CapabilityProbeContext {
             protocol_capabilities,
             artifacts,
             configurations,
+            devtool_bbpath: None,
         })
     }
 
     pub fn environment(&self) -> &YoctoEnvironmentIdentity {
         &self.environment
+    }
+
+    /// The daemon supplies a datastore-verified BBPATH only for a Devtool
+    /// executable whose global argument parser explicitly supports it.
+    pub fn with_devtool_bbpath(mut self, value: String) -> Result<Self, CapabilityProbeContextError> {
+        if value.is_empty() || !valid_environment_text(&value) {
+            return Err(CapabilityProbeContextError::InvalidInput);
+        }
+        self.devtool_bbpath = Some(value);
+        Ok(self)
     }
 
     pub fn matches_environment(&self, environment: &YoctoEnvironmentIdentity) -> bool {
@@ -362,7 +374,7 @@ impl CapabilityProbeRunner {
         &self,
         context: &CapabilityProbeContext,
         tool: CapabilityToolId,
-        arguments: Vec<String>,
+        mut arguments: Vec<String>,
         expected: Option<&str>,
         require_output: bool,
     ) -> CapabilityProbeObservation {
@@ -373,6 +385,14 @@ impl CapabilityProbeRunner {
         else {
             return self.probe_executable(context, tool);
         };
+        if tool == CapabilityToolId::Devtool
+            && arguments.last().is_some_and(|argument| argument == "--help")
+            && let Some(bbpath) = &context.devtool_bbpath
+        {
+            // Without this supported option every help invocation opens a
+            // fresh Tinfoil connection just to retrieve the same BBPATH.
+            arguments.splice(0..0, ["--bbpath".into(), bbpath.clone()]);
+        }
         let mut indexed = vec![path.display().to_string()];
         indexed.extend(arguments.iter().cloned());
         let run = || run_read_only(

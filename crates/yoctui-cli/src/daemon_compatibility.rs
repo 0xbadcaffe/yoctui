@@ -14,6 +14,7 @@ use yoctui_model::{
 pub(crate) mod backend_recovery;
 mod coordinator;
 mod datastore_query;
+pub(crate) mod metadata_capabilities;
 mod process_helpers;
 mod runtime_detection;
 

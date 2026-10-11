@@ -8,7 +8,30 @@ pub(super) fn poll(services: &mut DaemonServices) -> Result<()> {
         .and_then(|scan| scan.try_result())
     {
         match result {
-            Ok(Some(workspace)) => {
+            Ok(Some(metadata)) => {
+                let recovered = match services
+                    .daemon_state
+                    .compatibility
+                    .as_ref()
+                    .map(|current| {
+                        crate::daemon_compatibility::metadata_capabilities::recover(
+                            current.clone(),
+                            &metadata,
+                        )
+                    })
+                    .transpose()
+                {
+                    Ok(recovered) => recovered,
+                    Err(error) => {
+                        publish_startup_metadata_log(
+                            &mut services.daemon_journal,
+                            &format!("Task capability metadata rejected: {error:#}"),
+                            true,
+                        )?;
+                        return Ok(());
+                    }
+                };
+                let workspace = metadata.workspace;
                 if daemon_metadata::publish_workspace(
                     &mut services.daemon_journal,
                     workspace.clone(),
@@ -17,6 +40,9 @@ pub(super) fn poll(services: &mut DaemonServices) -> Result<()> {
                         &mut services.daemon_state,
                         yoctui_model::DaemonStateAction::ReplaceWorkspace(workspace),
                     )?;
+                    if let Some(Some(recovered)) = recovered {
+                        super::compatibility::install_authority(services, recovered)?;
+                    }
                 }
             }
             Ok(None) if services.startup_configured => publish_startup_metadata_log(

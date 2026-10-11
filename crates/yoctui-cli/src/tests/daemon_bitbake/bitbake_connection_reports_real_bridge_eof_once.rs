@@ -64,6 +64,7 @@ server = Server()
                     disconnects += 1;
                 }
                 DaemonBitBakeEvent::Failed { message, .. } => panic!("{message}"),
+                DaemonBitBakeEvent::Cancelled { .. } => panic!("unexpected cancellation"),
                 _ => {}
             }
         }

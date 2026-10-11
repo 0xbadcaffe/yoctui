@@ -82,7 +82,7 @@ pub(crate) fn publish_daemon_qemu_event(
             id: job_id,
             kind: JobKind::Qemu,
             label,
-            lifecycle: LifecycleState::Exited,
+            lifecycle: LifecycleState::Cancelled,
             progress_current: None,
             progress_total: None,
             exit_code,

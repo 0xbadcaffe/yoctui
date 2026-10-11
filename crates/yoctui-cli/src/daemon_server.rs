@@ -160,7 +160,9 @@ pub(crate) async fn run_daemon_foreground(
     let rootfs_query_permit = std::sync::Arc::new(tokio::sync::Semaphore::new(1));
     let mut retired_rootfs_queries: Vec<daemon_rootfs::PendingQuery> = Vec::new();
     let startup_configured = startup_environment.contains_key("BUILDDIR");
-    let startup_metadata: Option<daemon_metadata::StartupMetadata> = None;
+    let startup_metadata: Option<
+        daemon_metadata::StartupMetadata<crate::daemon_startup::StartupWorkspace>,
+    > = None;
     if startup_configured {
         publish_startup_metadata_log(
             &mut daemon_journal,

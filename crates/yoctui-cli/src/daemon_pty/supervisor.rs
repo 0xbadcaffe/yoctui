@@ -143,9 +143,19 @@ impl DaemonPtySupervisor {
     pub fn detach(&self, id: PtySessionId, client: PtyClientId) -> Result<(), String> {
         self.request(id, Control::Detach(client)).map(|_| ())
     }
+    #[cfg(test)]
     pub fn take(&self, id: PtySessionId, client: PtyClientId, epoch: u64) -> Result<u64, String> {
+        self.take_with_summary(id, client, epoch)
+            .map(|(epoch, _)| epoch)
+    }
+    pub fn take_with_summary(
+        &self,
+        id: PtySessionId,
+        client: PtyClientId,
+        epoch: u64,
+    ) -> Result<(u64, yoctui_protocol::daemon::PtySessionSummary), String> {
         match self.request(id, Control::Take(client, epoch))? {
-            Response::Epoch(epoch) => Ok(epoch),
+            Response::Epoch(epoch, summary) => Ok((epoch, *summary)),
             Response::Unit => Err("PTY did not return a writer epoch".into()),
             Response::Screen(_) => Err("PTY returned a screen instead of a writer epoch".into()),
         }
@@ -189,7 +199,7 @@ impl DaemonPtySupervisor {
     ) -> Result<yoctui_protocol::daemon::PtyScreenSnapshot, String> {
         match self.request(id, Control::Snapshot(scrollback_offset))? {
             Response::Screen(screen) => Ok(*screen),
-            Response::Epoch(_) | Response::Unit => {
+            Response::Epoch(..) | Response::Unit => {
                 Err("PTY did not return a terminal screen".into())
             }
         }

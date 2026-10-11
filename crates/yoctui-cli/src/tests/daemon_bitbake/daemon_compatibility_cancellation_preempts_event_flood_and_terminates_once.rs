@@ -104,6 +104,11 @@ server = Server()
                     _ => {}
                 },
                 DaemonBitBakeEvent::Failed { message, .. } => panic!("{message}"),
+                DaemonBitBakeEvent::Cancelled { .. } => {
+                    cancellation_terminal_latency =
+                        cancellation_started.map(|started| started.elapsed());
+                    terminal_count += 1;
+                }
             }
         }
         tokio::time::sleep(Duration::from_millis(10)).await;

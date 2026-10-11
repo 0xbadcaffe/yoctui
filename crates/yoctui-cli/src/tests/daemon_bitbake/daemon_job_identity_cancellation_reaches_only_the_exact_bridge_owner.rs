@@ -76,6 +76,7 @@ server = Server()
                         _ => {}
                     },
                     DaemonBitBakeEvent::Failed { message, .. } => panic!("{message}"),
+                    DaemonBitBakeEvent::Cancelled { .. } => panic!("unexpected early cancellation"),
                 }
             }
         }
@@ -104,6 +105,10 @@ server = Server()
                         }
                     }
                     DaemonBitBakeEvent::Failed { message, .. } => panic!("{message}"),
+                    DaemonBitBakeEvent::Cancelled { job_id, .. } => {
+                        assert_eq!(job_id, expected);
+                        return;
+                    }
                 }
             }
             assert!(
