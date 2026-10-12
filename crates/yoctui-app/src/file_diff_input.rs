@@ -47,7 +47,11 @@ pub fn help_workspace_action(app: &App, input: Input) -> Option<Action> {
     if let Some(delta) = collection_scroll_delta(input) {
         return Some(Action::ScrollHelp { delta });
     }
-    (input == Input::Char('g')).then_some(Action::OpenOnboarding)
+    match input {
+        Input::Char('g') => Some(Action::OpenOnboarding),
+        Input::Esc => Some(Action::Open(Screen::Dashboard)),
+        _ => None,
+    }
 }
 
 #[cfg(test)]

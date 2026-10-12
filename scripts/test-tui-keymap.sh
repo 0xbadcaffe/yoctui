@@ -20,20 +20,36 @@ with __import__('tempfile').TemporaryDirectory(prefix='yoctui-keymap-', dir='/tm
     raw = bytearray()
     terminal = TerminalAcceptance(master, proc, raw, 100, 30)
     terminal.dismiss_onboarding()
-    keys = b'?\x1b[15~\x10/\t\x1b[Z\x1b q\x03\x1b[A\x1b[Bjk\r\x7f\x1b[C\x1b[DleoRr.gmdfFnNw sTBC L12cQxDiv\x13\x02'
-    os.write(master, keys)
-    matrix_deadline = time.monotonic() + 1
-    while time.monotonic() < matrix_deadline:
-        terminal.read()
-    # Resolve a possible terminal-prefix wait, then unwind nested modal layers
-    # with distinct Escape events so they cannot be decoded as Alt+q.
-    os.write(master, b'\x02')
-    terminal.unwind()
-    terminal.finish()
+    # Assert each current route before sending another input. Arbitrary batched
+    # keys can start dialogs/chords and consume the eventual quit request; they
+    # never proved the individual shortcuts worked. Rust keymap tests cover the
+    # complete catalog; this is a state-checked real terminal routing smoke test.
+    def press(key, expected, absent=None):
+        os.write(master, key)
+        terminal.wait_for(expected, absent=absent)
+    try:
+        press(b'\x1bOP', 'Keyboard and action reference')
+        press(b'g', 'Six-step workbench path')
+        press(b'\x1b', 'Keyboard and action reference', 'Six-step workbench path')
+        press(b'\x1b', 'Build Overview', 'Keyboard and action reference')
+        press(b'\x1b[15~', 'Log Viewer')
+        press(b'\x10', 'Command Palette')
+        press(b'Open Diff Tool', 'Open Diff Tool')
+        press(b'\r', 'Diff tool · read-only', 'Command Palette')
+        press(b'\x1b[15~', 'Mark one file on each side with Space')
+        press(b'\x1b', 'h/l groups')
+        press(b'\x1b[15~', 'Log Viewer')
+        press(b'\x1b[24~', 'Yoctui Application Menu')
+        press(b'\x1b', 'Log Viewer', 'Yoctui Application Menu')
+        press(b'\x02?', 'Keyboard and action reference')
+        press(b'\x1b', 'Build Overview', 'Keyboard and action reference')
+        terminal.finish()
+    finally:
+        terminal.cleanup()
     os.close(master)
     if (b'yoctui' not in raw.lower() or b'\x1b[?1049h' not in raw
             or b'\x1b[?1049l' not in raw or b'\xef\xbf\xbd' in raw
             or proc.returncode != 0):
         raise SystemExit(f'keyboard PTY failed: returncode={proc.returncode}')
-print('real PTY keyboard matrix passed')
+print('state-checked real PTY keyboard routing passed')
 PY

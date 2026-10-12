@@ -44,6 +44,10 @@ fn file_diff_menu_and_help_overlays_keep_ownership() {
     yoctui_model::update(&mut app, Action::CloseMenu);
     yoctui_model::update(&mut app, Action::Open(Screen::Help));
     assert_eq!(
+        help_workspace_action(&app, Input::Esc),
+        Some(Action::Open(Screen::Dashboard))
+    );
+    assert_eq!(
         help_workspace_action(&app, Input::Char('g')),
         Some(Action::OpenOnboarding)
     );
