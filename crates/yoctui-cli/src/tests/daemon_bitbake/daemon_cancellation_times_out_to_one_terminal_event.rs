@@ -9,7 +9,6 @@ async fn daemon_cancellation_times_out_to_one_terminal_event() {
     ));
     let build = root.join("build");
     let python = root.join("python");
-    let cancelled = root.join("cancelled");
     fs::create_dir_all(&build).unwrap();
     fs::create_dir_all(&python).unwrap();
     let build = build.canonicalize().unwrap();
@@ -26,7 +25,6 @@ class Connection:
  def list_layers(self): return []
  def start_build(self, targets, task, force=False): pass
  def cancel_build(self):
-  open({cancelled:?}, "w", encoding="utf-8").write("cancelled")
   time.sleep(30)
  def drain_events(self): return [{{"type": "parse_progress", "current": 1, "total": 2}}]
  def terminate_server(self): pass
@@ -36,7 +34,6 @@ class Server:
 server = Server()
 "#,
             build = build.display().to_string(),
-            cancelled = cancelled.display().to_string(),
         ),
     )
     .unwrap();
@@ -91,7 +88,9 @@ server = Server()
 
     assert!(sent, "cancellation was never submitted");
     assert_eq!(terminals, 1);
-    assert_eq!(fs::read_to_string(cancelled).unwrap(), "cancelled");
+    // Forced timeout may kill the bridge before its cancellation callback runs.
+    // Assert the terminal boundary here; the graceful-cancellation tests check
+    // callback markers separately, without this deliberately short deadline.
     assert!(supervisor.try_event().is_none());
     assert!(supervisor.cancel(job_id).is_err());
     fs::remove_dir_all(&root).unwrap();
