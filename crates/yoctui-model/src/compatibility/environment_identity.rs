@@ -1,4 +1,6 @@
-pub const MAX_ENVIRONMENT_IDENTITY_TEXT_BYTES: usize = 1_024;
+// Must match the capability probe's MAX_PROBE_TEXT_BYTES: probe evidence is
+// validated here, including complete BBPATH arguments from large layer stacks.
+pub const MAX_ENVIRONMENT_IDENTITY_TEXT_BYTES: usize = 4_096;
 pub const MAX_ENVIRONMENT_IDENTITY_PATH_BYTES: usize = 4_096;
 pub const MAX_ENVIRONMENT_SOURCE_ROOTS: usize = 256;
 pub const MAX_ENVIRONMENT_LAYER_SERIES: usize = 256;

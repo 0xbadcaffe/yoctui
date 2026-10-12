@@ -161,6 +161,9 @@ fn bounded(value: &str) -> String {
     value
         .chars()
         .filter(|character| !character.is_control() || *character == '\t')
-        .take(MAX_PROBE_TEXT_BYTES)
+        .scan(0, |bytes, character| {
+            *bytes += character.len_utf8();
+            (*bytes <= MAX_PROBE_TEXT_BYTES).then_some(character)
+        })
         .collect()
 }

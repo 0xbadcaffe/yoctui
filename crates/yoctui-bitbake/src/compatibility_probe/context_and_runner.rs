@@ -22,7 +22,9 @@ const DEFAULT_PROBE_OUTPUT_LIMIT: usize = 64 * 1024;
 const MAX_PROBE_OUTPUT_LIMIT: usize = 1024 * 1024;
 const MAX_PROBE_CONTEXT_VALUES: usize = 1_024;
 const MAX_PROBE_ENVIRONMENT_VALUES: usize = 1_024;
-const MAX_PROBE_TEXT_BYTES: usize = 4_096;
+// Must match MAX_ENVIRONMENT_IDENTITY_TEXT_BYTES in the model validator.
+// Share its 4,096-byte definition so the producer and consumer cannot drift.
+const MAX_PROBE_TEXT_BYTES: usize = yoctui_model::MAX_ENVIRONMENT_IDENTITY_TEXT_BYTES;
 const PROBE_SPAWN_ATTEMPTS: usize = 4;
 const PROBE_SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
 
