@@ -99,7 +99,7 @@ pub(crate) async fn tui(
     crossterm::style::force_color_output(true);
     let hardware_graphics_capability = terminal_graphics::detect_hardware_graphics_capability();
     let guard = TerminalGuard::enter()?;
-    let terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
+    let mut terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
     let mut app = if build_dir_configured {
         App::new(log_entries, log_bytes)
     } else {
@@ -148,6 +148,7 @@ pub(crate) async fn tui(
     {
         app.pane_layout = layout;
     }
+    terminal.draw(|frame| yoctui_ui::render_startup(frame, &app))?;
     #[cfg(unix)]
     let daemon_runtime = match client_runtime::InteractiveDaemonRuntime::connect(
         &mut app,

@@ -1,6 +1,7 @@
 // Shared fixtures and regression modules.
 
 use super::*;
+mod branding;
 mod completed_progress;
 mod decompiled_dts;
 mod gitui_native_workspace;

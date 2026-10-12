@@ -1,6 +1,8 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
 use yoctui_utils::format_duration;
+mod branding;
 mod dialogs;
+pub use branding::render_startup;
 mod environment_setup;
 mod hardware_native_projection;
 mod hardware_projects_render;
