@@ -32,12 +32,13 @@ pub enum WorkspaceDestination {
     BuildEnvironment,
     Compatibility,
     Daemons,
+    DiffTool,
     Settings,
     Help,
 }
 
 impl WorkspaceDestination {
-    pub const ALL: [Self; 31] = [
+    pub const ALL: [Self; 32] = [
         Self::Dashboard,
         Self::Recipes,
         Self::Layers,
@@ -67,6 +68,7 @@ impl WorkspaceDestination {
         Self::BuildEnvironment,
         Self::Compatibility,
         Self::Daemons,
+        Self::DiffTool,
         Self::Settings,
         Self::Help,
     ];

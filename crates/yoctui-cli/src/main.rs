@@ -472,6 +472,7 @@ mod kernel_inspection;
 use kernel_inspection::*;
 mod firmware_inspection;
 use firmware_inspection::*;
+mod file_diff_io;
 mod layer_browser;
 use layer_browser::*;
 mod recipe_editor;

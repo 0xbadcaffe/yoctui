@@ -79,6 +79,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenTerminalSessions => "Ctrl+B t",
         CommandId::OpenMaintenance => "F12 Tools",
         CommandId::OpenDaemons => "F12 Tools",
+        CommandId::OpenDiffTool => "F12 Tools",
         CommandId::OpenBuildEnvironment => "F12 Workspace",
         CommandId::OpenCompatibility => "F12 Workspace",
         CommandId::OpenSettings => "F12 View",
@@ -159,6 +160,7 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         CommandId::OpenBuildEnvironment => Some(WorkspaceDestination::BuildEnvironment),
         CommandId::OpenCompatibility => Some(WorkspaceDestination::Compatibility),
         CommandId::OpenDaemons => Some(WorkspaceDestination::Daemons),
+        CommandId::OpenDiffTool => Some(WorkspaceDestination::DiffTool),
         CommandId::OpenSettings => Some(WorkspaceDestination::Settings),
         CommandId::OpenHelp | CommandId::OpenAbout => Some(WorkspaceDestination::Help),
         CommandId::BuildImage

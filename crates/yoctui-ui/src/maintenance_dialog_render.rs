@@ -338,19 +338,27 @@ pub(crate) fn help(frame: &mut Frame, app: &App, area: Rect) {
         .collect::<Vec<_>>()
         .join("\n");
     let area = if area.width >= 42 && area.height >= 38 {
-        let regions = Layout::vertical([Constraint::Length(5), Constraint::Min(0)]).split(area);
+        let regions = Layout::vertical([Constraint::Length(6), Constraint::Min(0)]).split(area);
         crate::branding::render_brand_logo(frame, app, regions[0]);
         regions[1]
     } else {
         area
     };
     let text = format!(
-        "Operator guide\n1. Configure the build environment, machine, and image from F12 > Workspace/Build.\n2. Start and monitor work from Dashboard or Tasks; inspect failures in Errors and Logs.\n3. Browse Recipes, Images, Kernel, Firmware, and Hardware. Use F12 > Actions for operations on the current screen.\n4. In Hardware, add PDF, KiCad, SVG, or image documents by category; Enter opens the embedded page, zoom, pan, and search viewer.\n5. Use Devtool modify to create a workspace source tree, edit/build it, then update-recipe or finish into a layer.\n6. Use QEMU / Wic to boot a compatible deployed image or create/write Wic media.\n\nAbout Yoctui\nYoctui {}\nBuild SHA: {}\nA terminal workbench for operating, inspecting, building, and debugging Yocto/OpenBMC workspaces.\n\nGlobal shortcuts\n{function_keys}\n\nGlobal action shortcuts\n{catalog_actions}\n\nNavigation: arrows move, Enter opens, Esc returns, F12 opens the application menu, ?/F1 opens this screen, q quits.\nSearch: / opens content search; type a regular expression and Enter opens the selected matching file.\nTerminal writers and editors retain literal keys; terminal search is Ctrl+B /.\nDestructive and publishing operations show an exact confirmation before execution.",
+        "Keyboard and action reference\nOperator guide: press g or F12 > Help > Operator guide for the interactive workflow.\n\nAbout Yoctui\nYoctui {}\nBuild SHA: {}\nA terminal workbench for operating, inspecting, building, and debugging Yocto/OpenBMC workspaces.\n\nGlobal shortcuts\n{function_keys}\n\nNavigation: arrows move, Enter opens, Esc returns, F12 opens the application menu, ?/F1 opens this screen, q quits.\nSearch: / opens global search; Alt+n switches content and filename search.\nTerminal writers and editors retain literal keys; terminal search is Ctrl+B /.\nDestructive and publishing operations show an exact confirmation before execution.\n\nGlobal action shortcuts\n{catalog_actions}",
         env!("CARGO_PKG_VERSION"),
         env!("YOCTUI_BUILD_SHA")
     );
     frame.render_widget(
-        Paragraph::new(text)
+        Paragraph::new(text.clone())
+            .scroll((
+                app.help_scroll.min(
+                    text.lines()
+                        .count()
+                        .saturating_sub(usize::from(area.height.saturating_sub(2))),
+                ) as u16,
+                0,
+            ))
             .style(ThemePalette::for_app(app).base())
             .block(Block::default().title("Help").borders(Borders::ALL)),
         area,

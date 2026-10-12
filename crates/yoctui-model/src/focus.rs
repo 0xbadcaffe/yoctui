@@ -6,7 +6,7 @@ pub fn focus_target_is_relevant(app: &crate::App, target: FocusTarget) -> bool {
         FocusTarget::Workspace => match app.screen {
             // These are informational projections. Their content never
             // becomes actionable merely because live or retained data appears.
-            Screen::Dashboard | Screen::LayerRelationships | Screen::Help => false,
+            Screen::Dashboard | Screen::LayerRelationships => false,
             _ => true,
         },
         // Inspector surfaces currently project facts and context actions but

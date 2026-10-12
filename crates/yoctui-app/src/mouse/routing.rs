@@ -65,6 +65,7 @@ pub fn mouse_action_for_app(
         return Some(Action::OpenContextMenu);
     }
     if let Some(zoomed) = app.zoomed_pane
+        && app.screen != Screen::DiffTool
         && !(app.screen == Screen::Hardware && app.hardware.viewer.is_some())
         && !((matches!(app.screen, Screen::TerminalSessions)
             || app.platform_menuconfig_visible())
@@ -133,6 +134,9 @@ pub fn mouse_action_for_app(
         return None;
     }
     if region.target == FocusTarget::Workspace {
+        if app.screen == Screen::DiffTool {
+            return file_diff_mouse_action(mouse, app, region.area);
+        }
         if matches!(mouse.kind, MouseKind::ScrollUp | MouseKind::ScrollDown) {
             let pages_pdf = app.screen == Screen::Hardware
                 && app.hardware.viewer.as_ref().is_some_and(|viewer| {

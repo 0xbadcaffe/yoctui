@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master&amp;event=push&amp;refresh=0.1.337" alt="CI workflow status for master pushes"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master&amp;event=push&amp;refresh=0.1.338" alt="CI workflow status for master pushes"></a>
   <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/testing.md#completion-gate"><img src="https://img.shields.io/badge/coverage-gates-orange?style=flat-square" alt="Coverage verification gates"></a>
   <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.333" alt="Latest published crates.io version"></a>
   <a href="#install"><img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&amp;logo=rust" alt="Rust stable toolchain"></a>
@@ -45,7 +45,8 @@ close the UI and reconnect later.
 - **Build and diagnose:** dashboard and insights, live BitBake tasks, logs,
   warnings, errors, and saved build history.
 - **Develop:** browse layers and recipes, use devtool and devshell, edit text
-  with syntax highlighting, and open GitUI in persistent terminal sessions.
+  with syntax highlighting, compare files in a built-in two-pane diff tool,
+  and open GitUI in persistent terminal sessions.
 - **Inspect images:** artifacts, rootfs package composition with a pie chart
   and list, navigable files with permissions and ownership, systemd services,
   D-Bus, and udev rules.

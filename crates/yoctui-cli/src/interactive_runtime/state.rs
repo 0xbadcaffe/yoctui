@@ -83,6 +83,7 @@ pub(super) struct InteractiveRuntime {
     pub(super) frame_interval: Duration,
     pub(super) render_scheduler: RenderScheduler,
     pub(super) environment_browser_io: environment_setup::EnvironmentBrowserIo,
+    pub(super) file_diff_io: crate::file_diff_io::FileDiffIo,
     pub(super) hardware_io: hardware_io::HardwareIo,
     pub(super) kernel_debug_io: kernel_debug_io::KernelDebugIo,
     pub(super) editor_gitui_io: EditorGitUiIo,

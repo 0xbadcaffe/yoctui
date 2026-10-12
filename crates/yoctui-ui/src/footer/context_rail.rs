@@ -50,6 +50,20 @@ pub(crate) fn current_search_state(app: &App) -> Option<(bool, bool)> {
 }
 
 pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
+    if app.screen == Screen::DiffTool && app.focus == FocusTarget::Workspace
+        && app.active_dialog().is_none() && !app.command_palette_open && !app.menu.is_open()
+    {
+        return if app.file_diff.comparison.is_some() {
+            ["Up/Down scroll", "PgUp/PgDn", "Home/End", "Left/Right pan", "Esc file trees"].into_iter().map(str::to_owned).collect()
+        } else {
+            ["Tab side", "Space mark", "F5 compare", "Enter expand", "Backspace parent", "Esc navigator"].into_iter().map(str::to_owned).collect()
+        };
+    }
+    if app.screen == Screen::Help && app.active_dialog().is_none()
+        && !app.command_palette_open && !app.menu.is_open() && !app.onboarding.open
+    {
+        return ["Up/Down scroll", "PgUp/PgDn", "Home/End", "g operator guide", "Esc dashboard"].into_iter().map(str::to_owned).collect();
+    }
     if app.screen == Screen::Daemons && !app.menu.is_open() && !app.command_palette_open
         && (app.focus == FocusTarget::Workspace || app.daemon_manager.editing || app.daemon_manager.review.is_some()) {
         return if app.daemon_manager.editing { vec!["Tab field".into(), "Ctrl+V paste".into(), "Enter review".into(), "Esc cancel".into()] }
@@ -208,6 +222,7 @@ pub(crate) fn footer_rail_shortcuts(app: &App, width: u16) -> String {
     if !compact {
         let optional = FUNCTION_SHORTCUTS
             .iter()
+            .filter(|shortcut| !(app.screen == Screen::DiffTool && app.focus == FocusTarget::Workspace && shortcut.key == FunctionKey::F5))
             .filter(|shortcut| {
                 !matches!(shortcut.key, FunctionKey::F1 | FunctionKey::F9 | FunctionKey::F12)
                     && !matches!(shortcut.route, FunctionShortcutRoute::Open(screen) if screen == app.screen)

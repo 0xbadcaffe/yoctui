@@ -244,6 +244,14 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             metadata.help_group = Group::Operate;
             metadata
         }
+        CommandId::OpenDiffTool => GlobalMetadata {
+            menu_path: vec!["Tools", "Diff tool"],
+            ..navigation(
+                "tools.file-diff", "Open Diff Tool",
+                "Browse two file trees and compare marked text files side by side",
+                &["compare files", "file diff"], &["diff", "compare", "files"], &[], 65,
+            )
+        },
         CommandId::OpenDevtool(_) => {
             unreachable!("Devtool utility metadata returned before the main catalog match")
         }

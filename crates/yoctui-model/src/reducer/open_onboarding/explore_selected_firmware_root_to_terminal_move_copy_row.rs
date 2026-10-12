@@ -62,10 +62,16 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 .then(|| selected_correlated_log_id(app))
                 .flatten();
             app.screen = s;
+            if s == Screen::Help {
+                app.help_scroll = 0;
+            }
             if s == Screen::BuildHistory {
                 app.saved_builds.reload_requested = true;
             }
-            app.focus = if matches!(s, Screen::BuildHistory | Screen::Settings) {
+            app.focus = if matches!(
+                s,
+                Screen::BuildHistory | Screen::Settings | Screen::DiffTool | Screen::Help
+            ) {
                 FocusTarget::Workspace
             } else {
                 FocusTarget::Navigator

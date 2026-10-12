@@ -14,6 +14,7 @@ fn set_local_background_activity(
 impl InteractiveRuntime {
     pub(super) async fn poll_runtime(&mut self) -> Result<bool> {
         let runtime = self;
+        runtime.poll_local_documents().await?;
         if runtime.app.screen == Screen::Daemons {
             let size = runtime.terminal.size()?;
             let [header, footer] =

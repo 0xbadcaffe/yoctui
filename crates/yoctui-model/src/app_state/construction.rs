@@ -1,6 +1,9 @@
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
+            file_diff: FileDiffState::default(),
+            help_scroll: 0,
+            help_visible_rows: 20,
             saved_builds: SavedBuildState::default(),
             require_daemon: false,
             last_daemon_update: None,

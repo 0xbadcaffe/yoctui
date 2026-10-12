@@ -244,7 +244,7 @@ pub(crate) fn onboarding_overlay(frame: &mut Frame, app: &App, area: Rect) {
         .style(palette.base())
         .block(dialog_block(
             app,
-            "Yoctui workflow guide · focus trapped",
+            "Operator guide · Yoctui workflow guide",
             DialogTone::Standard,
         ))
         .wrap(Wrap { trim: true }),

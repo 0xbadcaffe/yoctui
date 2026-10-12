@@ -11,7 +11,7 @@ pub(crate) fn navigator(
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 28] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 29] = [
         (
             "Dashboard",
             Screen::Dashboard,
@@ -74,6 +74,11 @@ pub(crate) fn navigator(
             WorkspaceDestination::Compatibility,
         ),
         ("Daemons", Screen::Daemons, WorkspaceDestination::Daemons),
+        (
+            "Diff tool",
+            Screen::DiffTool,
+            WorkspaceDestination::DiffTool,
+        ),
         (
             "GitUI",
             Screen::TerminalSessions,
@@ -359,6 +364,13 @@ pub(crate) fn literal_project_navigator(
     }
 
     lines.push(project_tree_group("Tools", width, palette));
+    lines.push(project_tree_child(
+        "Diff tool",
+        "▱",
+        width,
+        app.navigator_compatibility_destination() == WorkspaceDestination::DiffTool,
+        palette,
+    ));
     lines.push(project_tree_child(
         "GitUI",
         "▱",

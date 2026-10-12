@@ -56,6 +56,7 @@ pub enum Screen {
     BuildEnvironment,
     Compatibility,
     Daemons,
+    DiffTool,
     Settings,
 }
 
@@ -335,7 +336,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-pub(crate) const NAVIGATOR_SCREENS: [Screen; 28] = [
+pub(crate) const NAVIGATOR_SCREENS: [Screen; 29] = [
     Screen::Dashboard,
     Screen::Insights,
     Screen::Tasks,
@@ -362,10 +363,11 @@ pub(crate) const NAVIGATOR_SCREENS: [Screen; 28] = [
     Screen::BuildEnvironment,
     Screen::Compatibility,
     Screen::Daemons,
+    Screen::DiffTool,
     Screen::TerminalSessions,
     Screen::Settings,
 ];
-pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 28] = [
+pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 29] = [
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Tasks,
@@ -392,6 +394,7 @@ pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 28
     WorkspaceDestination::BuildEnvironment,
     WorkspaceDestination::Compatibility,
     WorkspaceDestination::Daemons,
+    WorkspaceDestination::DiffTool,
     WorkspaceDestination::GitUi,
     WorkspaceDestination::Settings,
 ];
@@ -427,7 +430,7 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "TOOLS",
         start: 18,
-        end: 28,
+        end: 29,
     },
 ];
 

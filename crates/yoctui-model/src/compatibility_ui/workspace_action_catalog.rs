@@ -485,6 +485,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
         ],
         Destination::ProjectProfiles
         | Destination::GitUi
+        | Destination::DiffTool
         | Destination::BuildEnvironment
         | Destination::Compatibility
         | Destination::Daemons

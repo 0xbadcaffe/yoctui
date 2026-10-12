@@ -1,0 +1,36 @@
+use super::*;
+
+impl InteractiveRuntime {
+    pub(super) async fn poll_local_documents(&mut self) -> Result<()> {
+        if matches!(self.app.screen, Screen::DiffTool | Screen::Help) {
+            let size = self.terminal.size()?;
+            let extra = u16::from(self.app.offline_notice().is_some()) * 2
+                + u16::from(self.app.zoomed_pane.is_some() || size.width < 100);
+            let height = size.height.saturating_sub(8 + extra);
+            if self.app.screen == Screen::DiffTool {
+                self.app
+                    .file_diff
+                    .reconcile_viewport(usize::from(height.saturating_sub(8)));
+            } else {
+                let logo = if height >= 38 { 6 } else { 0 };
+                self.app.help_visible_rows = usize::from(height.saturating_sub(2 + logo));
+                let _ = update(&mut self.app, Action::ScrollHelp { delta: 0 });
+            }
+        }
+        if self.app.screen == Screen::DiffTool {
+            let root = self
+                .app
+                .source_repository_path()
+                .map(Path::to_owned)
+                .unwrap_or_else(|| self.session_build_dir.clone());
+            if let Some(effect) = yoctui_model::file_diff_initial_request(&mut self.app, root) {
+                self.file_diff_io.submit(effect);
+            }
+        }
+        self.render_scheduler.invalidate_if(
+            self.file_diff_io.poll(&mut self.app).await,
+            RenderCause::State,
+        );
+        Ok(())
+    }
+}

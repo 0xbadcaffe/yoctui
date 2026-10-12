@@ -18,6 +18,12 @@ mod yocto_utility_dialog;
 #[rustfmt::skip]
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     let action = match action {
+        Action::FileDiff(action) => return crate::file_diff::reduce(app, action),
+        Action::ScrollHelp { delta } => {
+            let maximum = (global_operator_action_definitions().len() + 18).saturating_sub(app.help_visible_rows);
+            app.help_scroll = shifted_index(app.help_scroll, delta, maximum + 1);
+            return None;
+        }
         Action::OpenGitUi if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) => Action::OpenRecipeEditorGitUi,
         Action::RecipeEditorGitUiInspected { generation, root, result } => {
             return crate::editor_gitui::finish(app, generation, root, result);
@@ -401,6 +407,6 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::VariableLoaded(..) | Action::RecipeSourcesLoaded { .. } | Action::HostTelemetryUpdated(..)
         | Action::Failure(..) | Action::Tick => set_layer_inspector_mode::reduce_actions(app, action),
         Action::Hardware(_) | Action::KernelDebug(_)
-        | Action::RecipeEditorGitUiInspected { .. } | Action::RestoreRecipeEditor => unreachable!("Local workspace actions are routed before the shared reducer"),
+        | Action::RecipeEditorGitUiInspected { .. } | Action::RestoreRecipeEditor | Action::FileDiff(_) | Action::ScrollHelp { .. } => unreachable!("Local workspace actions are routed before the shared reducer"),
     }
 }

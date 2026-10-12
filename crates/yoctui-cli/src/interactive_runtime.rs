@@ -14,6 +14,7 @@ mod hardware_workspace;
 mod input;
 mod jobs;
 mod key_input;
+mod local_document_workspaces;
 mod metadata_backend;
 mod native_metadata_scope;
 mod notification_input;
@@ -149,6 +150,7 @@ pub(crate) async fn tui(
         app.pane_layout = layout;
     }
     terminal.draw(|frame| yoctui_ui::render_startup(frame, &app))?;
+    let startup_visible_since = Instant::now();
     #[cfg(unix)]
     let daemon_runtime = match client_runtime::InteractiveDaemonRuntime::connect(
         &mut app,
@@ -430,6 +432,7 @@ pub(crate) async fn tui(
         frame_interval,
         render_scheduler,
         environment_browser_io,
+        file_diff_io: crate::file_diff_io::FileDiffIo::default(),
         hardware_io,
         kernel_debug_io: kernel_debug_io::KernelDebugIo::default(),
         editor_gitui_io: EditorGitUiIo::default(),
@@ -444,5 +447,9 @@ pub(crate) async fn tui(
         #[cfg(unix)]
         termination,
     };
+    // Daemon attachment counts towards the 750 ms hold; slow connections do
+    // not pay another delay. Only this initial splash is held, never redraws.
+    tokio::time::sleep(Duration::from_millis(750).saturating_sub(startup_visible_since.elapsed()))
+        .await;
     runtime.run().await
 }

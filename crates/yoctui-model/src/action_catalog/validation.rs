@@ -98,6 +98,7 @@ impl WorkspaceDestination {
             Self::BuildEnvironment => "Build Environment",
             Self::Compatibility => "Compatibility",
             Self::Daemons => "Daemons",
+            Self::DiffTool => "Diff tool",
             Self::Settings => "Settings",
             Self::Help => "Help",
         }

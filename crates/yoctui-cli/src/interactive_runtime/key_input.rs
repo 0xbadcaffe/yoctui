@@ -328,6 +328,14 @@ impl InteractiveRuntime {
             let _ = compatibility_workspace_action(&mut runtime.app, action);
             return Ok(true);
         }
+        if let Some(action) = yoctui_app::file_diff_action(&runtime.app, input)
+            .or_else(|| yoctui_app::help_workspace_action(&runtime.app, input))
+        {
+            if let Some(effect) = compatibility_workspace_action(&mut runtime.app, action) {
+                runtime.file_diff_io.submit(effect);
+            }
+            return Ok(true);
+        }
         if let Some(action) =
             direct_menu_shortcut_action(&runtime.app, input, replayed_context_action)
         {

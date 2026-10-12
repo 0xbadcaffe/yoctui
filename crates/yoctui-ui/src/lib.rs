@@ -2,6 +2,7 @@
 use yoctui_utils::format_duration;
 mod branding;
 mod dialogs;
+mod file_diff_render;
 pub use branding::render_startup;
 mod environment_setup;
 mod hardware_native_projection;

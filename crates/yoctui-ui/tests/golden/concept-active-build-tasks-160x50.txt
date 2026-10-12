@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.337 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
+│yoctui v0.1.338 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
 │⣧ Build running · 1 active                                                                                                                                    │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -35,9 +35,9 @@
 │  ▱ Build environment    ││✕ Failed      core-image-mi Build        core-image-minimal       19:08:33  00:01:48 ││✓ Build History        [h] — Local          │
 │  ▱ Compatibility        ││✓ Succeeded   virtual/kerne Build        virtual/kernel           19:07:18  00:00:54 ││? Build options        [Alt+b] — Unknown    │
 │  ▱ Daemons              ││                                                                                     ││  Reason: No current environment capability │
-│  ▱ GitUI                ││                                                                                     ││                                            │
-│  ▱ Settings             │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
-│                         │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│                                            │
+│  ▱ Diff tool            ││                                                                                     ││                                            │
+│  ▱ GitUI                │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
+│  ▱ Settings             │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│                                            │
 │                         ││CPU Usage               24%│RAM ! unavailable           │BUILD FS ! unavailable      ││                                            │
 │                         ││                           │                            │                            ││System Status───────────────────────────────│
 │                         ││                           │                            │                            ││✓ Daemon Connected · Local · version unavai…│

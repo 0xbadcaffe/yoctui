@@ -95,7 +95,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 90] = [
+const GLOBAL_COMMANDS: [CommandId; 91] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -162,6 +162,7 @@ const GLOBAL_COMMANDS: [CommandId; 90] = [
     CommandId::OpenBuildEnvironment,
     CommandId::OpenCompatibility,
     CommandId::OpenDaemons,
+    CommandId::OpenDiffTool,
     CommandId::OpenSettings,
     CommandId::OpenInsights,
     CommandId::OpenBuildHistory,

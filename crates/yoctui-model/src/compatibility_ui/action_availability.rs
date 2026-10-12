@@ -135,6 +135,7 @@ pub fn compatibility_ui_command_action_definition(
         | CommandId::ScrollFirst
         | CommandId::ScrollLast
         | CommandId::OpenOnboarding
+        | CommandId::OpenDiffTool
         | CommandId::OpenDashboard
         | CommandId::OpenLogs
         | CommandId::OpenErrors

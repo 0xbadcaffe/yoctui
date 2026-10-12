@@ -4,6 +4,7 @@ use super::*;
 mod branding;
 mod completed_progress;
 mod decompiled_dts;
+mod file_diff;
 mod gitui_native_workspace;
 mod image_artifact_viewport;
 mod recipe_list_viewport;

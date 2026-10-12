@@ -16,6 +16,11 @@ pub fn authorize_workspace_effect(
 /// unavailable environment effect, preparation mutations are rolled back and
 /// only the exact denial notice is retained.
 pub fn update_with_workspace_authority(app: &mut App, action: crate::Action) -> Option<Effect> {
+    // These actions can only emit bounded, read-only client-local file requests.
+    // Avoid cloning a complete comparison and the recipe inventory per arrow key.
+    if matches!(action, crate::Action::FileDiff(_) | crate::Action::ScrollHelp { .. }) {
+        return crate::update(app, action);
+    }
     let before = app.clone();
     let effect = crate::update(app, action)?;
     if app.is_offline()

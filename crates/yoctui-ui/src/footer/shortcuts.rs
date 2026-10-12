@@ -1,4 +1,10 @@
 pub(crate) fn footer_shortcuts(app: &App) -> String {
+    if app.screen == Screen::DiffTool && app.focus == FocusTarget::Workspace {
+        return "Tab side | Space mark | F5 compare | Enter expand | Backspace parent | Esc trees/navigator".into();
+    }
+    if app.screen == Screen::Help {
+        return "Up/Down PgUp/PgDn scroll | Home/End | g operator guide | Esc dashboard | q quit".into();
+    }
     if app.screen == Screen::Signatures {
         return with_compatibility_footer(
             app,
@@ -209,6 +215,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             }
         }
         Screen::Help => "Esc dashboard | q quit",
+        Screen::DiffTool => "Tab side | Space mark | F5 compare | Enter expand | Backspace parent | Esc trees/navigator",
         Screen::Settings => {
             "↑/↓ select | ←/→ change | r retry save | Ctrl+P commands | Tab focus | q quit"
         }

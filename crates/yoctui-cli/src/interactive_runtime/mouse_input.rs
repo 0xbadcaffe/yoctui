@@ -44,6 +44,7 @@ impl InteractiveRuntime {
             )
         {
             match compatibility_workspace_action(&mut runtime.app, action) {
+                Some(effect @ Effect::FileDiff(_)) => runtime.file_diff_io.submit(effect),
                 Some(effect @ Effect::KernelDebug(_)) => runtime.kernel_debug_io.submit(effect),
                 Some(Effect::InspectKernel) => {
                     runtime.begin_platform_inspection(

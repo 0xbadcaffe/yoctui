@@ -12,6 +12,7 @@ pub fn workspace_destination_requirement(
         | WorkspaceDestination::Errors
         | WorkspaceDestination::Hardware
         | WorkspaceDestination::GitUi
+        | WorkspaceDestination::DiffTool
         | WorkspaceDestination::ProjectProfiles
         | WorkspaceDestination::BuildEnvironment
         | WorkspaceDestination::Compatibility

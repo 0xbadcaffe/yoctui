@@ -36,6 +36,9 @@ pub(crate) fn literal_navigator_selection_at_row(
         Destination::Maintenance,
     ];
     if row == tasks_start + TASK_DESTINATIONS.len() + 2 {
+        return App::navigator_selection_for_destination(Destination::DiffTool);
+    }
+    if row == tasks_start + TASK_DESTINATIONS.len() + 3 {
         return App::navigator_selection_for_destination(Destination::GitUi);
     }
     TASK_DESTINATIONS

@@ -64,6 +64,15 @@ mouse wheel scroll; Home/End reach the first/last line. Alt+f searches that DTS.
 In Errors, Esc closes retained diagnostics back to the selected error list;
 a second Esc returns to the navigator.
 
+## Diff tool
+
+Open Tools → Diff tool (navigator or F12). Tab/Shift+Tab switches file trees;
+Space marks/unmarks one file per side; F5 compares. Enter toggles a directory,
+Right expands, Left collapses, Backspace goes to the parent root, `.` toggles
+hidden files, and `r` refreshes. Comparison panes scroll together with arrows,
+PgUp/PgDn and Home/End; Left/Right pans horizontally. Esc returns to the trees,
+then Esc returns to the navigator. F5 still opens Logs outside this workspace.
+
 ## Terminal prefix
 
 Press Ctrl+B, then a command within one second:

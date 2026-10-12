@@ -93,6 +93,7 @@ impl ApplicationMenuGroup {
             | CommandId::OpenSettings => Self::View,
             CommandId::OpenDevtoolWorkspace | CommandId::OpenDevtool(_) => Self::Devtool,
             CommandId::OpenGitUi
+            | CommandId::OpenDiffTool
             | CommandId::OpenDaemons
             | CommandId::OpenBitBakeLayersShowLayers
             | CommandId::OpenBitBakeLayersShowRecipes
@@ -185,6 +186,7 @@ pub(crate) fn menu_item_order(group: ApplicationMenuGroup, item: &MenuItem) -> u
         ],
         ApplicationMenuGroup::Tools => &[
             OpenGitUi,
+            OpenDiffTool,
             OpenMaintenance,
             OpenRawMode,
             OpenBitBakeLayersShowMachines,

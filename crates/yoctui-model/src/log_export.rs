@@ -421,6 +421,7 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenBuildEnvironment => Action::Open(Screen::BuildEnvironment),
         CommandId::OpenCompatibility => Action::Open(Screen::Compatibility),
         CommandId::OpenDaemons => Action::Open(Screen::Daemons),
+        CommandId::OpenDiffTool => Action::Open(Screen::DiffTool),
         CommandId::OpenSettings => Action::Open(Screen::Settings),
         CommandId::ChooseTheme => Action::OpenThemePicker,
         CommandId::FocusNavigator => Action::Focus(FocusTarget::Navigator),

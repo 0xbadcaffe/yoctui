@@ -234,6 +234,26 @@ F12: Workspace, Build, Actions, Navigate, Config, View, Devtool, Tools, Help.
 Arrows move, typing selects a prefix, Enter opens, Esc closes. BBMASK is in
 Config; Preferences is first in View. Disabled actions explain why.
 
+F1 opens the keyboard/action reference (arrows, PgUp/PgDn and Home/End scroll).
+F12 → Help → Operator guide opens the separate interactive workflow guide;
+`g` in Help opens it too. The startup wordmark stays visible for at least 750 ms,
+including time spent connecting to the daemon.
+
+## File comparison
+
+Tools → Diff tool in the navigator or F12 opens a built-in, read-only comparison.
+Each side has its own layer-style filesystem tree. Tab/Shift+Tab switches sides;
+Enter toggles directories, Right expands, Left collapses and Backspace browses
+the parent root. `.` shows hidden files; `r` refreshes the current directory.
+Mark one file on each side with Space (green `[*]`), then F5 compares them.
+
+The synchronized text panes show line numbers, additions in green, removals
+in red and changed lines in yellow. Arrows/PgUp/PgDn/Home/End scroll;
+Left/Right pans long lines. Esc returns to both trees with your marks retained;
+another Esc returns to the navigator. UTF-8 text files up to 2 MiB and 20,000
+lines each are supported; binary, oversized and unreadable files explain why
+they cannot be compared. No external diff program is required.
+
 ## Settings, configuration, and sessions
 
 F12 → View → Preferences shows current/default/custom values. Arrows/Enter change,

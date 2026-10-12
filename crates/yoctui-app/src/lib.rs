@@ -52,7 +52,9 @@ use yoctui_model::{
 #[cfg(test)]
 mod tests;
 
+mod file_diff_input;
 mod rootfs_mapping;
+pub use file_diff_input::{file_diff_action, help_workspace_action};
 pub use rootfs_mapping::backend_event_from_rootfs_data;
 
 mod capability_actions;
