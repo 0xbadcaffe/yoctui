@@ -32,11 +32,17 @@ fn menus_cover_every_screen_once_and_keep_common_actions_first() {
         .collect::<Vec<_>>();
     let mut expected = MENU_SCREENS.to_vec();
     expected.push(Screen::Daemons);
+    expected.push(Screen::DiffTool);
     assert_eq!(screens, expected);
     assert!(
         app.application_menu_items(ApplicationMenuGroup::Tools)
             .iter()
             .any(|item| item.target == OperatorActionTarget::Command(CommandId::OpenDaemons))
+    );
+    assert!(
+        app.application_menu_items(ApplicationMenuGroup::Tools)
+            .iter()
+            .any(|item| item.target == OperatorActionTarget::Command(CommandId::OpenDiffTool))
     );
     for definition in crate::global_operator_action_definitions() {
         let OperatorActionTarget::Command(command) = definition.target else {
