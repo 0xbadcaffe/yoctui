@@ -100,11 +100,11 @@ impl App {
         // Do not delete daemon history or hide sessions on a transient disconnect.
         // A terminal that actually exited, disappeared, or belongs to an old
         // daemon identity is no longer an openable console in this browser.
-        if self.screen == Screen::TerminalSessions && self.daemon.status == ClientReplicaStatus::Current
-            && !self.terminal.awaiting_session {
-            if self.selected_terminal_session().is_none_or(|session| session.lifecycle.is_terminal()) {
-                self.terminal.browser_open = true;
-            }
+        if self.screen == Screen::TerminalSessions
+            && self.daemon.status == ClientReplicaStatus::Current
+            && !self.terminal.awaiting_session
+            && self.selected_terminal_session().is_none_or(|session| session.lifecycle.is_terminal()) {
+            self.terminal.browser_open = true;
         }
     }
 
