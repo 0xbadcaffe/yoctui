@@ -93,7 +93,7 @@ fn ux_terminal_workbench_renders_writer_read_only_recovery_and_help_states() {
     assert!(narrow.contains("CURRENT"), "{narrow}");
 
     app.daemon.status = yoctui_model::ClientReplicaStatus::Synchronizing;
-    let reconnecting = rendered_text(&app, 100, 30);
+    let reconnecting = rendered_text(&app, 160, 50);
     assert!(reconnecting.contains("RECONNECTING"), "{reconnecting}");
     assert!(
         reconnecting.contains("reconnect for control"),

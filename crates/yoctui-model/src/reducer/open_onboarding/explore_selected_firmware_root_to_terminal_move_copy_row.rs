@@ -279,6 +279,14 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 if session.lifecycle != ClientDaemonLifecycle::Running {
                     app.notification =
                         Some("Only a running terminal can grant writer control.".into());
+                } else if app.selected_terminal_details().is_some_and(|details| {
+                    app.terminal.releasing_writer == Some((details.id, details.writer_epoch))
+                        && details.writer.is_some()
+                        && details.writer == app.terminal.client_id
+                }) {
+                    app.terminal.reopen_after_release = true;
+                    app.notification =
+                        Some("Waiting for the daemon to release the previous writer lease.".into());
                 } else if app.selected_terminal_is_writer() {
                     app.notification =
                         Some("This client already owns the terminal writer lease.".into());
@@ -302,6 +310,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::TerminalReleaseControl => {
+            app.terminal.reopen_after_release = false;
             if app.screen == Screen::TerminalSessions {
                 app.zoomed_pane = None;
             }
@@ -312,6 +321,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             {
                 let session_id = session.id;
                 let writer_epoch = details.writer_epoch;
+                app.terminal.releasing_writer = Some((session_id, writer_epoch));
                 app.terminal.browser_open = true;
                 app.terminal.reset_transient_mode();
                 return Some(Effect::Terminal(TerminalEffect::ReleaseControl {

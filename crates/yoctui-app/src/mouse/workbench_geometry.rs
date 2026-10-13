@@ -104,6 +104,18 @@ pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -
     ]
 }
 
+/// Terminal Sessions keeps its navigator visible while the active console
+/// uses every remaining cell, including the space normally used by Inspector.
+pub fn terminal_console_navigator_width(app: &yoctui_model::App, width: u16, height: u16) -> u16 {
+    if width >= 130 {
+        workbench_pane_widths(app, width, height)[0]
+    } else if app.preferences.density == yoctui_model::UiDensity::Compact {
+        18
+    } else {
+        22
+    }
+}
+
 /// Visible cells available to the selected daemon PTY.
 ///
 /// This mirrors the production shell and Terminal Sessions allocations so a
@@ -122,7 +134,10 @@ pub fn terminal_workspace_dimensions(
     }
     let shell = workbench_shell(app, width, height)?;
     let (workspace_width, workspace_height) = if app.terminal_console_fullscreen() {
-        (shell.width, shell.height)
+        (
+            shell.width.saturating_sub(terminal_console_navigator_width(app, shell.width, height)),
+            shell.height,
+        )
     } else if app.zoomed_pane == Some(FocusTarget::Workspace) {
         (shell.width, shell.height.saturating_sub(1))
     } else if app.zoomed_pane.is_some() {
@@ -196,7 +211,23 @@ pub(crate) fn workbench_mouse_region(
         return None;
     }
     if app.terminal_console_fullscreen() {
-        return Some(WorkbenchMouseRegion { target: FocusTarget::Workspace, area: shell });
+        let navigator_width = terminal_console_navigator_width(
+            app,
+            shell.width,
+            shell.height + if shell.y == 5 { 8 } else { 4 },
+        );
+        let navigator = MouseRect { width: navigator_width, ..shell };
+        if navigator.contains(mouse) {
+            return Some(WorkbenchMouseRegion { target: FocusTarget::Navigator, area: navigator });
+        }
+        return Some(WorkbenchMouseRegion {
+            target: FocusTarget::Workspace,
+            area: MouseRect {
+                x: navigator.right(),
+                width: shell.right().saturating_sub(navigator.right()),
+                ..shell
+            },
+        });
     }
     if let Some(target) = app.zoomed_pane {
         let area = MouseRect {

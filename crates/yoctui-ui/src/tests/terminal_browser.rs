@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn terminal_browser_tree_filters_old_sessions_and_console_hides_all_passive_panes() {
+fn terminal_browser_tree_filters_old_sessions_and_console_keeps_navigator() {
     let mut app = super::demo_terminal_pane_binding::terminal_binding_fixture();
     app.terminal.browser_open = true;
     for (width, height) in [(80, 24), (100, 30), (160, 48), (240, 80)] {
@@ -21,7 +21,7 @@ fn terminal_browser_tree_filters_old_sessions_and_console_hides_all_passive_pane
     for (width, height) in [(80, 24), (100, 30), (160, 48), (240, 80)] {
         let text = rendered_text(&app, width, height);
         assert!(text.contains("VISIBLE_SESSION_26"), "{text}");
-        assert!(!text.contains("Navigator"), "{text}");
+        assert!(text.contains("Navigator"), "{text}");
         assert!(!text.contains("Inspector:"), "{text}");
         assert!(!text.contains("session tree"), "{text}");
     }

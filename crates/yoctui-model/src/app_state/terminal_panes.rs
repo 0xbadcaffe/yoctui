@@ -23,6 +23,32 @@ impl App {
         self.select_terminal_pane(self.pane_layout.focused, indexes[next]);
     }
 
+    /// Reopening during release waits for the authoritative writer epoch, then
+    /// requests control once. Another client's lease is never taken over.
+    pub fn pending_terminal_writer_effect(&mut self) -> Option<TerminalEffect> {
+        let (session_id, released_epoch) = self.terminal.releasing_writer?;
+        if self.daemon.status != ClientReplicaStatus::Current { return None; }
+        let details = self.daemon.pty_details.iter().find(|details| details.id == session_id);
+        let running = self.daemon.pty_sessions.iter().any(|session|
+            session.id == session_id && session.lifecycle == ClientDaemonLifecycle::Running);
+        if running && details.is_some_and(|details|
+            details.writer_epoch == released_epoch && details.writer.is_some()
+                && details.writer == self.terminal.client_id) { return None; }
+        let reopen = self.terminal.reopen_after_release;
+        self.terminal.releasing_writer = None;
+        self.terminal.reopen_after_release = false;
+        if reopen && running && self.terminal_console_fullscreen()
+            && self.focus == FocusTarget::Workspace
+            && self.selected_terminal_session().is_some_and(|session| session.id == session_id)
+            && let Some(details) = details.filter(|details| details.writer.is_none()) {
+            return Some(TerminalEffect::TakeControl {
+                session_id,
+                expected_epoch: details.writer_epoch,
+            });
+        }
+        None
+    }
+
     /// Shared typed projection for terminal rendering, mouse selection and resize.
     pub fn terminal_pane_session_index(
         &self,
@@ -59,6 +85,10 @@ impl App {
 
     pub fn reconcile_terminal_panes(&mut self) {
         let replaced = self.terminal.pane_daemon_instance != self.daemon.instance_id;
+        if replaced {
+            self.terminal.releasing_writer = None;
+            self.terminal.reopen_after_release = false;
+        }
         if replaced && !self.terminal.pane_sessions.is_empty() {
             self.pty_selection = usize::MAX;
         }

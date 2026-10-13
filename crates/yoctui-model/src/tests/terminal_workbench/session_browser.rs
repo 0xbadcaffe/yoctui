@@ -34,6 +34,58 @@ fn terminal_browser_open_release_and_reopen_preserve_running_process() {
 }
 
 #[test]
+fn terminal_browser_immediate_reopen_waits_for_release_and_uses_new_epoch_once() {
+    let mut app = ux_terminal_fixture(ClientDaemonLifecycle::Running, Some([7; 16]));
+    update(&mut app, Action::Open(Screen::TerminalSessions));
+    update(&mut app, Action::TerminalTakeControl);
+    update(&mut app, Action::TerminalReleaseControl);
+    assert!(
+        !app.selected_terminal_is_writer(),
+        "released input must stop immediately"
+    );
+    assert_eq!(update(&mut app, Action::TerminalTakeControl), None);
+    assert_eq!(app.pending_terminal_writer_effect(), None);
+    app.daemon.pty_details[0].writer = None;
+    app.daemon.pty_details[0].writer_epoch = 10;
+    assert_eq!(
+        app.pending_terminal_writer_effect(),
+        Some(TerminalEffect::TakeControl {
+            session_id: 41,
+            expected_epoch: 10,
+        })
+    );
+    assert_eq!(
+        app.pending_terminal_writer_effect(),
+        None,
+        "no duplicate request"
+    );
+    app.daemon.pty_details[0].writer = Some([7; 16]);
+    app.daemon.pty_details[0].writer_epoch = 11;
+    assert!(app.selected_terminal_is_writer());
+}
+
+#[test]
+fn terminal_browser_deferred_reopen_never_takes_a_foreign_writer_or_new_daemon() {
+    for replace_daemon in [false, true] {
+        let mut app = ux_terminal_fixture(ClientDaemonLifecycle::Running, Some([7; 16]));
+        update(&mut app, Action::Open(Screen::TerminalSessions));
+        update(&mut app, Action::TerminalTakeControl);
+        update(&mut app, Action::TerminalReleaseControl);
+        update(&mut app, Action::TerminalTakeControl);
+        app.daemon.pty_details[0].writer = Some([8; 16]);
+        app.daemon.pty_details[0].writer_epoch = 10;
+        if replace_daemon {
+            app.daemon.instance_id = Some(DaemonModelInstanceId([99; 16]));
+            app.reconcile_terminal_panes();
+        }
+        assert_eq!(app.pending_terminal_writer_effect(), None);
+        assert_eq!(app.terminal.releasing_writer, None);
+        assert!(!app.terminal.reopen_after_release);
+        assert!(!app.selected_terminal_is_writer());
+    }
+}
+
+#[test]
 fn terminal_browser_filters_unavailable_history_and_scrolls_to_final_live_session() {
     let mut app = ux_terminal_fixture(ClientDaemonLifecycle::Exited, None);
     for id in 42..=142 {

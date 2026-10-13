@@ -49,17 +49,17 @@ fn size(columns: u16, rows: u16) -> Option<yoctui_model::PtyDimensions> {
 }
 
 #[test]
-fn terminal_ordinary_dimensions_use_full_console_and_include_search_and_history_rows() {
+fn terminal_ordinary_dimensions_keep_navigator_and_include_search_and_history_rows() {
     let mut app = fixture();
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(158, 38));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
     app.inspector_visible = true;
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(158, 38));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
     app.daemon.pty_screens[0].scrollback_lines = 20;
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(158, 37));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 37));
     app.terminal.query = "find".into();
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(158, 36));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 36));
     app.daemon.pty_screens.clear();
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(158, 38));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
 }
 
 #[test]
@@ -76,26 +76,26 @@ fn terminal_dimensions_follow_focused_pane_not_global_history_index() {
     app.split_terminal_pane(yoctui_model::SplitAxis::Horizontal)
         .unwrap();
     app.pane_layout.resize(first, 200).unwrap();
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(46, 38));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(38, 38));
     assert!(app.select_terminal_pane(first, 25));
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(110, 38));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(91, 38));
     app.split_terminal_pane(yoctui_model::SplitAxis::Vertical)
         .unwrap();
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(110, 18));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(91, 18));
 }
 
 #[test]
 fn terminal_dimensions_exclude_hidden_small_and_nonlive_workspaces() {
     let mut app = fixture();
-    assert_eq!(terminal_workspace_dimensions(&app, 80, 24), size(78, 12));
+    assert_eq!(terminal_workspace_dimensions(&app, 80, 24), size(56, 12));
     app.focus = FocusTarget::Navigator;
     app.terminal.browser_open = true;
     assert_eq!(terminal_workspace_dimensions(&app, 80, 24), None);
     app.terminal.browser_open = false;
     app.zoomed_pane = Some(FocusTarget::Workspace);
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(158, 38));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
     app.zoomed_pane = Some(FocusTarget::Inspector);
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(158, 38));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
     app.zoomed_pane = None;
     app.focus = FocusTarget::Workspace;
     for (width, height) in [(0, 0), (79, 24), (160, 23)] {

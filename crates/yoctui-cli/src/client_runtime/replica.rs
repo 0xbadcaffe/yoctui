@@ -72,6 +72,8 @@ impl InteractiveDaemonRuntime {
                 }
                 ClientServerEvent::CommandResult(result) => {
                     if matches!(result.outcome, CommandOutcome::Rejected { .. }) {
+                        app.terminal.releasing_writer = None;
+                        app.terminal.reopen_after_release = false;
                         app.cancel_pending_platform_menuconfig();
                         if app.terminal.awaiting_session {
                             app.terminal.awaiting_session = false;

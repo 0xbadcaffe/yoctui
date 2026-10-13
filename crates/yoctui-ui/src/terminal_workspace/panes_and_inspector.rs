@@ -36,7 +36,8 @@ pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
                 } else if session.lifecycle != yoctui_model::ClientDaemonLifecycle::Running {
                     "read-only history"
                 } else if app.terminal.client_id.is_some()
-                    && details.is_some_and(|details| details.writer == app.terminal.client_id)
+                    && details.is_some_and(|details| details.writer == app.terminal.client_id
+                        && app.terminal.releasing_writer != Some((details.id, details.writer_epoch)))
                 {
                     "writer"
                 } else if details.is_some_and(|details| details.writer.is_some()) {

@@ -70,7 +70,7 @@ fn next_generation_mouse_traps_dialogs_and_resizes_exact_terminal_axis() {
             30,
         ),
         Some(Action::ResizeFocusedPane {
-            delta_per_mille: 250,
+            delta_per_mille: 193,
         })
     );
 

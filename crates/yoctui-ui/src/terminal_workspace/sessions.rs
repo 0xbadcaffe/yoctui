@@ -70,6 +70,10 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         if session.lifecycle != yoctui_model::ClientDaemonLifecycle::Running {
             return "READ-ONLY · no active writer";
         }
+        if details.is_some_and(|details|
+            app.terminal.releasing_writer == Some((details.id, details.writer_epoch))) {
+            return "VIEWER · waiting for writer release";
+        }
         if app.selected_terminal_is_writer() {
             "WRITER"
         } else if details.is_some_and(|details| details.writer.is_some()) {

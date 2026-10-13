@@ -31,13 +31,13 @@ fn app() -> App {
 }
 
 #[test]
-fn gitui_native_workspace_mouse_focus_and_writer_keys_use_exact_full_pane() {
+fn gitui_native_workspace_mouse_focus_and_writer_keys_use_exact_console_pane() {
     let mut app = app();
     assert_eq!(workbench_pane_widths(&app, 160, 50), [27, 133, 0]);
     assert_eq!(
         terminal_workspace_dimensions(&app, 160, 50),
         Some(PtyDimensions {
-            columns: 158,
+            columns: 131,
             rows: 38
         })
     );
@@ -99,7 +99,7 @@ fn gitui_native_geometry_preserves_other_utilities_splits_and_narrow_terminals()
     assert_eq!(
         terminal_workspace_dimensions(&app, 160, 50),
         Some(PtyDimensions {
-            columns: 158,
+            columns: 131,
             rows: 38
         })
     );
@@ -107,7 +107,7 @@ fn gitui_native_geometry_preserves_other_utilities_splits_and_narrow_terminals()
     app.split_terminal_pane(yoctui_model::SplitAxis::Horizontal)
         .unwrap();
     let dimensions = terminal_workspace_dimensions(&app, 160, 50).unwrap();
-    assert!(dimensions.columns < 158 && dimensions.rows == 38);
+    assert!(dimensions.columns < 131 && dimensions.rows == 38);
     for (w, h) in [(120, 32), (100, 30), (80, 24), (20, 5), (1, 1)] {
         let _ = terminal_workspace_dimensions(&app, w, h);
     }

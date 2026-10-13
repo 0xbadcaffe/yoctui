@@ -386,6 +386,13 @@ impl InteractiveRuntime {
             runtime.terminal.clear()?;
             runtime.render_scheduler.invalidate(RenderCause::Resize);
         }
+        if let Some(effect) = runtime.app.pending_terminal_writer_effect()
+            && let Some(daemon_client) = runtime.daemon_runtime.as_mut()
+            && let Err(error) = daemon_client.route_effect(&runtime.app, &Effect::Terminal(effect))
+        {
+            runtime.app.notification =
+                Some(format!("Could not reopen terminal writer control: {error}"));
+        }
         if let Some(effect) = runtime.app.pending_platform_writer_effect()
             && let Some(daemon_client) = runtime.daemon_runtime.as_mut()
         {

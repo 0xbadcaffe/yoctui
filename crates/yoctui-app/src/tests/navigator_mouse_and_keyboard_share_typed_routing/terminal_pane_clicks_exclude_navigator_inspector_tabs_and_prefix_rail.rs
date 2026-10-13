@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn terminal_pane_clicks_fill_workspace_and_exclude_header_and_footer() {
+fn terminal_pane_clicks_leave_navigator_and_exclude_header_and_footer() {
     let mut app = yoctui_model::App::new(16, 4096);
     app.screen = Screen::TerminalSessions;
     app.daemon
@@ -26,7 +26,7 @@ fn terminal_pane_clicks_fill_workspace_and_exclude_header_and_footer() {
                 height,
             )
         };
-        assert!(matches!(click(5, 10), Some(Action::SelectPtyPane { .. })));
+        assert!(!matches!(click(5, 10), Some(Action::SelectPtyPane { .. })));
         assert!(matches!(
             click(width - 3, 10),
             Some(Action::SelectPtyPane { .. })

@@ -32,7 +32,7 @@ fn gitui_terminal_viewport_native_keys_preserve_writer_and_modal_permissions() {
     assert_eq!(
         yoctui_app::terminal_workspace_dimensions(&app, 160, 50),
         Some(yoctui_model::PtyDimensions {
-            columns: 158,
+            columns: 131,
             rows: 38
         })
     );

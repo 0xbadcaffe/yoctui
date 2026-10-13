@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.339 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.343 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌Navigator────────────────┐Terminal Sessions───────────────────────────────────────────────────────────────────────────────────┌Inspector: Daemon / session────┐
-│▾ OVERVIEW               │ 1:shell  │  2:devshell:busybox  │                                                                  │▾ PRIMARY FACTS                │
-│  ▱ Dashboard            │────────────────────────────────────────────────────────────────────────────────────────────────────│Session: shell (1)             │
-│  ▱ Insights             │CURRENT · LIVE · WRITER · scrollback 0                                                              │Identity: BuildShell           │
-│    Tasks                │┌ shell #1 Running ────────────────────────────────────────────────────────────────────────────────┐│Lifecycle: Running             │
-│▾ CONTENT                ││BuildShell · writer · 2 viewer(s) · 88x18 · /workspace/yocto/build                                ││Role: Writer                   │
-│    Layers               ││last search: busybox · 0 matches                                                                  ││(keyboard/paste/resize enabled)│
-│    Recipes              ││build-shell$ bitbake-layers show-layers                                                           ││Writer: 01010101 · epoch 4     │
-│    Packages             ││layer                 path                                                                        ││Viewers: 2                     │
-│    Images               ││meta                  /workspace/yocto/meta                                                       ││Dimensions: 88x18              │
-│  ▱ Hardware             ││meta-poky             /workspace/yocto/meta-poky                                                  ││Working directory:             │
-│    Kernel               ││meta-yocto-bsp        /workspace/yocto/meta-yocto-bsp                                             ││/workspace/yocto/build         │
-│    U-Boot / BIOS        ││build-shell$                                                                                      ││Restartable: yes               │
-│    SDK                  ││                                                                                                  ││Exit code: unavailable         │
-│▾ BUILD                  ││                                                                                                  ││                               │
-│  ▱ Logs             LIVE││                                                                                                  ││Replica / history              │
-│  ▱ Errors               ││                                                                                                  ││Viewport offset: 0             │
-│    Configuration        ││                                                                                                  ││Retained scrollback: 0 lines   │
-│    Dependencies         ││                                                                                                  ││Dropped history: none observed │
-│▾ VALIDATE               ││                                                                                                  ││Cursor: 35,6 (visible)         │
-│    Testing              │└──────────────────────────────────────────────────────────────────────────────────────────────────┘│                               │
-│    Security             │┌ devshell:busybox #2 Running ─────────────────────────────────────────────────────────────────────┐│▾ CONTEXTUAL ACTIONS           │
-│    QA                   ││Devshell · read-only · 2 viewer(s) · 88x18 · /workspace/yocto/build                               ││✓ Open build shell [n] — Local │
-│▾ TOOLS                  ││last search: busybox · 3 matches                                                                  ││? Open devshell [s] — Unknown  │
-│    Raw Mode             ││history 312 · dropped ≥14                                                                         ││  Reason: No current           │
-│    Terminal Sessions    ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                                  ││environment capability         │
-│    Devtool              ││CC      coreutils/ls.o                                                                            ││snapshot: devshell.            │
-│    QEMU / Wic           ││CC      coreutils/cp.o                                                                            ││? Open menuconfig [m] — Unknown│
-│    Maintenance          ││LD      busybox_unstripped                                                                        ││  Reason: No current           │
-│  ▱ Build environment    ││busybox-devshell$                                                                                 ││environment capability         │
-│  ▱ Compatibility        ││                                                                                                  ││snapshot: menuconfig.          │
-│  ▱ Daemons              ││                                                                                                  ││✓ Take writer control [o] —    │
-│  ▱ Diff tool            ││                                                                                                  ││Local                          │
-│  ▱ GitUI                ││                                                                                                  ││✓ Release writer control [c] — │
-│  ▱ Settings             ││                                                                                                  ││Local                          │
-│                         ││                                                                                                  ││                               │
-│                         ││                                                                                                  ││                               │
-│                         ││                                                                                                  ││                               │
-│                         │└──────────────────────────────────────────────────────────────────────────────────────────────────┘│                               │
-│                         │┌Prefix help───────────────────────────────────────────────────────────────────────────────────────┐│                               │
-│                         ││Ctrl+B then: %/" split · z zoom · [ copy · / search · d detach · x close · ? help                 ││                               │
-└─────────────────────────┘└──────────────────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────┘
+┌Navigator────────────────┐Terminal Sessions · CURRENT · LIVE · WRITER · scrollback 0
+│▾ OVERVIEW               │┌ shell #1 Running ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  ▱ Dashboard            ││BuildShell · writer · 2 viewer(s) · 88x18 · /workspace/yocto/build                                                                 │
+│  ▱ Insights             ││last search: busybox · 0 matches                                                                                                   │
+│    Tasks                ││build-shell$ bitbake-layers show-layers                                                                                            │
+│▾ CONTENT                ││layer                 path                                                                                                         │
+│    Layers               ││meta                  /workspace/yocto/meta                                                                                        │
+│    Recipes              ││meta-poky             /workspace/yocto/meta-poky                                                                                   │
+│    Packages             ││meta-yocto-bsp        /workspace/yocto/meta-yocto-bsp                                                                              │
+│    Images               ││build-shell$                                                                                                                       │
+│  ▱ Hardware             ││                                                                                                                                   │
+│    Kernel               ││                                                                                                                                   │
+│    U-Boot / BIOS        ││                                                                                                                                   │
+│    SDK                  ││                                                                                                                                   │
+│▾ BUILD                  ││                                                                                                                                   │
+│  ▱ Logs             LIVE││                                                                                                                                   │
+│  ▱ Errors               ││                                                                                                                                   │
+│    Configuration        ││                                                                                                                                   │
+│    Dependencies         ││                                                                                                                                   │
+│▾ VALIDATE               ││                                                                                                                                   │
+│    Testing              │└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+│    Security             │┌ devshell:busybox #2 Running ──────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│    QA                   ││Devshell · read-only · 2 viewer(s) · 88x18 · /workspace/yocto/build                                                                │
+│▾ TOOLS                  ││last search: busybox · 3 matches                                                                                                   │
+│    Raw Mode             ││history 312 · dropped ≥14                                                                                                          │
+│    Terminal Sessions    ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                                                                   │
+│    Devtool              ││CC      coreutils/ls.o                                                                                                             │
+│    QEMU / Wic           ││CC      coreutils/cp.o                                                                                                             │
+│    Maintenance          ││LD      busybox_unstripped                                                                                                         │
+│  ▱ Build environment    ││busybox-devshell$                                                                                                                  │
+│  ▱ Compatibility        ││                                                                                                                                   │
+│  ▱ Daemons              ││                                                                                                                                   │
+│  ▱ Diff tool            ││                                                                                                                                   │
+│  ▱ GitUI                ││                                                                                                                                   │
+│  ▱ Settings             ││                                                                                                                                   │
+│                         ││                                                                                                                                   │
+│                         ││                                                                                                                                   │
+│                         ││                                                                                                                                   │
+│                         ││                                                                                                                                   │
+│                         ││                                                                                                                                   │
+│                         ││                                                                                                                                   │
+└─────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Tab Focus   Ctrl+B prefix   o take control   [ copy   / search   r rename   Alt+o release   F2 Tasks   F3 History   F4 Dashboard   F1 Help   F12 Menu   q Quit│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -59,6 +59,7 @@ impl App {
                 .is_some_and(|session| session.lifecycle == ClientDaemonLifecycle::Running)
             && self.selected_terminal_details().is_some_and(|details| {
                 self.terminal.client_id.is_some() && details.writer == self.terminal.client_id
+                    && self.terminal.releasing_writer != Some((details.id, details.writer_epoch))
             })
     }
 

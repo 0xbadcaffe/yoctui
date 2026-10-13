@@ -13,7 +13,12 @@ pub(super) fn responsive_shell(
         .then(|| app.visible_task_row_refs_at(now));
     let task_rows = task_rows.as_deref();
     if app.terminal_console_fullscreen() {
-        terminal_sessions_workspace(frame, app, area);
+        let navigator_width =
+            yoctui_app::terminal_console_navigator_width(app, area.width, frame.area().height);
+        let panes = Layout::horizontal([Constraint::Length(navigator_width), Constraint::Min(1)])
+            .split(area);
+        navigator(frame, app, panes[0], task_rows);
+        terminal_sessions_workspace(frame, app, panes[1]);
         return;
     }
     if let Some(zoomed) = app.zoomed_pane {

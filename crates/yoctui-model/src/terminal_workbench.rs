@@ -25,6 +25,9 @@ pub struct TerminalWorkbenchState {
     pub browser_open: bool,
     pub awaiting_session: bool,
     pub single_session: bool,
+    /// Do not reuse a writer lease while its release awaits daemon evidence.
+    pub releasing_writer: Option<(u64, u64)>,
+    pub reopen_after_release: bool,
     pub query: String,
     pub rename: String,
     pub pending_paste: Vec<u8>,

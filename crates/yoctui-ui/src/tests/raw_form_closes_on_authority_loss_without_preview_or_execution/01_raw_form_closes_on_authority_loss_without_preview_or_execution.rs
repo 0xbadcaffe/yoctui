@@ -386,8 +386,9 @@ fn raw_responsive_navigation_renders_with_exact_shell_help() {
     let _ = update(&mut app, Action::Open(Screen::Help));
     let help = rendered_text(&app, 160, 52);
     assert!(help.contains("Operator guide"), "{help}");
-    assert!(help.contains("Inspect Raw command catalog"), "{help}");
     assert!(help.contains("F1 Help") && help.contains("F12 Menu"), "{help}");
+    // Help lists global navigation; Raw Mode's inspector lists its local actions.
+    assert!(help.contains("Open Raw Mode"), "{help}");
 
     let _ = update(&mut app, Action::Open(Screen::RawMode));
     app.focus = FocusTarget::Workspace;
