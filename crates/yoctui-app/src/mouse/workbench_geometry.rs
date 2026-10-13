@@ -114,13 +114,16 @@ pub fn terminal_workspace_dimensions(
     height: u16,
 ) -> Option<yoctui_model::PtyDimensions> {
     if (app.screen != Screen::TerminalSessions && !app.platform_menuconfig_visible())
+        || app.terminal_browser_visible()
         || app.selected_terminal_session().is_none()
         || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live
     {
         return None;
     }
     let shell = workbench_shell(app, width, height)?;
-    let (workspace_width, workspace_height) = if app.zoomed_pane == Some(FocusTarget::Workspace) {
+    let (workspace_width, workspace_height) = if app.terminal_console_fullscreen() {
+        (shell.width, shell.height)
+    } else if app.zoomed_pane == Some(FocusTarget::Workspace) {
         (shell.width, shell.height.saturating_sub(1))
     } else if app.zoomed_pane.is_some() {
         return None;
@@ -141,19 +144,14 @@ pub fn terminal_workspace_dimensions(
     } else {
         return None;
     };
-    let prefix_help = if !app.selected_terminal_uses_native_workspace() && workspace_height >= 30 {
-        3
-    } else {
-        0
-    };
     let terminal_area = MouseRect {
         x: 0,
         y: 0,
         width: workspace_width,
-        height: workspace_height.saturating_sub(3 + 1 + prefix_help),
+        height: workspace_height.saturating_sub(if app.platform_menuconfig_visible() { 4 } else { 1 }),
     };
     let mut panes = Vec::new();
-    if app.platform_menuconfig_visible() {
+    if app.platform_menuconfig_visible() || app.terminal.single_session {
         panes.push((terminal_area, app.pane_layout.focused));
     } else {
         collect_terminal_mouse_panes(&app.pane_layout.root, terminal_area, &mut panes);
@@ -196,6 +194,9 @@ pub(crate) fn workbench_mouse_region(
 ) -> Option<WorkbenchMouseRegion> {
     if !shell.contains(mouse) {
         return None;
+    }
+    if app.terminal_console_fullscreen() {
+        return Some(WorkbenchMouseRegion { target: FocusTarget::Workspace, area: shell });
     }
     if let Some(target) = app.zoomed_pane {
         let area = MouseRect {

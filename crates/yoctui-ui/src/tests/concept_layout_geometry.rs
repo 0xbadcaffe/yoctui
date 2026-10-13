@@ -59,8 +59,9 @@ fn dashboard_concept_has_distinct_regions_and_resizes_without_mutation() {
 }
 
 #[test]
-fn concept_terminal_tabs_prefix_and_panes_stay_visible_across_resize() {
-    let app = concept_terminal_sessions_app();
+fn concept_terminal_tree_stays_visible_across_resize() {
+    let mut app = concept_terminal_sessions_app();
+    app.terminal.browser_open = true;
     for (width, height) in [(150, 50), (160, 50), (200, 60)] {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
         terminal
@@ -73,10 +74,11 @@ fn concept_terminal_tabs_prefix_and_panes_stay_visible_across_resize() {
                 .map(|x| buffer[(x, y)].symbol())
                 .collect::<String>()
         };
-        assert!(row(6).contains("1:shell"), "tabs must occupy a content row");
-        assert!(row(6).contains("2:devshell"));
-        assert_eq!(buffer[(nav, 9)].symbol(), "┌");
-        assert!(row(height - 6).contains("Prefix help"));
+        let text = (5..height - 3).map(row).collect::<String>();
+        assert!(text.contains("session tree"), "{text}");
+        assert!(text.contains("#1 shell"), "{text}");
+        assert!(text.contains("#2 devshell"), "{text}");
+        assert!(!text.contains("Prefix help"), "{text}");
         assert_eq!(app.pty_selection, 0);
     }
 }

@@ -45,6 +45,21 @@ pub enum Input {
 /// KillConfirmation, whose surrounding dispatch traps every unmapped input.
 pub fn terminal_workspace_action(app: &yoctui_model::App, input: Input) -> Option<Action> {
     use yoctui_model::TerminalWorkbenchMode as Mode;
+    if app.terminal_browser_visible() && app.terminal.mode == Mode::Live {
+        if let Some(delta) = collection_scroll_delta(input) {
+            return Some(Action::SelectPtySession { delta });
+        }
+        return match input {
+            Input::Enter | Input::Right | Input::Char('l' | 'o') => Some(Action::TerminalTakeControl),
+            Input::Alt('o') => Some(Action::TerminalReleaseControl),
+            Input::Char('n') => Some(Action::TerminalCreateBuildShell),
+            Input::Char('s') => Some(Action::TerminalCreateSelectedDevshell),
+            Input::Char('m') => Some(Action::TerminalCreateSelectedMenuconfig),
+            Input::Char('r') => Some(Action::TerminalBeginRename),
+            Input::Char('?') => Some(Action::TerminalToggleHelp),
+            _ => None,
+        };
+    }
     match app.terminal.mode {
         Mode::Search => match input {
             Input::Enter | Input::Esc => Some(Action::TerminalFinishSearch),
@@ -82,8 +97,10 @@ pub fn terminal_workspace_action(app: &yoctui_model::App, input: Input) -> Optio
             Input::Esc | Input::Char('v') => Some(Action::TerminalCancelMode),
             _ => None,
         },
+        Mode::Live if input == Input::Alt('o') => Some(Action::TerminalReleaseControl),
         Mode::Live if app.selected_terminal_is_writer() => None,
         Mode::Live => match input {
+            Input::Esc | Input::Tab | Input::BackTab if app.terminal_console_fullscreen() => Some(Action::TerminalReleaseControl),
             Input::Char('n') => Some(Action::TerminalCreateBuildShell),
             Input::Char('s') => Some(Action::TerminalCreateSelectedDevshell),
             Input::Char('m') => Some(Action::TerminalCreateSelectedMenuconfig),
@@ -326,6 +343,8 @@ pub fn terminal_owns_input(app: &yoctui_model::App) -> bool {
     app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation
         || (app.screen == yoctui_model::Screen::TerminalSessions
             || app.platform_menuconfig_visible())
+            && (!app.terminal_browser_visible()
+                || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live)
             && app.focus == FocusTarget::Workspace
             && (app.selected_terminal_is_writer()
                 || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live)

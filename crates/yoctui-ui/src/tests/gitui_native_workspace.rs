@@ -136,8 +136,8 @@ fn gitui_native_workspace_hides_passive_rails_and_matches_actual_rendered_cells(
     }
     app.daemon.pty_sessions[0].name = "ordinary utility".into();
     let text = rendered_text(&app, 160, 50);
-    assert!(text.contains("Inspector:"));
-    assert!(text.contains("Prefix help"));
+    assert!(!text.contains("Inspector:"));
+    assert!(!text.contains("Prefix help"));
     for (w, h) in [(20, 5), (1, 1)] {
         let _ = rendered_text(&app, w, h);
     }

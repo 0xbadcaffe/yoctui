@@ -21,7 +21,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             if app.terminal.mode == TerminalWorkbenchMode::KillConfirmation {
                 return None;
             }
-            if !app.selected_terminal_is_writer() {
+            if app.terminal_browser_visible() || !app.selected_terminal_is_writer() {
                 app.notification =
                     Some("Paste is disabled until this client owns the writer lease.".into());
             } else if !app.terminal.stage_paste(&text) {
@@ -32,6 +32,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::TerminalConfirmPaste => {
             if app.terminal.mode == TerminalWorkbenchMode::PasteReview
+                && !app.terminal_browser_visible()
                 && app.selected_terminal_is_writer()
                 && let (Some(session), Some(details)) = (
                     app.selected_terminal_session(),
@@ -185,6 +186,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 return update(app, Action::OpenGitUi);
             }
             app.screen = NAVIGATOR_SCREENS[app.navigator_selection];
+            if app.screen == Screen::TerminalSessions {
+                app.zoomed_pane = None;
+                app.terminal.browser_open = true;
+                app.terminal.reset_transient_mode();
+                app.reconcile_terminal_panes();
+            }
             app.focus = if focus_target_is_relevant(app, FocusTarget::Workspace) {
                 FocusTarget::Workspace
             } else {

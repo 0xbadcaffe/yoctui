@@ -255,14 +255,29 @@ pub(crate) fn terminal_session_mouse_action(
     if !shell.contains(mouse) {
         return None;
     }
-    let footer = if !app.selected_terminal_uses_native_workspace() && shell.height >= 30 {
-        3
-    } else {
-        0
-    };
+    if app.terminal_browser_visible() {
+        return match mouse.kind {
+            MouseKind::ScrollUp => Some(Action::SelectPtySession { delta: -1 }),
+            MouseKind::ScrollDown => Some(Action::SelectPtySession { delta: 1 }),
+            MouseKind::Down if mouse.row >= shell.y.saturating_add(2) && mouse.row < shell.bottom().saturating_sub(1) => {
+                let indexes = app.terminal_browser_indexes();
+                let selected = indexes.iter().position(|index| Some(*index) == app.selected_terminal_index()).unwrap_or(0);
+                let range = yoctui_model::centered_viewport_range(Some(selected), indexes.len(), usize::from(shell.height.saturating_sub(3)).max(1));
+                let index = *indexes.get(range.start + usize::from(mouse.row - shell.y - 2))?;
+                if app.focus == FocusTarget::Workspace && Some(index) == app.selected_terminal_index() {
+                    Some(Action::TerminalTakeControl)
+                } else {
+                    Some(Action::SelectPtyPane { pane: app.pane_layout.focused, index })
+                }
+            }
+            MouseKind::Down => Some(Action::Focus(FocusTarget::Workspace)),
+            _ => None,
+        };
+    }
+    let header = if app.platform_menuconfig_visible() { 4 } else { 1 };
     let shell = MouseRect {
-        y: shell.y + 4,
-        height: shell.height.saturating_sub(4 + footer),
+        y: shell.y + header,
+        height: shell.height.saturating_sub(header),
         ..shell
     };
     if !shell.contains(mouse) {
@@ -271,7 +286,7 @@ pub(crate) fn terminal_session_mouse_action(
     match mouse.kind {
         MouseKind::Down => {
             let mut leaves = Vec::new();
-            if app.platform_menuconfig_visible() {
+            if app.platform_menuconfig_visible() || app.terminal.single_session {
                 leaves.push((shell, app.pane_layout.focused));
             } else {
                 collect_terminal_mouse_panes(&app.pane_layout.root, shell, &mut leaves);
@@ -290,6 +305,7 @@ pub(crate) fn terminal_session_mouse_action(
                 })
         }
         MouseKind::ContextDown => None,
+        MouseKind::Drag if app.terminal.single_session => None,
         MouseKind::Drag => terminal_resize_action(mouse, app, shell),
         MouseKind::ScrollUp => Some(Action::SelectPtySession { delta: -1 }),
         MouseKind::ScrollDown => Some(Action::SelectPtySession { delta: 1 }),

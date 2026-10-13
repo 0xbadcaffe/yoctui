@@ -83,6 +83,7 @@ mod demo_terminal_viewport;
 mod golden_support;
 mod interactive_launch_focus;
 mod tasks_navigator;
+mod terminal_browser;
 use golden_support::*;
 
 mod concept_fixtures;

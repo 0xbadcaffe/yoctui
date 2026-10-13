@@ -15,6 +15,7 @@ pub(crate) fn terminal_writer_key_effect(
     key: crossterm::event::KeyEvent,
 ) -> Option<Effect> {
     if app.screen != Screen::TerminalSessions
+        || app.terminal_browser_visible()
         || app.focus != yoctui_model::FocusTarget::Workspace
         || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live
         || app.active_dialog().is_some()
@@ -69,6 +70,8 @@ impl InteractiveRuntime {
             // Unmapped review input must never reach the current writer.
         } else if let Some(effect) = terminal_writer_key_effect(&runtime.app, key) {
             let _ = submit_daemon_effect(&mut runtime.daemon_runtime, &mut runtime.app, &effect);
+        } else if runtime.app.terminal_browser_visible() {
+            // Browser input is never forwarded, even while a release awaits ack.
         } else if runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
             && !runtime.app.selected_terminal_is_writer()
         {

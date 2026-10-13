@@ -31,8 +31,8 @@ fn selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells() {
     assert_eq!(
         terminal_workspace_dimensions(&app, 160, 50),
         Some(yoctui_model::PtyDimensions {
-            columns: 131,
-            rows: 35,
+            columns: 158,
+            rows: 38,
         })
     );
 
@@ -41,8 +41,8 @@ fn selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells() {
     assert_eq!(
         terminal_workspace_dimensions(&app, 160, 50),
         Some(yoctui_model::PtyDimensions {
-            columns: 98,
-            rows: 32
+            columns: 158,
+            rows: 38
         })
     );
 

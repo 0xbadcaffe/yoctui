@@ -61,7 +61,10 @@ pub(crate) fn pane_focus_route(app: &App, input: Input) -> Option<Action> {
 }
 
 pub(crate) fn workspace_owns_focus_key(app: &App, input: Input) -> bool {
-    (input == Input::Esc && app.screen == Screen::Layers && app.layer_browser.is_some())
+    (app.terminal_console_fullscreen()
+        && !app.selected_terminal_is_writer()
+        && matches!(input, Input::Esc | Input::Tab | Input::BackTab))
+        || (input == Input::Esc && app.screen == Screen::Layers && app.layer_browser.is_some())
         || (input == Input::Esc
             && app.screen == Screen::Errors
             && app.error_workspace.viewer.is_some())

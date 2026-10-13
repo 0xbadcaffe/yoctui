@@ -50,6 +50,10 @@ pub(crate) fn current_search_state(app: &App) -> Option<(bool, bool)> {
 }
 
 pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
+    if app.terminal_browser_visible() && app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
+        && app.active_dialog().is_none() && !app.menu.is_open() && !app.command_palette_open {
+        return ["Up/Down sessions", "PgUp/PgDn", "Home/End", "Enter open", "n new shell", "Esc navigator"].into_iter().map(str::to_owned).collect();
+    }
     if app.screen == Screen::DiffTool && app.focus == FocusTarget::Workspace
         && app.active_dialog().is_none() && !app.command_palette_open && !app.menu.is_open()
     {

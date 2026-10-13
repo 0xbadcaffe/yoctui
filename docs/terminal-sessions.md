@@ -7,9 +7,14 @@ It follows the client lifecycle. After a damaged terminal, use `reset`/`stty san
 
 ## Daemon-owned Terminal Sessions
 
-Open Terminal Sessions from Navigator/menu/palette. Create a shell in the build
-or selected safe context, then take writer control (Ctrl+B o). Only the writer
-can type/resize; clicking focus alone does not grant ownership.
+Open Terminal Sessions from Navigator/menu/palette to browse the session tree.
+Use arrows/j/k, Page Up/Down or Home/End, then Enter to open the selected session.
+The console fills the workspace, hiding the list, navigator and inspector, and
+requests writer control. If another client holds the lease, it opens read-only.
+Alt+o (or Ctrl+B Alt+o) releases control and returns to the list without stopping
+the process. Create a build shell with `n` in the list or Ctrl+B c.
+Exited, lost and otherwise unavailable sessions disappear from the list
+automatically; daemon-owned history is preserved. Only the writer can type/resize.
 
 The daemon owns PTYs, emulation, and bounded screen/scrollback; clients receive
 styled cells. Navigation, client reconnect, pane close, and detach keep processes.

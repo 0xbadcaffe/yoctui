@@ -91,8 +91,8 @@ fn terminal_resize_rejects_ended_writer_without_sending_a_request() {
         assert_eq!(
             resize.dimensions,
             TerminalDimensions {
-                columns: 131,
-                rows: 32
+                columns: 158,
+                rows: 38
             }
         );
         // Every rejected state must leave this as the next wire frame.

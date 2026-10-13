@@ -2,6 +2,10 @@ pub(crate) const TERMINAL_KEYBOARD_HELP: &str = "Ctrl+B t  open Terminal Session
 
 pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
+    if app.terminal_browser_visible() && app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Help {
+        terminal_session_browser(frame, app, area);
+        return;
+    }
     if app.daemon.pty_sessions.is_empty() {
         if app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Help {
             frame.render_widget(
@@ -39,63 +43,22 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         return;
     }
 
-    let prefix_help_height = if app.selected_terminal_uses_native_workspace() {
-        0
-    } else if area.height >= 30 {
-        3
-    } else {
-        0
-    };
     let regions = Layout::vertical([
-        Constraint::Length(3),
+        Constraint::Length(if app.platform_menuconfig_visible() { 3 } else { 0 }),
         Constraint::Length(1),
         Constraint::Min(1),
-        Constraint::Length(prefix_help_height),
+        Constraint::Length(0),
     ])
     .split(area);
-    let selected_index = app.selected_terminal_index();
-    let embedded = app.embedded_platform_terminal_label();
-    let tabs = app
-        .daemon
-        .pty_sessions
-        .iter()
-        .enumerate()
-        .filter(|(index, _)| embedded.is_none() || Some(*index) == selected_index)
-        .flat_map(|(index, session)| {
-            [
-                Span::styled(
-                    format!(" {}:{} ", session.id, session.name),
-                    if Some(index) == selected_index {
-                        palette.selected()
-                    } else {
-                        palette.base()
-                    },
-                ),
-                Span::raw(" │ "),
-            ]
-        })
-        .collect::<Vec<_>>();
+    if let Some(label) = app.embedded_platform_terminal_label() {
+        frame.render_widget(Paragraph::new(format!("{label} · INPUT: MENUCONFIG · Ctrl+G Yoctui"))
+            .block(Block::default().borders(Borders::TOP | Borders::BOTTOM)), regions[0]);
+    }
     let terminal_edge_border = if app.selected_terminal_uses_native_workspace() {
         Borders::RIGHT
     } else {
         Borders::NONE
     };
-    frame.render_widget(
-        Paragraph::new(Line::from(tabs)).block(
-            Block::default()
-                .borders(Borders::TOP | Borders::BOTTOM | terminal_edge_border)
-                .title(if let Some(label) = embedded {
-                    format!("{label} · INPUT: MENUCONFIG · Ctrl+G Yoctui")
-                } else {
-                    "Terminal Sessions".into()
-                }),
-        ),
-        regions[0],
-    );
-    if regions[3].height > 0 {
-        frame.render_widget(Paragraph::new("Ctrl+B then: %/\" split · z zoom · [ copy · / search · d detach · x close · ? help")
-            .block(pane_block(app,"Prefix help",false)),regions[3]);
-    }
 
     let selected = app.selected_terminal_session();
     let screen = app.selected_terminal_screen();
@@ -136,7 +99,7 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
     let mode = match app.terminal.mode {
         yoctui_model::TerminalWorkbenchMode::Live => {
             let mut status = format!(
-                "{replica} · LIVE · {access} · scrollback {}",
+                "Terminal Sessions · {replica} · LIVE · {access} · scrollback {}",
                 app.terminal.scrollback_offset
             );
             if let Some(dropped) = screen

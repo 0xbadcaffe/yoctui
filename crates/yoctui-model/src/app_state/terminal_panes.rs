@@ -1,4 +1,28 @@
 impl App {
+    pub fn terminal_browser_indexes(&self) -> Vec<usize> {
+        self.daemon.pty_sessions.iter().enumerate()
+            .filter(|(_, session)| !session.lifecycle.is_terminal())
+            .map(|(index, _)| index).collect()
+    }
+
+    pub fn terminal_browser_visible(&self) -> bool {
+        self.screen == Screen::TerminalSessions && self.terminal.browser_open
+    }
+
+    pub fn terminal_console_fullscreen(&self) -> bool {
+        self.screen == Screen::TerminalSessions && !self.terminal.browser_open
+            && self.selected_terminal_session().is_some()
+    }
+
+    pub fn select_terminal_browser_session(&mut self, delta: isize) {
+        let indexes = self.terminal_browser_indexes();
+        if indexes.is_empty() { return; }
+        let current = indexes.iter().position(|index| Some(*index) == self.selected_terminal_index()).unwrap_or(0);
+        let next = if delta < 0 { current.saturating_sub(delta.unsigned_abs()) }
+            else { current.saturating_add(delta as usize).min(indexes.len() - 1) };
+        self.select_terminal_pane(self.pane_layout.focused, indexes[next]);
+    }
+
     /// Shared typed projection for terminal rendering, mouse selection and resize.
     pub fn terminal_pane_session_index(
         &self,
@@ -70,6 +94,18 @@ impl App {
                 .unwrap_or(usize::MAX);
         }
         self.invalidate_terminal_kill_review();
+        if self.terminal.awaiting_session && self.selected_terminal_session().is_some() {
+            self.terminal.awaiting_session = false;
+        }
+        // Do not delete daemon history or hide sessions on a transient disconnect.
+        // A terminal that actually exited, disappeared, or belongs to an old
+        // daemon identity is no longer an openable console in this browser.
+        if self.screen == Screen::TerminalSessions && self.daemon.status == ClientReplicaStatus::Current
+            && !self.terminal.awaiting_session {
+            if self.selected_terminal_session().is_none_or(|session| session.lifecycle.is_terminal()) {
+                self.terminal.browser_open = true;
+            }
+        }
     }
 
     fn bind_terminal_pane(&mut self, pane: PaneId, session: Option<u64>) {
@@ -95,6 +131,9 @@ impl App {
     /// Preserve the existing confirmed-launch next-slot selection, not an old binding.
     pub fn prepare_created_terminal_selection(&mut self) {
         self.remember_focused_terminal();
+        self.terminal.browser_open = false;
+        self.terminal.awaiting_session = true;
+        self.terminal.single_session = true;
         self.terminal
             .pane_sessions
             .retain(|(pane, _)| *pane != self.pane_layout.focused);
@@ -140,6 +179,7 @@ impl App {
         let pane = layout.split(layout.focused, axis)?;
         let session = self.remember_focused_terminal();
         self.pane_layout = layout;
+        self.terminal.single_session = false;
         self.bind_terminal_pane(pane, session);
         self.invalidate_terminal_kill_review();
         Ok(pane)

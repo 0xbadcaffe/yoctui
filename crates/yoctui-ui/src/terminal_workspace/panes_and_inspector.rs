@@ -1,7 +1,7 @@
 pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
     let layout = &app.pane_layout;
     let mut panes = Vec::new();
-    if app.platform_menuconfig_visible() {
+    if app.platform_menuconfig_visible() || app.terminal.single_session {
         panes.push((area, layout.focused));
     } else {
         collect_terminal_panes(&layout.root, area, &mut panes);

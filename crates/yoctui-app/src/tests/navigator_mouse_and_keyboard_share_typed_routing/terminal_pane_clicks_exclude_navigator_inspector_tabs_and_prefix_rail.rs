@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn terminal_pane_clicks_exclude_navigator_inspector_tabs_and_prefix_rail() {
+fn terminal_pane_clicks_fill_workspace_and_exclude_header_and_footer() {
     let mut app = yoctui_model::App::new(16, 4096);
     app.screen = Screen::TerminalSessions;
     app.daemon
@@ -13,7 +13,7 @@ fn terminal_pane_clicks_exclude_navigator_inspector_tabs_and_prefix_rail() {
             viewers: 1,
         });
     for (width, height) in [(160, 50), (200, 60)] {
-        let [nav, workspace, _] = workbench_pane_widths(&app, width, height);
+        let [nav, _, _] = workbench_pane_widths(&app, width, height);
         let click = |column, row| {
             mouse_action_for_app(
                 MouseInput {
@@ -26,10 +26,19 @@ fn terminal_pane_clicks_exclude_navigator_inspector_tabs_and_prefix_rail() {
                 height,
             )
         };
-        assert!(!matches!(click(5, 10), Some(Action::SelectPtyPane { .. })));
-        assert_eq!(click(nav + workspace, 10), None);
-        assert_eq!(click(nav + 2, 6), None);
-        assert_eq!(click(nav + 2, height - 5), None);
+        assert!(matches!(click(5, 10), Some(Action::SelectPtyPane { .. })));
+        assert!(matches!(
+            click(width - 3, 10),
+            Some(Action::SelectPtyPane { .. })
+        ));
+        assert!(!matches!(
+            click(nav + 2, 2),
+            Some(Action::SelectPtyPane { .. })
+        ));
+        assert!(!matches!(
+            click(nav + 2, height - 1),
+            Some(Action::SelectPtyPane { .. })
+        ));
         assert!(matches!(
             click(nav + 2, 10),
             Some(Action::SelectPtyPane { index: 0, .. })

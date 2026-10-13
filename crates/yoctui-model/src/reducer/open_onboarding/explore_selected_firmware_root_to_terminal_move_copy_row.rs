@@ -62,6 +62,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 .then(|| selected_correlated_log_id(app))
                 .flatten();
             app.screen = s;
+            if s == Screen::TerminalSessions {
+                app.zoomed_pane = None;
+                app.terminal.browser_open = true;
+                app.terminal.reset_transient_mode();
+                app.reconcile_terminal_panes();
+            }
             if s == Screen::Help {
                 app.help_scroll = 0;
             }
@@ -230,7 +236,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.navigator_groups_expanded[group] = true;
         }
         Action::SelectPtySession { delta } => {
-            app.select_terminal_session(delta);
+            if app.terminal_browser_visible() {
+                app.select_terminal_browser_session(delta);
+            } else {
+                app.select_terminal_session(delta);
+            }
         }
         Action::SelectPtyPane { pane, index } => {
             if app.select_terminal_pane(pane, index) {
@@ -239,6 +249,26 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::TerminalTakeControl => {
+            if app.terminal_browser_visible() {
+                app.terminal.single_session = true;
+            }
+            if app.terminal_browser_visible()
+                && !app.terminal.awaiting_session
+                && app
+                    .selected_terminal_session()
+                    .is_none_or(|session| session.lifecycle.is_terminal())
+            {
+                app.select_terminal_browser_session(0);
+            }
+            if app
+                .selected_terminal_session()
+                .is_some_and(|session| !session.lifecycle.is_terminal())
+            {
+                app.terminal.browser_open = false;
+                app.focus = FocusTarget::Workspace;
+                app.focus_return = None;
+                app.terminal.reset_transient_mode();
+            }
             if app.daemon.status != ClientReplicaStatus::Current {
                 app.notification = Some(
                     "Reconnect to a current daemon replica before taking terminal control.".into(),
@@ -272,17 +302,26 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::TerminalReleaseControl => {
+            if app.screen == Screen::TerminalSessions {
+                app.zoomed_pane = None;
+            }
             if let (Some(session), Some(details)) = (
                 app.selected_terminal_session(),
                 app.selected_terminal_details(),
             ) && app.selected_terminal_is_writer()
             {
+                let session_id = session.id;
+                let writer_epoch = details.writer_epoch;
+                app.terminal.browser_open = true;
+                app.terminal.reset_transient_mode();
                 return Some(Effect::Terminal(TerminalEffect::ReleaseControl {
-                    session_id: session.id,
-                    writer_epoch: details.writer_epoch,
+                    session_id,
+                    writer_epoch,
                 }));
             }
-            app.notification = Some("This client does not own the terminal writer lease.".into());
+            app.terminal.browser_open = true;
+            app.terminal.reset_transient_mode();
+            app.notification = Some("Returned to the terminal session list.".into());
         }
         Action::TerminalCreateBuildShell => {
             begin_terminal_creation(app, None);

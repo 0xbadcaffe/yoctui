@@ -21,6 +21,10 @@ pub enum TerminalWorkbenchMode {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct TerminalWorkbenchState {
     pub mode: TerminalWorkbenchMode,
+    /// Client-local browser; daemon sessions and retained history stay intact.
+    pub browser_open: bool,
+    pub awaiting_session: bool,
+    pub single_session: bool,
     pub query: String,
     pub rename: String,
     pub pending_paste: Vec<u8>,

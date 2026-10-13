@@ -78,6 +78,7 @@ fn terminal_split_displays_selected_later_history_session_in_focused_pane() {
 #[test]
 fn terminal_bound_output_survives_focus_and_close_without_deleting_history() {
     let mut app = terminal_binding_fixture();
+    app.daemon.pty_sessions[1].lifecycle = yoctui_model::ClientDaemonLifecycle::Running;
     let first = app.pane_layout.focused;
     let second = app
         .split_terminal_pane(yoctui_model::SplitAxis::Horizontal)
@@ -102,6 +103,7 @@ fn terminal_bound_output_survives_focus_and_close_without_deleting_history() {
 #[test]
 fn terminal_bound_output_disappears_when_session_is_removed_not_reassigned() {
     let mut app = terminal_binding_fixture();
+    app.daemon.pty_sessions[1].lifecycle = yoctui_model::ClientDaemonLifecycle::Running;
     app.split_terminal_pane(yoctui_model::SplitAxis::Horizontal)
         .unwrap();
     app.select_terminal_session(-1);

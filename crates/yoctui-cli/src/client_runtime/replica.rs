@@ -73,6 +73,10 @@ impl InteractiveDaemonRuntime {
                 ClientServerEvent::CommandResult(result) => {
                     if matches!(result.outcome, CommandOutcome::Rejected { .. }) {
                         app.cancel_pending_platform_menuconfig();
+                        if app.terminal.awaiting_session {
+                            app.terminal.awaiting_session = false;
+                            app.terminal.browser_open = true;
+                        }
                     }
                     app.notification = command_result_notification(result);
                 }

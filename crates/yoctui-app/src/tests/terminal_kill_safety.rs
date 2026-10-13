@@ -2,6 +2,46 @@ use super::*;
 use yoctui_model::{App, TerminalWorkbenchMode};
 
 #[test]
+fn terminal_browser_keyboard_routes_navigation_and_open_not_terminal_input() {
+    let mut app = App::new(8, 1000);
+    app.screen = Screen::TerminalSessions;
+    app.focus = FocusTarget::Workspace;
+    app.terminal.browser_open = true;
+    for (key, delta) in [
+        (Input::Down, 1),
+        (Input::Up, -1),
+        (Input::PageDown, 10),
+        (Input::End, isize::MAX),
+        (Input::Home, isize::MIN),
+    ] {
+        assert_eq!(
+            terminal_workspace_action(&app, key),
+            Some(Action::SelectPtySession { delta })
+        );
+    }
+    assert_eq!(
+        terminal_workspace_action(&app, Input::Enter),
+        Some(Action::TerminalTakeControl)
+    );
+    assert_eq!(
+        terminal_workspace_action(&app, Input::Alt('o')),
+        Some(Action::TerminalReleaseControl)
+    );
+    assert_eq!(
+        terminal_workspace_action(&app, Input::Char('n')),
+        Some(Action::TerminalCreateBuildShell)
+    );
+    assert_eq!(terminal_workspace_action(&app, Input::Char('x')), None);
+    assert!(!terminal_owns_input(&app));
+    app.terminal.mode = TerminalWorkbenchMode::Rename;
+    assert!(terminal_owns_input(&app));
+    assert_eq!(
+        terminal_workspace_action(&app, Input::Char('x')),
+        Some(Action::TerminalAppendRename('x'))
+    );
+}
+
+#[test]
 fn terminal_kill_safety_only_enter_escape_act_even_for_unfocused_writer() {
     let mut app = App::new(8, 1000);
     app.terminal.mode = TerminalWorkbenchMode::KillConfirmation;

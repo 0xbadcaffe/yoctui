@@ -158,7 +158,9 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             }
         }
         Screen::TerminalSessions => {
-            if app.suspended_recipe_editor.is_some() {
+            if app.terminal_browser_visible() {
+                "↑/↓ sessions | PgUp/PgDn | Home/End | Enter open | n new shell | r rename | Esc navigator | Ctrl+B prefix"
+            } else if app.suspended_recipe_editor.is_some() {
                 "Ctrl+B prefix: editor (e) | control (o) | [ copy | / search | r rename | Alt+o release | z zoom | paste review"
             } else {
                 "Ctrl+B prefix | o take control | [ copy | / search | r rename | Alt+o release | Alt+k confirmed kill | z zoom | paste review"

@@ -99,15 +99,15 @@ fn gitui_native_geometry_preserves_other_utilities_splits_and_narrow_terminals()
     assert_eq!(
         terminal_workspace_dimensions(&app, 160, 50),
         Some(PtyDimensions {
-            columns: 98,
-            rows: 32
+            columns: 158,
+            rows: 38
         })
     );
     app.daemon.pty_sessions[0].name = "GitUI · devtool busybox".into();
     app.split_terminal_pane(yoctui_model::SplitAxis::Horizontal)
         .unwrap();
     let dimensions = terminal_workspace_dimensions(&app, 160, 50).unwrap();
-    assert!(dimensions.columns < 131 && dimensions.rows == 35);
+    assert!(dimensions.columns < 158 && dimensions.rows == 38);
     for (w, h) in [(120, 32), (100, 30), (80, 24), (20, 5), (1, 1)] {
         let _ = terminal_workspace_dimensions(&app, w, h);
     }

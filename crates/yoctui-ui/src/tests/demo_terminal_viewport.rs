@@ -55,6 +55,7 @@ fn terminal_visible_dimensions_match_actual_rendered_cells_across_sizes() {
 #[test]
 fn terminal_visible_dimensions_match_search_history_and_split_content() {
     let mut app = marker_app();
+    app.daemon.pty_sessions[1].lifecycle = yoctui_model::ClientDaemonLifecycle::Running;
     app.terminal.query = "needle".into();
     app.daemon
         .pty_screens

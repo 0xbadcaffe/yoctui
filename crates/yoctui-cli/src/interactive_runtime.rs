@@ -109,6 +109,9 @@ pub(crate) async fn tui(
     // Startup remains Navigator-focused; the saved destination is restored
     // after the daemon snapshot determines whether an environment is configured.
     app.focus = yoctui_model::FocusTarget::Navigator;
+    if app.screen == Screen::TerminalSessions {
+        app.terminal.browser_open = true;
+    }
     app.require_daemon = true;
     app.client_access_origin = client_access_origin();
     let _ = update(
