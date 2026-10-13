@@ -24,6 +24,12 @@ fn graphics_terminal_handoff_uses_readable_xterm_and_preserves_cli_arguments() {
             "Monospace",
             "-fs",
             "14",
+            "-xrm",
+            "XTerm*metaSendsEscape: true",
+            "-xrm",
+            "XTerm*altIsNotMeta: true",
+            "-xrm",
+            "XTerm*altSendsEscape: true",
             "-geometry",
             "140x40",
             "-e",
@@ -37,6 +43,28 @@ fn graphics_terminal_handoff_uses_readable_xterm_and_preserves_cli_arguments() {
     assert!(command.get_envs().any(|(name, value)| {
         name == OsStr::new(HANDOFF_ENV) && value == Some(OsStr::new("1"))
     }));
+}
+
+#[test]
+fn graphics_terminal_handoff_encodes_alt_shortcuts_without_global_resource_changes() {
+    let command = graphics_terminal_command(
+        Path::new("/usr/bin/xterm"),
+        Path::new("/opt/yoctui"),
+        ["attach"],
+        (100, 30),
+    );
+    let arguments = command.get_args().collect::<Vec<_>>();
+    for resource in [
+        "XTerm*metaSendsEscape: true",
+        "XTerm*altIsNotMeta: true",
+        "XTerm*altSendsEscape: true",
+    ] {
+        assert!(
+            arguments
+                .windows(2)
+                .any(|pair| { pair == [OsStr::new("-xrm"), OsStr::new(resource)] })
+        );
+    }
 }
 
 #[test]

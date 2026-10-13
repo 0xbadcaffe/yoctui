@@ -11,7 +11,23 @@ pub(crate) fn uses_interactive_terminal(cli: &Cli) -> bool {
             None | Some(Command::Attach | Command::Build { .. })
         )
 }
-const XTERM_ARGUMENTS: [&str; 6] = ["-ti", "vt340", "-fa", "Monospace", "-fs", "14"];
+// Crossterm decodes Alt shortcuts as ESC-prefixed keys. XTerm's default
+// eight-bit Meta input turns Alt+q into ñ instead, so configure only the
+// terminal we launch (never the user's global X resources).
+const XTERM_ARGUMENTS: [&str; 12] = [
+    "-ti",
+    "vt340",
+    "-fa",
+    "Monospace",
+    "-fs",
+    "14",
+    "-xrm",
+    "XTerm*metaSendsEscape: true",
+    "-xrm",
+    "XTerm*altIsNotMeta: true",
+    "-xrm",
+    "XTerm*altSendsEscape: true",
+];
 
 pub(crate) fn handoff_if_needed() -> Result<Option<std::process::ExitStatus>> {
     if handoff_disabled_by_environment()
