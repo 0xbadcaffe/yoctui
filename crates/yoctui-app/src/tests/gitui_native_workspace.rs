@@ -37,8 +37,8 @@ fn gitui_native_workspace_mouse_focus_and_writer_keys_use_exact_full_pane() {
     assert_eq!(
         terminal_workspace_dimensions(&app, 160, 50),
         Some(PtyDimensions {
-            columns: 131,
-            rows: 35
+            columns: 158,
+            rows: 38
         })
     );
     let action = mouse_action_for_app(
