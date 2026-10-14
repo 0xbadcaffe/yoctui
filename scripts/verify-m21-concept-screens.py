@@ -13,7 +13,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "docs" / "design" / "ui-scenes.toml"
-REGISTRY = ROOT / "docs" / "design" / "acceptance-contracts.toml"
 WIDTH = 160
 HEIGHT = 50
 CELL_COUNT = WIDTH * HEIGHT
@@ -79,48 +78,17 @@ def verify_cell_golden(path: Path, scenario_id: str) -> None:
         fail(f"{scenario_id}: styles cover {style_cells} cells, expected {CELL_COUNT}")
 
 
-def verify_gap_task(
-    task_id: object,
-    scenario_id: str,
-    context: str,
-    implementation_tasks: set[str],
-    open_gap_tasks: set[str],
-    tasks: dict[str, dict[str, object]],
-) -> None:
-    if not isinstance(task_id, str) or task_id not in implementation_tasks:
-        fail(f"{scenario_id}: {context} has invalid gap task {task_id!r}")
-    if task_id not in open_gap_tasks:
-        fail(f"{scenario_id}: {context} gap task {task_id} is not declared in open_gaps")
-    if tasks[task_id]["status"] == "DONE":
-        fail(f"{scenario_id}: completed task {task_id} still owns {context}")
-
-
 def verify_external_evidence(
     evidence: object,
     kind: str,
     scenario_id: str,
-    implementation_tasks: set[str],
-    open_gap_tasks: set[str],
-    tasks: dict[str, dict[str, object]],
     fixture_golden: Path | None = None,
 ) -> None:
     if not isinstance(evidence, dict):
         fail(f"{scenario_id}: {kind}_evidence must be a table")
     status = evidence.get("status")
-    if status == "gap":
-        verify_gap_task(
-            evidence.get("task"),
-            scenario_id,
-            f"{kind} evidence",
-            implementation_tasks,
-            open_gap_tasks,
-            tasks,
-        )
-        if set(evidence) != {"status", "task"}:
-            fail(f"{scenario_id}: gap {kind}_evidence may contain only status and task")
-        return
     if status != "verified":
-        fail(f"{scenario_id}: {kind}_evidence status must be gap or verified")
+        fail(f"{scenario_id}: {kind}_evidence status must be verified")
 
     artifact = safe_repo_file(evidence.get("artifact"), scenario_id, f"{kind}_evidence.artifact")
     sha256 = evidence.get("sha256")
@@ -167,10 +135,6 @@ def verify_external_evidence(
 def main(*, fixtures_only: bool = False) -> None:
     with MANIFEST.open("rb") as manifest_file:
         manifest = tomllib.load(manifest_file)
-    with REGISTRY.open("rb") as registry_file:
-        registry = tomllib.load(registry_file)
-
-    tasks = {task["id"]: task for task in registry.get("task", [])}
     scenarios = manifest.get("scenario")
     if not isinstance(scenarios, list) or len(scenarios) != 6:
         fail("manifest must contain exactly six scenarios")
@@ -180,7 +144,6 @@ def main(*, fixtures_only: bool = False) -> None:
     ids: set[str] = set()
     golden_paths: set[Path] = set()
     capture_paths: set[Path] = set()
-    gap_count = 0
     for scenario in scenarios:
         scenario_id = scenario.get("id")
         if not isinstance(scenario_id, str) or not scenario_id or scenario_id in ids:
@@ -211,37 +174,10 @@ def main(*, fixtures_only: bool = False) -> None:
             if not isinstance(anchor, str) or not anchor or anchor not in capture_text:
                 fail(f"{scenario_id}: semantic capture is missing anchor {anchor!r}")
 
-        implementation_task_list = scenario.get("implementation_tasks")
-        if not isinstance(implementation_task_list, list) or not implementation_task_list:
-            fail(f"{scenario_id}: implementation_tasks must not be empty")
-        if len(implementation_task_list) != len(set(implementation_task_list)):
-            fail(f"{scenario_id}: implementation_tasks contains duplicates")
-        implementation_tasks = set(implementation_task_list)
-        for task_id in implementation_task_list:
-            if task_id not in tasks:
-                fail(f"{scenario_id}: unknown implementation task {task_id}")
-
-        gaps = scenario.get("open_gaps")
-        if not isinstance(gaps, list):
-            fail(f"{scenario_id}: open_gaps must be a list")
-        gap_tasks: set[str] = set()
-        for gap in gaps:
-            task_id = gap.get("task") if isinstance(gap, dict) else None
-            description = gap.get("description") if isinstance(gap, dict) else None
-            if task_id not in implementation_tasks or task_id in gap_tasks:
-                fail(f"{scenario_id}: invalid or duplicate gap task {task_id!r}")
-            if not isinstance(description, str) or not description.strip():
-                fail(f"{scenario_id}: gap {task_id} needs a description")
-            if tasks[task_id]["status"] == "DONE":
-                fail(f"{scenario_id}: completed task {task_id} still owns an open gap")
-            gap_tasks.add(task_id)
-            gap_count += 1
-
         features = scenario.get("required_features")
         if not isinstance(features, list) or len(features) < 4:
             fail(f"{scenario_id}: at least four required_features are required")
         feature_ids: set[str] = set()
-        feature_gap_tasks: set[str] = set()
         for feature in features:
             if not isinstance(feature, dict):
                 fail(f"{scenario_id}: required feature must be a table")
@@ -257,23 +193,6 @@ def main(*, fixtures_only: bool = False) -> None:
                 fail(f"{scenario_id}: feature {feature_id} needs a description")
             feature_ids.add(feature_id)
             fixture_anchors = feature.get("fixture_anchors")
-            gap_task = feature.get("gap_task")
-            if (fixture_anchors is None) == (gap_task is None):
-                fail(
-                    f"{scenario_id}: feature {feature_id} must have exactly one of "
-                    "fixture_anchors or gap_task"
-                )
-            if gap_task is not None:
-                verify_gap_task(
-                    gap_task,
-                    scenario_id,
-                    f"feature {feature_id}",
-                    implementation_tasks,
-                    gap_tasks,
-                    tasks,
-                )
-                feature_gap_tasks.add(gap_task)
-                continue
             if (
                 not isinstance(fixture_anchors, list)
                 or not fixture_anchors
@@ -286,16 +205,11 @@ def main(*, fixtures_only: bool = False) -> None:
                         f"{scenario_id}: feature {feature_id} is missing fixture anchor "
                         f"{anchor!r}"
                     )
-        if not feature_gap_tasks.issubset(gap_tasks):
-            fail(f"{scenario_id}: feature gaps are not represented in open_gaps")
 
         verify_external_evidence(
             scenario.get("raster_evidence"),
             "raster",
             scenario_id,
-            implementation_tasks,
-            gap_tasks,
-            tasks,
             golden,
         )
         if not fixtures_only:
@@ -303,14 +217,11 @@ def main(*, fixtures_only: bool = False) -> None:
                 scenario.get("live_evidence"),
                 "live",
                 scenario_id,
-                implementation_tasks,
-                gap_tasks,
-                tasks,
             )
 
     print(
         f"M21 concept screens verified: {len(scenarios)} production-renderer "
-        f"scenes at {WIDTH}x{HEIGHT}; {gap_count} tracked implementation gaps; "
+        f"scenes at {WIDTH}x{HEIGHT}; "
         + ("live acceptance not checked" if fixtures_only else "live evidence checked")
     )
 

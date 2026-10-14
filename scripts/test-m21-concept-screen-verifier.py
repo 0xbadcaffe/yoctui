@@ -7,7 +7,6 @@ import contextlib
 import importlib.util
 import io
 import hashlib
-import re
 import shutil
 import sys
 import tempfile
@@ -35,7 +34,6 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         for relative in [
             "docs/design/ui-scenes.toml",
-            "docs/design/acceptance-contracts.toml",
         ]:
             destination = self.root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -49,10 +47,14 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         raster_destination = self.root / "docs/design/screenshots"
         shutil.copytree(raster_source, raster_destination)
 
+        shutil.copytree(
+            SOURCE_ROOT / "docs/media/screenshots",
+            self.root / "docs/media/screenshots",
+        )
+
         self.verifier = load_verifier()
         self.verifier.ROOT = self.root
         self.verifier.MANIFEST = self.root / "docs/design/ui-scenes.toml"
-        self.verifier.REGISTRY = self.root / "docs/design/acceptance-contracts.toml"
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -103,20 +105,13 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         path.unlink()
         self.assert_rejected("missing crates/yoctui-ui/tests/golden")
 
-    def test_rejects_completed_task_with_open_gap(self) -> None:
+    def test_rejects_duplicate_feature_id(self) -> None:
         path = self.verifier.MANIFEST
-        text = path.read_text(encoding="utf-8")
-        text, replacements = re.subn(
-            r'open_gaps = \[\]',
-            'open_gaps = [\n'
-            '  { task = "UX-DASHBOARD-001", description = "test gap" },\n'
-            ']',
-            text,
-            count=1,
+        text = path.read_text(encoding="utf-8").replace(
+            'id = "persistent-shell"', 'id = "next-action"', 1
         )
-        self.assertEqual(replacements, 1)
         path.write_text(text, encoding="utf-8")
-        self.assert_rejected("completed task UX-DASHBOARD-001 still owns an open gap")
+        self.assert_rejected("invalid or duplicate feature id")
 
     def test_rejects_missing_required_feature_anchor(self) -> None:
         path = self.verifier.MANIFEST
@@ -128,22 +123,16 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
         self.assert_rejected("feature next-action is missing fixture anchor")
 
-    def test_rejects_feature_gap_missing_from_open_gaps(self) -> None:
+    def test_rejects_feature_without_fixture_anchors(self) -> None:
         path = self.verifier.MANIFEST
-        text = path.read_text(encoding="utf-8")
-        text = text.replace(
-            '  { id = "next-action", description = "Capability-aware next action", fixture_anchors = ["Next Action", "Build image [Alt+b]"] },',
-            '  { id = "next-action", description = "Capability-aware next action", gap_task = "UX-CONCEPT-LIVE-001" },',
-            1,
+        text = path.read_text(encoding="utf-8").replace(
+            ', fixture_anchors = ["Next Action", "Build image [Alt+b]"]', "", 1
         )
         path.write_text(text, encoding="utf-8")
-        self.assert_rejected(
-            "feature next-action gap task UX-CONCEPT-LIVE-001 "
-            "is not declared in open_gaps"
-        )
+        self.assert_rejected("feature next-action needs unique fixture anchors")
 
     def test_rejects_corrupt_raster_artifact(self) -> None:
-        path = self.root / "docs/design/screenshots/01-idle-dashboard.png"
+        path = self.root / "docs/media/screenshots/07-idle-dashboard.png"
         path.write_bytes(path.read_bytes() + b"corrupt")
         self.assert_rejected("verified raster evidence checksum does not match")
 
@@ -169,7 +158,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
             with self.assertRaises(SystemExit):
                 self.verifier.verify_external_evidence(
-                    evidence, "live", "synthetic", set(), set(), {}
+                    evidence, "live", "synthetic"
                 )
         self.assertIn("verified live evidence needs explicit interactions", output.getvalue())
 
@@ -183,7 +172,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
                 "interactions": ["synthetic input for verifier unit coverage"],
                 "assertions": ["first assertion", "second assertion"],
             },
-            "live", "synthetic", set(), set(), {},
+            "live", "synthetic",
         )
 
     def test_full_validation_rejects_missing_live_evidence(self) -> None:
@@ -191,7 +180,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
             with self.assertRaises(SystemExit):
                 self.verifier.main()
-        self.assertIn("live_evidence status must be gap or verified", output.getvalue())
+        self.assertIn("live_evidence status must be verified", output.getvalue())
 
 
 if __name__ == "__main__":

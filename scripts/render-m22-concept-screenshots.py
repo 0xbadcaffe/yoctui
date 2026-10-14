@@ -21,8 +21,13 @@ except ImportError as error:  # pragma: no cover - environment diagnostic
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENE_MANIFEST = ROOT / "docs/design/ui-scenes.toml"
-OUTPUT_DIR = ROOT / "docs/design/screenshots"
-PROVENANCE = OUTPUT_DIR / "manifest.toml"
+OUTPUT_DIR = ROOT / "docs/media/screenshots"
+PROVENANCE = ROOT / "docs/design/screenshots/manifest.toml"
+SCENE_FILES = {
+    "idle-dashboard": "07-idle-dashboard.png", "active-build-tasks": "01-active-build-tasks.png",
+    "failed-build-errors": "08-failed-build-errors.png", "rootfs-composition": "06-rootfs-composition.png",
+    "editor-application-menu": "09-editor-application-menu.png", "terminal-sessions": "10-terminal-sessions.png",
+}
 WIDTH = 160
 HEIGHT = 50
 CELL_WIDTH = 10
@@ -414,8 +419,10 @@ def provenance_text(rendered: list[tuple[str, Path, Path]], output_root: Path) -
 
 def render_all(output_root: Path) -> list[tuple[str, Path, Path]]:
     rendered = []
-    for index, (scenario_id, source) in enumerate(scenarios(), start=1):
-        artifact = output_root / f"{index:02d}-{scenario_id}.png"
+    for scenario_id, source in scenarios():
+        if scenario_id not in SCENE_FILES:
+            fail(f"unknown shared screenshot identity: {scenario_id}")
+        artifact = output_root / SCENE_FILES[scenario_id]
         render_cell_golden(source, artifact)
         if png_dimensions(artifact) != (WIDTH * CELL_WIDTH, HEIGHT * CELL_HEIGHT):
             fail(f"wrong PNG dimensions for {scenario_id}")

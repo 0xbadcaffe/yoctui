@@ -43,13 +43,10 @@ Run [ordinary checks](testing.md#ordinary-verification) and the relevant PTY/UI/
 checks. Containers need --init or a child subreaper; do not accept zombies.
 Documentation-only changes need no version bump; unchanged test reference renames
 are narrowly exempt. Source/test logic/dependencies follow scripts/check-version-bump.py.
-Design acceptance metadata and scene IDs remain inputs to verification.
+Design scene IDs, feature anchors, and source/raster hashes remain inputs to verification.
 
-## Optional vendor helpers
+## Optional live helpers
 
-ZCU102 defaults to $HOME/src/yoctui-zcu102-2026.1; YOCTUI_ZCU102_ROOT and
-YOCTUI_ZCU102_CONTAINER select an existing canonical checkout/container visible
-at the same path. Helpers check identity/ownership/pins and do not create them.
 OpenBMC smoke uses YOCTUI_OPENBMC_NATIVE_BUILD and YOCTUI_OPENBMC_RETAINED_BUILD;
 read-only discovery does not boot a guest.
 

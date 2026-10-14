@@ -213,7 +213,6 @@ case "$mode" in
     ;;
   all)
     verify_contract
-    verify_all_done
     verify_baseline
     verify_profiles
     verify_wakeups

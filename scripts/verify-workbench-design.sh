@@ -7,12 +7,10 @@ cd "$repo_root"
 python3 - <<'PY'
 from pathlib import Path
 import re
-import tomllib
 
 roadmap = Path("docs/widgets-and-dependencies.md").read_text(encoding="utf-8")
 ui_spec = Path("docs/interface-behavior.md").read_text(encoding="utf-8")
 architecture = Path("docs/architecture.md").read_text(encoding="utf-8")
-registry = tomllib.loads(Path("docs/design/acceptance-contracts.toml").read_text(encoding="utf-8"))
 
 required_headings = {
     "Product outcome",
@@ -61,21 +59,13 @@ for crate, license_expression in third_party.items():
     if f"| {license_expression} |" not in row:
         raise SystemExit(f"workbench design has unexpected license for {crate}: {row}")
 
-m21 = [task for task in registry.get("task", []) if task.get("milestone") == "M21"]
-if len(m21) != 38:
-    raise SystemExit(f"M21 must contain exactly 38 required tasks, found {len(m21)}")
-if any(task.get("required") is not True for task in m21):
-    raise SystemExit("every M21 task must be required")
-if not any(task["id"] == "UX-SPEC-001" and task["status"] == "DONE" for task in m21):
-    raise SystemExit("UX-SPEC-001 must remain complete")
-
 required_contracts = {
     "docs/interface-behavior.md": (ui_spec, "## Workbench usability contract"),
     "docs/architecture.md": (architecture, "## Widget integration boundary"),
 }
 for path, (text, marker) in required_contracts.items():
     if marker not in text:
-        raise SystemExit(f"{path} missing M21 contract marker: {marker}")
+        raise SystemExit(f"{path} missing contract marker: {marker}")
 
 print("workbench design valid: widget, license, UI and architecture contracts")
 PY

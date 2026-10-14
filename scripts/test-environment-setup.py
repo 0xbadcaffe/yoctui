@@ -45,6 +45,8 @@ def main() -> None:
             directory.mkdir(mode=0o700)
             environment[key] = str(directory)
         environment["TERM"] = "xterm-256color"
+        # Keep this test's screen in its private PTY, not a desktop XTerm.
+        environment["YOCTUI_TERMINAL_GRAPHICS"] = "none"
         master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 32, 120, 0, 0))
         process = subprocess.Popen(
@@ -87,9 +89,10 @@ def main() -> None:
             wait_for("s save profile", "Enter accept value")
 
         try:
-            wait_for("yoctui")
+            # The splash also contains the name: synchronize on onboarding.
+            wait_for("Operator guide · Yoctui workflow guide")
             send(b"\x1b")  # dismiss first-run onboarding or initial notice
-            time.sleep(0.1)
+            wait_for("F12 Menu", "Six-step workbench path")
             send(b"E")
             wait_for("Build environment")
             send(b"e")

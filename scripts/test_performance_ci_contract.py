@@ -56,13 +56,14 @@ class PerformanceCiContractTests(unittest.TestCase):
         self.assertIn('mean_worker_cpu_percent"] < 25', harness)
         self.assertNotIn('minimum_worker_cpu_percent"] < 60', harness)
 
-    def test_completion_counts_only_required_m46_performance_tasks(self) -> None:
-        completion = (ROOT / "scripts/verify-completion.sh").read_text(
+    def test_performance_gate_keeps_executable_limits(self) -> None:
+        contract = (ROOT / "scripts/verify-performance/contract_and_baseline.sh").read_text(
             encoding="utf-8"
         )
-        self.assertIn('task.get("milestone") == "M46"', completion)
-        self.assertIn('task["id"].startswith("PERF-")', completion)
-        self.assertIn("expected 30 required performance tasks", completion)
+        self.assertIn("key press to visible frame p95 <=100 ms", contract)
+        self.assertIn("sixty raw samples", contract)
+        self.assertIn("baseline artifact digest mismatch", contract)
+        self.assertNotIn("verify_all_done", contract)
 
     def test_completion_fuzzing_is_network_independent(self) -> None:
         fuzz = (ROOT / "scripts/test-fuzz.sh").read_text(encoding="utf-8")

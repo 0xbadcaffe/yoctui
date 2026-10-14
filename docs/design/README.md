@@ -38,21 +38,23 @@ and deterministic text fallbacks. See the dependency decisions in
 
 [ui-scenes.toml](ui-scenes.toml) connects six typed production-renderer fixtures
 to their semantic anchors, required features, cell goldens, and raster hashes.
-The fixtures render at `160x50` with the optional inspector enabled.
+The fixtures render at `160x50`; content scenes enable the optional inspector,
+while terminal scenes reserve the workspace for the PTY panes.
 
 | Scene | Reviewed production rendering |
 | --- | --- |
-| Dashboard | [Screenshot](screenshots/01-idle-dashboard.png) |
-| Active tasks | [Screenshot](screenshots/02-active-build-tasks.png) |
-| Failed build | [Screenshot](screenshots/03-failed-build-errors.png) |
-| Rootfs composition | [Screenshot](screenshots/04-rootfs-composition.png) |
-| Editor and application menu | [Screenshot](screenshots/05-editor-application-menu.png) |
-| Terminal sessions | [Screenshot](screenshots/06-terminal-sessions.png) |
+| Dashboard | [Screenshot](../media/screenshots/07-idle-dashboard.png) |
+| Active tasks | [Screenshot](../media/screenshots/01-active-build-tasks.png) |
+| Failed build | [Screenshot](../media/screenshots/08-failed-build-errors.png) |
+| Rootfs composition | [Screenshot](../media/screenshots/06-rootfs-composition.png) |
+| Editor and application menu | [Screenshot](../media/screenshots/09-editor-application-menu.png) |
+| Terminal sessions | [Screenshot](../media/screenshots/10-terminal-sessions.png) |
 
 Exact cell symbols and styles under `crates/yoctui-ui/tests/golden` are the
 regression authority. The screenshots are deterministic renderings of those
 cells. [screenshots/manifest.toml](screenshots/manifest.toml) pins the renderer,
-fonts, geometry, source hashes, and PNG hashes. Fixture images do not certify
+fonts, geometry, source hashes, and PNG hashes. The PNG files are shared with
+the README gallery rather than duplicated here. Fixture images do not certify
 live builds or performance.
 
 ```bash
@@ -68,10 +70,10 @@ semantic capture, and raster diff. Re-run the checks and the README raster
 checks before committing; [Testing](../testing.md#ordinary-verification) lists
 the wider test suite.
 
-## Acceptance metadata
+## Executable design contracts
 
-[acceptance-contracts.toml](acceptance-contracts.toml) retains the stable IDs,
-dependencies, and status fields consumed by design, compatibility, performance,
-and completion checks. Scenario checks reject unknown dependencies, missing
-features, stale hashes, and declared gaps whose owning task is complete.
-Passing metadata checks supplements executable tests and fresh live evidence.
+[ui-scenes.toml](ui-scenes.toml) defines required features and semantic anchors.
+Checks validate the production cell dimensions/styles, feature anchors, and
+source/raster hashes. They do not rely on historical task IDs or progress stamps.
+Fixture checks supplement executable tests; live acceptance requires fresh,
+attributed interactions and assertions.

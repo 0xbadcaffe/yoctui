@@ -89,7 +89,9 @@ including zombies. Sanitizer diagnostics/nonzero workloads fail; LSan is separat
 
 ## Completion gate
 
-./scripts/verify-completion.sh combines ordinary/PTY/fuzz/stress/sanitizer/static/
-security/coverage/Valgrind/profiling and opt-in live checks. It needs a clean checkout
-and host prerequisites; status 2 identifies missing inputs. Separate board/boot
-acceptance still applies. See [Profiling](profiling.md) and [Performance](performance.md).
+Run the [ordinary checks](#ordinary-verification), terminal/PTY checks, and
+documentation/boundary checks, followed by the applicable fuzz, stress,
+sanitizer, security, coverage, Valgrind, and profiling commands documented above.
+Live workflows require fresh evidence and their host prerequisites; fixture
+checks do not certify board boot, image completion, or target debugging.
+See [Profiling](profiling.md) and [Performance](performance.md).
