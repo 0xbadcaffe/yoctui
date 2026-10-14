@@ -14,7 +14,7 @@ fn qemu_adapter_builds_exact_shell_free_arguments_and_rejects_tampering() {
                 .to_owned(),
             OsString::from("qemuparams=-m 1024"),
             OsString::from("slirp"),
-            OsString::from("sdl"),
+            OsString::from("nographic"),
             OsString::from("serialstdio"),
         ]
     );

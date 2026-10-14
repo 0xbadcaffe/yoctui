@@ -41,6 +41,13 @@ async fn qemu_workspace_cli_refreshes_capability_and_runs_exact_request_across_n
             .iter()
             .any(|entry| entry.message == "qemuparams=-m 1024")
     );
+    assert!(job.output.iter().any(|entry| entry.message == "nographic"));
+    assert!(
+        job.output
+            .iter()
+            .any(|entry| entry.message == "serialstdio")
+    );
+    assert!(!job.output.iter().any(|entry| entry.message == "sdl"));
 
     let effect = update(&mut app, Action::RefreshImageArtifactInventory).unwrap();
     let mut scan = None;

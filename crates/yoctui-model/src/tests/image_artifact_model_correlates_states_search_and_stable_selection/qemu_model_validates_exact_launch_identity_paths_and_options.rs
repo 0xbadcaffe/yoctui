@@ -12,6 +12,19 @@ fn qemu_model_validates_exact_launch_identity_paths_and_options() {
     let second = draft.preview(&capability).expect("deterministic preview");
     assert_eq!(first, second);
     assert_eq!(first.request.memory_mib, 1024);
+    assert_eq!(first.request.display, QemuDisplayMode::Nographic);
+    assert_eq!(first.request.serial, QemuSerialMode::Stdio);
+    assert!(first.argv.contains(&"nographic".into()));
+    assert!(first.argv.contains(&"serialstdio".into()));
+    assert!(!first.argv.contains(&"sdl".into()));
+
+    let mut graphical = draft.clone();
+    graphical.display = QemuDisplayMode::Graphical;
+    let graphical = graphical
+        .preview(&capability)
+        .expect("explicit graphical preview");
+    assert!(graphical.argv.contains(&"sdl".into()));
+    assert!(!graphical.argv.contains(&"nographic".into()));
 
     let mut invalid = draft.clone();
     invalid.machine = "other-machine".into();

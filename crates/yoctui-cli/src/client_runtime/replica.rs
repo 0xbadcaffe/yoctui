@@ -63,7 +63,10 @@ impl InteractiveDaemonRuntime {
             self.flush_log_events(app, &mut pending_logs)?;
             self.flush_task_events(app, &mut pending_tasks)?;
             match event {
-                ClientServerEvent::Snapshot(snapshot) => self.replica.replace_app(app, *snapshot),
+                ClientServerEvent::Snapshot(snapshot) => {
+                    self.replica.replace_app(app, *snapshot);
+                    clear_resynchronization_notification(app);
+                }
                 ClientServerEvent::Event(event) => self.replica.apply_event_to_app(app, &event)?,
                 ClientServerEvent::ResyncRequired { reason, .. } => {
                     self.replica.begin_synchronization();
@@ -157,6 +160,18 @@ impl InteractiveDaemonRuntime {
         pending.clear();
         restore_local_build_dir(app, self.local_build_dir.as_ref());
         Ok(())
+    }
+}
+
+pub(super) fn clear_resynchronization_notification(app: &mut App) {
+    // A successful replacement ends recovery; do not leave a stale error banner
+    // or erase a different notification that arrived while recovery was pending.
+    if app
+        .notification
+        .as_deref()
+        .is_some_and(|message| message.starts_with("Daemon resynchronization required: "))
+    {
+        app.notification = None;
     }
 }
 

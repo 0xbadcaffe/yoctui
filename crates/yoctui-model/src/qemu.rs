@@ -280,7 +280,8 @@ impl QemuLaunchDraft {
             } else {
                 QemuNetworkingMode::Slirp
             },
-            display: QemuDisplayMode::Graphical,
+            // Yoctui owns the serial console; a separate SDL window is opt-in.
+            display: QemuDisplayMode::Nographic,
             serial: QemuSerialMode::Stdio,
             memory_mib: if romulus_flash { "512" } else { "1024" }.into(),
             extra_arguments: String::new(),

@@ -42,9 +42,10 @@ missing tools/stale artifacts keep the form open. Both modes reuse writer leases
 scrollback, split, detach/reconnect, and confirmed kill. Fixture PTYs do not prove
 real boot or SSH login. See [Compatibility](compatibility.md).
 
-Graphical display with serialstdio shows one guest in two places: QEMU's graphical
-window and the embedded serial console. Select nographic for an embedded console
-without a graphical window.
+QEMU/Wic defaults to `nographic` with `serialstdio`: the guest console stays
+embedded in Yoctui, without a separate window. Explicitly selecting
+`graphical (separate window)` opens QEMU's display as well as the embedded serial
+console; these are two views of the same guest, not two QEMU instances.
 
 ## Daemon and remote use
 

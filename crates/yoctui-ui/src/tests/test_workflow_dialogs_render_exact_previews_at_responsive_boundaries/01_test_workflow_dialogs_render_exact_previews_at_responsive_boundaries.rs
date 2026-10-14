@@ -1,6 +1,23 @@
 use super::*;
 
 #[test]
+fn qemu_launch_labels_embedded_default_and_explicit_separate_window() {
+    let mut app = qemu_workspace_app();
+    update(&mut app, Action::BeginSelectedQemuLaunch);
+    for (width, height) in [(100, 30), (160, 48), (240, 80)] {
+        let output = rendered_text(&app, width, height);
+        assert!(output.contains("nographic (embedded console)"), "{output}");
+        assert!(!output.contains("graphical (separate window)"), "{output}");
+    }
+    let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog_mut() else {
+        panic!("QEMU launch dialog");
+    };
+    dialog.draft.display = yoctui_model::QemuDisplayMode::Graphical;
+    let output = rendered_text(&app, 160, 48);
+    assert!(output.contains("graphical (separate window)"), "{output}");
+}
+
+#[test]
 fn qemu_review_shows_tail_controls_and_scrolls_back_from_end() {
     let mut app = qemu_workspace_app();
     let artifact = app.selected_image_artifact().unwrap().clone();

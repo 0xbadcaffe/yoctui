@@ -156,8 +156,8 @@ pub(crate) fn qemu_launch_field_value(dialog: &QemuLaunchDialog, field: QemuLaun
         .into(),
         QemuLaunchField::Memory => dialog.draft.memory_mib.clone(),
         QemuLaunchField::Display => match dialog.draft.display {
-            QemuDisplayMode::Graphical => "graphical",
-            QemuDisplayMode::Nographic => "nographic",
+            QemuDisplayMode::Graphical => "graphical (separate window)",
+            QemuDisplayMode::Nographic => "nographic (embedded console)",
         }
         .into(),
         QemuLaunchField::Serial => match dialog.draft.serial {
