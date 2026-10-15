@@ -8,6 +8,19 @@ struct Fixture {
     build: PathBuf,
 }
 
+#[test]
+fn platform_inspection_palette_effects_reach_the_same_worker_and_deferred_screen() {
+    for (effect, screen) in [
+        (Effect::InspectKernel, Screen::Kernel),
+        (Effect::InspectFirmware, Screen::Firmware),
+    ] {
+        let request = PlatformInspectionRequest::from_effect(&effect)
+            .expect("palette effect must launch inspection");
+        assert_eq!(request.screen(), screen);
+    }
+    assert!(PlatformInspectionRequest::from_effect(&Effect::InspectSdkTools).is_none());
+}
+
 impl Fixture {
     fn new() -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(0);

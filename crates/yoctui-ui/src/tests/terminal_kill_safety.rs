@@ -17,7 +17,7 @@ fn terminal_kill_safety_existing_inline_warning_names_only_the_reviewed_target()
     })
     .join("\n");
     assert!(
-        output.contains("KILL #41:owned-demo process group? Enter confirm"),
+        output.contains("KILL #41:owned-demo and remove? TERM → KILL after 2s · Enter confirm"),
         "{output}"
     );
     app.daemon.pty_sessions[0].name = "renamed-after-review".into();

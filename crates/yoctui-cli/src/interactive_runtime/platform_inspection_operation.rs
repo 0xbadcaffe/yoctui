@@ -8,6 +8,23 @@ pub(super) enum PlatformInspectionRequest {
     Firmware,
 }
 
+impl PlatformInspectionRequest {
+    pub(super) fn from_effect(effect: &Effect) -> Option<Self> {
+        match effect {
+            Effect::InspectKernel => Some(Self::Kernel),
+            Effect::InspectFirmware => Some(Self::Firmware),
+            _ => None,
+        }
+    }
+
+    pub(super) fn screen(self) -> Screen {
+        match self {
+            Self::Kernel => Screen::Kernel,
+            Self::Firmware => Screen::Firmware,
+        }
+    }
+}
+
 pub(super) struct PlatformInspectionOperation {
     request: PlatformInspectionRequest,
     handle: tokio::task::JoinHandle<Action>,
@@ -21,9 +38,9 @@ impl InteractiveRuntime {
             return;
         }
         if self.configuration_io.active() || self.recipe_inspection_operation.is_some() {
-            self.app.notification = Some(
-                "Metadata inspection is still running; retry after it releases BitBake.".into(),
-            );
+            // Keep the original request; the poll loop retries after the
+            // other short-lived connection has released BitBake.
+            self.startup_platform_inspection = Some(request.screen());
             return;
         }
         let build_dir = self.session_build_dir.clone();

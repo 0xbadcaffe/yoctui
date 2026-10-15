@@ -41,7 +41,11 @@ impl InteractiveRuntime {
                     _ => None,
                 },
             };
-            if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
+            if let Some(request) = effect.as_ref().and_then(
+                super::platform_inspection_operation::PlatformInspectionRequest::from_effect,
+            ) {
+                runtime.begin_platform_inspection(request);
+            } else if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
                 begin_image_artifact_operation(
                     &mut runtime.app,
                     runtime.image_artifact_adapter.as_ref(),

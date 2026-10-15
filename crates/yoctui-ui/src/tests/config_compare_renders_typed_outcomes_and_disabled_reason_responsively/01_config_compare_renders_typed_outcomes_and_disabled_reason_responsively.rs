@@ -104,10 +104,11 @@ fn config_edit_preview_renders_availability_editor_and_exact_confirmation_respon
     app.screen = Screen::Configuration;
     app.workspace
         .variables
-        .insert("BB_NUMBER_THREADS".into(), "8".into());
+        .insert("IMAGE_ROOTFS".into(), "/build/rootfs".into());
     let output = rendered_text(&app, 120, 28);
     assert!(output.contains("Alt+e edit: disabled"), "{output}");
-    assert!(output.contains("read-only"), "{output}");
+    assert!(yoctui_model::config_edit_disabled_reason(&app)
+        .is_some_and(|reason| reason.contains("read-only")), "{output}");
 }
 
 #[test]
