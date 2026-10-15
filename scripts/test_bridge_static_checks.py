@@ -45,8 +45,18 @@ class BridgeStaticChecksTests(unittest.TestCase):
                     actual = next(item for item in classes[target.value.id].body if isinstance(item, ast.FunctionDef) and item.name == target.attr)
                     self.assertEqual(ast.dump(actual), ast.dump(expected))
                     checked += 1
-        self.assertEqual(checked, 12)
+        self.assertEqual(checked, 13)
         self.assertEqual(MODULE.type_projection(source).count("# type: ignore[import-not-found]"), source.count("# type: ignore[import-not-found]"))
+
+    def test_type_projection_preserves_multiline_docstring(self):
+        source = ('class Example:\n    pass\n\n'
+                  'def helper(self):\n    """First line.\n\n'
+                  '    Indented detail.\n    """\n    return 1\n\n'
+                  'Example.method = helper\n')
+        original = ast.parse(source).body[1]
+        original.name = "method"
+        projected = ast.parse(MODULE.type_projection(source)).body[0].body[1]
+        self.assertEqual(ast.dump(projected), ast.dump(original))
 
     def test_unsupported_dynamic_binding_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "Unsupported"):

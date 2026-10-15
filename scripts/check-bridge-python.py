@@ -64,6 +64,13 @@ def type_projection(source: str) -> str:
                 if function.decorator_list:
                     raise ValueError("Unsupported decorated bridge method binding")
                 body = ast.get_source_segment(source, function)
+                # Reindent code, not the contents of its docstring literal.
+                # Otherwise a multiline docstring gains four spaces per line
+                # and the projected method no longer has the exact same AST.
+                first = function.body[0] if function.body else None
+                if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
+                    literal = ast.get_source_segment(source, first.value)
+                    body = body.replace(literal, repr(first.value.value), 1)
                 body = re.sub(rf"^def {re.escape(function.name)}\(", f"def {target.attr}(", body, count=1)
                 additions.setdefault(classes[target.value.id].end_lineno, []).append(textwrap.indent(body, "    "))
                 removed.update(range(node.lineno, node.end_lineno + 1))
