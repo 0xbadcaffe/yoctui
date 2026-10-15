@@ -187,6 +187,10 @@ Missing evidence is not estimated.
 ## Image, SDK, QEMU, and Wic operations
 
 Images: `i` chooses a target, `b` reviews a build, `R` rescans, `o` opens an artifact.
+Artifacts refresh automatically after builds, on returning to the screen, and when
+the deploy directory changes. Modification dates come from filesystem metadata
+and use the client's local timezone (including its UTC offset), not the filename
+or build completion time. Refresh preserves the selected file if it still exists.
 `T` opens [QEMU/SSH consoles](terminal-sessions.md#image-consoles); `Q` offers advanced
 QEMU review. `W` reviews Wic creation. Device writing (`D`) requires an eligible
 removable device, the exact `WRITE <device-path>` phrase, and another confirmation.

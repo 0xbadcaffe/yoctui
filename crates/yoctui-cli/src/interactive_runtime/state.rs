@@ -45,6 +45,7 @@ pub(super) struct InteractiveRuntime {
     pub(super) package_operation: Option<PackageBackgroundOperation>,
     pub(super) image_artifact_adapter: Option<ImageArtifactAdapter>,
     pub(super) image_artifact_operation: Option<ImageArtifactBackgroundOperation>,
+    pub(super) image_artifact_refresh: ImageArtifactRefresh,
     pub(super) rootfs_composition_operation: Option<RootfsCompositionBackgroundOperation>,
     pub(super) global_content_search_operation: Option<GlobalContentSearchOperation>,
     pub(super) history_root: PathBuf,

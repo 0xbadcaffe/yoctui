@@ -2,6 +2,7 @@ use super::*;
 mod clipboard;
 mod errors_retained_escape;
 mod gitui_native_workspace;
+mod image_artifact_refresh;
 mod modifier_shortcuts;
 mod rootfs_browser;
 mod rootfs_package_preview;

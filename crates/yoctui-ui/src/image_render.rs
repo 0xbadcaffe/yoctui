@@ -159,8 +159,8 @@ pub(crate) fn image_artifacts_workspace(frame: &mut Frame, app: &App, area: Rect
             let mut titles = vec!["File", "Size (B)"];
             let mut widths = vec![Constraint::Min(12), Constraint::Length(11)];
             if show_time {
-                titles.push("Modified UTC");
-                widths.push(Constraint::Length(20));
+                titles.push("Modified (local)");
+                widths.push(Constraint::Length(25));
             }
             if show_kind {
                 titles.push("Kind");

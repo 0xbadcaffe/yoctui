@@ -1,5 +1,7 @@
 //! Image operations.
 use super::*;
+mod refresh;
+pub(crate) use refresh::ImageArtifactRefresh;
 
 pub(crate) struct ImageArtifactBackgroundOperation {
     pub(crate) request: ImageArtifactRequest,

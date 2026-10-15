@@ -33,7 +33,7 @@ jobs:
       - name: Install pinned raster host prerequisites
         run: |
           apt-get update
-          apt-get install -y git curl build-essential pkg-config python3-dev python3-venv libcairo2-dev fontconfig fonts-dejavu-core
+          DEBIAN_FRONTEND=noninteractive apt-get install -y git curl build-essential pkg-config python3-dev python3-venv libcairo2-dev fontconfig fonts-dejavu-core tzdata
           python3 -m venv /opt/yoctui-ci
           echo /opt/yoctui-ci/bin >> "$GITHUB_PATH"
       - uses: actions/checkout@v4

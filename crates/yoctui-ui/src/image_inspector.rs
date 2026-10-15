@@ -6,24 +6,31 @@ pub(super) fn image_artifact_timestamp(seconds: Option<u64>) -> String {
         return "unavailable".into();
     };
     let mut value = std::mem::MaybeUninit::<libc::tm>::uninit();
-    // gmtime_r writes only this caller-owned tm and performs no locale/timezone mutation.
-    if unsafe { libc::gmtime_r(&seconds, value.as_mut_ptr()) }.is_null() {
+    // Match filesystem tools in the client's local timezone, including historical DST.
+    // localtime_r writes only this caller-owned tm; never change the process's TZ.
+    if unsafe { libc::localtime_r(&seconds, value.as_mut_ptr()) }.is_null() {
         return "unavailable".into();
     }
-    // Successful gmtime_r initialized every field of tm.
+    // Successful localtime_r initialized every field of tm.
     let value = unsafe { value.assume_init() };
     let year = i64::from(value.tm_year) + 1900;
     if !(0..=9999).contains(&year) {
         return "unavailable".into();
     }
-    format!(
-        "{year:04}-{:02}-{:02} {:02}:{:02}:{:02}Z",
-        value.tm_mon + 1,
-        value.tm_mday,
-        value.tm_hour,
-        value.tm_min,
-        value.tm_sec
-    )
+    let mut text = [0_u8; 64];
+    // SAFETY: the format is NUL-terminated, tm initialized, and the buffer writable.
+    let length = unsafe {
+        libc::strftime(
+            text.as_mut_ptr().cast(),
+            text.len(),
+            c"%Y-%m-%d %H:%M:%S %z".as_ptr(),
+            &value,
+        )
+    };
+    if length == 0 {
+        return "unavailable".into();
+    }
+    String::from_utf8_lossy(&text[..length]).into_owned()
 }
 
 pub(crate) fn image_artifact_inspector_text(app: &App) -> String {
@@ -89,7 +96,7 @@ pub(crate) fn image_artifact_inspector_text(app: &App) -> String {
                 yoctui_model::ImagePreviewTransport::DirectTerminal,
             );
             format!(
-                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\n\nTerminal image preview\nNative graphics: not offered\nprotocol probe skipped\nFallback: {}\nReason: {}\n\nDeploy directory: {}\nSize: {}\nLast modified (UTC): {}\nView: o/e text or DTB decompile; v RootFS files\nLimitations:\n{}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}",
+                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\n\nTerminal image preview\nNative graphics: not offered\nprotocol probe skipped\nFallback: {}\nReason: {}\n\nDeploy directory: {}\nSize: {}\nLast modified (local): {}\nView: o/e text or DTB decompile; v RootFS files\nLimitations:\n{}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}",
                 artifact.identity.machine,
                 artifact.identity.image,
                 artifact.kind.label(),

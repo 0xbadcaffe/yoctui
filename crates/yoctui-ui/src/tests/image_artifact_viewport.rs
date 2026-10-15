@@ -80,14 +80,8 @@ fn image_artifact_viewport_keeps_every_selection_visible_with_long_wrapping_name
 
 #[test]
 fn image_artifact_metadata_is_readable_and_tiny_empty_views_do_not_panic() {
-    assert_eq!(
-        super::super::image_inspector::image_artifact_timestamp(Some(1_700_000_000)),
-        "2023-11-14 22:13:20Z"
-    );
-    assert_eq!(
-        super::super::image_inspector::image_artifact_timestamp(Some(0)),
-        "1970-01-01 00:00:00Z"
-    );
+    let expected = super::super::image_inspector::image_artifact_timestamp(Some(1_700_000_000));
+    assert_ne!(expected, "unavailable");
     assert_eq!(
         super::super::image_inspector::image_artifact_timestamp(None),
         "unavailable"
@@ -103,12 +97,13 @@ fn image_artifact_metadata_is_readable_and_tiny_empty_views_do_not_panic() {
         .unwrap();
     let text = buffer_text(terminal.backend().buffer());
     assert!(
-        text.contains("8192") && text.contains("2023-11-14 22:13:20Z"),
+        text.contains("8192") && text.contains(&expected) && text.contains("Modified (local)"),
         "{text}"
     );
     let inspector = super::super::image_inspector::image_artifact_inspector_text(&app);
     assert!(
-        inspector.contains("8192 bytes") && inspector.contains("Last modified (UTC): 2023-11-14")
+        inspector.contains("8192 bytes")
+            && inspector.contains(&format!("Last modified (local): {expected}"))
     );
     for total in [0, 1, 80] {
         let app = artifacts_app(total);
@@ -118,6 +113,46 @@ fn image_artifact_metadata_is_readable_and_tiny_empty_views_do_not_panic() {
                 .draw(|frame| image_artifacts_workspace(frame, &app, frame.area()))
                 .unwrap();
         }
+    }
+}
+
+#[test]
+fn image_artifact_timestamp_respects_local_timezone() {
+    // Isolate timezone changes in child processes; never mutate TZ in parallel tests.
+    if let Ok(expected) = std::env::var("YOCTUI_TIMESTAMP_EXPECTED") {
+        let seconds = std::env::var("YOCTUI_TIMESTAMP_SECONDS")
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert_eq!(
+            super::super::image_inspector::image_artifact_timestamp(Some(seconds)),
+            expected
+        );
+        return;
+    }
+    for (zone, seconds, expected) in [
+        ("UTC", 1_700_000_000_u64, "2023-11-14 22:13:20 +0000"),
+        ("Asia/Jerusalem", 1_700_000_000, "2023-11-15 00:13:20 +0200"),
+        ("Asia/Jerusalem", 1_781_481_600, "2026-06-15 03:00:00 +0300"),
+        ("America/New_York", 0, "1969-12-31 19:00:00 -0500"),
+    ] {
+        let result = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "tests::image_artifact_viewport::image_artifact_timestamp_respects_local_timezone",
+                "--nocapture",
+            ])
+            .env("TZ", zone)
+            .env("YOCTUI_TIMESTAMP_EXPECTED", expected)
+            .env("YOCTUI_TIMESTAMP_SECONDS", seconds.to_string())
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "{zone}: {}{}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        );
     }
 }
 

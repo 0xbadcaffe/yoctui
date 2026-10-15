@@ -1,6 +1,7 @@
 //! Interactive runtime.
 use super::*;
 
+mod artifact_refresh;
 mod build_dialogs;
 mod build_options_dialogs;
 mod command_dialogs;
@@ -400,6 +401,7 @@ pub(crate) async fn tui(
         package_operation,
         image_artifact_adapter,
         image_artifact_operation,
+        image_artifact_refresh: ImageArtifactRefresh::default(),
         rootfs_composition_operation,
         global_content_search_operation,
         history_root,

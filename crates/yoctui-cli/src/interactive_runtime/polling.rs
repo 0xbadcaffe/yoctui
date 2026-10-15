@@ -323,6 +323,7 @@ impl InteractiveRuntime {
         clone_operation::poll(&mut runtime.app, &mut runtime.clone_operation).await;
         poll_signature_operation(&mut runtime.app, &mut runtime.signature_operation).await;
         poll_package_operation(&mut runtime.app, &mut runtime.package_operation).await;
+        runtime.poll_image_artifact_refresh();
         poll_image_artifact_operation(
             &mut runtime.app,
             &mut runtime.image_artifact_operation,
