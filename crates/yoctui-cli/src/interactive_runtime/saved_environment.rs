@@ -51,6 +51,7 @@ impl InteractiveRuntime {
             || self.recipe_inspection_operation.is_some()
             || self.devtool_status_operation.is_some()
             || self.platform_inspection_operation.is_some()
+            || self.configuration_io.active()
             || self.devtool_runner.is_some()
             || self.sdk_artifact_operation.is_some()
             || self.sdk_capability_operation.is_some()

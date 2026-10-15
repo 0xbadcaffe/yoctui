@@ -15,6 +15,34 @@ impl InteractiveRuntime {
     pub(super) async fn poll_runtime(&mut self) -> Result<bool> {
         let runtime = self;
         runtime.poll_local_documents().await?;
+        let configuration_enabled = runtime.daemon_attached
+            && !runtime.app.is_offline()
+            && runtime
+                .app
+                .workspace_compatibility
+                .authority()
+                .is_some_and(|authority| {
+                    authority
+                        .snapshot
+                        .allows(yoctui_model::CapabilityId::BitBakeGetVar)
+                });
+        let configuration_changed = if runtime.platform_inspection_operation.is_none()
+            && runtime.recipe_inspection_operation.is_none()
+        {
+            runtime
+                .configuration_io
+                .poll(
+                    &mut runtime.app,
+                    &runtime.session_build_dir,
+                    configuration_enabled,
+                )
+                .await
+        } else {
+            false
+        };
+        runtime
+            .render_scheduler
+            .invalidate_if(configuration_changed, RenderCause::State);
         if runtime.app.screen == Screen::Daemons {
             let size = runtime.terminal.size()?;
             let [header, footer] =
@@ -248,6 +276,7 @@ impl InteractiveRuntime {
             || runtime.recipe_inspection_operation.is_some()
             || runtime.devtool_status_operation.is_some()
             || runtime.platform_inspection_operation.is_some()
+            || runtime.configuration_io.active()
             || runtime.sdk_artifact_operation.is_some()
             || runtime.sdk_capability_operation.is_some()
             || runtime.sdk_operation.is_some()

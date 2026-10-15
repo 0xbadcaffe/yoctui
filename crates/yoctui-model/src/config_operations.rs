@@ -186,7 +186,21 @@ pub fn config_comparison(app: &App) -> Result<ConfigComparison, String> {
     })
 }
 
-pub const EDITABLE_CONFIG_VARIABLES: &[&str] = &["DISTRO", "MACHINE"];
+pub const EDITABLE_CONFIG_VARIABLES: &[&str] = &[
+    "DISTRO",
+    "MACHINE",
+    "EXTRA_IMAGE_FEATURES",
+    "IMAGE_FEATURES",
+    "BB_NUMBER_THREADS",
+    "PARALLEL_MAKE",
+    "PACKAGE_CLASSES",
+    "BB_NO_NETWORK",
+    "BB_FETCH_PREMIRRORONLY",
+    "DL_DIR",
+    "SSTATE_DIR",
+    "TEST_SUITES",
+    "BBMASK",
+];
 
 pub(crate) fn config_edit_context(
     app: &App,

@@ -145,7 +145,7 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         yoctui_model::TerminalWorkbenchMode::KillConfirmation => {
             app.terminal.kill_target.as_ref().map_or_else(
                 || "KILL CONFIRMATION · target unavailable · Esc cancel".into(),
-                |target| format!("KILL #{}:{} process group? Enter confirm · Esc cancel", target.session_id, target.name),
+                |target| format!("KILL #{}:{} and remove? TERM → KILL after 2s · Enter confirm · Esc cancel", target.session_id, target.name),
             )
         }
         yoctui_model::TerminalWorkbenchMode::Help => {

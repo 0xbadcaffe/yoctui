@@ -14,6 +14,6 @@ fn git_status_reducer_preserves_independent_dirty_and_sync_facts() {
         })),
     );
     let label = app.source_git_status.label().unwrap();
-    assert!(label.contains("+2 ~1 ahead 3"));
+    assert!(label.contains("2 staged files 1 modified file ahead 3"));
     assert!(!label.contains("synced"));
 }

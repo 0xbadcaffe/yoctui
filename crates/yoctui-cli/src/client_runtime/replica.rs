@@ -75,6 +75,7 @@ impl InteractiveDaemonRuntime {
                 }
                 ClientServerEvent::CommandResult(result) => {
                     if matches!(result.outcome, CommandOutcome::Rejected { .. }) {
+                        self.pending_terminal_removals.clear();
                         app.terminal.releasing_writer = None;
                         app.terminal.reopen_after_release = false;
                         app.cancel_pending_platform_menuconfig();
@@ -98,6 +99,7 @@ impl InteractiveDaemonRuntime {
         self.flush_log_events(app, &mut pending_logs)?;
         self.flush_task_events(app, &mut pending_tasks)?;
         self.reconcile_terminal_completions(app);
+        self.reconcile_terminal_removals(app)?;
         Ok(received)
     }
 

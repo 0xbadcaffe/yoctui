@@ -8,12 +8,18 @@ pub(crate) fn terminal_session_browser(frame: &mut Frame, app: &App, area: Rect)
     );
     let inner = block.inner(area);
     frame.render_widget(block, area);
-    let regions = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).split(inner);
-    let heading = if app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Rename {
+    let reviewing_removal = app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation;
+    let regions = Layout::vertical([Constraint::Length(if reviewing_removal { 3 } else { 1 }), Constraint::Min(0)]).split(inner);
+    let heading = if app.terminal.mode == yoctui_model::TerminalWorkbenchMode::KillConfirmation {
+        app.terminal.kill_target.as_ref().map_or_else(
+            || "Remove session: target unavailable · Esc cancel".into(),
+            |target| format!("Enter remove · Esc cancel\nTERM → KILL after 2s\n#{} {}", target.session_id, target.name),
+        )
+    } else if app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Rename {
         format!("Rename: {}▏ · Enter save · Esc cancel", app.terminal.rename)
     } else {
         format!(
-            "▾ Daemon terminals ({}) · Enter open · n new shell",
+            "▾ Daemon terminals ({}) · Enter open · n new shell · Del/x remove",
             indexes.len()
         )
     };

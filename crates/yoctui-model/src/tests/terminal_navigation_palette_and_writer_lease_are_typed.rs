@@ -366,7 +366,8 @@ fn devwork_terminal_devtool_routes_use_authoritative_recipe_and_workspace() {
         Some(Dialog::TerminalLaunch(TerminalLaunchDialog { request, .. }))
             if request.kind == TerminalCreationKind::DevtoolShell
                 && request.cwd.as_path() == Path::new("/work/build/workspace/sources/busybox")
-                && request.program.as_path() == Path::new("/bin/sh")
+                && request.program.as_path() == Path::new("/bin/bash")
+                && request.arguments == ["-i"]
     ));
     let _ = update(&mut app, Action::CancelTerminalLaunch);
     let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolGitUi);

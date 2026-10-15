@@ -1,8 +1,80 @@
+def _tinfoil_fast_recipe_data(self, recipe):
+    """Inspect one unambiguous configured recipe without parsing every recipe.
+
+    This opt-in path uses current BBFILES/BBMASK, applies BitBake's bbappends,
+    and validates PN/PROVIDES. Ambiguous selection retains normal provider lookup.
+    A datastore is cached only for this short-lived inspection connection.
+    """
+    if os.environ.get("YOCTUI_BRIDGE_FAST_RECIPE_INSPECTION") != "1":
+        return None
+    cache = getattr(self, "inspection_datastores", {})
+    if recipe in cache:
+        return cache[recipe]
+    config = self.tinfoil.config_data
+    target = recipe
+    if recipe.startswith("virtual/"):
+        target = config.getVar("PREFERRED_PROVIDER_" + recipe)
+    if not target or not re.fullmatch(r"[A-Za-z0-9+._-]+", target):
+        return None
+    if config.getVar("BBMULTICONFIG"):
+        return None
+    import glob
+
+    masks = (config.getVar("BBMASK") or "").split()
+    try:
+        mask = (
+            re.compile("|".join(part.removeprefix("|") for part in masks))
+            if masks
+            else None
+        )
+    except re.error:
+        return None
+    candidates = set()
+    count = 0
+    # Tinfoil's prepared configuration has already expanded active
+    # BBFILES_DYNAMIC collections into BBFILES, just as BitBake does.
+    for pattern in (config.getVar("BBFILES") or "").split():
+        if os.path.isdir(pattern):
+            return None  # Directory-recursive selection belongs to BitBake.
+        for path in glob.iglob(pattern):
+            count += 1
+            if count > MAX_RECIPE_INVENTORY_RECORDS:
+                return None
+            name = os.path.basename(path)
+            if not (
+                name == target + ".bb"
+                or name.startswith(target + "_")
+                and name.endswith(".bb")
+            ):
+                continue
+            if mask and mask.search(path):
+                continue
+            candidates.add(os.path.realpath(path))
+    if len(candidates) != 1:
+        return None
+    path = candidates.pop()
+    datastore = self.tinfoil.parse_recipe_file(path)
+    if datastore.getVar("PN") != target:
+        return None
+    if recipe != target and recipe not in (datastore.getVar("PROVIDES") or "").split():
+        return None
+    if config.getVar("REQUIRED_VERSION_" + target) or config.getVar(
+        "REQUIRED_VERSION:" + target
+    ):
+        return None
+    self.recipe_files[recipe] = path
+    self.inspection_datastores = cache
+    cache[recipe] = datastore
+    return datastore
+
+
 def _tinfoil_get_variable(self, name, recipe):
     datastore = self.tinfoil.config_data
     if recipe is not None:
-        self._ensure_recipes()
-        datastore = self.tinfoil.parse_recipe(recipe)
+        datastore = self._fast_recipe_data(recipe)
+        if datastore is None:
+            self._ensure_recipes()
+            datastore = self.tinfoil.parse_recipe(recipe)
     value = datastore.getVar(name)
     unexpanded_value = datastore.getVar(name, False)
     operations = self._variable_operations(datastore, name)
@@ -135,10 +207,13 @@ def _tinfoil_get_recipe_sources(self, recipe):
 
 
 def _tinfoil_get_recipe_metadata(self, recipe):
-    self._ensure_recipes()
+    datastore = self._fast_recipe_data(recipe)
+    if datastore is None:
+        self._ensure_recipes()
     recipe_file = self._preferred_recipe_file(recipe)
     appends = list(self.tinfoil.get_file_appends(recipe_file) or [])
-    datastore = self.tinfoil.parse_recipe_file(recipe_file)
+    if datastore is None:
+        datastore = self.tinfoil.parse_recipe_file(recipe_file)
     tasks = datastore.getVar("__BBTASKS") or []
     packages = (datastore.getVar("PACKAGES") or "").split()
     source_uri = (datastore.getVar("SRC_URI") or "").split()
@@ -174,6 +249,7 @@ def _tinfoil_get_recipe_metadata(self, recipe):
 
 
 TinfoilConnection.get_variable = _tinfoil_get_variable
+TinfoilConnection._fast_recipe_data = _tinfoil_fast_recipe_data
 TinfoilConnection.get_rootfs_sources = _tinfoil_get_rootfs_sources
 TinfoilConnection.get_dependencies = _tinfoil_get_dependencies
 TinfoilConnection.get_dependency_graph = _tinfoil_get_dependency_graph

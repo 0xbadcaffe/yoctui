@@ -34,6 +34,7 @@ pub struct InteractiveDaemonRuntime {
     last_pty_resize: Option<(u64, u64, TerminalDimensions)>,
     pending_terminal_completions: Vec<PendingTerminalCompletion>,
     terminal_completions: Vec<TerminalCompletionOutcome>,
+    pending_terminal_removals: Vec<(Option<yoctui_model::DaemonModelInstanceId>, u64)>,
 }
 
 struct PendingTerminalCompletion {

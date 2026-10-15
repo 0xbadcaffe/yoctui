@@ -98,6 +98,16 @@ fn terminal_resize_rejects_ended_writer_without_sending_a_request() {
         // Every rejected state must leave this as the next wire frame.
         assert_eq!(
             connection.receive::<ClientMessage>().unwrap(),
+            ClientMessage::Command(yoctui_protocol::daemon::CommandRequest {
+                request_id: yoctui_protocol::daemon::RequestId(2),
+                expected_generation: None,
+                command: DaemonCommand::ClosePty {
+                    session_id: yoctui_protocol::daemon::PtySessionId(41)
+                },
+            })
+        );
+        assert_eq!(
+            connection.receive::<ClientMessage>().unwrap(),
             ClientMessage::Detach
         );
         connection.send(&ServerMessage::Detaching).unwrap();
@@ -129,6 +139,7 @@ fn terminal_resize_rejects_ended_writer_without_sending_a_request() {
         last_pty_resize: None,
         pending_terminal_completions: vec![],
         terminal_completions: vec![],
+        pending_terminal_removals: vec![],
     };
     let mut app = App::new(8, 1_000);
     app.screen = yoctui_model::Screen::TerminalSessions;
@@ -213,6 +224,37 @@ fn terminal_resize_rejects_ended_writer_without_sending_a_request() {
             .unwrap()
     );
     assert_eq!(runtime.next_request, 2);
+    app.daemon.instance_id = Some(yoctui_model::DaemonModelInstanceId([9; 16]));
+    runtime
+        .pending_terminal_removals
+        .push((app.daemon.instance_id, 41));
+    runtime.reconcile_terminal_removals(&app).unwrap();
+    assert_eq!(
+        runtime.pending_terminal_removals.len(),
+        1,
+        "must wait until exit"
+    );
+    app.daemon.pty_sessions[0].lifecycle = ClientDaemonLifecycle::Exited;
+    app.daemon.status = yoctui_model::ClientReplicaStatus::Stale;
+    runtime.reconcile_terminal_removals(&app).unwrap();
+    assert_eq!(
+        runtime.next_request, 2,
+        "stale replicas cannot remove a session"
+    );
+    app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+    app.daemon.instance_id = Some(yoctui_model::DaemonModelInstanceId([10; 16]));
+    runtime.reconcile_terminal_removals(&app).unwrap();
+    assert!(
+        runtime.pending_terminal_removals.is_empty(),
+        "restart invalidates old removal intent"
+    );
+    assert_eq!(runtime.next_request, 2);
+    runtime
+        .pending_terminal_removals
+        .push((app.daemon.instance_id, 41));
+    runtime.reconcile_terminal_removals(&app).unwrap();
+    assert!(runtime.pending_terminal_removals.is_empty());
+    assert_eq!(runtime.next_request, 3);
     runtime.transport.detach().unwrap();
     server.join().unwrap();
 }

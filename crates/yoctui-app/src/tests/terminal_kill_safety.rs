@@ -31,7 +31,12 @@ fn terminal_browser_keyboard_routes_navigation_and_open_not_terminal_input() {
         terminal_workspace_action(&app, Input::Char('n')),
         Some(Action::TerminalCreateBuildShell)
     );
-    assert_eq!(terminal_workspace_action(&app, Input::Char('x')), None);
+    for key in [Input::Char('x'), Input::Delete] {
+        assert_eq!(
+            terminal_workspace_action(&app, key),
+            Some(Action::TerminalBeginKill)
+        );
+    }
     assert!(!terminal_owns_input(&app));
     app.terminal.mode = TerminalWorkbenchMode::Rename;
     assert!(terminal_owns_input(&app));

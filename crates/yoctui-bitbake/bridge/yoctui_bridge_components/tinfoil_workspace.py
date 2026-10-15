@@ -56,6 +56,7 @@ class TinfoilConnection:
         self.recipes_parsed = False
         self.active = False
         self.recipe_files = {}
+        self.inspection_datastores = {}
         self.task_recipe_identities = None
         self.force_active = False
 

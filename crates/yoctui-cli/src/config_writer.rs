@@ -202,36 +202,3 @@ pub(crate) fn finish_config_edit_refresh(
         }
     }
 }
-
-pub(crate) async fn execute_config_edit_write(
-    backend: &mut dyn BitBakeBackend,
-    app: &mut App,
-    build_dir: &Path,
-    request: ConfigEditRequest,
-) {
-    let identity = request.identity.clone();
-    match write_config_assignment(build_dir, request).await {
-        Ok(()) => {
-            if let Some(Effect::GetVariable(identity)) = compatibility_workspace_action(
-                app,
-                Action::ConfigEditWriteSucceeded {
-                    identity: identity.clone(),
-                },
-            ) {
-                let result = backend
-                    .get_variable(identity.name.clone(), identity.recipe.clone())
-                    .await;
-                finish_config_edit_refresh(app, identity, result);
-            }
-        }
-        Err(error) => {
-            let _ = update(
-                app,
-                Action::ConfigEditWriteFailed {
-                    identity,
-                    message: error.to_string(),
-                },
-            );
-        }
-    }
-}

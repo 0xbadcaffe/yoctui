@@ -56,6 +56,7 @@ pub fn terminal_workspace_action(app: &yoctui_model::App, input: Input) -> Optio
             Input::Char('s') => Some(Action::TerminalCreateSelectedDevshell),
             Input::Char('m') => Some(Action::TerminalCreateSelectedMenuconfig),
             Input::Char('r') => Some(Action::TerminalBeginRename),
+            Input::Delete | Input::Char('x') => Some(Action::TerminalBeginKill),
             Input::Char('?') => Some(Action::TerminalToggleHelp),
             _ => None,
         };
@@ -128,6 +129,7 @@ pub fn terminal_workspace_action(app: &yoctui_model::App, input: Input) -> Optio
 /// separate route prevents ordinary writer keystrokes from becoming controls.
 pub fn terminal_context_action(input: Input) -> Option<Action> {
     match input {
+        Input::Delete | Input::Char('x') => Some(Action::TerminalBeginKill),
         Input::Char('n') => Some(Action::TerminalCreateBuildShell),
         Input::Char('s') => Some(Action::TerminalCreateSelectedDevshell),
         Input::Char('m') => Some(Action::TerminalCreateSelectedMenuconfig),

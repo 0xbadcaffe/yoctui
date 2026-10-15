@@ -66,7 +66,15 @@ impl InteractiveRuntime {
             }
         } else if runtime.app.screen == yoctui_model::Screen::Configuration && input == Input::Enter
         {
-            inspect_selected_config_variable(&mut runtime.app, runtime.backend.as_mut()).await;
+            if let Some(Effect::GetVariable(identity)) =
+                compatibility_workspace_action(&mut runtime.app, Action::BeginSelectedConfigDetail)
+            {
+                runtime.configuration_io.inspect(identity);
+            }
+        } else if runtime.app.screen == yoctui_model::Screen::Configuration
+            && matches!(input, Input::Char('r') | Input::Alt('r') | Input::Char('R'))
+        {
+            runtime.configuration_io.refresh();
         } else if runtime.app.screen == yoctui_model::Screen::Configuration
             && matches!(
                 input,

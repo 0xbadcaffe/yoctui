@@ -11,12 +11,19 @@ pub(super) enum PlatformInspectionRequest {
 pub(super) struct PlatformInspectionOperation {
     request: PlatformInspectionRequest,
     handle: tokio::task::JoinHandle<Action>,
+    cancel: tokio::sync::oneshot::Sender<()>,
 }
 
 impl InteractiveRuntime {
     pub(super) fn begin_platform_inspection(&mut self, request: PlatformInspectionRequest) {
         if self.platform_inspection_operation.is_some() {
             self.fail_platform_inspection(request, "another platform inspection is running".into());
+            return;
+        }
+        if self.configuration_io.active() || self.recipe_inspection_operation.is_some() {
+            self.app.notification = Some(
+                "Metadata inspection is still running; retry after it releases BitBake.".into(),
+            );
             return;
         }
         let build_dir = self.session_build_dir.clone();
@@ -36,23 +43,29 @@ impl InteractiveRuntime {
             .iter()
             .map(|recipe| recipe.name.clone())
             .collect();
+        let (cancel, mut cancelled) = tokio::sync::oneshot::channel();
         let handle = tokio::spawn(async move {
             if let Err(message) =
                 super::metadata_backend::metadata_backend_start_required(&backend_kind, false)
             {
                 return failed_action(request, message.into());
             }
-            let environment =
-                match initialized_platform_environment(&build_dir, source_dir.as_deref()).await {
-                    Ok(environment) => environment,
-                    Err(error) => return failed_action(request, format!("{error:#}")),
-                };
+            let mut environment = match tokio::select! {
+                _ = &mut cancelled => return failed_action(request, "inspection cancelled".into()),
+                result = initialized_platform_environment(&build_dir, source_dir.as_deref()) => result,
+            } {
+                Ok(environment) => environment,
+                Err(error) => return failed_action(request, format!("{error:#}")),
+            };
+            environment.insert("YOCTUI_BRIDGE_FAST_RECIPE_INSPECTION".into(), "1".into());
             let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-            let mut backend =
-                match spawn_configured_bridge(&python, build_dir, Some(environment)).await {
-                    Ok(backend) => backend.with_platform_inspection_scope(),
-                    Err(error) => return failed_action(request, format!("{error:#}")),
-                };
+            let mut backend = match tokio::select! {
+                _ = &mut cancelled => return failed_action(request, "inspection cancelled".into()),
+                result = spawn_configured_bridge(&python, build_dir, Some(environment)) => result,
+            } {
+                Ok(backend) => backend.with_platform_inspection_scope(),
+                Err(error) => return failed_action(request, format!("{error:#}")),
+            };
             let inspection = async {
                 match request {
                     PlatformInspectionRequest::Kernel => {
@@ -63,19 +76,28 @@ impl InteractiveRuntime {
                     }
                 }
             };
-            let action = match tokio::time::timeout(PLATFORM_INSPECTION_TIMEOUT, inspection).await {
-                Ok(action) => action,
-                Err(_) => failed_action(
-                    request,
-                    "platform inspection timed out after 120 seconds".into(),
-                ),
+            let (action, completed) = tokio::select! {
+                _ = &mut cancelled => (failed_action(request, "inspection cancelled".into()), false),
+                result = tokio::time::timeout(PLATFORM_INSPECTION_TIMEOUT, inspection) => match result {
+                    Ok(action) => (action, true),
+                    Err(_) => (failed_action(request, "platform inspection timed out after 120 seconds".into()), false),
+                },
             };
-            if let Err(error) = backend.shutdown().await {
-                tracing::debug!(%error, "platform metadata backend shutdown failed");
+            let released = completed
+                && tokio::time::timeout(Duration::from_secs(5), backend.shutdown())
+                    .await
+                    .is_ok_and(|result| result.is_ok());
+            if !released {
+                #[cfg(unix)]
+                backend.interrupt_metadata().await;
             }
             action
         });
-        self.platform_inspection_operation = Some(PlatformInspectionOperation { request, handle });
+        self.platform_inspection_operation = Some(PlatformInspectionOperation {
+            request,
+            handle,
+            cancel,
+        });
     }
 
     pub(super) async fn poll_platform_inspection(&mut self) -> bool {
@@ -107,13 +129,13 @@ impl InteractiveRuntime {
 
     pub(super) async fn stop_platform_inspection(&mut self) {
         if let Some(operation) = self.platform_inspection_operation.take() {
-            operation.handle.abort();
+            let _ = operation.cancel.send(());
             let _ = operation.handle.await;
         }
     }
 }
 
-pub(super) async fn initialized_platform_environment(
+pub(crate) async fn initialized_platform_environment(
     build_dir: &Path,
     source_dir: Option<&Path>,
 ) -> Result<BTreeMap<String, String>> {

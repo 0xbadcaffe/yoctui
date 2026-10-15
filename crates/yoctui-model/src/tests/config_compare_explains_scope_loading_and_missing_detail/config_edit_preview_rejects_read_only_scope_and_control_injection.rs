@@ -6,9 +6,9 @@ fn config_edit_preview_rejects_read_only_scope_and_control_injection() {
     app.workspace.build_dir = Some("/build".into());
     app.workspace
         .variables
-        .insert("BB_NUMBER_THREADS".into(), "8".into());
+        .insert("IMAGE_ROOTFS".into(), "/build/tmp/rootfs".into());
     let identity = VariableIdentity {
-        name: "BB_NUMBER_THREADS".into(),
+        name: "IMAGE_ROOTFS".into(),
         recipe: None,
     };
     app.variable_details.insert(

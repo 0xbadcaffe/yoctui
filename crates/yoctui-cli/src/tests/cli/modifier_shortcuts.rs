@@ -2,6 +2,10 @@ use super::*;
 
 #[test]
 fn modifier_terminal_keys_decode_and_forward_without_losing_alt_or_text() {
+    assert_eq!(
+        terminal_key_bytes(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE), false),
+        Some(b"\t".to_vec())
+    );
     for character in ['f', 'g', 'w', 'n', 'N', 'F', 'G'] {
         let key = KeyEvent::new(KeyCode::Char(character), KeyModifiers::ALT);
         assert_eq!(input_from_key(key), Some(Input::Alt(character)));

@@ -30,13 +30,25 @@ impl SourceGitStatus {
                     parts.push(format!("!{}", s.conflicts));
                 }
                 if s.staged > 0 {
-                    parts.push(format!("+{}", s.staged));
+                    parts.push(format!(
+                        "{} staged file{}",
+                        s.staged,
+                        if s.staged == 1 { "" } else { "s" }
+                    ));
                 }
                 if s.unstaged > 0 {
-                    parts.push(format!("~{}", s.unstaged));
+                    parts.push(format!(
+                        "{} modified file{}",
+                        s.unstaged,
+                        if s.unstaged == 1 { "" } else { "s" }
+                    ));
                 }
                 if s.untracked > 0 {
-                    parts.push(format!("?{}", s.untracked));
+                    parts.push(format!(
+                        "{} untracked file{}",
+                        s.untracked,
+                        if s.untracked == 1 { "" } else { "s" }
+                    ));
                 }
                 if s.ahead > 0 {
                     parts.push(format!("ahead {}", s.ahead));

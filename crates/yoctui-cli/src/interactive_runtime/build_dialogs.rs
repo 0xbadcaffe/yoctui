@@ -407,7 +407,7 @@ impl InteractiveRuntime {
             let effect = config_scope_picker_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
             if let Some(Effect::GetVariable(identity)) = effect {
-                load_config_variable(&mut runtime.app, runtime.backend.as_mut(), identity).await;
+                runtime.configuration_io.inspect(identity);
             }
         } else if matches!(
             runtime.app.active_dialog(),
@@ -436,13 +436,27 @@ impl InteractiveRuntime {
                 && let Some(Effect::WriteConfigAssignment(request)) =
                     compatibility_workspace_action(&mut runtime.app, action)
             {
-                execute_config_edit_write(
-                    runtime.backend.as_mut(),
-                    &mut runtime.app,
-                    &runtime.session_build_dir,
-                    request,
-                )
-                .await;
+                let identity = request.identity.clone();
+                match write_config_assignment(&runtime.session_build_dir, request).await {
+                    Ok(()) => {
+                        let _ = update(
+                            &mut runtime.app,
+                            Action::ConfigEditWriteSucceeded {
+                                identity: identity.clone(),
+                            },
+                        );
+                        runtime.configuration_io.saved(identity);
+                    }
+                    Err(error) => {
+                        let _ = update(
+                            &mut runtime.app,
+                            Action::ConfigEditWriteFailed {
+                                identity,
+                                message: error.to_string(),
+                            },
+                        );
+                    }
+                }
             }
         } else if matches!(
             runtime.app.active_dialog(),

@@ -163,8 +163,15 @@ use the current or a supported detached terminal; embedded GitUI uses writer lea
 
 ### Configuration and BBMASK
 
-Enter inspects, `s` changes scope, `c` compares, and `o` opens the reported source.
-Only allowlisted global edits can write, after exact assignment/destination review.
+Configuration refreshes when opened and when watched build/layer configuration
+files change. `r` refreshes values explicitly; Enter refreshes selected-variable
+detail without blocking navigation. `s` changes scope, `c` compares, and `o`
+opens the reported source. Values come from a fresh BitBake connection, not a
+local.conf text approximation. Recipe scopes include their recipe overrides.
+`Alt+e` edits supported global values, including `EXTRA_IMAGE_FEATURES`,
+`IMAGE_FEATURES`, `MACHINE`, `DISTRO`, parallelism, cache paths and network flags,
+after exact `conf/local.conf` assignment/destination review. Derived paths remain
+read-only; opening a source file is a separate action.
 BBMASK edits also require preview and confirmation.
 
 ## Dependency, package, and signature evidence

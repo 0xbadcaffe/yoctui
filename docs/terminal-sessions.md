@@ -14,12 +14,21 @@ and inspector, and requests writer control. If another client holds the lease,
 it opens read-only.
 Alt+o (or Ctrl+B Alt+o) releases control and returns to the list without stopping
 the process. Create a build shell with `n` in the list or Ctrl+B c.
+New build and Devtool workspace shells use interactive Bash for command/file
+Tab completion. Take writer control before typing; existing shells keep their
+original shell. Optional Bash-completion packages provide additional tool-specific
+completions.
 Exited, lost and otherwise unavailable sessions disappear from the list
 automatically; daemon-owned history is preserved. Only the writer can type/resize.
 
 The daemon owns PTYs, emulation, and bounded screen/scrollback; clients receive
 styled cells. Navigation, client reconnect, pane close, and detach keep processes.
-Ctrl+B Alt+k separately confirms termination. Daemon restart does not restore
+Select a session and press Delete or `x` in the list to review removal;
+Enter confirms and Esc cancels. Yoctui sends SIGTERM to that session's process
+group, waits up to two seconds, then uses SIGKILL if needed. Its daemon record is
+removed only after exit is confirmed. Ctrl+B Alt+k opens the same review from
+the console. Closing a pane or detaching is not removal.
+Daemon restart does not restore
 process ownership; lost/exited sessions and dropped history are explicit.
 
 [Prefix shortcuts](keyboard-shortcuts.md#terminal-prefix) cover splits, zoom, copy/search,

@@ -239,7 +239,7 @@ pub(crate) fn config(frame: &mut Frame, app: &App, area: Rect) {
         .block(
             Block::default()
                 .title(format!(
-                    "Effective configuration (shown: {} of {}, read-only)",
+                    "Effective configuration (shown: {} of {}, r refresh · Alt+e edit)",
                     variable_count,
                     app.workspace.variables.len()
                 ))
@@ -267,7 +267,7 @@ pub(crate) fn config(frame: &mut Frame, app: &App, area: Rect) {
         config_detail_state_summary(app, selected, chunks[1].width.saturating_sub(2));
     frame.render_widget(
         Paragraph::new(format!(
-            "{action_summary}\n{state_summary}\n{detail}\n\nEnter refreshes detail; o opens provenance when available."
+            "{action_summary}\n{state_summary}\n{detail}\n\nr refreshes values; Enter refreshes detail; Alt+e edits local.conf; o opens provenance."
         ))
         .block(
             Block::default()

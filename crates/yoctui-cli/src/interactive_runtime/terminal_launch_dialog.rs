@@ -11,7 +11,8 @@ impl InteractiveRuntime {
             &mut runtime.app,
             runtime.daemon_attached,
             runtime.recipe_inspection_operation.is_some()
-                || runtime.platform_inspection_operation.is_some(),
+                || runtime.platform_inspection_operation.is_some()
+                || runtime.configuration_io.active(),
             input,
         ) {
             return Ok(KeyRouteOutcome::Handled);

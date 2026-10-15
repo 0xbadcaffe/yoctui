@@ -19,7 +19,10 @@ fn git_status_is_global_and_visible_at_supported_widths() {
             .iter()
             .map(|c| c.symbol())
             .collect::<String>();
-        assert!(text.contains("Git: master ~2 synced*"), "{width}: {text}");
+        assert!(text.contains("Git: master 2 modified"), "{width}: {text}");
+        if width >= 160 {
+            assert!(text.contains("Git: master 2 modified files synced*"), "{width}: {text}");
+        }
     }
 }
 

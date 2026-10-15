@@ -336,6 +336,12 @@ impl BridgeBackend {
         self
     }
 
+    /// Fresh, read-only configuration queries must not authorize build APIs.
+    pub fn with_configuration_inspection_scope(mut self) -> Self {
+        self.local_api_scope = Some(BridgeLocalApiScope::ConfigurationInspection);
+        self
+    }
+
     /// Interrupt an owned metadata query so Python can release its Tinfoil
     /// connection even while waiting for a synchronous recipe parse. Never
     /// use this to cancel a build: builds require the typed cancellation path.

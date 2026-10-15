@@ -152,8 +152,9 @@ pub(crate) fn terminal_creation_request(
             name: "build shell".into(),
             kind: TerminalCreationKind::BuildShell,
             cwd,
-            program: PathBuf::from("/bin/sh"),
-            arguments: Vec::new(),
+            // Yocto requires Bash; /bin/sh may be dash without Readline/Tab completion.
+            program: PathBuf::from("/bin/bash"),
+            arguments: vec!["-i".into()],
             completion: None,
         });
     }
@@ -280,8 +281,8 @@ pub(crate) fn devtool_terminal_request(
         name: format!("devtool workspace {}", identity.name),
         kind: TerminalCreationKind::DevtoolShell,
         cwd: source_path,
-        program: PathBuf::from("/bin/sh"),
-        arguments: Vec::new(),
+        program: PathBuf::from("/bin/bash"),
+        arguments: vec!["-i".into()],
         completion: None,
     })
 }

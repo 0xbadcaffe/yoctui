@@ -52,4 +52,5 @@ mod pty_runner_uses_real_pty_raw_io_and_resize;
 
 mod pty_runner_bounds_input_and_forces_ignored_termination;
 
+mod bash_tab_completion;
 mod pty_runner_preserves_raw_bytes_and_terminates_gracefully;

@@ -17,11 +17,16 @@ pub struct BridgeBackend {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum BridgeLocalApiScope {
     PlatformInspection,
+    ConfigurationInspection,
 }
 
 impl BridgeLocalApiScope {
     pub(crate) const fn allows(self, operation: BitBakeApiOperation) -> bool {
         match self {
+            Self::ConfigurationInspection => matches!(
+                operation,
+                BitBakeApiOperation::Workspace | BitBakeApiOperation::Variable
+            ),
             Self::PlatformInspection => matches!(
                 operation,
                 BitBakeApiOperation::Variable | BitBakeApiOperation::RecipeMetadata

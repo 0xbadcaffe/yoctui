@@ -60,6 +60,7 @@ mod sdk_test_dialogs;
 mod shutdown;
 mod state;
 use key_input::KeyRouteOutcome;
+pub(crate) use platform_inspection_operation::initialized_platform_environment as metadata_environment;
 use state::InteractiveRuntime;
 
 pub(crate) fn restore_startup_screen(app: &mut App, configured: bool, saved: Option<Screen>) {
@@ -372,6 +373,7 @@ pub(crate) async fn tui(
         backend_kind,
         backend,
         metadata_backend_authoritative,
+        configuration_io: ConfigurationIo::default(),
         session,
         session_build_dir,
         session_path,

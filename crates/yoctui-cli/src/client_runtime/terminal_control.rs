@@ -11,6 +11,41 @@ use yoctui_protocol::daemon::{
 use super::{ClientRuntimeError, InteractiveDaemonRuntime, RuntimeEffectRoute};
 
 impl InteractiveDaemonRuntime {
+    pub(super) fn reconcile_terminal_removals(
+        &mut self,
+        app: &App,
+    ) -> Result<(), ClientRuntimeError> {
+        if app.daemon.status != yoctui_model::ClientReplicaStatus::Current {
+            return Ok(());
+        }
+        let mut index = 0;
+        while index < self.pending_terminal_removals.len() {
+            let (instance, id) = self.pending_terminal_removals[index];
+            if instance != app.daemon.instance_id {
+                self.pending_terminal_removals.remove(index);
+                continue;
+            }
+            match app
+                .daemon
+                .pty_sessions
+                .iter()
+                .find(|session| session.id == id)
+            {
+                Some(session) if !session.lifecycle.is_terminal() => {
+                    index += 1;
+                }
+                Some(_) => {
+                    self.route_terminal_effect(app, &TerminalEffect::Close { session_id: id })?;
+                    self.pending_terminal_removals.remove(index);
+                }
+                None => {
+                    self.pending_terminal_removals.remove(index);
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn resize_selected_terminal(
         &mut self,
         app: &App,
@@ -163,6 +198,12 @@ impl InteractiveDaemonRuntime {
                         confirmation: None,
                     },
                 })?;
+                let target = (app.daemon.instance_id, *session_id);
+                if !self.pending_terminal_removals.contains(&target)
+                    && self.pending_terminal_removals.len() < 16
+                {
+                    self.pending_terminal_removals.push(target);
+                }
             }
             TerminalEffect::Close { session_id } => {
                 self.transport.command(CommandRequest {
@@ -270,8 +311,8 @@ pub(super) fn prefix_daemon_command(
                 kind: yoctui_protocol::daemon::PtyKind::BuildShell,
                 cwd: cwd.display().to_string(),
                 command: yoctui_protocol::daemon::PtyCommand {
-                    program: "/bin/sh".into(),
-                    arguments: Vec::new(),
+                    program: "/bin/bash".into(),
+                    arguments: vec!["-i".into()],
                     environment_profile_id: None,
                 },
                 dimensions: yoctui_protocol::daemon::TerminalDimensions {
