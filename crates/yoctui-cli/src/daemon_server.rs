@@ -308,7 +308,21 @@ pub(crate) async fn run_daemon_foreground(
                 client_id,
                 rootfs_query,
             };
-            let mut keep_client = client_requests::service(&mut services, &mut client, &record)?;
+            let mut keep_client = match client_requests::service(
+                &mut services,
+                &mut client,
+                &record,
+            ) {
+                Ok(keep_client) => keep_client,
+                // A status client may close after reading a snapshot while a
+                // second reply is being delivered. Its socket failure must not
+                // terminate the daemon or any other client's build/terminal.
+                Err(error) if error.downcast_ref::<IpcError>().is_some() => {
+                    tracing::debug!(%error, "dropping daemon client after request delivery failure");
+                    false
+                }
+                Err(error) => return Err(error),
+            };
             let DaemonClient {
                 mut connection,
                 negotiated,

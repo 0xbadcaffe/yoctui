@@ -1,5 +1,8 @@
 #![cfg(unix)]
 
+#[path = "daemon_state_runtime/client_disconnect.rs"]
+mod client_disconnect;
+
 use std::{
     fs,
     os::unix::fs::DirBuilderExt,
