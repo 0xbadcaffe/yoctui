@@ -457,7 +457,7 @@ impl InteractiveRuntime {
         }
         if runtime
             .render_scheduler
-            .take_frame_with_interval(ordinary_frame_interval(&runtime.app))
+            .take_frame_with_interval(foreground_frame_interval(&runtime.app))
         {
             let size = runtime.terminal.size()?;
             if runtime.hardware_native_graphics.prepare_frame(

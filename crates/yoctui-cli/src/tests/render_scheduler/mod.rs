@@ -18,3 +18,4 @@ mod overlays_and_reduced_motion_freeze_animation_but_not_elapsed_time;
 mod presentation_cadences_are_explicitly_bounded;
 
 mod four_hertz_live_budget_coalesces_many_updates_per_frame;
+mod terminal_latency;

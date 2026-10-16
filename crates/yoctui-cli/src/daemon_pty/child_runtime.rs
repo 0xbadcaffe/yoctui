@@ -98,6 +98,9 @@ impl DaemonPtySupervisor {
                             }
                             continue;
                         }
+                        // Input and viewport reads do not change lease/lifecycle
+                        // metadata. Do not publish a state update for every key.
+                        let metadata_changed = !matches!(&control, Control::Input(..) | Control::Snapshot(..));
                         let result = match control {
                             Control::Attach(client) => session.attach(client).map(|_| Response::Unit),
                             Control::Detach(client) => session.detach(client).map(|_| Response::Unit),
@@ -112,7 +115,7 @@ impl DaemonPtySupervisor {
                             Control::Terminate => unreachable!("handled above"),
                         };
                         let _ = response.send(result.map_err(|error| error.to_string()));
-                        if let Ok(snapshot) = session.snapshot(0) {
+                        if metadata_changed && let Ok(snapshot) = session.snapshot(0) {
                             let _ = state_tx.send(DaemonPtyEvent::Changed { session_id, snapshot: snapshot_to_wire(&snapshot.listing) });
                         }
                     }

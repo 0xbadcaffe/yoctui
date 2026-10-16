@@ -6,7 +6,44 @@ pub(crate) const ANIMATION_INTERVAL: std::time::Duration = std::time::Duration::
 pub(crate) const ELAPSED_REFRESH_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
 pub(crate) const ORDINARY_FRAME_INTERVAL: std::time::Duration = ANIMATION_INTERVAL;
 pub(crate) const SATURATED_FRAME_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
+pub(crate) const TERMINAL_FRAME_INTERVAL: std::time::Duration =
+    std::time::Duration::from_millis(16);
+const TERMINAL_INPUT_WAIT: std::time::Duration = std::time::Duration::from_millis(8);
 const SATURATED_HOST_CPU_PERCENT: u8 = 90;
+
+pub(crate) fn has_visible_live_terminal(app: &App) -> bool {
+    (app.terminal_console_fullscreen() || app.platform_menuconfig_visible())
+        && app.daemon.status == yoctui_model::ClientReplicaStatus::Current
+        && app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
+        && app.active_dialog().is_none()
+        && !app.menu.is_open()
+        && !app.command_palette_open
+        && !app.onboarding.open
+        && !app.keymap_preferences_ui.open
+        && app.selected_terminal_session().is_some_and(|session| {
+            session.lifecycle == yoctui_model::ClientDaemonLifecycle::Running
+        })
+}
+
+/// Interactive terminal echoes must not use the build-dashboard refresh budget.
+pub(crate) fn foreground_frame_interval(app: &App) -> std::time::Duration {
+    if has_visible_live_terminal(app) {
+        TERMINAL_FRAME_INTERVAL
+    } else {
+        ordinary_frame_interval(app)
+    }
+}
+
+pub(crate) fn terminal_event_wait(
+    app: &App,
+    configured: std::time::Duration,
+) -> std::time::Duration {
+    if has_visible_live_terminal(app) {
+        configured.min(TERMINAL_INPUT_WAIT)
+    } else {
+        configured
+    }
+}
 
 /// Whether the foreground workspace contains a visible indeterminate activity
 /// glyph. Hidden work must not drive animation frames.

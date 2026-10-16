@@ -2,7 +2,10 @@ use super::*;
 
 impl InteractiveRuntime {
     pub(super) async fn handle_terminal_event(&mut self) -> Result<bool> {
-        if !event::poll(self.frame_interval)? {
+        if !event::poll(crate::render_scheduler::terminal_event_wait(
+            &self.app,
+            self.frame_interval,
+        ))? {
             return Ok(false);
         }
         let terminal_event = event::read()?;

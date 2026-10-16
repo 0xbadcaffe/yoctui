@@ -29,7 +29,7 @@ use ratatui::Terminal;
 
 use render_scheduler::{
     ELAPSED_REFRESH_INTERVAL, RenderCause, RenderScheduler, animation_interval,
-    has_live_elapsed_time, has_visible_indeterminate_activity, ordinary_frame_interval,
+    foreground_frame_interval, has_live_elapsed_time, has_visible_indeterminate_activity,
 };
 
 use serde::{Deserialize, Serialize};
