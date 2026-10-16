@@ -49,15 +49,15 @@ fn size(columns: u16, rows: u16) -> Option<yoctui_model::PtyDimensions> {
 }
 
 #[test]
-fn terminal_ordinary_dimensions_keep_navigator_and_include_search_and_history_rows() {
+fn terminal_ordinary_dimensions_keep_navigator_and_stay_stable_for_search_and_history() {
     let mut app = fixture();
     assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
     app.inspector_visible = true;
     assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
     app.daemon.pty_screens[0].scrollback_lines = 20;
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 37));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
     app.terminal.query = "find".into();
-    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 36));
+    assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
     app.daemon.pty_screens.clear();
     assert_eq!(terminal_workspace_dimensions(&app, 160, 50), size(131, 38));
 }

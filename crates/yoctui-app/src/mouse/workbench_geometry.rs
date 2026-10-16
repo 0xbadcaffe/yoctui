@@ -174,10 +174,9 @@ pub fn terminal_workspace_dimensions(
     let pane = panes
         .iter()
         .find(|(_, id)| *id == app.pane_layout.focused)?;
-    let status_rows = 1 + app.selected_terminal_screen().map_or(0, |screen| {
-        u16::from(!app.terminal.query.is_empty())
-            + u16::from(screen.scrollback_lines > 0 || screen.dropped_line_feeds_lower_bound > 0)
-    });
+    // Mirrors the renderer's single metadata row. History and search must not
+    // change the terminal size underneath a running shell or full-screen tool.
+    let status_rows = 1;
     let columns = pane.0.width.saturating_sub(2);
     let rows = pane.0.height.saturating_sub(2 + status_rows);
     if columns < 2 || rows == 0 {

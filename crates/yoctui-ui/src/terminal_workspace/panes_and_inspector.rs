@@ -45,8 +45,13 @@ pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
                 } else {
                     "viewer"
                 };
+                let history = screen.filter(|screen| screen.scrollback_lines > 0
+                    || screen.dropped_line_feeds_lower_bound > 0).map_or_else(String::new, |screen| {
+                    format!(" · history {} · dropped ≥{}", screen.scrollback_lines,
+                        screen.dropped_line_feeds_lower_bound)
+                });
                 format!(
-                    "{:?} · {access} · {} viewer(s) · {}x{} · {}",
+                    "{:?} · {access} · {} viewer(s) · {}x{}{history} · {}",
                     details.map_or(yoctui_model::ClientDaemonPtyKind::Utility, |details| {
                         details.kind
                     }),
@@ -60,30 +65,9 @@ pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
                 )
             },
         );
-        let mut status_lines = vec![Line::raw(bounded_cell_text(&status, inner.width))];
-        if let Some(screen) = screen {
-            if !app.terminal.query.is_empty() {
-                let query = app.terminal.query.to_lowercase();
-                let hits = screen
-                    .rows
-                    .iter()
-                    .filter(|row| row.to_lowercase().contains(&query))
-                    .count();
-                status_lines.push(Line::raw(bounded_cell_text(
-                    &format!("last search: {} · {hits} matches", app.terminal.query),
-                    inner.width,
-                )));
-            }
-            if screen.scrollback_lines > 0 || screen.dropped_line_feeds_lower_bound > 0 {
-                status_lines.push(Line::raw(bounded_cell_text(
-                    &format!(
-                        "history {} · dropped ≥{}",
-                        screen.scrollback_lines, screen.dropped_line_feeds_lower_bound
-                    ),
-                    inner.width,
-                )));
-            }
-        }
+        // Keep status to one row: adding history/search metadata must not shrink
+        // the PTY and discard the most recent output or the guest's prompt.
+        let status_lines = vec![Line::raw(bounded_cell_text(&status, inner.width))];
         let regions = Layout::vertical([
             Constraint::Length(status_lines.len().min(u16::MAX as usize) as u16),
             Constraint::Min(0),

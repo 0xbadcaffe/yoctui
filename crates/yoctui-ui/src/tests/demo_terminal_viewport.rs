@@ -85,6 +85,25 @@ fn terminal_visible_dimensions_match_search_history_and_split_content() {
 }
 
 #[test]
+fn terminal_visible_dimensions_do_not_shrink_when_history_or_search_appears() {
+    let mut app = marker_app();
+    let baseline = yoctui_app::terminal_workspace_dimensions(&app, 160, 50).unwrap();
+    for (history, dropped) in [(0, 0), (8, 0), (8, 2)] {
+        let screen = app.daemon.pty_screens.last_mut().unwrap();
+        screen.scrollback_lines = history;
+        screen.dropped_line_feeds_lower_bound = dropped;
+        for query in ["", "needle"] {
+            app.terminal.query = query.into();
+            assert_eq!(
+                yoctui_app::terminal_workspace_dimensions(&app, 160, 50),
+                Some(baseline)
+            );
+            assert_visible_cells(&app, 160, 50);
+        }
+    }
+}
+
+#[test]
 fn terminal_visible_dimensions_preserve_menuconfig_and_inplace_geometry() {
     let mut app = marker_app();
     app.daemon.pty_details.last_mut().unwrap().kind = yoctui_model::ClientDaemonPtyKind::Menuconfig;
