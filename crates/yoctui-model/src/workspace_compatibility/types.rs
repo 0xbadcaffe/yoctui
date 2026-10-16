@@ -6,6 +6,7 @@ pub enum WorkspaceDestination {
     Dashboard,
     Recipes,
     Layers,
+    BuildDirectory,
     Configuration,
     Tasks,
     BuildHistory,
@@ -38,10 +39,11 @@ pub enum WorkspaceDestination {
 }
 
 impl WorkspaceDestination {
-    pub const ALL: [Self; 32] = [
+    pub const ALL: [Self; 33] = [
         Self::Dashboard,
         Self::Recipes,
         Self::Layers,
+        Self::BuildDirectory,
         Self::Configuration,
         Self::Tasks,
         Self::BuildHistory,

@@ -44,7 +44,9 @@ pub fn help_workspace_action(app: &App, input: Input) -> Option<Action> {
     {
         return None;
     }
-    if let Some(delta) = collection_scroll_delta(input) {
+    if !app.help_about
+        && let Some(delta) = collection_scroll_delta(input)
+    {
         return Some(Action::ScrollHelp { delta });
     }
     match input {

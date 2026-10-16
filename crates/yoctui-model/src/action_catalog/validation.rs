@@ -72,6 +72,7 @@ impl WorkspaceDestination {
             Self::Dashboard => "Dashboard",
             Self::Recipes => "Recipes",
             Self::Layers => "Layers",
+            Self::BuildDirectory => "Build directory",
             Self::Configuration => "Configuration",
             Self::Tasks => "Tasks",
             Self::BuildHistory => "Build History",

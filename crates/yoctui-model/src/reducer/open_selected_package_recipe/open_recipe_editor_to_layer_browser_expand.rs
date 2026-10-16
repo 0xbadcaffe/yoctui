@@ -276,6 +276,33 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some("No layer is selected to edit.".into());
         }
         Action::BeginSelectedLayerBrowser => {
+            if app.navigator_compatibility_destination() == WorkspaceDestination::BuildDirectory {
+                let Some(root) = app
+                    .workspace
+                    .build_dir
+                    .clone()
+                    .or_else(|| app.workspace.variables.get("BUILDDIR").map(PathBuf::from))
+                    .filter(|root| root.is_absolute())
+                else {
+                    app.notification =
+                        Some("Build directory unavailable: load a build environment first.".into());
+                    return None;
+                };
+                app.focus = FocusTarget::Workspace;
+                if app
+                    .layer_browser
+                    .as_ref()
+                    .is_some_and(|browser| browser.is_build_directory() && browser.root == root)
+                {
+                    return None;
+                }
+                app.metadata_query.clear();
+                return Some(Effect::LoadLayerBrowserDirectory {
+                    layer: "Build directory".into(),
+                    root: root.clone(),
+                    directory: root,
+                });
+            }
             if let Some(layer) = app.workspace.layers.get(app.layer_selection) {
                 return Some(Effect::LoadLayerBrowserDirectory {
                     layer: layer.name.clone(),

@@ -51,7 +51,17 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 }
             }
         }
-        Action::CloseLayerBrowser => app.layer_browser = None,
+        Action::CloseLayerBrowser => {
+            if app
+                .layer_browser
+                .as_ref()
+                .is_some_and(LayerBrowser::is_build_directory)
+            {
+                app.focus = FocusTarget::Navigator;
+            } else {
+                app.layer_browser = None;
+            }
+        }
         Action::RefreshLayerBrowser => {
             if let Some(browser) = app.layer_browser.as_ref() {
                 let directory = browser

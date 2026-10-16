@@ -6,8 +6,8 @@ fn navigator_workbench_order_keeps_build_and_validation_groups_contiguous() {
         NAVIGATOR_SCREENS,
         [
             Screen::Dashboard,
-            Screen::Insights,
             Screen::Tasks,
+            Screen::Insights,
             Screen::Layers,
             Screen::Recipes,
             Screen::Packages,
@@ -20,6 +20,7 @@ fn navigator_workbench_order_keeps_build_and_validation_groups_contiguous() {
             Screen::Errors,
             Screen::Configuration,
             Screen::Dependencies,
+            Screen::Layers,
             Screen::Testing,
             Screen::Security,
             Screen::Qa,

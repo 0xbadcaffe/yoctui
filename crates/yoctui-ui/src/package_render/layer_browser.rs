@@ -1,19 +1,25 @@
 pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rect) {
+    let area = if browser.is_build_directory() {
+        let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).split(area);
+        frame.render_widget(Paragraph::new(format!("Build directory: {}", browser.root.display())).bold(), rows[0]);
+        rows[1]
+    } else { area };
     let left_width = layer_browser_left_width(browser, area.width);
     let rootfs = browser.is_rootfs();
-    let chunks = if rootfs && area.width < 120 {
+    let standalone = rootfs || browser.is_build_directory();
+    let chunks = if standalone && area.width < 120 {
         Layout::vertical([Constraint::Percentage(55), Constraint::Percentage(45)]).split(area)
     } else {
         Layout::horizontal([Constraint::Length(left_width), Constraint::Min(1)]).split(area)
     };
     let layer_height = app.workspace.layers.len().saturating_add(2).min(8) as u16;
-    let left = if rootfs {
+    let left = if standalone {
         Layout::vertical([Constraint::Length(0), Constraint::Min(0)]).split(chunks[0])
     } else {
         Layout::vertical([Constraint::Length(layer_height), Constraint::Min(3)]).split(chunks[0])
     };
     let palette = ThemePalette::for_app(app);
-    if !rootfs {
+    if !standalone {
         let configured = app
             .workspace
             .layers

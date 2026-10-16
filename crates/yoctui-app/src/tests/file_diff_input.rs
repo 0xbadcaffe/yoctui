@@ -55,6 +55,12 @@ fn file_diff_menu_and_help_overlays_keep_ownership() {
         help_workspace_action(&app, Input::End),
         Some(Action::ScrollHelp { delta: isize::MAX })
     );
+    yoctui_model::update(&mut app, Action::OpenAbout);
+    assert_eq!(help_workspace_action(&app, Input::End), None);
+    assert_eq!(
+        help_workspace_action(&app, Input::Char('g')),
+        Some(Action::OpenOnboarding)
+    );
     yoctui_model::update(&mut app, Action::OpenOnboarding);
     assert_eq!(help_workspace_action(&app, Input::End), None);
 }

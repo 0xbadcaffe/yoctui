@@ -1,6 +1,7 @@
 //! Shared fixtures and regression modules.
 
 use super::*;
+mod build_directory;
 mod editor_preferences;
 mod rootfs_browser;
 mod runqueue_completion;

@@ -11,18 +11,18 @@ pub(crate) fn navigator(
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 29] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 30] = [
         (
             "Dashboard",
             Screen::Dashboard,
             WorkspaceDestination::Dashboard,
         ),
+        ("Tasks", Screen::Tasks, WorkspaceDestination::Tasks),
         (
             "Insights",
             Screen::Insights,
             WorkspaceDestination::Dashboard,
         ),
-        ("Tasks", Screen::Tasks, WorkspaceDestination::Tasks),
         ("Layers", Screen::Layers, WorkspaceDestination::Layers),
         ("Recipes", Screen::Recipes, WorkspaceDestination::Recipes),
         ("Packages", Screen::Packages, WorkspaceDestination::Packages),
@@ -46,6 +46,11 @@ pub(crate) fn navigator(
             "Dependencies",
             Screen::Dependencies,
             WorkspaceDestination::Dependencies,
+        ),
+        (
+            "Build directory",
+            Screen::Layers,
+            WorkspaceDestination::BuildDirectory,
         ),
         ("Testing", Screen::Testing, WorkspaceDestination::Testing),
         ("Security", Screen::Security, WorkspaceDestination::Security),

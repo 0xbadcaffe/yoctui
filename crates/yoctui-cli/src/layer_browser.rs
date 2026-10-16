@@ -85,12 +85,13 @@ pub(crate) async fn load_layer_browser_directory(
 ) {
     let scan = directory.clone();
     let is_rootfs = layer.starts_with("Rootfs:") || layer == "Rootfs system";
+    let with_git = layer != "Build directory";
     let scan_root = root.clone();
     match tokio::task::spawn_blocking(move || {
         if is_rootfs {
             yoctui_bitbake::scan_rootfs_browser_directory(&scan_root, &scan)
         } else {
-            scan_layer_directory(&scan, true)
+            scan_layer_directory(&scan, with_git)
         }
     })
     .await

@@ -14,10 +14,10 @@ fn navigator_groups_collapse_without_exposing_hidden_destinations() {
     assert_eq!(app.navigator_selection_at_visual_row(13), None);
 
     let _ = update(&mut app, Action::SelectNavigator { delta: 1 });
-    assert_eq!(app.navigator_selection, 15);
+    assert_eq!(app.navigator_selection, NAVIGATOR_GROUPS[3].start);
     let _ = update(&mut app, Action::SelectNavigatorAt { index: 12 });
     assert_eq!(
-        app.navigator_selection, 15,
+        app.navigator_selection, NAVIGATOR_GROUPS[3].start,
         "hidden rows cannot be selected"
     );
 

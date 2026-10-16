@@ -42,6 +42,9 @@ pub(crate) fn layer_entry_metadata(
     let modified = entry
         .modified
         .map_or_else(|| "unavailable".into(), timestamp_text);
+    if browser.is_build_directory() {
+        return format!("Path: {}\nType/size: {size}\nModified: {modified}\nBuild directory: {}", display_path.display(), browser.root.display());
+    }
     let compatibility = relationship.map_or_else(
         || "unavailable".into(),
         |value| {

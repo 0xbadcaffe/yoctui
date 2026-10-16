@@ -336,10 +336,10 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-pub(crate) const NAVIGATOR_SCREENS: [Screen; 29] = [
+pub(crate) const NAVIGATOR_SCREENS: [Screen; 30] = [
     Screen::Dashboard,
-    Screen::Insights,
     Screen::Tasks,
+    Screen::Insights,
     Screen::Layers,
     Screen::Recipes,
     Screen::Packages,
@@ -352,6 +352,7 @@ pub(crate) const NAVIGATOR_SCREENS: [Screen; 29] = [
     Screen::Errors,
     Screen::Configuration,
     Screen::Dependencies,
+    Screen::Layers,
     Screen::Testing,
     Screen::Security,
     Screen::Qa,
@@ -367,10 +368,10 @@ pub(crate) const NAVIGATOR_SCREENS: [Screen; 29] = [
     Screen::TerminalSessions,
     Screen::Settings,
 ];
-pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 29] = [
-    WorkspaceDestination::Dashboard,
+pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 30] = [
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Tasks,
+    WorkspaceDestination::Dashboard,
     WorkspaceDestination::Layers,
     WorkspaceDestination::Recipes,
     WorkspaceDestination::Packages,
@@ -383,6 +384,7 @@ pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 29
     WorkspaceDestination::Errors,
     WorkspaceDestination::Configuration,
     WorkspaceDestination::Dependencies,
+    WorkspaceDestination::BuildDirectory,
     WorkspaceDestination::Testing,
     WorkspaceDestination::Security,
     WorkspaceDestination::Qa,
@@ -420,17 +422,17 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "BUILD",
         start: 11,
-        end: 15,
+        end: 16,
     },
     NavigatorGroupRange {
         label: "VALIDATE",
-        start: 15,
-        end: 18,
+        start: 16,
+        end: 19,
     },
     NavigatorGroupRange {
         label: "TOOLS",
-        start: 18,
-        end: 29,
+        start: 19,
+        end: 30,
     },
 ];
 

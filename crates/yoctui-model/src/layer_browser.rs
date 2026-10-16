@@ -146,6 +146,10 @@ pub struct LayerBrowser {
     pub cycle_entries: usize,
 }
 impl LayerBrowser {
+    pub fn is_build_directory(&self) -> bool {
+        self.layer == "Build directory"
+    }
+
     pub fn is_rootfs(&self) -> bool {
         self.layer.starts_with("Rootfs:") || self.layer == "Rootfs system"
     }

@@ -198,7 +198,7 @@ fn compatibility_ui_workspace_actions_render_exact_states_reasons_and_local_path
     }
 
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 20;
+    app.navigator_selection = 21;
     let devtool = rendered_text(&app, 180, 58);
     for expected in [
         "Destination: Devtool",
@@ -248,7 +248,7 @@ fn compatibility_dynamic_ui_replaces_action_state_reason_and_preserves_selection
     let mut app = compatibility_ui_inspector_app();
     app.screen = Screen::Configuration;
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 20;
+    app.navigator_selection = 21;
     let unavailable = rendered_text(&app, 180, 56);
     assert!(unavailable.contains("Upgrade recipe"), "{unavailable}");
     assert!(unavailable.contains("[Alt+u] — Unavailable"), "{unavailable}");
@@ -275,7 +275,7 @@ fn compatibility_dynamic_ui_replaces_action_state_reason_and_preserves_selection
         },
     );
     yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
-    assert_eq!(app.navigator_selection, 20);
+    assert_eq!(app.navigator_selection, 21);
     let available = rendered_text(&app, 180, 56);
     assert!(available.contains("Upgrade recipe"), "{available}");
     assert!(available.contains("[Alt+u] — Available"), "{available}");
@@ -307,7 +307,7 @@ fn compatibility_dynamic_ui_replaces_action_state_reason_and_preserves_selection
         .implementations
         .remove(&yoctui_model::CapabilityId::DevtoolUpgrade);
     yoctui_model::install_workspace_compatibility(&mut app, replacement).unwrap();
-    assert_eq!(app.navigator_selection, 20);
+    assert_eq!(app.navigator_selection, 21);
     let replaced = rendered_text(&app, 180, 56);
     assert!(
         replaced.contains("The reconnected Devtool omits upgrade."),

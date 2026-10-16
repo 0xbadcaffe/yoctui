@@ -2,6 +2,7 @@
 
 use super::*;
 mod branding;
+mod build_directory;
 mod completed_progress;
 mod decompiled_dts;
 mod file_diff;

@@ -7,6 +7,7 @@ pub fn workspace_destination_requirement(
     use CapabilityId as Id;
     match destination {
         WorkspaceDestination::Dashboard
+        | WorkspaceDestination::BuildDirectory
         | WorkspaceDestination::BuildHistory
         | WorkspaceDestination::Logs
         | WorkspaceDestination::Errors

@@ -163,7 +163,15 @@ impl InteractiveRuntime {
                 }
             } else {
                 if let Some(effect) = compatibility_workspace_action(&mut runtime.app, action) {
-                    if local_workspace_effect_route(&effect)
+                    if let Effect::LoadLayerBrowserDirectory {
+                        layer,
+                        root,
+                        directory,
+                    } = effect
+                    {
+                        load_layer_browser_directory(&mut runtime.app, layer, root, directory)
+                            .await;
+                    } else if local_workspace_effect_route(&effect)
                         == LocalWorkspaceEffectRoute::ImageArtifacts
                     {
                         begin_image_artifact_operation(

@@ -54,6 +54,14 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.overview_view = view;
         }
         Action::Open(s) => {
+            if s == Screen::Layers
+                && app
+                    .layer_browser
+                    .as_ref()
+                    .is_some_and(LayerBrowser::is_build_directory)
+            {
+                app.layer_browser = None;
+            }
             let raw_execution_effect = (s == Screen::RawMode
                 && app.raw_mode.view == RawModeView::Execution)
                 .then(|| update(app, Action::RawMode(RawModeAction::CloseExecution)))
