@@ -27,4 +27,12 @@ fn raw_pty_effect_maps_to_confirmed_request_and_bounded_dimensions() {
         request
     );
     assert!(dimensions.columns <= 512 && dimensions.rows <= 512);
+    assert_eq!(
+        DaemonCommand::StartRawPty {
+            request: wire,
+            dimensions
+        }
+        .expected_generation(42),
+        None
+    );
 }

@@ -9,6 +9,7 @@ use crate::client_transport::{ClientTransportError, DaemonClientTransport};
 mod attach;
 mod effect_inputs;
 mod effect_routing;
+mod raw_submissions;
 mod replica;
 mod terminal_control;
 
@@ -35,6 +36,7 @@ pub struct InteractiveDaemonRuntime {
     pending_terminal_completions: Vec<PendingTerminalCompletion>,
     terminal_completions: Vec<TerminalCompletionOutcome>,
     pending_terminal_removals: Vec<(Option<yoctui_model::DaemonModelInstanceId>, u64)>,
+    pending_raw_submissions: std::collections::BTreeMap<u64, yoctui_model::RawRequestId>,
 }
 
 struct PendingTerminalCompletion {

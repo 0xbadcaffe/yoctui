@@ -41,6 +41,10 @@ impl InteractiveDaemonRuntime {
             expected_generation: command.expected_generation(app.daemon.generation),
             command,
         })?;
+        if let Effect::StartRaw(request) = effect {
+            self.pending_raw_submissions
+                .insert(request_id.0, request.id.clone());
+        }
         Ok(RuntimeEffectRoute::Daemon(request_id))
     }
 }

@@ -28,9 +28,20 @@ fn raw_job_effects_map_only_to_typed_daemon_commands() {
         request
     );
     assert_eq!(
+        DaemonCommand::StartRaw { request: wire }.expected_generation(42),
+        None
+    );
+    assert_eq!(
         daemon_command_for_effect(&app, &Effect::CancelRaw(request.id.clone())).unwrap(),
         Some(DaemonCommand::CancelRaw {
             request_id: request.id.as_str().into(),
         })
+    );
+    assert_eq!(
+        DaemonCommand::CancelRaw {
+            request_id: request.id.as_str().into()
+        }
+        .expected_generation(43),
+        None
     );
 }

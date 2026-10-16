@@ -74,6 +74,11 @@ impl InteractiveDaemonRuntime {
                     app.notification = Some(format!("Daemon resynchronization required: {reason}"));
                 }
                 ClientServerEvent::CommandResult(result) => {
+                    super::raw_submissions::reconcile_raw_submission(
+                        app,
+                        &mut self.pending_raw_submissions,
+                        &result,
+                    );
                     if matches!(result.outcome, CommandOutcome::Rejected { .. }) {
                         self.pending_terminal_removals.clear();
                         app.terminal.releasing_writer = None;

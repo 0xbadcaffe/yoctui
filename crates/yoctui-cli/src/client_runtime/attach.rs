@@ -70,6 +70,7 @@ impl InteractiveDaemonRuntime {
             pending_terminal_completions: Vec::new(),
             terminal_completions: Vec::new(),
             pending_terminal_removals: Vec::new(),
+            pending_raw_submissions: Default::default(),
         })
     }
     pub fn detach(mut self, app: &mut App) -> Result<(), ClientRuntimeError> {

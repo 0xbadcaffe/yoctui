@@ -140,6 +140,7 @@ fn terminal_resize_rejects_ended_writer_without_sending_a_request() {
         pending_terminal_completions: vec![],
         terminal_completions: vec![],
         pending_terminal_removals: vec![],
+        pending_raw_submissions: Default::default(),
     };
     let mut app = App::new(8, 1_000);
     app.screen = yoctui_model::Screen::TerminalSessions;

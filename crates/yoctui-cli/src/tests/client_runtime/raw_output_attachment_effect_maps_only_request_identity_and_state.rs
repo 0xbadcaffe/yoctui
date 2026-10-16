@@ -18,4 +18,12 @@ fn raw_output_attachment_effect_maps_only_request_identity_and_state() {
             attached: false,
         })
     );
+    assert_eq!(
+        DaemonCommand::SetRawAttachment {
+            request_id: request.as_str().into(),
+            attached: false,
+        }
+        .expected_generation(42),
+        None
+    );
 }

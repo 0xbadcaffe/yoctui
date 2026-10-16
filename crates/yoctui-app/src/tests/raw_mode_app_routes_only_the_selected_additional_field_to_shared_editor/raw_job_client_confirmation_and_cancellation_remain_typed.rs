@@ -95,4 +95,51 @@ fn repeated_raw_command_waits_for_the_new_request_identity() {
     assert_ne!(request.id, previous_id);
     assert_eq!(app.raw_mode.output.request.as_ref(), Some(&request.id));
     assert!(app.raw_mode.selected_execution().is_none());
+    assert_eq!(app.focus, yoctui_model::FocusTarget::Workspace);
+    let form = app.raw_mode.form.clone();
+    let preview = app.raw_mode.preview.clone();
+    yoctui_model::update(
+        &mut app,
+        Action::RawMode(yoctui_model::RawModeAction::SubmissionFailed {
+            request: previous_id,
+            message: "old rejection".into(),
+        }),
+    );
+    assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Execution);
+    yoctui_model::update(
+        &mut app,
+        Action::RawMode(yoctui_model::RawModeAction::SubmissionFailed {
+            request: request.id,
+            message: "daemon rejected submission".into(),
+        }),
+    );
+    assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Browser);
+    assert_eq!(app.raw_mode.form, form);
+    assert_eq!(app.raw_mode.preview, preview);
+    assert_eq!(
+        app.raw_mode.notification.as_deref(),
+        Some("daemon rejected submission")
+    );
+}
+
+#[test]
+fn raw_execution_escape_returns_to_catalog_even_before_acknowledgement() {
+    for focus in [
+        yoctui_model::FocusTarget::Workspace,
+        yoctui_model::FocusTarget::Navigator,
+    ] {
+        let mut app = yoctui_model::App::new(8, 1024);
+        app.screen = yoctui_model::Screen::RawMode;
+        app.focus = focus;
+        app.raw_mode.view = yoctui_model::RawModeView::Execution;
+        // Defer to Raw routing so the runtime also handles its detach effect.
+        assert_eq!(focus_action_for_app(&app, Input::Esc), None);
+        let action = Action::RawMode(raw_mode_input(&app, Input::Esc).unwrap());
+        assert_eq!(
+            action,
+            Action::RawMode(yoctui_model::RawModeAction::CloseExecution)
+        );
+        assert_eq!(yoctui_model::update(&mut app, action), None);
+        assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Browser);
+    }
 }
