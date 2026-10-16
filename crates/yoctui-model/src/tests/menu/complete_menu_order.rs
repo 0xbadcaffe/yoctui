@@ -50,11 +50,12 @@ fn menus_cover_every_screen_once_and_keep_common_actions_first() {
         };
         let group = ApplicationMenuGroup::for_command(command);
         assert_eq!(definition.menu_path[0], group.label());
-        if let Action::Open(screen) = crate::command_action(&app, command) {
-            assert_eq!(command.screen(), Some(screen));
-        } else {
-            assert_eq!(command.screen(), None);
-        }
+        let destination = match crate::command_action(&app, command) {
+            Action::Open(screen) => Some(screen),
+            Action::OpenAbout => Some(Screen::Help),
+            _ => None,
+        };
+        assert_eq!(command.screen(), destination, "{command:?}");
         assert!(
             app.application_menu_items(group)
                 .iter()

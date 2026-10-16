@@ -2,8 +2,13 @@ use super::*;
 
 #[test]
 fn devtool_workspace_is_a_distinct_navigator_screen_with_devtool_authority() {
-    assert_eq!(NAVIGATOR_SCREENS[4], Screen::Recipes);
-    assert_eq!(NAVIGATOR_SCREENS[20], Screen::Devtool);
+    for (destination, expected) in [
+        (WorkspaceDestination::Recipes, Screen::Recipes),
+        (WorkspaceDestination::Devtool, Screen::Devtool),
+    ] {
+        let index = App::navigator_selection_for_destination(destination).unwrap();
+        assert_eq!(NAVIGATOR_SCREENS[index], expected);
+    }
     assert_eq!(
         workspace_screen_destination(Screen::Devtool),
         WorkspaceDestination::Devtool
