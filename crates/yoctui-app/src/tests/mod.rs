@@ -5,6 +5,7 @@ mod gitui_native_workspace;
 mod rootfs_browser;
 mod terminal_incremental_projection;
 mod terminal_kill_safety;
+mod terminal_search_shortcuts;
 
 pub(crate) fn compatibility_workspace_authority(
     generation: u64,

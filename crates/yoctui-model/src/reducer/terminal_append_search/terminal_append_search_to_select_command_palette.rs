@@ -15,7 +15,6 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::TerminalFinishSearch => app.terminal.mode = TerminalWorkbenchMode::Live,
         Action::TerminalClearSearch => {
             app.terminal.query.clear();
-            app.terminal.mode = TerminalWorkbenchMode::Live;
         }
         Action::TerminalStagePaste(text) => {
             if app.terminal.mode == TerminalWorkbenchMode::KillConfirmation {
@@ -200,6 +199,17 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.focus_return = None;
             if app.is_offline() {
                 return None;
+            }
+            if app.navigator_compatibility_destination() == WorkspaceDestination::BuildDirectory {
+                return update(app, Action::BeginSelectedLayerBrowser);
+            }
+            if app.screen == Screen::Layers
+                && app
+                    .layer_browser
+                    .as_ref()
+                    .is_some_and(LayerBrowser::is_build_directory)
+            {
+                app.layer_browser = None;
             }
             if app.screen == Screen::Packages
                 && matches!(app.package_inventory, PackageInventoryState::NotLoaded)

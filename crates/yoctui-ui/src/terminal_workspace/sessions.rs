@@ -1,4 +1,29 @@
-pub(crate) const TERMINAL_KEYBOARD_HELP: &str = "Ctrl+B t  open Terminal Sessions\nCtrl+B c  create build shell\nCtrl+B n/p  next/previous session\nCtrl+B % / \"  horizontal/vertical split\nCtrl+B z  zoom focused pane\nCtrl+B x  close pane (process keeps running)\nCtrl+B d  detach client (process keeps running)\nCtrl+B o  take · Ctrl+B Alt+o  release writer control\nCtrl+B [  copy mode · Ctrl+B / search\nCtrl+B r  rename · Ctrl+B Alt+k confirmed kill\nCtrl+B Ctrl+B  send literal Ctrl+B\n\nWriter mode forwards ordinary characters and terminal keys verbatim. Paste always pauses for bounded review. Viewers can use the visible direct shortcuts because they cannot send PTY input.\n\nOnly the current daemon writer lease can send keyboard, paste, mouse, or resize input. Retained and remote-writer replicas remain read-only.";
+pub(crate) const TERMINAL_KEYBOARD_HELP: &str = concat!(
+    "Terminal controls\n",
+    "Alt+o  Back to sessions; the process keeps running\n",
+    "Alt+/  Find output in this console (not global file search)\n",
+    "Esc  Close this help and resume the console\n\n",
+    "Ctrl+B is a prefix: press it, release it, then press the next key.\n",
+    "Ctrl+B ?  Show this shortcut reference\n",
+    "Ctrl+B c  New build shell\n",
+    "Ctrl+B n / p  Next / previous session\n",
+    "Ctrl+B [  Copy mode; arrows select a line, Enter copies, Esc returns\n",
+    "Ctrl+B r  Rename this session\n",
+    "Ctrl+B e  Return to the retained editor, when available\n",
+    "Ctrl+B % / \"  Horizontal / vertical split\n",
+    "Ctrl+B z  Zoom the focused pane\n",
+    "Ctrl+B x  Close pane; the process keeps running\n",
+    "Ctrl+B Alt+k  Review stopping this process\n",
+    "Ctrl+B Ctrl+B  Send a literal Ctrl+B to the application\n\n",
+    "When you are the writer, Tab, q and ordinary / go to the application.\n",
+    "F1 help, F2 tasks and F12 menu remain Yoctui shortcuts, except in GitUI\n",
+    "where function keys belong to GitUI. Alt+o is the reliable way back.\n",
+    "A read-only console uses o to take control, if no other client owns it.\n\n",
+    "Find output: type a query; arrows/PgUp/PgDn browse history, Home/End go\n",
+    "to oldest/live output, Ctrl+U clears, Enter/Esc resumes the console.\n",
+    "Matches count only the displayed page. Ctrl+B / is an alternative.\n",
+    "Global search: use / in the session tree, not in an open console."
+);
 
 pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
@@ -112,6 +137,9 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
             {
                 status.push_str(&format!(" · dropped line-feeds ≥ {dropped}"));
             }
+            if !app.terminal.query.is_empty() {
+                status.push_str(&format!(" · search: {} · {hits} visible match(es)", app.terminal.query));
+            }
             status
         }
         yoctui_model::TerminalWorkbenchMode::Copy => format!(
@@ -119,7 +147,7 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
             app.terminal.copy_row.saturating_add(1)
         ),
         yoctui_model::TerminalWorkbenchMode::Search => format!(
-            "SEARCH · {}▏ · {hits} visible match(es) · Enter/Esc finish",
+            "SEARCH · {}▏ · {hits} visible match(es) · PgUp/PgDn history · Ctrl+U clear · Enter/Esc finish",
             if app.terminal.query.is_empty() {
                 "<empty>"
             } else {

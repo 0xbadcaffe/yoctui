@@ -59,6 +59,10 @@ pub struct TerminalLaunchRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TerminalCompletion {
+    ReturnEditor {
+        path: PathBuf,
+        name: String,
+    },
     OpenDeviceTree {
         component: crate::PlatformComponent,
         path: PathBuf,

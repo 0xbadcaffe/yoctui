@@ -113,3 +113,4 @@ mod daemon_manager;
 mod application_menus;
 mod editor_preferences;
 mod terminal_borrowed_cells;
+mod terminal_search_shortcuts;

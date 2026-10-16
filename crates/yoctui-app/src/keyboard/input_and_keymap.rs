@@ -66,6 +66,12 @@ pub fn terminal_workspace_action(app: &yoctui_model::App, input: Input) -> Optio
             Input::Enter | Input::Esc => Some(Action::TerminalFinishSearch),
             Input::Backspace => Some(Action::TerminalBackspaceSearch),
             Input::CtrlU => Some(Action::TerminalClearSearch),
+            Input::Up => Some(Action::TerminalScroll { delta: 1 }),
+            Input::Down => Some(Action::TerminalScroll { delta: -1 }),
+            Input::PageUp => Some(Action::TerminalScroll { delta: 10 }),
+            Input::PageDown => Some(Action::TerminalScroll { delta: -10 }),
+            Input::Home => Some(Action::TerminalScroll { delta: isize::MAX }),
+            Input::End => Some(Action::TerminalScroll { delta: isize::MIN + 1 }),
             Input::Char(character) => Some(Action::TerminalAppendSearch(character)),
             _ => None,
         },
@@ -99,6 +105,9 @@ pub fn terminal_workspace_action(app: &yoctui_model::App, input: Input) -> Optio
             _ => None,
         },
         Mode::Live if input == Input::Alt('o') => Some(Action::TerminalReleaseControl),
+        // A bare slash belongs to the PTY writer (paths, Vim, shell searches).
+        // This explicit chord opens Yoctui's search without releasing the lease.
+        Mode::Live if input == Input::Alt('/') => Some(Action::TerminalBeginSearch),
         Mode::Live if app.selected_terminal_is_writer() => None,
         Mode::Live => match input {
             Input::Esc | Input::Tab | Input::BackTab if app.terminal_console_fullscreen() => Some(Action::TerminalReleaseControl),
@@ -260,7 +269,8 @@ pub fn inspector_toggle_action(app: &App, key: Input) -> Option<Action> {
 }
 
 /// Route menuconfig-style global search without stealing `/` from an active
-/// text editor, contextual search, or daemon-owned terminal session.
+/// text editor, contextual search, or open daemon-owned terminal console.
+/// The session tree is a normal workspace, not a terminal input surface.
 pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
     if key != Input::Char('/')
         || app.onboarding.open
@@ -269,8 +279,11 @@ pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Actio
         || app.active_dialog().is_some()
         || app.command_palette_open
         || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
-        || app.screen == yoctui_model::Screen::TerminalSessions
+        || (app.screen == yoctui_model::Screen::TerminalSessions
+            && (!app.terminal_browser_visible()
+                || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live))
         || app.screen == yoctui_model::Screen::Devtool
+        || (app.screen == yoctui_model::Screen::RawMode && app.focus == FocusTarget::Workspace)
         || app.platform_menuconfig_visible()
         || workspace_text_input_active(app)
     {
@@ -333,7 +346,7 @@ pub fn workspace_text_input_active(app: &yoctui_model::App) -> bool {
         || (app.screen == yoctui_model::Screen::Qa && app.qa.searching)
         || (app.screen == yoctui_model::Screen::Compatibility && app.compatibility_ui.searching)
         || (app.screen == yoctui_model::Screen::RawMode
-            && (app.raw_mode.search.editing || app.raw_mode.output.searching))
+            && (app.raw_mode.search.editing || app.raw_mode.output.searching || app.raw_mode.modal_active()))
         || (app.screen == yoctui_model::Screen::RawMode
             && matches!(
                 app.raw_mode.view,

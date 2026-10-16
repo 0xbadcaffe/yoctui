@@ -41,6 +41,7 @@ fn gitui_terminal_viewport_native_keys_preserve_writer_and_modal_permissions() {
         (Input::F12, b"\x1b[24~".as_slice()),
         (Input::Tab, b"\t".as_slice()),
         (Input::Char('q'), b"q".as_slice()),
+        (Input::Char('/'), b"/".as_slice()),
         (Input::CtrlV, b"\x16".as_slice()),
     ] {
         assert!(direct_menu_shortcut_action(&app, input, false).is_none());
