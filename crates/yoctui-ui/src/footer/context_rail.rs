@@ -50,9 +50,14 @@ pub(crate) fn current_search_state(app: &App) -> Option<(bool, bool)> {
 }
 
 pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
+    if app.screen == Screen::RawMode && !app.menu.is_open() && !app.command_palette_open
+        && (app.focus == FocusTarget::Workspace || app.raw_mode.modal_active()
+            || matches!(app.raw_mode.view, yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview)) {
+        return raw_mode_shortcuts(app).split(" | ").map(str::to_owned).collect();
+    }
     if app.terminal_browser_visible() && app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
         && app.active_dialog().is_none() && !app.menu.is_open() && !app.command_palette_open {
-        return ["Up/Down sessions", "PgUp/PgDn", "Home/End", "Enter open", "n new shell", "Esc navigator"].into_iter().map(str::to_owned).collect();
+        return ["Up/Down sessions", "PgUp/PgDn", "Home/End", "Enter open", "/ global search", "n new shell", "Esc navigator"].into_iter().map(str::to_owned).collect();
     }
     if app.screen == Screen::DiffTool && app.focus == FocusTarget::Workspace
         && app.active_dialog().is_none() && !app.command_palette_open && !app.menu.is_open()
@@ -66,6 +71,9 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
     if app.screen == Screen::Help && app.active_dialog().is_none()
         && !app.command_palette_open && !app.menu.is_open() && !app.onboarding.open
     {
+        if app.help_about {
+            return ["F1 keyboard help", "g operator guide", "Esc dashboard"].into_iter().map(str::to_owned).collect();
+        }
         return ["Up/Down scroll", "PgUp/PgDn", "Home/End", "g operator guide", "Esc dashboard"].into_iter().map(str::to_owned).collect();
     }
     if app.screen == Screen::Daemons && !app.menu.is_open() && !app.command_palette_open
@@ -103,6 +111,11 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
             .collect();
     }
     if current_search_state(app).is_some_and(|(editing, _)| editing) {
+        // Search keeps the lease while operating on the displayed output.
+        if app.screen == Screen::TerminalSessions {
+            return ["Type query", "↑/↓ history", "PgUp/PgDn history", "Home/End", "Ctrl+U clear", "Enter/Esc done"]
+                .into_iter().map(str::to_owned).collect();
+        }
         return [
             "Type query",
             "Backspace edit",
@@ -113,6 +126,27 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
         .into_iter()
         .map(str::to_owned)
         .collect();
+    }
+
+    if app.screen == Screen::TerminalSessions && app.focus == FocusTarget::Workspace {
+        use yoctui_model::TerminalWorkbenchMode as Mode;
+        let hints: &[&str] = match app.terminal.mode {
+            Mode::Rename => &["Type name", "Backspace delete", "Enter save", "Esc cancel"],
+            Mode::PasteReview => &["Enter send paste", "Esc cancel"],
+            Mode::KillConfirmation => &["Enter stop session", "Esc cancel"],
+            Mode::Help => &["Esc close shortcuts"],
+            Mode::Copy => &["Up/Down line", "Enter copy", "/ find output", "Esc back"],
+            Mode::Live | Mode::Search => &[],
+        };
+        if !hints.is_empty() {
+            return hints.iter().map(|hint| (*hint).to_owned()).collect();
+        }
+    }
+
+    if app.terminal_console_fullscreen() && app.focus == FocusTarget::Workspace
+        && app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
+    {
+        return footer_shortcuts(app).split(" | ").map(str::to_owned).collect();
     }
 
     let responsive_override = (app.screen == Screen::Images && width <= 129)
@@ -186,6 +220,28 @@ pub(crate) fn push_footer_items_that_fit(
 }
 
 pub(crate) fn footer_rail_shortcuts(app: &App, width: u16) -> String {
+    if app.screen == Screen::RawMode && !app.menu.is_open() && !app.command_palette_open
+        && (app.raw_mode.modal_active() || app.raw_mode.search.editing || app.raw_mode.output.searching
+            || matches!(app.raw_mode.view, yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview)) {
+        let mut visible = Vec::new();
+        push_footer_items_that_fit(&mut visible, &footer_context_items(app, width), usize::from(width));
+        return visible.join(" | ");
+    }
+    // Keep the writer rail focused on common terminal controls; global hints
+    // such as Tab focus and q quit would actually send input to the PTY.
+    if app.screen == Screen::TerminalSessions && yoctui_app::terminal_owns_input(app)
+        && app.active_dialog().is_none() && !app.menu.is_open() && !app.command_palette_open
+    {
+        let mut visible = Vec::new();
+        push_footer_items_that_fit(&mut visible, &footer_context_items(app, width), usize::from(width));
+        return visible.join(" | ");
+    }
+    if app.editor_settings.draft.is_some() {
+        let items = footer_shortcuts(app).split(" | ").map(str::to_owned).collect::<Vec<_>>();
+        let mut visible = Vec::new();
+        push_footer_items_that_fit(&mut visible, &items, usize::from(width));
+        return visible.join(" | ");
+    }
     let budget = usize::from(width);
     let compact = width < 100;
     if compact
@@ -223,7 +279,7 @@ pub(crate) fn footer_rail_shortcuts(app: &App, width: u16) -> String {
         prefix_budget,
     );
 
-    if !compact {
+    if !compact && app.screen != Screen::RawMode {
         let optional = FUNCTION_SHORTCUTS
             .iter()
             .filter(|shortcut| !(app.screen == Screen::DiffTool && app.focus == FocusTarget::Workspace && shortcut.key == FunctionKey::F5))

@@ -1,8 +1,14 @@
 pub(crate) fn footer_shortcuts(app: &App) -> String {
+    if app.editor_settings.draft.is_some() {
+        return "Enter save | Esc cancel | Tab placement | Ctrl+u clear | Ctrl+v paste".into();
+    }
     if app.screen == Screen::DiffTool && app.focus == FocusTarget::Workspace {
         return "Tab side | Space mark | F5 compare | Enter expand | Backspace parent | Esc trees/navigator".into();
     }
     if app.screen == Screen::Help {
+        if app.help_about {
+            return "F1 keyboard help | g operator guide | Esc dashboard | q quit".into();
+        }
         return "Up/Down PgUp/PgDn scroll | Home/End | g operator guide | Esc dashboard | q quit".into();
     }
     if app.screen == Screen::Signatures {
@@ -150,20 +156,16 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         Screen::Qa => {
             "Tab view | ↑/↓ select | s scope | / search | f status | r run | Alt+i import | Alt+r refresh | Enter details | o report | e provider | l source | c cancel"
         }
-        Screen::RawMode => {
-            if app.raw_mode.view == yoctui_model::RawModeView::Execution {
-                "↑/↓ Scroll | ←/→ Horizontal | 1/2 Stream | f Follow | / Search | c Cancel | d Detach | r Reattach | Esc Back"
-            } else {
-                "←/→ Pane | ↑/↓ Select | Enter Open | / Search | f Favorite | Alt+h History | Tab Focus | F1 Help | F12 Menu | q Quit"
-            }
-        }
+        Screen::RawMode => raw_mode_shortcuts(app),
         Screen::TerminalSessions => {
             if app.terminal_browser_visible() {
-                "↑/↓ sessions | PgUp/PgDn | Home/End | Enter open | n new shell | r rename | Esc navigator | Ctrl+B prefix"
+                "↑/↓ sessions | PgUp/PgDn | Home/End | Enter open | / global search | n new shell | r rename | Esc navigator | Ctrl+B prefix"
             } else if app.suspended_recipe_editor.is_some() {
-                "Ctrl+B prefix: editor (e) | control (o) | [ copy | / search | r rename | Alt+o release | z zoom | paste review"
+                "Alt+o sessions | Alt+/ find output | Ctrl+B e editor | Ctrl+B ? shortcuts | Ctrl+B [ copy | Ctrl+B r rename"
+            } else if app.selected_terminal_is_writer() {
+                "Alt+o sessions | Alt+/ find output | Ctrl+B ? shortcuts | Ctrl+B [ copy | Ctrl+B r rename"
             } else {
-                "Ctrl+B prefix | o take control | [ copy | / search | r rename | Alt+o release | Alt+k confirmed kill | z zoom | paste review"
+                "o type in terminal | Alt+o sessions | / find output | Ctrl+B ? shortcuts | Ctrl+B [ copy | r rename"
             }
         }
         Screen::Layers => {
@@ -225,6 +227,9 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             "e configure | b browse paths | Alt+a advanced | Alt+v verify | Tab focus | q quit"
         }
     };
+    if app.terminal_console_fullscreen() && app.focus == FocusTarget::Workspace {
+        return shortcuts.to_owned();
+    }
     with_compatibility_footer(
         app,
         yoctui_model::workspace_screen_destination(app.screen),

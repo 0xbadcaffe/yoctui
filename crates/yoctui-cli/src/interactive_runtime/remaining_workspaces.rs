@@ -6,13 +6,7 @@ impl InteractiveRuntime {
         input: Input,
     ) -> Result<Option<KeyRouteOutcome>> {
         let runtime = self;
-        if runtime.app.screen == yoctui_model::Screen::RawMode
-            && (runtime.app.focus == yoctui_model::FocusTarget::Workspace
-                || matches!(
-                    runtime.app.raw_mode.view,
-                    yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview
-                ))
-        {
+        if yoctui_app::raw_workspace_owns_input(&runtime.app, input) {
             if let Some(action) = raw_mode_input(&runtime.app, input) {
                 let effect =
                     compatibility_workspace_action(&mut runtime.app, Action::RawMode(action));
@@ -28,27 +22,36 @@ impl InteractiveRuntime {
                     }
                 }
                 if let Some(
-                    effect @ (Effect::StartRaw(_)
+                    effect @ (Effect::Terminal(_)
+                    | Effect::StartRaw(_)
                     | Effect::CancelRaw(_)
                     | Effect::SetRawAttachment { .. }),
                 ) = effect
                 {
                     #[cfg(unix)]
-                    if let Some(daemon_client) = runtime.daemon_runtime.as_mut() {
+                    let failure = if let Some(daemon_client) = runtime.daemon_runtime.as_mut() {
                         match daemon_client.route_effect(&runtime.app, &effect) {
-                            Ok(client_runtime::RuntimeEffectRoute::Daemon(_)) => {}
+                            Ok(client_runtime::RuntimeEffectRoute::Daemon(_)) => None,
                             Ok(client_runtime::RuntimeEffectRoute::ClientLocal) => {
-                                runtime.app.notification =
-                                    Some("Raw execution was not routed to the daemon.".into());
+                                Some("Raw execution was not routed to the daemon.".into())
                             }
-                            Err(error) => {
-                                runtime.app.notification =
-                                    Some(format!("Raw execution was not sent: {error}"));
-                            }
+                            Err(error) => Some(format!("Raw execution was not sent: {error}")),
                         }
                     } else {
-                        runtime.app.notification =
-                            Some("Raw execution requires an attached Yoctui daemon.".into());
+                        Some("Raw execution requires an attached Yoctui daemon.".into())
+                    };
+                    #[cfg(unix)]
+                    if let Some(message) = failure {
+                        if let Effect::StartRaw(request) = &effect {
+                            compatibility_workspace_action(
+                                &mut runtime.app,
+                                Action::RawMode(yoctui_model::RawModeAction::SubmissionFailed {
+                                    request: request.id.clone(),
+                                    message: message.clone(),
+                                }),
+                            );
+                        }
+                        runtime.app.notification = Some(message);
                     }
                 }
             }

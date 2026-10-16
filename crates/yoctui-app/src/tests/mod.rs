@@ -2,6 +2,7 @@
 
 use super::*;
 mod gitui_native_workspace;
+mod raw_flow;
 mod rootfs_browser;
 mod terminal_incremental_projection;
 mod terminal_kill_safety;

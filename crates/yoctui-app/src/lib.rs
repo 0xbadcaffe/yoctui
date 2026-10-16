@@ -137,7 +137,7 @@ pub use mouse::{
 mod raw_input;
 pub use raw_input::{
     RawArgvEditorAction, RawModeInputContext, popup_editor_action, raw_argv_editor_action,
-    raw_mode_input, reduce_raw_mode_state, validate_raw_argv_editor,
+    raw_mode_input, raw_workspace_owns_input, reduce_raw_mode_state, validate_raw_argv_editor,
 };
 
 mod workspace_input;

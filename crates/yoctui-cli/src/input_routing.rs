@@ -68,6 +68,11 @@ pub(crate) fn workspace_owns_focus_key(app: &App, input: Input) -> bool {
         || (input == Input::Esc
             && app.screen == Screen::Errors
             && app.error_workspace.viewer.is_some())
+        || (input == Input::Esc
+            && app.screen == Screen::RawMode
+            && app.raw_mode.owns_escape()
+            && (app.focus == yoctui_model::FocusTarget::Workspace
+                || app.raw_mode.view == yoctui_model::RawModeView::Execution))
         || (app.screen == Screen::Testing
             && app.focus == yoctui_model::FocusTarget::Workspace
             && (input == Input::Tab

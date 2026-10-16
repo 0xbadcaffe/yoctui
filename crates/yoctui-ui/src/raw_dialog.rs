@@ -212,7 +212,12 @@ pub(crate) fn raw_command_form_dialog(
         "NORMAL · i edit · e replace · ←/→ authoritative selector · Tab/↑/↓ field\nEnter validates and opens exact preview · q/Esc close without execution"
     };
     frame.render_widget(
-        Paragraph::new(hints).wrap(Wrap { trim: false }),
+        Paragraph::new(if let Some(message) = &app.raw_mode.notification {
+            format!("{}\n{hints}", bounded_cell_text(message, sections[2].width))
+        } else {
+            hints.to_owned()
+        })
+        .wrap(Wrap { trim: false }),
         sections[2],
     );
 }
@@ -305,6 +310,16 @@ pub fn render_raw_execution_preview(
     preview: &yoctui_model::RawExecutionPreview,
     area: Rect,
 ) {
+    render_raw_execution_preview_at(frame, preview, area, 0, None);
+}
+
+pub(crate) fn render_raw_execution_preview_at(
+    frame: &mut Frame,
+    preview: &yoctui_model::RawExecutionPreview,
+    area: Rect,
+    scroll: usize,
+    notification: Option<&str>,
+) {
     if area.is_empty() {
         return;
     }
@@ -376,5 +391,57 @@ pub fn render_raw_execution_preview(
         };
         Line::from(format!("[{}] {value}  ({source})", argument.index))
     }));
-    frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), inner);
+    let visual = raw_preview_visual_lines(lines, inner.width);
+    let sections = Layout::vertical([Constraint::Min(0), Constraint::Length(1)]).split(inner);
+    let start = scroll.min(visual.len().saturating_sub(usize::from(sections[0].height)));
+    let hint = notification.map(str::to_owned).unwrap_or_else(|| {
+        format!(
+            "PgUp/PgDn review {}/{} · Enter run · Esc edit",
+            start + 1,
+            visual.len()
+        )
+    });
+    frame.render_widget(
+        Paragraph::new(
+            visual
+                .into_iter()
+                .skip(start)
+                .take(usize::from(sections[0].height))
+                .collect::<Vec<_>>(),
+        ),
+        sections[0],
+    );
+    frame.render_widget(
+        Paragraph::new(bounded_cell_text(&hint, sections[1].width)),
+        sections[1],
+    );
+}
+
+fn raw_preview_visual_lines(lines: Vec<Line<'_>>, columns: u16) -> Vec<Line<'static>> {
+    let mut output = Vec::new();
+    for line in lines {
+        let mut row = String::new();
+        let mut width = 0;
+        for character in line.spans.iter().flat_map(|span| span.content.chars()) {
+            if character == '\n' {
+                output.push(Line::from(std::mem::take(&mut row)));
+                width = 0;
+                continue;
+            }
+            let symbol = if character.is_control() {
+                character.escape_default().to_string()
+            } else {
+                character.to_string()
+            };
+            let symbol_width = Line::from(symbol.as_str()).width();
+            if width + symbol_width > usize::from(columns) && !row.is_empty() {
+                output.push(Line::from(std::mem::take(&mut row)));
+                width = 0;
+            }
+            row.push_str(&symbol);
+            width += symbol_width;
+        }
+        output.push(Line::from(row));
+    }
+    output
 }

@@ -15,6 +15,10 @@ fn render_shell_overlays(frame: &mut Frame, app: &App, area: Rect) -> bool {
         command_palette(frame, app, area);
         return true;
     } else if app.screen == Screen::RawMode
+        && (app.raw_mode.favorite_confirmation.is_some() || app.raw_mode.favorite_rename.is_some()) {
+        raw_management_overlay(frame, app, area);
+        return true;
+    } else if app.screen == Screen::RawMode
         && let Some(picker) = app.raw_mode.recipe_picker.as_ref()
         && let Some(form) = app.raw_mode.form.as_ref()
     {
@@ -39,7 +43,8 @@ fn render_shell_overlays(frame: &mut Frame, app: &App, area: Rect) -> bool {
     {
         let popup = dialog_popup_rect(area, 110, 30);
         clear_popup(frame, app, popup);
-        render_raw_execution_preview(frame, preview, popup);
+        crate::raw_dialog::render_raw_execution_preview_at(frame, preview, popup,
+            app.raw_mode.preview_scroll, app.raw_mode.notification.as_deref());
         return true;
     }
     false

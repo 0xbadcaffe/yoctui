@@ -1,6 +1,53 @@
 use super::*;
 
 #[test]
+fn raw_execution_escape_uses_workspace_route_so_detach_effect_is_submitted() {
+    let mut app = App::new(8, 1024);
+    app.screen = Screen::RawMode;
+    app.raw_mode.view = yoctui_model::RawModeView::Execution;
+    for focus in [
+        yoctui_model::FocusTarget::Workspace,
+        yoctui_model::FocusTarget::Navigator,
+    ] {
+        app.focus = focus;
+        assert!(workspace_owns_focus_key(&app, Input::Esc));
+        assert_eq!(
+            raw_mode_input(&app, Input::Esc),
+            Some(yoctui_model::RawModeAction::CloseExecution)
+        );
+    }
+}
+
+#[test]
+fn raw_history_favorites_and_filter_escape_stay_local_before_navigator() {
+    let mut app = App::new(8, 1024);
+    app.screen = Screen::RawMode;
+    app.focus = yoctui_model::FocusTarget::Workspace;
+    for view in [
+        yoctui_model::RawModeView::History,
+        yoctui_model::RawModeView::Favorites,
+    ] {
+        app.raw_mode.view = view;
+        assert!(workspace_owns_focus_key(&app, Input::Esc));
+        assert!(pane_focus_route(&app, Input::Esc).is_none());
+        assert_eq!(
+            raw_mode_input(&app, Input::Esc),
+            Some(yoctui_model::RawModeAction::Back)
+        );
+    }
+    app.raw_mode.view = yoctui_model::RawModeView::Browser;
+    app.raw_mode.search.query = "--version".into();
+    assert!(workspace_owns_focus_key(&app, Input::Esc));
+    assert_eq!(
+        raw_mode_input(&app, Input::Esc),
+        Some(yoctui_model::RawModeAction::ClearSearch)
+    );
+    app.raw_mode.search.query.clear();
+    app.raw_mode.browser_column = yoctui_model::RawBrowserColumn::Categories;
+    assert!(!workspace_owns_focus_key(&app, Input::Esc));
+}
+
+#[test]
 fn testing_local_tabs_back_and_import_win_only_in_workspace() {
     use yoctui_model::FocusTarget;
     let mut app = App::new(10, 1_000);

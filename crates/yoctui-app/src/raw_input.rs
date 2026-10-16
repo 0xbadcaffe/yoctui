@@ -103,6 +103,34 @@ impl RawModeInputContext for yoctui_model::RawModeState {
     }
 }
 
+/// Raw-local keys must precede global image/shell shortcuts and metadata input.
+/// Unknown keys remain global outside forms and other modal Raw interactions.
+pub fn raw_workspace_owns_input(app: &yoctui_model::App, key: Input) -> bool {
+    use yoctui_model::RawModeView as View;
+    if app.screen != Screen::RawMode
+        || app.menu.is_open()
+        || app.command_palette_open
+        || app.active_dialog().is_some()
+        || app.onboarding.open
+        || app.keymap_preferences_ui.open
+    {
+        return false;
+    }
+    let state = &app.raw_mode;
+    // At the outermost category list, Esc belongs to normal pane focus.
+    if key == Input::Esc && state.view == View::Browser && !state.owns_escape() {
+        return false;
+    }
+    state.modal_active()
+        || state.search.editing
+        || state.output.searching
+        || matches!(state.view, View::Form | View::Preview)
+        || (app.focus == FocusTarget::Workspace
+            && (raw_mode_input(app, key).is_some()
+                || (state.view == View::Execution && matches!(key, Input::Char('c' | 'd' | 'r')))))
+        || (state.view == View::Execution && key == Input::Esc)
+}
+
 pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
     context: &C,
     key: Input,
@@ -110,12 +138,26 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
     use yoctui_model::{RawBrowserColumn, RawModeAction, RawModeView};
     let state = context.raw_mode_state();
 
+    if state.favorite_rename.is_some() {
+        return match key {
+            Input::Enter => Some(RawModeAction::ConfirmFavoriteRename),
+            Input::Esc => Some(RawModeAction::CancelFavoriteRename),
+            Input::Backspace => Some(RawModeAction::BackspaceFavoriteName),
+            Input::CtrlU => Some(RawModeAction::ClearFavoriteName),
+            Input::Char(character) => Some(RawModeAction::AppendFavoriteName(character)),
+            _ => None,
+        };
+    }
+
     if state.recipe_picker.is_some() {
         return match key {
-            Input::Up | Input::Char('k') => Some(RawModeAction::SelectRecipePicker { delta: -1 }),
-            Input::Down | Input::Char('j') => Some(RawModeAction::SelectRecipePicker { delta: 1 }),
+            Input::Up => Some(RawModeAction::SelectRecipePicker { delta: -1 }),
+            Input::Down => Some(RawModeAction::SelectRecipePicker { delta: 1 }),
             Input::PageUp => Some(RawModeAction::SelectRecipePicker { delta: -10 }),
             Input::PageDown => Some(RawModeAction::SelectRecipePicker { delta: 10 }),
+            Input::Home => Some(RawModeAction::SelectRecipePicker { delta: isize::MIN }),
+            Input::End => Some(RawModeAction::SelectRecipePicker { delta: isize::MAX }),
+            Input::CtrlU => Some(RawModeAction::ClearRecipePickerQuery),
             Input::Enter => Some(RawModeAction::ConfirmRecipePicker),
             Input::Esc => Some(RawModeAction::CancelRecipePicker),
             Input::Backspace => Some(RawModeAction::BackspaceRecipePickerQuery),
@@ -133,7 +175,7 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
     }
     if state.view == RawModeView::Execution && state.output.searching {
         return match key {
-            Input::Esc => Some(RawModeAction::FinishOutputSearch),
+            Input::Esc | Input::Enter => Some(RawModeAction::FinishOutputSearch),
             Input::CtrlU => Some(RawModeAction::ClearOutputSearch),
             Input::Backspace => Some(RawModeAction::BackspaceOutputSearch),
             Input::Char(character) => Some(RawModeAction::AppendOutputSearch(character)),
@@ -142,14 +184,18 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
     }
     if state.search.editing {
         return match key {
-            Input::Esc => Some(RawModeAction::FinishSearch),
+            Input::Esc | Input::Enter => Some(RawModeAction::FinishSearch),
             Input::CtrlU => Some(RawModeAction::ClearSearch),
             Input::Backspace => Some(RawModeAction::BackspaceSearch),
             Input::Char(character) => Some(RawModeAction::AppendSearch(character)),
-            _ => None,
+            input => {
+                collection_scroll_delta(input).map(|delta| RawModeAction::SelectCommand { delta })
+            }
         };
     }
-    if let Some(delta) = collection_scroll_delta(key) {
+    if let Some(delta) = collection_scroll_delta(key)
+        && state.view != RawModeView::Form
+    {
         return match state.view {
             RawModeView::Browser => Some(match state.browser_column {
                 RawBrowserColumn::Categories => RawModeAction::SelectCategory { delta },
@@ -168,7 +214,8 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
                     horizontal: 0,
                 })
             }
-            RawModeView::Form | RawModeView::Preview => None,
+            RawModeView::Preview => Some(RawModeAction::ScrollPreview { delta }),
+            RawModeView::Form => None,
         };
     }
     match state.view {
@@ -176,6 +223,8 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
             Input::Char('/') => Some(RawModeAction::BeginSearch),
             Input::Char('f') => Some(RawModeAction::ToggleFavorite),
             Input::Alt('h') | Input::Char('H') => Some(RawModeAction::OpenHistory),
+            Input::Alt('f') => Some(RawModeAction::OpenFavorites),
+            Input::CtrlU => Some(RawModeAction::ClearSearch),
             Input::Left | Input::Char('h') => Some(RawModeAction::FocusCategories),
             Input::Right | Input::Char('l') => Some(RawModeAction::FocusCommands),
             Input::Up | Input::Char('k') => Some(match state.browser_column {
@@ -190,6 +239,7 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
                 Some(RawModeAction::FocusCommands)
             }
             Input::Enter => Some(RawModeAction::OpenSelected),
+            Input::Esc if !state.search.query.is_empty() => Some(RawModeAction::ClearSearch),
             Input::Esc => Some(RawModeAction::Back),
             _ => None,
         },
@@ -281,6 +331,8 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
         },
         RawModeView::Execution => {
             match key {
+                Input::Char('o') => Some(RawModeAction::OpenExecutionTerminal),
+                Input::CtrlU => Some(RawModeAction::ClearOutputSearch),
                 Input::Char('f') => Some(RawModeAction::ToggleOutputFollow),
                 Input::Char('/') => Some(RawModeAction::BeginOutputSearch),
                 Input::Char('1') => Some(RawModeAction::SelectOutputStream(
@@ -328,6 +380,7 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
             Input::Up | Input::Char('k') => Some(RawModeAction::SelectHistory { delta: -1 }),
             Input::Down | Input::Char('j') => Some(RawModeAction::SelectHistory { delta: 1 }),
             Input::Enter => Some(RawModeAction::ActivateHistory),
+            Input::Char('r') => Some(RawModeAction::ReviewHistory),
             Input::Esc => Some(RawModeAction::Back),
             _ => None,
         },
@@ -336,6 +389,7 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
             Input::Down | Input::Char('j') => Some(RawModeAction::SelectFavorite { delta: 1 }),
             Input::Enter => Some(RawModeAction::ActivateFavorite),
             Input::Char('i') => Some(RawModeAction::InspectFavorite),
+            Input::Char('r') => Some(RawModeAction::BeginFavoriteRename),
             Input::Char('x') | Input::Char('d') => Some(RawModeAction::RemoveFavorite),
             Input::Char('[') => Some(RawModeAction::MoveFavorite { delta: -1 }),
             Input::Char(']') => Some(RawModeAction::MoveFavorite { delta: 1 }),

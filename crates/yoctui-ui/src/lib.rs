@@ -150,6 +150,8 @@ use navigator_render::navigator;
 
 mod raw_render;
 use raw_render::raw_mode_workspace;
+mod raw_management;
+use raw_management::{raw_favorites_workspace, raw_history_workspace, raw_management_overlay};
 
 mod raw_catalog_render;
 use raw_catalog_render::{

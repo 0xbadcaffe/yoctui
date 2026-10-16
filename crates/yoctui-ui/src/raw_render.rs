@@ -3,6 +3,46 @@ use super::*;
 
 pub(crate) fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
     use yoctui_model::{RawBrowserColumn, RawModeView};
+    let rows = Layout::vertical([
+        Constraint::Length(u16::from(app.raw_mode.notification.is_some())),
+        Constraint::Length(u16::from(
+            app.raw_mode.view == RawModeView::Browser
+                && (app.raw_mode.search.editing || !app.raw_mode.search.query.is_empty()),
+        )),
+        Constraint::Min(0),
+    ])
+    .split(area);
+    if let Some(message) = &app.raw_mode.notification {
+        frame.render_widget(
+            Paragraph::new(bounded_cell_text(message, rows[0].width)).style(
+                ThemePalette::for_app(app).role(ThemePalette::for_app(app).warning, Modifier::BOLD),
+            ),
+            rows[0],
+        );
+    }
+    if rows[1].height > 0 {
+        frame.render_widget(
+            Paragraph::new(bounded_cell_text(
+                &format!(
+                    "Command filter: {}{} · Enter {} · Ctrl+U clear",
+                    app.raw_mode.search.query,
+                    if app.raw_mode.search.editing {
+                        "▏"
+                    } else {
+                        ""
+                    },
+                    if app.raw_mode.search.editing {
+                        "finish"
+                    } else {
+                        "review"
+                    }
+                ),
+                rows[1].width,
+            )),
+            rows[1],
+        );
+    }
+    let area = rows[2];
 
     if app.raw_mode.view == RawModeView::Execution {
         raw_execution_workspace(frame, app, area, terminal_width);
@@ -10,6 +50,10 @@ pub(crate) fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect, termi
     }
     if app.raw_mode.view == RawModeView::Favorites {
         raw_favorites_workspace(frame, app, area, terminal_width);
+        return;
+    }
+    if app.raw_mode.view == RawModeView::History {
+        raw_history_workspace(frame, app, area);
         return;
     }
     if app.raw_mode.view != RawModeView::Browser {
@@ -30,110 +74,13 @@ pub(crate) fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect, termi
         return;
     }
 
-    let columns = Layout::horizontal([Constraint::Percentage(52), Constraint::Min(20)]).split(area);
+    let columns = Layout::horizontal([
+        Constraint::Length(yoctui_model::raw_category_column_width(area.width)),
+        Constraint::Min(0),
+    ])
+    .split(area);
     raw_category_browser(frame, app, columns[0]);
     raw_command_list(frame, app, columns[1]);
-}
-
-pub(crate) fn raw_favorites_workspace(
-    frame: &mut Frame,
-    app: &App,
-    area: Rect,
-    terminal_width: u16,
-) {
-    use yoctui_model::RawModeFocus;
-    let catalog = yoctui_model::builtin_raw_catalog();
-    let authority = app.workspace_compatibility.authority();
-    let selected = app.raw_mode.favorite_selection;
-    let count = app.raw_mode.favorites.len();
-    let viewport_height = usize::from(area.height.saturating_sub(4)).max(1);
-    let viewport = yoctui_model::centered_viewport_range(
-        (count > 0).then_some(selected),
-        count,
-        viewport_height,
-    );
-    let position = BoundedScrollIndicator::new(viewport.start, viewport.len(), count).label();
-    let active =
-        app.focus == FocusTarget::Workspace && app.raw_mode.focus == RawModeFocus::Favorites;
-    let title = format!("Raw Mode / Favorites · {position}");
-    let block = pane_block(app, &title, active);
-    let inner = block.inner(area);
-    frame.render_widget(block, area);
-    if inner.is_empty() {
-        return;
-    }
-    if app.raw_mode.favorites.is_empty() {
-        frame.render_widget(
-            Paragraph::new("No Raw favorites.\n\nf adds the selected command from the catalog.\nEsc returns to the catalog browser.")
-                .wrap(Wrap { trim: false }),
-            inner,
-        );
-        return;
-    }
-    let width = usize::from(inner.width);
-    let mut lines = Vec::new();
-    for (offset, favorite) in app.raw_mode.favorites[viewport.clone()].iter().enumerate() {
-        let index = viewport.start + offset;
-        let selected_row = index == selected;
-        let projection = favorite.project(catalog, authority);
-        let state = raw_availability_label(projection.availability.state);
-        let stale = if projection.stale { " · STALE" } else { "" };
-        let command = catalog
-            .command(&favorite.command)
-            .map(raw_command_template)
-            .unwrap_or_else(|| "<command absent from current catalog>".into());
-        let prefix = if selected_row { "▶ " } else { "  " };
-        lines.push(Line::raw(bounded_cell_text(
-            &format!("{prefix}{} · {state}{stale}", favorite.name),
-            width as u16,
-        )));
-        lines.push(Line::raw(bounded_cell_text(
-            &format!("    {command}"),
-            width as u16,
-        )));
-        let defaults = if favorite.parameter_defaults.is_empty() {
-            "defaults: --"
-        } else {
-            "defaults: configured"
-        };
-        let argv = if favorite.additional_arguments.as_slice().is_empty() {
-            "argv: --".to_owned()
-        } else {
-            format!(
-                "argv: {}",
-                favorite.additional_arguments.as_slice().join(" ")
-            )
-        };
-        lines.push(Line::raw(bounded_cell_text(
-            &format!("    {defaults} · {argv}"),
-            width as u16,
-        )));
-        lines.push(Line::raw(bounded_cell_text(
-            &format!(
-                "    reason: {}",
-                projection
-                    .reason
-                    .as_deref()
-                    .unwrap_or("Current catalog and capability authority")
-            ),
-            width as u16,
-        )));
-    }
-    frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), inner);
-    let footer = if terminal_width < 100 {
-        "Enter reopen · i inspect · r rename · o reorder · x remove · Esc back"
-    } else {
-        "Enter reopen · i inspect · r rename · ↑/↓ reorder · x remove · Esc back"
-    };
-    if inner.height > 1 {
-        let footer_area = Rect {
-            x: inner.x,
-            y: inner.y + inner.height.saturating_sub(1),
-            width: inner.width,
-            height: 1,
-        };
-        frame.render_widget(Paragraph::new(footer), footer_area);
-    }
 }
 
 pub(crate) fn raw_execution_workspace(
@@ -143,8 +90,7 @@ pub(crate) fn raw_execution_workspace(
     terminal_width: u16,
 ) {
     use yoctui_model::{
-        RawAttachmentState, RawExecutionOutcome, RawExecutionOwner, RawExecutionPhase,
-        RawInteractionMode, RawOutputStream,
+        RawAttachmentState, RawExecutionOwner, RawInteractionMode, RawOutputStream,
     };
 
     let Some(execution) = app.raw_mode.selected_execution() else {
@@ -155,7 +101,7 @@ pub(crate) fn raw_execution_workspace(
             .map_or("unknown", |command| command.as_str());
         frame.render_widget(
             Paragraph::new(format!(
-                "Command: {command}\nState: Awaiting daemon acknowledgement\n\nNo local process exists. The execution view will install the validated daemon replica when it arrives."
+                "Command: {command}\nState: Awaiting daemon acknowledgement\n\nNo local process exists. The execution view will install the validated daemon replica when it arrives.\n\nEsc returns to the catalog; accepted daemon work continues."
             ))
             .block(pane_block(app, "Raw execution · connecting", true))
             .wrap(Wrap { trim: false }),
@@ -164,16 +110,7 @@ pub(crate) fn raw_execution_workspace(
         return;
     };
 
-    let phase = match execution.phase {
-        RawExecutionPhase::Queued => "QUEUED",
-        RawExecutionPhase::Starting => "STARTING",
-        RawExecutionPhase::Running => "RUNNING",
-        RawExecutionPhase::Cancelling => "CANCELLING",
-        RawExecutionPhase::Terminal(RawExecutionOutcome::Succeeded) => "SUCCEEDED",
-        RawExecutionPhase::Terminal(RawExecutionOutcome::Failed) => "FAILED",
-        RawExecutionPhase::Terminal(RawExecutionOutcome::Cancelled) => "CANCELLED",
-        RawExecutionPhase::Terminal(RawExecutionOutcome::Lost) => "LOST",
-    };
+    let phase = crate::raw_management::raw_phase_label(execution.phase);
     let attachment = match execution.attachment {
         RawAttachmentState::Attached => "ATTACHED",
         RawAttachmentState::Detached => "DETACHED",
@@ -205,14 +142,35 @@ pub(crate) fn raw_execution_workspace(
             )
         },
     );
+    let compact = area.height < 22;
     let rows = Layout::vertical([
-        Constraint::Length(if terminal_width >= 100 { 7 } else { 9 }),
+        Constraint::Length(if compact {
+            5
+        } else if terminal_width >= 100 {
+            7
+        } else {
+            9
+        }),
         Constraint::Min(3),
         Constraint::Length(2),
     ])
     .split(area);
-    frame.render_widget(
-        Paragraph::new(vec![
+    let status = if compact {
+        vec![
+            Line::raw(format!("{phase} · {attachment} · {interaction}")),
+            Line::raw(result),
+            Line::raw(format!(
+                "Search: {} · Follow: {}",
+                app.raw_mode.output.query,
+                if app.raw_mode.output.follow {
+                    "ON"
+                } else {
+                    "PAUSED"
+                }
+            )),
+        ]
+    } else {
+        vec![
             Line::raw(format!(
                 "{} · {} · {} · {}",
                 execution.request.command, interaction, phase, attachment
@@ -236,9 +194,20 @@ pub(crate) fn raw_execution_workspace(
                     "PAUSED"
                 }
             )),
-        ])
-        .block(pane_block(app, "Raw execution", true))
-        .wrap(Wrap { trim: false }),
+        ]
+    };
+    frame.render_widget(
+        Paragraph::new(status)
+            .block(pane_block(
+                app,
+                &if compact {
+                    format!("Raw execution · {}", execution.request.command)
+                } else {
+                    "Raw execution".into()
+                },
+                true,
+            ))
+            .wrap(Wrap { trim: false }),
         rows[0],
     );
 
@@ -273,12 +242,8 @@ pub(crate) fn raw_execution_workspace(
         RawInteractionMode::InteractivePty => raw_pty_output(frame, app, execution, rows[1]),
     }
     frame.render_widget(
-        Paragraph::new(if terminal_width < 100 {
-            "c Cancel  d Detach  r Reattach  f Follow  / Search  Esc Back"
-        } else {
-            "c Cancel · d Detach · r Reattach · f Follow · / Search · Esc Back · ↑/↓ Scroll · ←/→ Horizontal · 1 stdout · 2 stderr"
-        })
-        .block(Block::default().borders(Borders::TOP)),
+        Paragraph::new(crate::footer::raw_mode_shortcuts(app))
+            .block(Block::default().borders(Borders::TOP)),
         rows[2],
     );
 }
@@ -302,7 +267,7 @@ pub(crate) fn raw_output_stream(
             if lines.is_empty() { vec![""] } else { lines }
         })
         .collect::<Vec<_>>();
-    let viewport = usize::from(area.height.saturating_sub(2)).max(1);
+    let viewport = usize::from(area.height.saturating_sub(3)).max(1);
     let start = if app.raw_mode.output.follow {
         lines.len().saturating_sub(viewport)
     } else {
@@ -316,7 +281,22 @@ pub(crate) fn raw_output_stream(
         .iter()
         .skip(start)
         .take(viewport)
-        .map(|line| Line::raw(line.chars().skip(horizontal).collect::<String>()))
+        .map(|line| {
+            let text = line.chars().skip(horizontal).collect::<String>();
+            if !app.raw_mode.output.query.is_empty()
+                && line
+                    .to_lowercase()
+                    .contains(&app.raw_mode.output.query.to_lowercase())
+            {
+                Line::styled(
+                    text,
+                    ThemePalette::for_app(app)
+                        .role(ThemePalette::for_app(app).warning, Modifier::BOLD),
+                )
+            } else {
+                Line::raw(text)
+            }
+        })
         .collect::<Vec<_>>();
     let hits = if app.raw_mode.output.query.is_empty() {
         0
@@ -332,12 +312,8 @@ pub(crate) fn raw_output_stream(
     visible.insert(
         0,
         Line::raw(format!(
-            "retained {} B/{} lines · dropped {} B/{} lines · truncated {} · hits {hits}",
-            output.retained_bytes,
-            output.retained_lines,
-            output.dropped_bytes,
-            output.dropped_lines,
-            output.truncated_chunks
+            "hits {hits} · dropped {}B/{}L · trunc {}",
+            output.dropped_bytes, output.dropped_lines, output.truncated_chunks
         )),
     );
     let title = format!(
@@ -353,7 +329,7 @@ pub(crate) fn raw_output_stream(
             visible
         }),
         pane_block(app, &title, app.raw_mode.output.stream == stream),
-        true,
+        false,
     );
 }
 
@@ -375,14 +351,14 @@ pub(crate) fn raw_pty_output(
             .find(|pty| pty.session_id == id)
     });
     let title = session.map_or_else(
-        || " Raw PTY · awaiting daemon session ".into(),
+        || " Raw PTY preview · o opens interactive terminal ".into(),
         |session| {
             let dimensions = screen.map_or_else(
                 || "size unavailable".into(),
                 |screen| format!("{}x{}", screen.columns, screen.rows_count),
             );
             format!(
-                " Raw PTY · {:?} · {dimensions} · daemon writer lease · {} viewer(s) ",
+                " Raw PTY preview · o terminal · {:?} · {dimensions} · {} viewer(s) ",
                 session.lifecycle, session.viewers
             )
         },

@@ -1,6 +1,7 @@
 //! Mouse.
 
 include!("mouse/routing.rs");
+include!("mouse/raw_workspace.rs");
 
 include!("mouse/workbench_geometry.rs");
 

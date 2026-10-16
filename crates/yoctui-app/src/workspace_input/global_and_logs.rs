@@ -126,6 +126,10 @@ pub fn focus_action_for_app(app: &yoctui_model::App, key: Input) -> Option<Actio
         return focus_action(app.focus, key);
     }
     if key == Input::Esc {
+        if app.screen == Screen::RawMode && app.raw_mode.owns_escape()
+            && (app.focus == FocusTarget::Workspace || app.raw_mode.view == yoctui_model::RawModeView::Execution) {
+            return None;
+        }
         if app.focus == FocusTarget::Workspace
             && app.screen == Screen::Errors
             && app.error_workspace.viewer.is_some()

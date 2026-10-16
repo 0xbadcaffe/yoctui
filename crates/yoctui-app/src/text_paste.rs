@@ -127,6 +127,32 @@ fn target(app: &App) -> Option<Target> {
     {
         return Some(Target::Raw(Box::new(action)));
     }
+    if app.screen == Screen::RawMode
+        && matches!(app.focus, FocusTarget::Workspace | FocusTarget::Dialog)
+    {
+        use yoctui_model::RawModeAction as Raw;
+        if app.raw_mode.favorite_confirmation.is_some() {
+            return None;
+        }
+        if app.raw_mode.favorite_rename.is_some() {
+            return Some(Target::Single(|c| {
+                Action::RawMode(Raw::AppendFavoriteName(c))
+            }));
+        }
+        if app.raw_mode.recipe_picker.is_some() {
+            return Some(Target::Single(|c| {
+                Action::RawMode(Raw::AppendRecipePickerQuery(c))
+            }));
+        }
+        if app.raw_mode.search.editing {
+            return Some(Target::Single(|c| Action::RawMode(Raw::AppendSearch(c))));
+        }
+        if app.raw_mode.output.searching {
+            return Some(Target::Single(|c| {
+                Action::RawMode(Raw::AppendOutputSearch(c))
+            }));
+        }
+    }
     if app.focus != FocusTarget::Workspace {
         return None;
     }

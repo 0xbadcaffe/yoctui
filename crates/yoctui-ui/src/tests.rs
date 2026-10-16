@@ -100,6 +100,7 @@ mod maintenance_fixtures;
 use maintenance_fixtures::*;
 
 mod raw_fixtures;
+mod raw_flow;
 use raw_fixtures::*;
 
 mod concept_layout_geometry;
