@@ -1,13 +1,13 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.347 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.348 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator────────────────┐┌Build Overview───────────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
 │▾ OVERVIEW               ││Overall  build not started · 0%                                                      ││Environment                                 │
 │  ▱ Dashboard            ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                                ││Project          : core-image-minimal       │
-│  ▱ Insights             ││Current Build : core-image-minimal        │Last Build / Job                          ││Machine          : qemux86-64               │
-│    Tasks                ││Current Task  : none                      │✓ Succeeded core-image-minimal · 00:04:55 ││Distro           : poky                     │
+│    Tasks                ││Current Build : core-image-minimal        │Last Build / Job                          ││Machine          : qemux86-64               │
+│  ▱ Insights             ││Current Task  : none                      │✓ Succeeded core-image-minimal · 00:04:55 ││Distro           : poky                     │
 │▾ CONTENT                ││Build Status  : Idle · Exit code: none    │Work · core-image-minimal                 ││Yocto release    : scarthgap                │
 │    Layers               ││Daemon Status : Connected                 │                                          ││Layers enabled   : 7                        │
 │    Recipes              ││Warnings: 0  Errors: 0                    │                                          ││                                            │
@@ -22,23 +22,23 @@
 │  ▱ Errors               ││                                                                                     ││[l] View logs                               │
 │    Configuration        ││                                                                                     ││[e] View errors                             │
 │    Dependencies         ││                                                                                     ││[Alt+e] Verify environment                  │
-│▾ VALIDATE               ││                                                                                     ││[t] Open terminal                           │
-│    Testing              ││                                                                                     ││[d] Open devtool                            │
-│    Security             ││                                                                                     ││                                            │
-│    QA                   ││                                                                                     ││Active Tasks                                │
-│▾ TOOLS                  ││                                                                                     ││No active task events                       │
-│    Raw Mode             ││                                                                                     ││Next Action                                 │
-│    Terminal Sessions    ││                                                                                     ││Build image [Alt+b]                         │
-│    Devtool              │└─────────────────────────────────────────────────────────────────────────────────────┘│Attention                                   │
-│    QEMU / Wic           │┌Resource Telemetry · observed resources and cache────────────────────────────────────┐│No retained warnings or errors              │
-│    Maintenance          ││CPU Usage               18%│RAM Usage                42%│Build FS Usage           63%││Workbench Center                            │
-│  ▱ Build environment    ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫ ││Context: Work · core-image-minimal          │
-│  ▱ Compatibility        ││          4 cores          │        6.7/16.0 GiB        │        55.5 GiB free       ││Active: tasks 0 · jobs 0                    │
-│  ▱ Daemons              ││Sstate: summary not reported                                                         ││Favorite: none                              │
-│  ▱ Diff tool            ││Downloads: 0 completed, 0 failed, 0 active                                           ││Terminal: none                              │
-│  ▱ GitUI                ││Network: unknown; offline readiness: unverified                                      ││[t] Terminal sessions                       │
-│  ▱ Settings             │└─────────────────────────────────────────────────────────────────────────────────────┘│Artifact: none retained                     │
-│                         │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Recent: ✓ Succeeded core-image-minimal ·    │
+│  ▱ Build directory      ││                                                                                     ││[t] Open terminal                           │
+│▾ VALIDATE               ││                                                                                     ││[d] Open devtool                            │
+│    Testing              ││                                                                                     ││                                            │
+│    Security             ││                                                                                     ││Active Tasks                                │
+│    QA                   ││                                                                                     ││No active task events                       │
+│▾ TOOLS                  ││                                                                                     ││Next Action                                 │
+│    Raw Mode             ││                                                                                     ││Build image [Alt+b]                         │
+│    Terminal Sessions    │└─────────────────────────────────────────────────────────────────────────────────────┘│Attention                                   │
+│    Devtool              │┌Resource Telemetry · observed resources and cache────────────────────────────────────┐│No retained warnings or errors              │
+│    QEMU / Wic           ││CPU Usage               18%│RAM Usage                42%│Build FS Usage           63%││Workbench Center                            │
+│    Maintenance          ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫ ││Context: Work · core-image-minimal          │
+│  ▱ Build environment    ││          4 cores          │        6.7/16.0 GiB        │        55.5 GiB free       ││Active: tasks 0 · jobs 0                    │
+│  ▱ Compatibility        ││Sstate: summary not reported                                                         ││Favorite: none                              │
+│  ▱ Daemons              ││Downloads: 0 completed, 0 failed, 0 active                                           ││Terminal: none                              │
+│  ▱ Diff tool            ││Network: unknown; offline readiness: unverified                                      ││[t] Terminal sessions                       │
+│  ▱ GitUI                │└─────────────────────────────────────────────────────────────────────────────────────┘│Artifact: none retained                     │
+│  ▱ Settings             │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Recent: ✓ Succeeded core-image-minimal ·    │
 │                         ││[Alt+b] Build image        │[t] Open terminal           │[Alt+e] Verify environment  ││00:04:55                                    │
 │                         ││                           │                            │                            ││                                            │
 │                         ││Start the selected BitBake │Use the initialized Yocto   │Check layers and            ││                                            │

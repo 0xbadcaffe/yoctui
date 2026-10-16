@@ -1,13 +1,13 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.347 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
+│yoctui v0.1.348 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
 │⣧ Build running · 1 active                                                                                                                                    │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator────────────────┐┌Tasks: core-image-minimal · All──────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW               ││█████████████████████████████████Overall  40%  4/10                                  ││Task        do_compile                      │
 │  ▱ Dashboard            ││Active 1  Waiting 5  Warnings 0  Errors 0  Elapsed 00:16:18                          ││Recipe      bash_5.2.21-2                   │
-│  ▱ Insights             ││Task               Recipe            Status        Time      Progress                ││PN          bash_5.2.21-2                   │
-│    Tasks               1││ do_compile        bash_5.2.21-2     ▶ Running     00:09:50  ███████▏░░ 72%          ││PV          unavailable                     │
+│    Tasks               1││Task               Recipe            Status        Time      Progress                ││PN          bash_5.2.21-2                   │
+│  ▱ Insights             ││ do_compile        bash_5.2.21-2     ▶ Running     00:09:50  ███████▏░░ 72%          ││PV          unavailable                     │
 │▾ CONTENT                ││5 waiting tasks    unavailable       ▫ Waiting     --        metadata unavailable    ││PR          unavailable                     │
 │    Layers               ││  do_fetch         bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││State       ▶ Running                       │
 │    Recipes              ││  do_unpack        bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││Progress    72%                             │
@@ -22,23 +22,23 @@
 │  ▱ Errors               │││ |  CC     builtins/jobs.o                                                          ││oky-linux/bash/5.2.21-r2/temp/log.do_compile│
 │    Configuration        │││ |  CC     execute_cmd.o                                                            ││.85873                                      │
 │    Dependencies         │││ [ 72%] Linking bash                                                                ││Dependencies none reported                  │
+│  ▱ Build directory      ││                                                                                     ││                                            │
 │▾ VALIDATE               ││                                                                                     ││                                            │
 │    Testing              ││                                                                                     ││                                            │
 │    Security             ││                                                                                     ││                                            │
-│    QA                   ││                                                                                     ││                                            │
-│▾ TOOLS                  │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
-│    Raw Mode             │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1────┐│                                            │
-│    Terminal Sessions    ││Status        Operation     Type         Target / Context         Started   Elapsed  ││Actions─────────────────────────────────────│
-│    Devtool              ││▶ Running     core-image-mi Build        4/10                     --        --       ││? Cancel active build  [c] — Unknown        │
-│    QEMU / Wic           ││✓ Succeeded   core-image-mi Build        core-image-minimal       19:12:10  00:04:55 ││  Reason: No current environment capability │
-│    Maintenance          ││✓ Succeeded   busybox       Build        busybox                  19:11:42  00:00:17 ││✓ Open Logs            [l] — Local          │
-│  ▱ Build environment    ││✕ Failed      core-image-mi Build        core-image-minimal       19:08:33  00:01:48 ││✓ Build History        [h] — Local          │
-│  ▱ Compatibility        ││✓ Succeeded   virtual/kerne Build        virtual/kernel           19:07:18  00:00:54 ││? Build options        [Alt+b] — Unknown    │
-│  ▱ Daemons              ││                                                                                     ││  Reason: No current environment capability │
-│  ▱ Diff tool            ││                                                                                     ││                                            │
-│  ▱ GitUI                │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
-│  ▱ Settings             │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│                                            │
-│                         ││CPU Usage               24%│RAM ! unavailable           │BUILD FS ! unavailable      ││                                            │
+│    QA                   │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
+│▾ TOOLS                  │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1────┐│                                            │
+│    Raw Mode             ││Status        Operation     Type         Target / Context         Started   Elapsed  ││Actions─────────────────────────────────────│
+│    Terminal Sessions    ││▶ Running     core-image-mi Build        4/10                     --        --       ││? Cancel active build  [c] — Unknown        │
+│    Devtool              ││✓ Succeeded   core-image-mi Build        core-image-minimal       19:12:10  00:04:55 ││  Reason: No current environment capability │
+│    QEMU / Wic           ││✓ Succeeded   busybox       Build        busybox                  19:11:42  00:00:17 ││✓ Open Logs            [l] — Local          │
+│    Maintenance          ││✕ Failed      core-image-mi Build        core-image-minimal       19:08:33  00:01:48 ││✓ Build History        [h] — Local          │
+│  ▱ Build environment    ││✓ Succeeded   virtual/kerne Build        virtual/kernel           19:07:18  00:00:54 ││? Build options        [Alt+b] — Unknown    │
+│  ▱ Compatibility        ││                                                                                     ││  Reason: No current environment capability │
+│  ▱ Daemons              ││                                                                                     ││                                            │
+│  ▱ Diff tool            │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
+│  ▱ GitUI                │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│                                            │
+│  ▱ Settings             ││CPU Usage               24%│RAM ! unavailable           │BUILD FS ! unavailable      ││                                            │
 │                         ││                           │                            │                            ││System Status───────────────────────────────│
 │                         ││                           │                            │                            ││✓ Daemon Connected · Local · version unavai…│
 │                         ││                         ▅ │                            │                            ││✓ BitBake Running · v2.8.0 · Jobs 1         │

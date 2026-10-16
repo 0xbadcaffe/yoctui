@@ -15,160 +15,160 @@ pixel_height = 1000
 [[artifact]]
 id = "active-build-tasks"
 source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"
-source_sha256 = "76705a25bd32583a6cbcf2f8789f6a5c328c6d98a708eeff42edb77416f78f3b"
+source_sha256 = "76365565c1aa7f222f3341e9c800f0984dfb9530ec463e9d47afd6f4fe3af6bc"
 file = "docs/media/screenshots/01-active-build-tasks.png"
-sha256 = "40ee93bdc3c6d3f7c2e9fe7a30c230c8480759a87aee0058b04961c77a7dba16"
+sha256 = "6605e758a897f0d976c639b352a6df1195c85485a146df14c1d035d3f8154127"
 
 [[artifact]]
 id = "kernel-device-tree"
 source = "crates/yoctui-ui/tests/golden/readme-kernel-device-tree-160x50.cells"
-source_sha256 = "c449f3343357248f7ded3c34823d1a6a84bdc3d699728ff0b71fb6a08efde72f"
+source_sha256 = "95b4549d32ec644e3e674378686fab9dcce79cfe2e0a5096671326a93b5eb3e0"
 file = "docs/media/screenshots/02-kernel-device-tree.png"
-sha256 = "4b5e49ccfa7678af52ea784d4766e926ba9eb9f82dc669a339131dd94b622ee2"
+sha256 = "641191111401130604caf45aeda0eca771044507d953ccd7ef88ba24309839bf"
 
 [[artifact]]
 id = "uboot-device-tree"
 source = "crates/yoctui-ui/tests/golden/readme-uboot-device-tree-160x50.cells"
-source_sha256 = "a62ef68f7d77afe8beb005b156316a6f5dae7c42c2ef487817a77f996b0ae876"
+source_sha256 = "ee3f0122be477acc2a2da65d65ac199ff57c743402f376d3523e5e64facb084c"
 file = "docs/media/screenshots/03-uboot-device-tree.png"
-sha256 = "188aec39249e832fd0aab0f6b1de30124b11728a069a956357033286302700d0"
+sha256 = "95ceb84fcd53f6c698ee4d0b7f54d218202d879f66eb2a3d34b1efbd0ead2fa5"
 
 [[artifact]]
 id = "kernel-menuconfig"
 source = "crates/yoctui-ui/tests/golden/readme-kernel-menuconfig-160x50.cells"
-source_sha256 = "229b9fe9e22f4a1738e10f810f2239654de4919a0f8b9252d450f2eb7322d852"
+source_sha256 = "525266a6160c4c12228c65a7191ec7b0456d00a24d6dc5fecee1e4fdfbc0b90b"
 file = "docs/media/screenshots/04-kernel-menuconfig.png"
-sha256 = "930da6c1bd57cfb7fd9f153dcabc2b44736684f3538d6741660275c87d6a36bb"
+sha256 = "c61c7c350c425a480bf8bde1bf327bad4a87ce2f47480327e764fc4de17770cf"
 
 [[artifact]]
 id = "uboot-menuconfig"
 source = "crates/yoctui-ui/tests/golden/readme-uboot-menuconfig-160x50.cells"
-source_sha256 = "5e92daecf9b7fecd4c2a967560906c7205d36c079214a53d7a232ad08d3d2b35"
+source_sha256 = "1a2c66fa8d6e9565df585fe58788192527f54c648688c5eafe797a8547796512"
 file = "docs/media/screenshots/05-uboot-menuconfig.png"
-sha256 = "c85768a0f4eb8fd2f6c89b5ed5c2a8a9d265f7d222a647d79525413a39376b32"
+sha256 = "62af4a78041a0dded91d0a6605e6aa00f5494e1ed476ad9960e27ca825c24636"
 
 [[artifact]]
 id = "rootfs-composition"
 source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells"
-source_sha256 = "5fbf1b3471e567efa91a7b42ac8ea517726f64a56aecd0a8415ff2ca5d300050"
+source_sha256 = "c71753f4a62ca1c96af94d73803934da1e949c07f0d71f8bb959e6444a456a86"
 file = "docs/media/screenshots/06-rootfs-composition.png"
-sha256 = "5b31ea3a56923417984ee3f481951b22a6816fd490845ff5ca1c4223bf1b2f77"
+sha256 = "101cffe9300515dde297743f3fe42cc17c27aa48d5215328324d4c65d57567b0"
 
 [[artifact]]
 id = "idle-dashboard"
 source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
-source_sha256 = "744bbe5eb3998f8e6454364e893afd322bbd8601753921aafd2657f59cd166d2"
+source_sha256 = "9f0cd3786f52fda6aa797f999490efe560c529da03b4f9add5fbe1db5cdaf8ab"
 file = "docs/media/screenshots/07-idle-dashboard.png"
-sha256 = "aa4f0b29f89c8a6f68bcff8d6d7c0a3bb4ecd0bbf1050301939d41378d206b6e"
+sha256 = "dde7cb62e6bbefe14abaec4403fa099d40dd00f705290fac8285039bb2afdcf4"
 
 [[artifact]]
 id = "failed-build-errors"
 source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells"
-source_sha256 = "21b8888af4a00b84d2c80b103bd0dde225bf59430c43f7a0e988ea7e10813446"
+source_sha256 = "34c833ad11888e2533c42f57241a6d76fcfd30b2f6ce6089bc127ad8cfc4bbbf"
 file = "docs/media/screenshots/08-failed-build-errors.png"
-sha256 = "99f558ef7098473e89ecca69bee7e3da6d7651d3b73de11d359f6f47f8e7f421"
+sha256 = "71e16a3ec436d9df8f73280cacc5a78cc480bbe5c5c31f6b560b642849a620db"
 
 [[artifact]]
 id = "editor-application-menu"
 source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells"
-source_sha256 = "79b33ebd681bd145c0675db1fe0e50ffbad661bc478a6488cf260b28cf1f2d1e"
+source_sha256 = "1baa1c461f964a350a0352857526e42eed677c59a6faa931dd7b24d0db102a9e"
 file = "docs/media/screenshots/09-editor-application-menu.png"
-sha256 = "a673e968afdb76fc23d959f6d07ac3db83050c05b3c6ac5a3490935cdc252bd7"
+sha256 = "57d523c8091f09ee202e05d7c31ec45e8450a84aecc233e0b52a69f6b60b91f3"
 
 [[artifact]]
 id = "terminal-sessions"
 source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells"
-source_sha256 = "2f496d963ef131190d9324d8d07d1e8345567b189e8c80c3b9e1e046465e91f9"
+source_sha256 = "d5aaa31f16f83b1fbab970ab49d05c9d23cc7e4b8944e23e9dca5c128d209f01"
 file = "docs/media/screenshots/10-terminal-sessions.png"
-sha256 = "95fd2c410b20af7362074287d80d32e5d94b41458cfc7e821da2bcf07d26889e"
+sha256 = "e7c579d2ee632669315808cf904c5ffafffb527a12b9755856f3cf18a20fb4fe"
 
 [[artifact]]
 id = "device-tree-editor"
 source = "crates/yoctui-ui/tests/golden/readme-device-tree-editor-160x50.cells"
-source_sha256 = "acc5ad135d2c355dbdcacad89d2c80424c360a67ef191aa27c5552644ac0dd8d"
+source_sha256 = "dd2e714d49b6d1651dcee8338767631705bbb70bedbda47a9573db8cb282e54c"
 file = "docs/media/screenshots/11-device-tree-editor.png"
-sha256 = "61aba79b579196dd95f146186fdfa37881409b3f87d9af15132ad8d1d56afe0c"
+sha256 = "fbc55510af0e12209df6f746031b0849e227b897e1a43df201aa2629c907f903"
 
 [[artifact]]
 id = "device-tree-compile-options"
 source = "crates/yoctui-ui/tests/golden/readme-device-tree-compile-options-160x50.cells"
-source_sha256 = "8f13f08231d5a6de185c4e288e7d510bfb6866642696b857992a0dfb174e87ef"
+source_sha256 = "bf78fff37f0b1dc8a8af520fceab9b08d177d3dfa4f3e652c1d060874588f128"
 file = "docs/media/screenshots/12-device-tree-compile-options.png"
-sha256 = "ac3ccebc548e6cd8a3740816018d7d133cbb5e2553449156aff9ca3d4c137222"
+sha256 = "9ee9601651eacf1ee8a591e3b06cc8ca53003099d52b8f489e517a570382f6e2"
 
 [[artifact]]
 id = "cloning"
 source = "crates/yoctui-ui/tests/golden/readme-cloning-160x50.cells"
-source_sha256 = "85bf4e983d40eb9c5870a3d55accc04ec088d64a538da39a5a97f64580e94da1"
+source_sha256 = "8b9e70c8c9ae9d8f5ea448b505a6b1395483f5126c1ab28d55002b87844ad624"
 file = "docs/media/screenshots/13-cloning.png"
-sha256 = "a23faf2ed66dc89655982eb88af3fc5c191c5829c996b4975259a6fbc73e720b"
+sha256 = "140a4635edfbd522ff30f3566123d6541e92bd4c006a9dcca6d0991179001bb3"
 
 [[artifact]]
 id = "cancelling"
 source = "crates/yoctui-ui/tests/golden/readme-cancelling-160x50.cells"
-source_sha256 = "2d008e4ead6a0e592cb6d1ba6bb4496ef2121b21dcbd9b83dbda47582c231572"
+source_sha256 = "e6de9dbeeb105f3a3034114609265b5e7c117b132e24db3fe77ccc8c7039f431"
 file = "docs/media/screenshots/14-cancelling.png"
-sha256 = "2c643301f5623ecdbbcdbba13b908c398ded2a88846f4323f1d93937a51ac8b3"
+sha256 = "e420b1642d87a47483c9db6a6c578f1b3f84a0fe71de11172175d75e66739bf9"
 
 [[artifact]]
 id = "search-empty"
 source = "crates/yoctui-ui/tests/golden/readme-search-empty-160x50.cells"
-source_sha256 = "396efda05c7f6216547361fd4abd462f73aec633c11062279a13348a1c7f6269"
+source_sha256 = "44ef4cbd999f66670616c95dce4355c6bf43b118f7e480df66ab656b622f02db"
 file = "docs/media/screenshots/15-search-empty.png"
-sha256 = "ae5b6d83ed340725084feba1ce75e58d86e1440c046a0157025ff1cbc52bb035"
+sha256 = "7751abe3fe5e06aa2710d2c3a995bc40f4a6fa844d6d0259a1e182472239c66c"
 
 [[artifact]]
 id = "gitui-diff"
 source = "crates/yoctui-ui/tests/golden/readme-gitui-diff-160x50.cells"
-source_sha256 = "0019af1fbe761d093bb9e4607a2b871b1913832aa3caf6d8e2ccef6418ccde6c"
+source_sha256 = "6ab7a54cc0109fb44a2a046322faa3de4670c5807956dee2b192e50cb3374445"
 file = "docs/media/screenshots/16-gitui-diff.png"
-sha256 = "48c3c16f58ac36836fbe76a4176f225c17573d94d27528c7b4e8b538ddb00345"
+sha256 = "543f903ce75df865777d8e773f24ba0d716abbc1d1e4ebba09c2558284ef761d"
 
 [[artifact]]
 id = "gitui-commit"
 source = "crates/yoctui-ui/tests/golden/readme-gitui-commit-160x50.cells"
-source_sha256 = "8c8f25631c3c8decf297ff2ae3593f8031085efc0a2de109184735ad8754844f"
+source_sha256 = "a2349b1d4e9540ed9c38620c7fb0167009f12dc9f9d2e92cd266179c47f57286"
 file = "docs/media/screenshots/17-gitui-commit.png"
-sha256 = "0535d5814a0846d53ead70285686ce1d3bb34d9eb63ad2e2f10b843df87f8edb"
+sha256 = "c5ddb0d98ae3e21450449cca88a6e0809a468dbc6f7ee89c1c370db3147b2978"
 
 [[artifact]]
 id = "offline-dashboard"
 source = "crates/yoctui-ui/tests/golden/readme-offline-dashboard-160x50.cells"
-source_sha256 = "f3031bc71d6c7b51769e9f8071c476731f4747bdcdb9f72ad5e75b0168e07279"
+source_sha256 = "9177c3067f821d1ace6d2d578d81b49fe63691e9659951d795d043c18454f950"
 file = "docs/media/screenshots/18-offline-dashboard.png"
-sha256 = "2510e8ee24feb582ff0acc8da46dd998c58ae4622872ca54127a51eb8539954d"
+sha256 = "35bd550e04d9c7b52bde4c072fb430e4b2a5b8166ddcfaab7342b6e8bfbd2cdb"
 
 [[artifact]]
 id = "saved-build-history"
 source = "crates/yoctui-ui/tests/golden/readme-saved-build-history-160x50.cells"
-source_sha256 = "43d333ab8f09c6e26a5158bf88c44e255b91d55798ab3b2ea6ec4fdca5a7293c"
+source_sha256 = "ac8a070f90bea9ba6efaf053b51eb6064bda96568c1c5634d83d900da91415e1"
 file = "docs/media/screenshots/19-saved-build-history.png"
-sha256 = "046a17360960ca413a111b2c45902935e70338207f60dfe7e8c8790e17f620fd"
+sha256 = "9df2f349220e93fb353b837776af46118aa0e35415cfbce4c5a7a04c719e80a8"
 
 [[artifact]]
 id = "saved-build-logs"
 source = "crates/yoctui-ui/tests/golden/readme-saved-build-logs-160x50.cells"
-source_sha256 = "be7fc7f5c8baa1c20a0c249b6c4a32534cea0a0fb5aa64525af35136573a69a0"
+source_sha256 = "bb648be5c0cfdfc1eefd826b83dc85b8b434b546a65a39b537da99b3d08ae5ff"
 file = "docs/media/screenshots/20-saved-build-logs.png"
-sha256 = "d19919c65d2900c752ef0455cba7cb979ec12ae5a6871c3b8a0d99100d9da3f0"
+sha256 = "4a0f0a47dab81cc7e23cbe4ecc02ffc1422aa3b449dcdf2a27c2d08fa504cd11"
 
 [[artifact]]
 id = "systemd-services"
 source = "crates/yoctui-ui/tests/golden/readme-systemd-services-160x50.cells"
-source_sha256 = "05117d465ec44039101cc3dd43e213a77a11a9eca18cc0f07b9a1b0eefd09173"
+source_sha256 = "bd373df80d8da3a0d9c2cdcb7bbaaea2afdd28ef219b93ad045102af4cdf7597"
 file = "docs/media/screenshots/21-systemd-services.png"
-sha256 = "afd2ffe68528e42d17cb6446ab4570a84971befc7c4d12d97f5359cbcec29b1c"
+sha256 = "95940c6d0eb2ece2d1a5042196c31ccd2ee703644074b2068e83d97760c75974"
 
 [[artifact]]
 id = "system-dbus"
 source = "crates/yoctui-ui/tests/golden/readme-system-dbus-160x50.cells"
-source_sha256 = "e9b6f7f35f174716858cfe1ceda4356b652315839afd15cb00f4ad27284cb8c8"
+source_sha256 = "bb714bf76ac604db3c3d75790448ebe9ed51e5b378df4b50e0fc6db154102556"
 file = "docs/media/screenshots/22-system-dbus.png"
-sha256 = "57ebd79c8d62b5c498c3c97778c27f62f85a05429915fd303787177b02e17614"
+sha256 = "074cd43ecbd26bc28d056df4d360b083855b2f4049f493d3026df54581b98fea"
 
 [[artifact]]
 id = "udev-rules"
 source = "crates/yoctui-ui/tests/golden/readme-udev-rules-160x50.cells"
-source_sha256 = "4422811f21a562c787756e20f1fe145d7a8199db1ebab14e7507fc66d53ca780"
+source_sha256 = "36ef7e11275cc1b411ffc5233cf6d8f09696be5176390a52b2963d95558e6339"
 file = "docs/media/screenshots/23-udev-rules.png"
-sha256 = "b5aa75ac75b2b9ef78b69a7fe43e4d03774b373970678a9173854f4e82d9264e"
+sha256 = "14f547a7576981aa7928918fd634347bf5db7fb99d19a9f7371df7eb97b830d2"
