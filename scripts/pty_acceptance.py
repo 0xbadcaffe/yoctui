@@ -159,9 +159,9 @@ class TerminalAcceptance:
 
     def dismiss_onboarding(self, workbench_timeout=8):
         # The OSC window title precedes the first frame and is not readiness.
-        self.wait_for("Esc dismiss")
+        self.wait_for("Six-step workbench path")
         os.write(self.master, b"\x1b")
-        self.wait_for("Quit", absent="Esc dismiss", timeout=workbench_timeout)
+        self.wait_for("Quit", absent="Six-step workbench path", timeout=workbench_timeout)
 
     def finish(self):
         os.write(self.master, b"q")

@@ -21,7 +21,7 @@ for width, height in ((80, 24), (160, 48)):
                                   "--backend", "process", "--build-dir", build, "--no-color")
         try:
             # Window title and setup clear/home escapes are not a rendered frame.
-            terminal.wait_for("Esc dismiss")
+            terminal.wait_for("Six-step workbench path")
             first_frame = time.perf_counter() - started
             terminal.dismiss_onboarding()
             terminal.finish()

@@ -94,6 +94,8 @@ fn compatibility_ui_inspector_responsive_absent_themes_and_no_color_are_safe() {
 #[test]
 fn compatibility_ui_inspector_is_discoverable_without_changing_tasks_golden() {
     let mut app = App::new(32, 8192);
+    app.navigator_selection =
+        App::navigator_selection_for_destination(WorkspaceDestination::Compatibility).unwrap();
     let navigator = rendered_text(&app, 180, 40);
     assert!(navigator.contains("Compatibility"), "{navigator}");
     app.command_palette_open = true;

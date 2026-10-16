@@ -65,7 +65,7 @@ fn ux_onboarding_renders_real_typed_workflow_states_responsively_and_accessibly(
         assert!(output.contains("CURRENT"), "{output}");
         assert!(output.contains("BLOCKED"), "{output}");
         assert!(output.contains("Enter open"), "{output}");
-        assert!(output.contains("Esc dismiss"), "{output}");
+        assert!(output.contains("Esc close"), "{output}");
     }
 
     app.onboarding

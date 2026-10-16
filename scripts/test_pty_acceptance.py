@@ -124,19 +124,19 @@ class AcceptanceHelpers(unittest.TestCase):
 
     def test_title_escape_is_not_rendered_onboarding_readiness(self):
         terminal = self.terminal()
-        terminal.screen.feed(b"\x1b]0;yoctui Esc dismiss\x07")
+        terminal.screen.feed(b"\x1b]0;yoctui Six-step workbench path\x07")
         terminal.process.poll.return_value = None
         with patch("pty_acceptance.time.monotonic", side_effect=[0, 1, 9]):
-            with self.assertRaisesRegex(AssertionError, "PTY missing 'Esc dismiss'"):
-                terminal.wait_for("Esc dismiss")
+            with self.assertRaisesRegex(AssertionError, "PTY missing 'Six-step workbench path'"):
+                terminal.wait_for("Six-step workbench path")
 
     def test_wait_for_requires_popup_absence_as_well_as_footer(self):
         terminal = self.terminal()
         terminal.screen = Mock()
-        terminal.screen.text.side_effect = ["Quit Esc dismiss", "Quit"]
+        terminal.screen.text.side_effect = ["Quit Six-step workbench path", "Quit"]
         terminal.process.poll.return_value = None
         with patch("pty_acceptance.time.monotonic", side_effect=[0, 1, 2]):
-            terminal.wait_for("Quit", absent="Esc dismiss")
+            terminal.wait_for("Quit", absent="Six-step workbench path")
         self.assertEqual(terminal.read.call_count, 2)
 
     def test_successful_exit_requires_alternate_screen_restoration(self):

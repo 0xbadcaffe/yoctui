@@ -10,15 +10,16 @@ fn tasks_navigator_clicks_actual_rendered_destinations_across_geometries() {
         (120, 40, false),
         (80, 24, false),
     ] {
-        for (index, label, expected) in [
-            (20, "Devtool", Screen::Devtool),
-            (21, "QEMU / Wic", Screen::Images),
+        for (destination, label, expected) in [
+            (WorkspaceDestination::Devtool, "Devtool", Screen::Devtool),
+            (WorkspaceDestination::QemuWic, "QEMU / Wic", Screen::Images),
         ] {
             let mut app = App::new(10, 1024);
             app.screen = Screen::Tasks;
             app.focus = FocusTarget::Navigator;
             app.preferences.mouse_enabled = true;
-            app.navigator_selection = index;
+            app.navigator_selection =
+                App::navigator_selection_for_destination(destination).unwrap();
             if compact {
                 app.preferences.density = yoctui_model::UiDensity::Compact;
             }
@@ -28,7 +29,11 @@ fn tasks_navigator_clicks_actual_rendered_destinations_across_geometries() {
                 .unwrap();
             let buffer = terminal.backend().buffer();
             let literal = !compact && width == 160 && height == 48;
-            let label = if literal && index == 21 { "Wic" } else { label };
+            let label = if literal && destination == WorkspaceDestination::QemuWic {
+                "Wic"
+            } else {
+                label
+            };
             let row = (0..height)
                 .find(|row| {
                     let text = (0..width.min(26))
