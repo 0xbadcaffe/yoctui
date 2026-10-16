@@ -199,6 +199,16 @@ pub(super) fn terminal_completion_outcome(
         .find(|details| details.id == session_id);
     match summary.lifecycle {
         yoctui_model::ClientDaemonLifecycle::Exited => match details.and_then(|d| d.exit_code) {
+            Some(_)
+                if matches!(
+                    pending.completion,
+                    yoctui_model::TerminalCompletion::ReturnEditor { .. }
+                ) =>
+            {
+                Some(TerminalCompletionOutcome::Succeeded(
+                    pending.completion.clone(),
+                ))
+            }
             Some(0) => Some(TerminalCompletionOutcome::Succeeded(
                 pending.completion.clone(),
             )),
