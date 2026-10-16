@@ -312,6 +312,10 @@ pub(crate) fn bbmask_assignment(value: &str) -> String {
     )
 }
 pub(crate) fn help(frame: &mut Frame, app: &App, area: Rect) {
+    if app.help_about {
+        crate::branding::render_about(frame, app, area);
+        return;
+    }
     let function_keys = FUNCTION_SHORTCUTS
         .chunks(5)
         .map(|shortcuts| {
@@ -337,17 +341,8 @@ pub(crate) fn help(frame: &mut Frame, app: &App, area: Rect) {
         })
         .collect::<Vec<_>>()
         .join("\n");
-    let area = if area.width >= 42 && area.height >= 38 {
-        let regions = Layout::vertical([Constraint::Length(6), Constraint::Min(0)]).split(area);
-        crate::branding::render_brand_logo(frame, app, regions[0]);
-        regions[1]
-    } else {
-        area
-    };
     let text = format!(
-        "Keyboard and action reference\nOperator guide: press g or F12 > Help > Operator guide for the interactive workflow.\n\nAbout Yoctui\nYoctui {}\nBuild SHA: {}\nA terminal workbench for operating, inspecting, building, and debugging Yocto/OpenBMC workspaces.\n\nGlobal shortcuts\n{function_keys}\n\nNavigation: arrows move, Enter opens, Esc returns, F12 opens the application menu, ?/F1 opens this screen, q quits.\nSearch: / opens global search; Alt+n switches content and filename search.\nTerminal writers and editors retain literal keys; terminal search is Ctrl+B /.\nDestructive and publishing operations show an exact confirmation before execution.\n\nGlobal action shortcuts\n{catalog_actions}",
-        env!("CARGO_PKG_VERSION"),
-        env!("YOCTUI_BUILD_SHA")
+        "Keyboard and action reference\nOperator guide: press g or F12 > Help > Operator guide for the interactive workflow.\nAbout Yoctui: F12 > Help > About Yoctui shows the logo, version and project information.\n\nGlobal shortcuts\n{function_keys}\n\nNavigation: arrows move, Enter opens, Esc returns, F12 opens the application menu, ?/F1 opens this screen, q quits.\nSearch: / opens global search; Alt+n switches content and filename search.\nTerminal writers and editors retain literal keys; terminal search is Ctrl+B /.\nDestructive and publishing operations show an exact confirmation before execution.\n\nGlobal action shortcuts\n{catalog_actions}"
     );
     frame.render_widget(
         Paragraph::new(text.clone())

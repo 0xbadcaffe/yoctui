@@ -78,6 +78,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
             if s == Screen::Help {
                 app.help_scroll = 0;
+                app.help_about = false;
             }
             if s == Screen::BuildHistory {
                 app.saved_builds.reload_requested = true;

@@ -94,6 +94,35 @@ pub(crate) fn render_brand_logo(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(Paragraph::new(lines).alignment(Alignment::Center), area);
 }
 
+pub(crate) fn render_about(frame: &mut Frame, app: &App, area: Rect) {
+    let popup = dialog_popup_rect(area, 84, 19);
+    let palette = ThemePalette::for_app(app);
+    let block = Block::default().title("About Yoctui").borders(Borders::ALL);
+    let inner = block.inner(popup);
+    frame.render_widget(block.style(palette.base()), popup);
+    let regions = Layout::vertical([Constraint::Length(6), Constraint::Min(0)]).split(inner);
+    render_brand_logo(frame, app, regions[0]);
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::styled(
+                format!("yoctui v{}", env!("CARGO_PKG_VERSION")),
+                palette.focus(),
+            ),
+            Line::raw("Yocto development workbench"),
+            Line::raw("Build · inspect · develop · debug"),
+            Line::raw("Roy Cohen · MIT license"),
+            Line::raw(format!("Build SHA: {}", env!("YOCTUI_BUILD_SHA"))),
+            Line::raw("https://github.com/0xbadcaffe/yoctui"),
+            Line::raw(""),
+            Line::raw("F1 keyboard help · g operator guide · Esc dashboard"),
+        ])
+        .alignment(Alignment::Center)
+        .wrap(Wrap { trim: true })
+        .style(palette.base()),
+        regions[1],
+    );
+}
+
 /// Portable splash; the caller holds the initial frame for at least 750 ms.
 pub fn render_startup(frame: &mut Frame, app: &App) {
     let area = frame.area();

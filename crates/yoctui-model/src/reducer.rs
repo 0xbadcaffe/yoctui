@@ -21,7 +21,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::FileDiff(action) => return crate::file_diff::reduce(app, action),
         Action::EditorSettings(action) => return crate::editor_preferences::reduce(app, action),
         Action::ScrollHelp { delta } => {
-            let maximum = (global_operator_action_definitions().len() + 18).saturating_sub(app.help_visible_rows);
+            if app.help_about { return None; }
+            // Twelve fixed reference lines plus the function-key and action rows.
+            let lines = 12 + FUNCTION_SHORTCUTS.len().div_ceil(5)
+                + global_operator_action_definitions().iter().filter(|action| action.shortcut != "none").count();
+            let maximum = lines.saturating_sub(app.help_visible_rows);
             app.help_scroll = shifted_index(app.help_scroll, delta, maximum + 1);
             return None;
         }
@@ -38,6 +42,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         && matches!(
             &action,
             Action::OpenOnboarding
+                | Action::OpenAbout
                 | Action::OpenGitUi
                 | Action::Open(_)
                 | Action::OpenRawFavorites
@@ -65,6 +70,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::OpenAbout => {
+            let effect = update(app, Action::Open(Screen::Help));
+            app.help_about = true;
+            effect
+        }
         Action::ScrollDaemonManager { delta } => { app.scroll_daemon_manager(delta); None }
         Action::ToggleInspector => {
             app.set_inspector_visible(!app.inspector_visible);

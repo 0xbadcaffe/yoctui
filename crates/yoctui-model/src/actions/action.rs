@@ -4,6 +4,7 @@ pub enum Action {
     FileDiff(FileDiffAction),
     EditorSettings(EditorSettingsAction),
     ScrollHelp { delta: isize },
+    OpenAbout,
 
     Hardware(HardwareAction),
     KernelDebug(KernelDebugAction),

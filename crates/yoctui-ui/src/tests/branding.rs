@@ -64,7 +64,7 @@ fn portable_branding_respects_ascii_monochrome_and_light_themes() {
 }
 
 #[test]
-fn portable_branding_help_keeps_guide_and_about_visible() {
+fn portable_branding_help_and_about_are_distinct_at_all_demo_sizes() {
     let mut app = App::new(16, 4096);
     app.screen = Screen::Help;
     app.focus = FocusTarget::Workspace;
@@ -72,6 +72,44 @@ fn portable_branding_help_keeps_guide_and_about_visible() {
         let text = rendered_text_at(&app, width, height, literal_now());
         assert!(text.contains("Operator guide"), "{text}");
         assert!(text.contains("About Yoctui"), "{text}");
-        assert_eq!(text.contains('█'), width == 160, "{text}");
+        assert!(!text.contains('█'), "{text}");
+        assert!(!text.contains("Build SHA:"), "{text}");
+        update(&mut app, Action::OpenAbout);
+        let about = rendered_text_at(&app, width, height, literal_now());
+        assert!(about.contains("About Yoctui"), "{about}");
+        assert!(about.contains("yoctui v"), "{about}");
+        assert!(about.contains("Yocto development workbench"), "{about}");
+        assert!(about.contains("Build SHA:"), "{about}");
+        assert!(about.contains('█'), "{about}");
+        assert!(!about.contains("Keyboard and action reference"), "{about}");
+        assert!(!about.contains("Connecting to daemon..."), "{about}");
+        update(&mut app, Action::Open(Screen::Help));
+    }
+}
+
+#[test]
+fn operator_guide_shows_current_steps_and_real_picker_inventory_responsively() {
+    for (width, height) in [(80, 24), (100, 30), (160, 48), (240, 80)] {
+        let mut app = App::new(16, 4096);
+        app.workspace.recipes = vec![yoctui_model::Recipe {
+            name: "core-image-minimal".into(),
+            ..Default::default()
+        }];
+        update(&mut app, Action::OpenOnboarding);
+        update(&mut app, Action::AdvanceOnboarding);
+        let guide = rendered_text_at(&app, width, height, literal_now());
+        assert!(guide.contains("1/6 completed"), "{guide}");
+        assert!(guide.contains("Select a target"), "{guide}");
+        assert!(guide.contains("n complete current"), "{guide}");
+        update(&mut app, Action::ActivateOnboardingStep);
+        let picker = rendered_text_at(&app, width, height, literal_now());
+        assert!(picker.contains("Available image targets"), "{picker}");
+        assert!(picker.contains("core-image-minimal"), "{picker}");
+        assert!(!picker.contains("No image recipes"), "{picker}");
+        update(&mut app, Action::CancelImagePicker);
+        assert!(
+            rendered_text_at(&app, width, height, literal_now())
+                .contains("Six-step workbench path")
+        );
     }
 }

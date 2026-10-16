@@ -4,6 +4,7 @@ impl App {
             file_diff: FileDiffState::default(),
             editor_settings: EditorSettingsState::default(),
             help_scroll: 0,
+            help_about: false,
             help_visible_rows: 20,
             saved_builds: SavedBuildState::default(),
             require_daemon: false,
