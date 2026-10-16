@@ -2,6 +2,7 @@
 use super::*;
 
 pub(crate) fn prepare_build(app: &mut App, target: Option<String>) {
+    app.onboarding.resume_after_dialog = None;
     app.build.cache = BuildCacheState::default();
     app.build.status = BuildStatus::LoadingWorkspace;
     app.build.target = target;

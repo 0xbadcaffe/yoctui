@@ -5,9 +5,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::OpenOnboarding => {
             app.onboarding.open = true;
             app.onboarding.selected = app.onboarding.progress.current;
+            app.onboarding.resume_after_dialog = None;
         }
         Action::DismissOnboarding => {
             app.onboarding.open = false;
+            app.onboarding.resume_after_dialog = None;
             app.onboarding.progress.dismissed = true;
             synchronize_focus(app);
             return Some(Effect::PersistOnboarding);
@@ -17,13 +19,34 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::SelectOnboarding { .. } => {}
         Action::ActivateOnboardingStep if app.onboarding.open => {
-            let route = onboarding_route(app, app.onboarding.selected);
+            let selected = app.onboarding.selected;
+            if selected != OnboardingStep::Environment
+                && app.onboarding_projection().rows.iter().any(|row| {
+                    row.step == selected
+                        && matches!(
+                            row.status,
+                            OnboardingStepStatus::Blocked | OnboardingStepStatus::Unavailable
+                        )
+                })
+            {
+                app.notification = Some("Complete or explicitly skip earlier steps, and satisfy this step's prerequisites first.".into());
+                return None;
+            }
+            let route = onboarding_route(app, selected);
+            app.notification = None;
+            app.onboarding.resume_after_dialog = matches!(
+                selected,
+                OnboardingStep::Target | OnboardingStep::FirstBuild
+            )
+            .then_some(selected);
             app.onboarding.open = false;
             return update(app, route);
         }
         Action::ActivateOnboardingStep => {}
         Action::AdvanceOnboarding if app.onboarding.open => {
             let current = app.onboarding.progress.current;
+            // n/s always apply to the current workflow step, not a browsed row.
+            app.onboarding.selected = current;
             if !onboarding_completion_evidence(app, current) {
                 app.notification = Some(format!(
                     "{} is not complete: {}",
@@ -37,6 +60,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         })
                 ));
             } else {
+                app.notification = None;
                 app.onboarding.progress.completed.insert(current);
                 app.onboarding.progress.skipped.remove(&current);
                 app.onboarding.move_after_current();
@@ -47,6 +71,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::AdvanceOnboarding => {}
         Action::SkipOnboardingStep if app.onboarding.open => {
             let current = app.onboarding.progress.current;
+            app.onboarding.selected = current;
             app.onboarding.progress.skipped.insert(current);
             app.onboarding.progress.completed.remove(&current);
             app.onboarding.move_after_current();

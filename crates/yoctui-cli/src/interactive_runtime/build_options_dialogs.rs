@@ -25,15 +25,7 @@ impl InteractiveRuntime {
                     compatibility_workspace_action(&mut runtime.app, Action::BeginBuildTargetEdit)
                 }
                 Input::Char('i') => {
-                    let images = runtime
-                        .app
-                        .workspace
-                        .recipes
-                        .iter()
-                        .map(|recipe| recipe.name.as_str())
-                        .filter(|name| name.contains("image"))
-                        .map(str::to_owned)
-                        .collect();
+                    let images = runtime.app.image_targets();
                     compatibility_workspace_action(
                         &mut runtime.app,
                         Action::OpenImageBuildPicker(images),

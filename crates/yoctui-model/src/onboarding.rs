@@ -136,6 +136,8 @@ pub struct OnboardingState {
     pub open: bool,
     pub selected: OnboardingStep,
     pub progress: OnboardingProgress,
+    /// Client-local return route; never persisted as completed progress.
+    pub resume_after_dialog: Option<OnboardingStep>,
 }
 
 impl Default for OnboardingState {
@@ -145,16 +147,24 @@ impl Default for OnboardingState {
             open: false,
             selected: progress.current,
             progress,
+            resume_after_dialog: None,
         }
     }
 }
 
 impl OnboardingState {
+    pub fn resume_dialog(&mut self) {
+        if let Some(step) = self.resume_after_dialog.take() {
+            self.selected = step;
+            self.open = true;
+        }
+    }
     pub fn install(&mut self, progress: OnboardingProgress, open: bool) -> Result<(), String> {
         progress.validate()?;
         self.selected = progress.current;
         self.progress = progress;
         self.open = open;
+        self.resume_after_dialog = None;
         Ok(())
     }
 
@@ -285,7 +295,7 @@ impl App {
 pub fn onboarding_route(app: &App, step: OnboardingStep) -> crate::Action {
     match step {
         OnboardingStep::Environment => crate::Action::Open(Screen::BuildEnvironment),
-        OnboardingStep::Target => crate::Action::OpenImagePicker(app.available_images.clone()),
+        OnboardingStep::Target => crate::Action::OpenImagePicker(app.image_targets()),
         OnboardingStep::FirstBuild => crate::Action::OpenBuildOptions,
         OnboardingStep::Diagnostics
             if app.build.errors > 0 || app.logs.diagnostics().next().is_some() =>
@@ -301,36 +311,37 @@ pub fn onboarding_route(app: &App, step: OnboardingStep) -> crate::Action {
 pub fn onboarding_completion_evidence(app: &App, step: OnboardingStep) -> bool {
     match step {
         OnboardingStep::Environment => app.build_environment.connected(),
-        OnboardingStep::Target => app.build.target.as_ref().is_some_and(|target| {
-            app.available_images.iter().any(|image| image == target)
-                || app
-                    .workspace
-                    .recipes
+        OnboardingStep::Target => app
+            .build
+            .target
+            .as_ref()
+            .is_some_and(|target| app.is_image_target(target)),
+        OnboardingStep::FirstBuild | OnboardingStep::Diagnostics => {
+            onboarding_completion_evidence(app, OnboardingStep::Target)
+                && (app
+                    .build_history
                     .iter()
-                    .any(|recipe| &recipe.name == target)
-        }),
-        OnboardingStep::FirstBuild => {
-            !app.build_history.is_empty()
-                || matches!(
-                    app.build.status,
-                    BuildStatus::Completed | BuildStatus::Cancelled | BuildStatus::Failed
-                )
-        }
-        OnboardingStep::Diagnostics => {
-            !app.build_history.is_empty()
-                || matches!(
-                    app.build.status,
-                    BuildStatus::Completed | BuildStatus::Cancelled | BuildStatus::Failed
-                )
+                    .any(|record| record.target == app.build.target)
+                    || (app.build.started.is_some()
+                        && matches!(
+                            app.build.status,
+                            BuildStatus::Completed | BuildStatus::Cancelled | BuildStatus::Failed
+                        )))
         }
         OnboardingStep::ArtifactsRootfs => {
+            let current_image = |identity: &crate::ImageArtifactIdentity| {
+                app.build.target.as_ref() == Some(&identity.image)
+                    && app.workspace.variables.get("MACHINE") == Some(&identity.machine)
+            };
             matches!(
-                app.image_artifacts,
-                ImageArtifactInventoryState::Available { .. }
-                    | ImageArtifactInventoryState::Partial { .. }
+                &app.image_artifacts,
+                ImageArtifactInventoryState::Available { inventory, .. }
+                    | ImageArtifactInventoryState::Partial { inventory, .. }
+                    if inventory.artifacts.iter().any(|artifact| current_image(&artifact.identity))
             ) || matches!(
-                app.rootfs_composition,
-                RootfsCompositionState::Available { .. } | RootfsCompositionState::Partial { .. }
+                &app.rootfs_composition,
+                RootfsCompositionState::Available { composition, .. } | RootfsCompositionState::Partial { composition, .. }
+                    if current_image(&composition.image)
             )
         }
         OnboardingStep::Terminal => app.daemon.status == ClientReplicaStatus::Current,
@@ -340,16 +351,18 @@ pub fn onboarding_completion_evidence(app: &App, step: OnboardingStep) -> bool {
 fn onboarding_unavailable(app: &App, step: OnboardingStep) -> bool {
     match step {
         OnboardingStep::Environment => false,
-        OnboardingStep::Target => {
-            !app.build_environment.connected()
-                || (!onboarding_completion_evidence(app, step) && app.available_images.is_empty())
-        }
+        OnboardingStep::Target => !app.has_image_targets(),
         OnboardingStep::FirstBuild => {
             !app.build_environment.connected()
                 || !onboarding_completion_evidence(app, OnboardingStep::Target)
         }
         OnboardingStep::Diagnostics => false,
-        OnboardingStep::ArtifactsRootfs => !onboarding_completion_evidence(app, step),
+        // Opening Images initiates artifact discovery; not having loaded it
+        // yet must not prevent reaching the discovery screen.
+        OnboardingStep::ArtifactsRootfs => {
+            !app.build_environment.connected()
+                || !onboarding_completion_evidence(app, OnboardingStep::Target)
+        }
         OnboardingStep::Terminal => app.daemon.status != ClientReplicaStatus::Current,
     }
 }
@@ -360,14 +373,14 @@ fn onboarding_prerequisite(app: &App, step: OnboardingStep) -> String {
             "Verified connected environment is current.".into()
         }
         OnboardingStep::Environment => "Requires environment verification.".into(),
-        OnboardingStep::Target if app.available_images.is_empty() => {
-            "Requires verified image-recipe inventory.".into()
+        OnboardingStep::Target if !app.has_image_targets() => {
+            "Waiting for image recipes; verify the environment and recipe inventory.".into()
         }
         OnboardingStep::Target => "Requires one current image target selection.".into(),
         OnboardingStep::FirstBuild => {
-            "Requires verified environment and selected target; confirmation stays explicit.".into()
+            "Requires a completed attempt for this image; review and confirmation stay explicit.".into()
         }
-        OnboardingStep::Diagnostics => "Requires one terminal build attempt.".into(),
+        OnboardingStep::Diagnostics => "Requires a completed attempt for the selected image, not another recipe or raw command.".into(),
         OnboardingStep::ArtifactsRootfs => {
             "Requires a current correlated deploy artifact or rootfs composition.".into()
         }

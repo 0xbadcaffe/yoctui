@@ -73,14 +73,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 if app.build.target.is_some() {
                     open_dialog(app, Dialog::BuildOptions);
                 } else {
-                    let images = app
-                        .workspace
-                        .recipes
-                        .iter()
-                        .map(|recipe| recipe.name.as_str())
-                        .filter(|name| name.contains("image"))
-                        .map(str::to_owned)
-                        .collect();
+                    let images = app.image_targets();
                     return update(app, Action::OpenImageBuildPicker(images));
                 }
             } else {
@@ -90,6 +83,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::CloseBuildOptions => {
             if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
                 close_dialog(app);
+                app.onboarding.resume_dialog();
             }
         }
         Action::OpenImagePicker(mut images) => {
@@ -207,6 +201,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     if std::mem::take(&mut app.pending_image_build_options) {
                         app.resume_build_options_on_image_picker_cancel = false;
                         open_dialog(app, Dialog::BuildOptions);
+                    } else {
+                        app.onboarding.resume_dialog();
                     }
                 }
             }
@@ -217,6 +213,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 app.pending_image_build_options = false;
                 if std::mem::take(&mut app.resume_build_options_on_image_picker_cancel) {
                     open_dialog(app, Dialog::BuildOptions);
+                } else {
+                    app.onboarding.resume_dialog();
                 }
             }
         }
@@ -236,14 +234,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     }),
                 );
             } else {
-                let images = app
-                    .workspace
-                    .recipes
-                    .iter()
-                    .map(|recipe| recipe.name.as_str())
-                    .filter(|name| name.contains("image"))
-                    .map(str::to_owned)
-                    .collect();
+                let images = app.image_targets();
                 return update(app, Action::OpenImageBuildPicker(images));
             }
         }

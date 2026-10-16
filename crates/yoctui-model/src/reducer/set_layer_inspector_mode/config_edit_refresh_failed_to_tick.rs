@@ -119,18 +119,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     app.recipe_selection
                         .min(app.workspace.recipes.len().saturating_sub(1))
                 });
-            app.available_images = if app.build_environment.connected() {
-                app.workspace
-                    .recipes
-                    .iter()
-                    .filter(|recipe| {
-                        recipe.name.starts_with("core-image-") || recipe.name.ends_with("-image")
-                    })
-                    .map(|recipe| recipe.name.clone())
-                    .collect()
-            } else {
-                Vec::new()
-            };
+            app.refresh_image_targets();
             if app.config_scope.as_ref().is_some_and(|scope| {
                 !app.workspace
                     .recipes
@@ -172,18 +161,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 .map(|recipe| recipe.name.clone())
                 .collect::<HashSet<_>>();
             app.workspace.recipes = recipes;
-            app.available_images = if app.build_environment.connected() {
-                app.workspace
-                    .recipes
-                    .iter()
-                    .filter(|recipe| {
-                        recipe.name.starts_with("core-image-") || recipe.name.ends_with("-image")
-                    })
-                    .map(|recipe| recipe.name.clone())
-                    .collect()
-            } else {
-                Vec::new()
-            };
+            app.refresh_image_targets();
             if app
                 .config_scope
                 .as_ref()

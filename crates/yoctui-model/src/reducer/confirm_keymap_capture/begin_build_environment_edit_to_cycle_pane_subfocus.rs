@@ -103,6 +103,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 && *pending == generation
             {
                 app.build_environment = BuildEnvironmentState::Connected(profile.clone());
+                app.refresh_image_targets();
                 app.notification = None;
             }
         }

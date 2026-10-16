@@ -295,6 +295,9 @@ impl DaemonClientSnapshot {
         app.invalidate_task_projection();
         app.logs = build.logs;
         install_daemon_build_environment(app);
+        // Replay may load recipes before the daemon environment is marked
+        // connected. Rebuild all image selectors after installing both.
+        app.refresh_image_targets();
     }
 
     pub fn resume_cursor(&self) -> Option<yoctui_protocol::daemon::ResumeCursor> {

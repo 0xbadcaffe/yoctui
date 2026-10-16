@@ -31,7 +31,14 @@ fn daemon_attach_build_restores_and_updates_typed_progress_without_replacing_pre
                 bitbake_version: Some("2.8.1".into()),
                 release: Some("5.0.19".into()),
                 layers: Vec::new(),
-                recipes: Vec::new(),
+                recipes: vec![yoctui_protocol::RecipeData {
+                    name: "core-image-minimal".into(),
+                    version: Some("1.0".into()),
+                    layer: Some("core".into()),
+                    preferred_version: None,
+                    file: Some("/work/poky/meta/recipes-core/images/core-image-minimal.bb".into()),
+                    append_count: None,
+                }],
             },
         },
         DaemonBuildEvent::Started {
@@ -57,7 +64,7 @@ fn daemon_attach_build_restores_and_updates_typed_progress_without_replacing_pre
             progress: Some(77),
         },
     ];
-    let mut app = yoctui_model::App::new(64, 64 * 1024);
+    let mut app = yoctui_model::App::new_unconfigured(64, 64 * 1024);
     app.screen = Screen::Recipes;
     app.focus = FocusTarget::Inspector;
     app.theme = yoctui_model::Theme::MatrixGreen;
@@ -75,6 +82,11 @@ fn daemon_attach_build_restores_and_updates_typed_progress_without_replacing_pre
     ));
     assert_eq!(app.build.status, yoctui_model::BuildStatus::Running);
     assert_eq!(app.build.target.as_deref(), Some("core-image-minimal"));
+    assert_eq!(app.available_images, ["core-image-minimal"]);
+    assert_eq!(
+        yoctui_model::onboarding_route(&app, yoctui_model::OnboardingStep::Target),
+        yoctui_model::Action::OpenImagePicker(vec!["core-image-minimal".into()])
+    );
     assert_eq!((app.build.completed, app.build.total), (102, Some(4090)));
     assert_eq!(
         app.tasks[&yoctui_model::TaskId("busybox:do_compile".into())].progress,

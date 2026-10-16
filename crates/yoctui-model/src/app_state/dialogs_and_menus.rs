@@ -53,11 +53,7 @@ impl App {
                             .build_dir
                             .is_none()
                             .then_some("Load a Yocto workspace first"),
-                        OperatorActionLocalRequirement::ImageRecipeAvailable => (!self
-                            .workspace
-                            .recipes
-                            .iter()
-                            .any(|recipe| recipe.name.contains("image")))
+                        OperatorActionLocalRequirement::ImageRecipeAvailable => (!self.has_image_targets())
                         .then_some("No image recipes are available"),
                         OperatorActionLocalRequirement::SelectedRecipe => (self.screen
                             != Screen::Recipes

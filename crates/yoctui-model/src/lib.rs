@@ -25,6 +25,7 @@ mod global_search;
 mod hardware;
 mod image;
 mod image_console;
+mod image_targets;
 mod internal_log;
 mod kernel_debug;
 mod kernel_instrumentation;

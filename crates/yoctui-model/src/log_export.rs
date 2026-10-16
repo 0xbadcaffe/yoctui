@@ -337,15 +337,7 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenCommandPalette => Action::OpenCommandPalette,
         CommandId::Quit => Action::Quit,
         CommandId::BuildImage => Action::OpenBuildOptions,
-        CommandId::SelectImage => Action::OpenImagePicker(
-            app.workspace
-                .recipes
-                .iter()
-                .map(|recipe| recipe.name.as_str())
-                .filter(|name| name.contains("image"))
-                .map(str::to_owned)
-                .collect(),
-        ),
+        CommandId::SelectImage => Action::OpenImagePicker(app.image_targets()),
         CommandId::BuildSelectedRecipe => Action::BeginSelectedRecipeBuild,
         CommandId::EditBbmask => Action::BeginBbmaskEdit,
         CommandId::OpenDashboard => Action::Open(Screen::Dashboard),

@@ -138,6 +138,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::CancelRecipeTask => {
             if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                 close_dialog(app);
+                app.onboarding.resume_dialog();
             }
         }
         Action::ConfirmDevtoolModify => {

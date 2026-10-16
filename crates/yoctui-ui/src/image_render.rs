@@ -58,12 +58,8 @@ pub(crate) fn images_tabs_line(app: &App, width: u16) -> Line<'static> {
 }
 
 pub(crate) fn image_artifacts_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let recipe_count = app
-        .workspace
-        .recipes
-        .iter()
-        .filter(|recipe| recipe.name.contains("image"))
-        .count();
+    let image_targets = app.image_targets();
+    let recipe_count = image_targets.len();
     let machine = app
         .workspace
         .variables
@@ -80,13 +76,10 @@ pub(crate) fn image_artifacts_workspace(frame: &mut Frame, app: &App, area: Rect
             app.build.target.as_deref().unwrap_or("not selected")
         )),
     ];
-    let recipe_targets = app
-        .workspace
-        .recipes
+    let recipe_targets = image_targets
         .iter()
-        .filter(|recipe| recipe.name.contains("image"))
         .take(8)
-        .map(|recipe| recipe.name.as_str())
+        .map(String::as_str)
         .collect::<Vec<_>>();
     lines.push(Line::from(format!(
         "Recipe targets: {}",
