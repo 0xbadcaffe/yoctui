@@ -1,5 +1,7 @@
 use super::*;
 mod runqueue_completion;
+mod terminal_journal_performance;
+mod terminal_screen_budget;
 
 fn client_id(byte: u8) -> ClientId {
     ClientId([byte; 16])

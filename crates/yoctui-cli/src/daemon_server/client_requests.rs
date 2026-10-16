@@ -11,7 +11,18 @@ pub(super) fn service(
         if !client.connection.is_readable()? {
             break;
         }
-        if client.attached && client.last_sequence < services.daemon_journal.snapshot().sequence {
+        let message = client.connection.receive::<ClientMessage>();
+        // Keystrokes and resizes use a session writer epoch, not a journal
+        // generation, and publish no direct events. Let normal ordered fan-out
+        // catch up afterwards instead of sending the entire build on every key.
+        let input_only = matches!(
+            &message,
+            Ok(ClientMessage::PtyInput(_) | ClientMessage::PtyResize(_))
+        );
+        if !input_only
+            && client.attached
+            && client.last_sequence < services.daemon_journal.snapshot().sequence
+        {
             // Commands can publish direct events. Bring a lagging replica to
             // the current cursor first; never skip old state or send an event
             // with a sequence gap just to prioritize writer control.
@@ -20,7 +31,7 @@ pub(super) fn service(
             client.connection.send(&ServerMessage::Snapshot(snapshot))?;
             client.last_sequence = sequence;
         }
-        match client.connection.receive::<ClientMessage>() {
+        match message {
                 Ok(ClientMessage::Hello(hello)) => {
                     if !yoctui_protocol::daemon::negotiate_version(
                         hello.minimum_version, hello.maximum_version, ProtocolVersion::CURRENT,
@@ -199,7 +210,13 @@ pub(super) fn service(
                                     .publish(yoctui_protocol::daemon::DaemonEvent::PtyScreen(
                                         screen,
                                     ))?;
+                                let sequence = event.sequence;
                                 client.connection.send(&ServerMessage::Event(event))?;
+                                // The viewport event was delivered directly. Do
+                                // not replay it again during normal fan-out:
+                                // duplicate sequence numbers force a reconnect
+                                // and drop this client's writer lease.
+                                client.last_sequence = sequence;
                                 CommandOutcome::Accepted
                             }
                             Err(message) => CommandOutcome::Rejected {

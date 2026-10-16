@@ -1,3 +1,13 @@
+fn decimal_width(value: u64) -> usize {
+    value.checked_ilog10().map_or(1, |log| log as usize + 1)
+}
+
+fn terminal_screen_sizes(snapshot: &DaemonSnapshot) -> Result<std::collections::HashMap<PtySessionId, usize>, DaemonSnapshotError> {
+    snapshot.pty_screens.iter().map(|screen| {
+        Ok((screen.session_id, serde_json::to_vec(screen)?.len()))
+    }).collect()
+}
+
 /// Single-owner snapshot/event journal. Calling `synchronize` while holding the
 /// daemon state's lock establishes the snapshot/replay watermark before a
 /// client is added to the live subscriber set.
@@ -10,6 +20,9 @@ pub struct DaemonSnapshotJournal {
     published_events: u64,
     published_event_bytes: u64,
     snapshot_serializations: u64,
+    // Exact leaf sizes let a screen replace itself without re-encoding the
+    // entire retained build/other terminals to prove the snapshot byte bound.
+    pty_screen_bytes: std::collections::HashMap<PtySessionId, usize>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -53,6 +66,7 @@ impl DaemonSnapshotJournal {
             });
         }
         Ok(Self {
+            pty_screen_bytes: terminal_screen_sizes(&snapshot)?,
             snapshot,
             events: VecDeque::new(),
             limits,
@@ -107,7 +121,23 @@ impl DaemonSnapshotJournal {
                 maximum: MAX_FRAME_BYTES,
             });
         }
-        let conservative_bytes = self.snapshot_bytes_upper_bound.saturating_add(event_bytes);
+        let counter_growth = decimal_width(sequence) + decimal_width(generation)
+            - decimal_width(self.snapshot.sequence) - decimal_width(self.snapshot.generation);
+        let incoming_screen = if let DaemonEvent::PtyScreen(screen) = &sequenced.event {
+            Some((screen.session_id, serde_json::to_vec(screen)?.len()))
+        } else { None };
+        let conservative_bytes = match &sequenced.event {
+            // These bytes are replayed but not retained in the snapshot.
+            DaemonEvent::PtyOutput { .. } => self.snapshot_bytes_upper_bound.saturating_add(counter_growth),
+            DaemonEvent::PtyScreen(_) => {
+                let (id, bytes) = incoming_screen.expect("screen size was measured");
+                let previous = self.pty_screen_bytes.get(&id).copied();
+                let comma = usize::from(previous.is_none() && !self.snapshot.pty_screens.is_empty());
+                self.snapshot_bytes_upper_bound.saturating_sub(previous.unwrap_or(0))
+                    .saturating_add(bytes).saturating_add(counter_growth + comma)
+            }
+            _ => self.snapshot_bytes_upper_bound.saturating_add(event_bytes),
+        };
         let snapshot_bytes_upper_bound = if conservative_bytes <= self.limits.snapshot_bytes
             && matches!(
                 &sequenced.event,
@@ -115,15 +145,25 @@ impl DaemonSnapshotJournal {
                     | DaemonEvent::Log(_)
                     | DaemonEvent::JobChanged(_)
                     | DaemonEvent::Telemetry(_)
+                    | DaemonEvent::PtyOutput { .. }
+                    | DaemonEvent::PtyChanged(_)
+                    | DaemonEvent::PtyRemoved { .. }
+                    | DaemonEvent::PtyScreen(_)
             ) {
-            // Build, log, job, and telemetry reduction cannot reject a payload
+            // Build, log, job, telemetry and PTY metadata/output reduction cannot reject a payload
             // after the frame and sequence checks above. Telemetry only advances
             // the snapshot counters; its encoded event also covers their growth.
+            // PtyScreen validates its complete payload BEFORE mutating state.
+            // Its measured leaf-size delta covers replacement, the array comma,
+            // and counter growth; no other terminal/build data needs cloning.
             // Apply these recurring records in
             // place while the conservative size ledger proves that the
             // resulting snapshot remains bounded; validation-sensitive event
             // variants retain the transactional clone below.
             apply_sequenced_event(&mut self.snapshot, &sequenced)?;
+            if let Some((id, bytes)) = incoming_screen {
+                self.pty_screen_bytes.insert(id, bytes);
+            }
             while self.snapshot.recent_logs.len() > self.limits.recent_logs {
                 self.snapshot.recent_logs.remove(0);
             }
@@ -152,10 +192,15 @@ impl DaemonSnapshotJournal {
                     maximum: self.limits.snapshot_bytes,
                 });
             }
+            let screen_bytes = terminal_screen_sizes(&candidate)?;
             self.snapshot = candidate;
+            self.pty_screen_bytes = screen_bytes;
             encoded_bytes
         };
         self.snapshot_bytes_upper_bound = snapshot_bytes_upper_bound;
+        if let DaemonEvent::PtyRemoved { session_id } = &sequenced.event {
+            self.pty_screen_bytes.remove(session_id);
+        }
         self.published_events = self.published_events.saturating_add(1);
         self.published_event_bytes = self
             .published_event_bytes

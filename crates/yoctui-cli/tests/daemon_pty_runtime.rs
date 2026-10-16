@@ -19,6 +19,10 @@ use yoctui_protocol::{
 
 #[path = "daemon_pty_runtime/busy_console.rs"]
 mod busy_console;
+#[path = "daemon_pty_runtime/input_latency.rs"]
+mod input_latency;
+#[path = "daemon_pty_runtime/viewport_sequence.rs"]
+mod viewport_sequence;
 
 struct DaemonGuard {
     binary: PathBuf,
@@ -262,14 +266,7 @@ fn exercise_terminal_kind(kind: PtyKind) {
         .unwrap();
     receive_command_result(&mut connection);
 
-    connection
-        .send(&ClientMessage::PtyViewport(PtyViewport {
-            request_id: RequestId(5),
-            session_id: yoctui_protocol::daemon::PtySessionId(1),
-            scrollback_offset: 0,
-        }))
-        .unwrap();
-    receive_command_result(&mut connection);
+    viewport_sequence::assert_ordered_after_viewport(&mut connection);
     connection
         .send(&ClientMessage::Command(CommandRequest {
             request_id: RequestId(6),

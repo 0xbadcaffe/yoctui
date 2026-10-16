@@ -284,7 +284,14 @@ impl DaemonCommand {
             | Self::TerminatePty { .. }
             | Self::TakePtyControl { .. }
             | Self::ReleasePtyControl { .. }
-            | Self::CancelJob { .. } => None,
+            | Self::CancelJob { .. }
+            // Raw validates the confirmed preview, capability generation, build
+            // directory and request identity. Unrelated PTY output is not a
+            // change to that intent and must not reject its submission/control.
+            | Self::StartRaw { .. }
+            | Self::StartRawPty { .. }
+            | Self::CancelRaw { .. }
+            | Self::SetRawAttachment { .. } => None,
             _ => Some(generation),
         }
     }
