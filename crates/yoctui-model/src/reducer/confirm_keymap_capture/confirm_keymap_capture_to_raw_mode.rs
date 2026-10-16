@@ -145,6 +145,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         RawModeAction::OpenExecution(request.command.clone()),
                     );
                     app.raw_mode.output.request = Some(request.id.clone());
+                    app.focus = FocusTarget::Workspace;
                     return Some(Effect::StartRaw(request));
                 }
                 Err(error) => app.raw_mode.notification = Some(error.to_string()),
@@ -181,6 +182,47 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 "Raw execution is terminal, unknown, or already has that attachment state.".into(),
             );
         }
+        Action::RawMode(RawModeAction::OpenExecutionTerminal) => {
+            let id = app.raw_mode.selected_execution().and_then(|execution| {
+                match execution.owner.as_ref() {
+                    Some(RawExecutionOwner::Pty(id)) => id.daemon_pty_id(),
+                    _ => None,
+                }
+            });
+            if let Some(index) =
+                id.and_then(|id| app.daemon.pty_sessions.iter().position(|pty| pty.id == id))
+            {
+                app.restore_startup_screen(Screen::TerminalSessions);
+                app.focus = FocusTarget::Workspace;
+                app.focus_return = None;
+                app.terminal.browser_open = false;
+                app.terminal.single_session = true;
+                app.terminal.reset_transient_mode();
+                app.select_terminal_pane(app.pane_layout.focused, index);
+                return crate::update(app, Action::TerminalTakeControl);
+            }
+            app.raw_mode.notification =
+                Some("This command has no available interactive terminal.".into());
+        }
+        Action::RawMode(RawModeAction::ActivateHistory) => {
+            let authority = app.workspace_compatibility.authority().cloned();
+            reduce_raw_mode(
+                &mut app.raw_mode,
+                builtin_raw_catalog(),
+                authority.as_ref(),
+                RawModeAction::ActivateHistory,
+            );
+            if let Some(execution) = app.raw_mode.selected_execution()
+                && app.raw_mode.view == RawModeView::Execution
+                && !execution.phase.is_terminal()
+                && execution.attachment == RawAttachmentState::Detached
+            {
+                return Some(Effect::SetRawAttachment {
+                    request: execution.request.id.clone(),
+                    attached: true,
+                });
+            }
+        }
         Action::RawMode(RawModeAction::CloseExecution) => {
             let detach = app
                 .raw_mode
@@ -204,6 +246,15 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::RawMode(action) => {
+            if matches!(
+                action,
+                RawModeAction::SelectCategory { .. }
+                    | RawModeAction::SelectCommand { .. }
+                    | RawModeAction::SelectHistory { .. }
+                    | RawModeAction::SelectFavorite { .. }
+            ) {
+                app.focus = FocusTarget::Workspace;
+            }
             let authority = app.workspace_compatibility.authority().cloned();
             let persist_favorites = matches!(
                 action,
@@ -212,6 +263,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     | RawModeAction::MoveFavorite { .. }
                     | RawModeAction::RemoveFavorite
                     | RawModeAction::ConfirmFavorite
+                    | RawModeAction::ConfirmFavoriteRename
             );
             reduce_raw_mode(
                 &mut app.raw_mode,

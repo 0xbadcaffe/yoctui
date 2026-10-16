@@ -149,7 +149,9 @@ pub(crate) fn install_raw_execution_snapshots(
             return Err("duplicate Raw execution request snapshot".into());
         }
     }
+    let selected = app.raw_mode.selected_history_request();
     app.raw_mode.execution_states = executions;
+    app.raw_mode.restore_history_selection(selected.as_ref());
     Ok(())
 }
 
@@ -208,11 +210,9 @@ pub(crate) fn install_raw_history_snapshots(
         .iter()
         .map(raw_history_record_from_protocol)
         .collect::<Result<Vec<_>, _>>()?;
+    let selected = app.raw_mode.selected_history_request();
     yoctui_model::install_raw_history(&mut app.raw_mode.history, records)
         .map_err(|error| error.to_string())?;
-    app.raw_mode.history_selection = app
-        .raw_mode
-        .history_selection
-        .min(app.raw_mode.history.len().saturating_sub(1));
+    app.raw_mode.restore_history_selection(selected.as_ref());
     Ok(())
 }

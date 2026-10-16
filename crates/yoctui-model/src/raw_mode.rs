@@ -23,6 +23,8 @@ include!("raw_mode/command_model.rs");
 include!("raw_mode/favorites.rs");
 include!("raw_mode/catalog.rs");
 include!("raw_mode/state_accessors.rs");
+include!("raw_mode/history_flow.rs");
+include!("raw_mode/favorite_edit.rs");
 include!("raw_mode/reducer_dispatch.rs");
 include!("raw_mode/output_navigation.rs");
 include!("raw_mode/form_navigation.rs");

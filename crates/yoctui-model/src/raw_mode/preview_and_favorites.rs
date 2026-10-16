@@ -59,34 +59,12 @@ fn request_raw_preview(
     match catalog.preview(&request, authority) {
         Ok(preview) => {
             state.preview = Some(preview);
+            state.preview_scroll = 0;
             state.notification = None;
             state.enter_view(RawModeView::Preview, RawModeFocus::Preview);
         }
         Err(error) => state.notification = Some(error.to_string()),
     }
-}
-
-fn activate_raw_history(state: &mut RawModeState, catalog: &RawCatalog) {
-    let command = state
-        .history
-        .get(state.history_selection)
-        .map(|record| record.command.clone());
-    let Some(command) = command.and_then(|command| {
-        catalog
-            .command(&command)
-            .map(|catalog_command| (command, catalog_command.category.clone()))
-    }) else {
-        state.notification = Some("The retained Raw command is stale or unavailable.".into());
-        return;
-    };
-    state.command = Some(command.0);
-    state.category = Some(command.1);
-    state.search.query.clear();
-    state.search.editing = false;
-    state.return_stack.clear();
-    state.view = RawModeView::Browser;
-    state.browser_column = RawBrowserColumn::Commands;
-    state.focus = RawModeFocus::Commands;
 }
 
 fn activate_raw_favorite(

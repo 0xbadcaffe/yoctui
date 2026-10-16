@@ -121,4 +121,5 @@ mod raw_history_accepts_only_terminal_outcomes_and_sanitizes_execution_authority
 
 mod raw_history_install_is_bounded_newest_first_and_replaces_duplicate_requests;
 
+mod raw_history_flow;
 mod raw_output_selection_follow_search_scroll_and_session_mapping_are_bounded;

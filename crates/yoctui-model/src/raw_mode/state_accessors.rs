@@ -13,6 +13,7 @@ impl RawModeState {
             search: RawSearchState::default(),
             form: None,
             preview: None,
+            preview_scroll: 0,
             recipe_picker: None,
             execution: None,
             execution_states: BTreeMap::new(),
@@ -22,6 +23,7 @@ impl RawModeState {
             favorites: Vec::new(),
             favorite_selection: 0,
             favorite_confirmation: None,
+            favorite_rename: None,
             notification: None,
             return_stack: Vec::new(),
         };

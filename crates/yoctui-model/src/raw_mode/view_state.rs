@@ -260,6 +260,7 @@ pub struct RawModeState {
     pub search: RawSearchState,
     pub form: Option<RawCommandForm>,
     pub preview: Option<RawExecutionPreview>,
+    pub preview_scroll: usize,
     pub recipe_picker: Option<RawRecipePicker>,
     pub execution: Option<RawCommandId>,
     pub execution_states: BTreeMap<RawRequestId, RawExecutionState>,
@@ -269,6 +270,7 @@ pub struct RawModeState {
     pub favorites: Vec<RawFavorite>,
     pub favorite_selection: usize,
     pub favorite_confirmation: Option<RawFavoriteConfirmation>,
+    pub favorite_rename: Option<String>,
     pub notification: Option<String>,
     return_stack: Vec<(RawModeView, RawModeFocus)>,
 }
@@ -307,6 +309,7 @@ pub enum RawModeAction {
     },
     AppendRecipePickerQuery(char),
     BackspaceRecipePickerQuery,
+    ClearRecipePickerQuery,
     ConfirmRecipePicker,
     CancelRecipePicker,
     EditParameterInput {
@@ -318,7 +321,12 @@ pub enum RawModeAction {
     },
     EditAdditionalArguments(PopupEditorCommand),
     RequestPreview,
+    ScrollPreview { delta: isize },
     ConfirmPreview,
+    SubmissionFailed {
+        request: RawRequestId,
+        message: String,
+    },
     CancelExecution(RawRequestId),
     CloseExecution,
     SetExecutionAttachment {
@@ -342,6 +350,8 @@ pub enum RawModeAction {
         delta: isize,
     },
     ActivateHistory,
+    ReviewHistory,
+    OpenExecutionTerminal,
     OpenFavorites,
     SelectFavorite {
         delta: isize,
@@ -351,6 +361,12 @@ pub enum RawModeAction {
     RenameFavorite {
         name: String,
     },
+    BeginFavoriteRename,
+    AppendFavoriteName(char),
+    BackspaceFavoriteName,
+    ClearFavoriteName,
+    ConfirmFavoriteRename,
+    CancelFavoriteRename,
     MoveFavorite {
         delta: isize,
     },

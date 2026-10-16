@@ -20,7 +20,7 @@ fn reconcile_raw_mode(state: &mut RawModeState, catalog: &RawCatalog) {
     reconcile_raw_command(state, catalog);
     state.history_selection = state
         .history_selection
-        .min(state.history.len().saturating_sub(1));
+        .min(state.history_request_ids().len().saturating_sub(1));
     state.favorite_selection = state
         .favorite_selection
         .min(state.favorites.len().saturating_sub(1));
@@ -52,6 +52,9 @@ fn shifted_index(current: usize, length: usize, delta: isize) -> usize {
 }
 
 fn select_raw_category(state: &mut RawModeState, catalog: &RawCatalog, delta: isize) {
+    state.browser_column = RawBrowserColumn::Categories;
+    state.focus = RawModeFocus::Categories;
+    state.notification = None;
     let categories = catalog.browser_categories();
     let current = state
         .category
@@ -70,6 +73,9 @@ fn select_raw_category(state: &mut RawModeState, catalog: &RawCatalog, delta: is
 }
 
 fn select_raw_command(state: &mut RawModeState, catalog: &RawCatalog, delta: isize) {
+    state.browser_column = RawBrowserColumn::Commands;
+    state.focus = RawModeFocus::Commands;
+    state.notification = None;
     let visible = raw_visible_commands(state, catalog);
     let current = state
         .command
@@ -86,6 +92,13 @@ fn open_raw_selected(
     catalog: &RawCatalog,
     authority: Option<&DaemonCompatibilitySnapshot>,
 ) {
+    if state.search.query.is_empty() && state.category.as_ref().and_then(|id| catalog.category(id))
+        .is_some_and(|category| category.kind == RawCategoryKind::Favorites)
+        && let Some(index) = state.favorites.iter().position(|favorite| Some(&favorite.command) == state.command.as_ref()) {
+        state.favorite_selection = index;
+        activate_raw_favorite(state, catalog, authority);
+        return;
+    }
     let Some(command) = state.selected_command(catalog) else {
         state.notification = Some("No Raw command is selected.".into());
         return;
@@ -187,6 +200,7 @@ fn raw_availability_reason(availability: &RawCommandAvailability) -> String {
 }
 
 fn raw_mode_back(state: &mut RawModeState) {
+    state.notification = None;
     if state.search.editing {
         state.search.editing = false;
         state.focus = match state.browser_column {

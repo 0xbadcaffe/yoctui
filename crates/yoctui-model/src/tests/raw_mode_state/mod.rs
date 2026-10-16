@@ -235,3 +235,4 @@ mod raw_history_catalog_replacement_retains_stale_records_without_replay;
 mod raw_mode_empty_replacement_and_large_indices_never_panic;
 
 mod raw_category_browser_pins_favorites_before_reference_order;
+mod raw_favorite_flow;

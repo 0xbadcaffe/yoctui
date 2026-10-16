@@ -20,6 +20,7 @@ pub fn reduce_raw_mode(
         RawModeAction::Back => raw_mode_back(state),
         RawModeAction::BeginSearch => {
             state.search.editing = true;
+            state.browser_column = RawBrowserColumn::Commands;
             state.focus = RawModeFocus::Search;
         }
         RawModeAction::AppendSearch(character) => {
@@ -107,6 +108,9 @@ pub fn reduce_raw_mode(
                 picker.selection = 0;
             }
         }
+        RawModeAction::ClearRecipePickerQuery => {
+            if let Some(picker) = state.recipe_picker.as_mut() { picker.query.clear(); picker.selection = 0; }
+        }
         RawModeAction::ConfirmRecipePicker => {
             let selected = state.recipe_picker.as_ref().and_then(|picker| {
                 picker.filtered().get(picker.selection).map(|recipe| {
@@ -131,10 +135,29 @@ pub fn reduce_raw_mode(
             }
         }
         RawModeAction::RequestPreview => request_raw_preview(state, catalog, authority),
+        RawModeAction::ScrollPreview { delta } => {
+            state.preview_scroll = shifted_index(state.preview_scroll, usize::from(u16::MAX), delta);
+        }
         RawModeAction::ConfirmPreview
         | RawModeAction::CancelExecution(_)
         | RawModeAction::SetExecutionAttachment { .. } => {}
+        RawModeAction::SubmissionFailed { request, message } => {
+            // Do not invent an execution result for a process that never
+            // started, or disturb a newer request / acknowledged execution.
+            if state.output.request.as_ref() == Some(&request)
+                && !state.execution_states.contains_key(&request)
+            {
+                if state.view == RawModeView::Execution {
+                    state.leave_view();
+                }
+                state.notification = Some(message);
+            }
+        }
         RawModeAction::CloseExecution => {
+            if state.return_stack.last().is_some_and(|(view, _)| *view == RawModeView::History) {
+                state.leave_view();
+                return;
+            }
             state.execution = None;
             state.output = RawOutputViewState::default();
             state.form = None;
@@ -171,7 +194,7 @@ pub fn reduce_raw_mode(
                 horizontal,
             );
             if vertical != 0 {
-                state.output.follow = false;
+                state.output.follow = vertical == isize::MIN;
             }
         }
         RawModeAction::BeginOutputSearch => state.output.searching = true,
@@ -209,14 +232,16 @@ pub fn reduce_raw_mode(
         RawModeAction::OpenHistory => {
             state.history_selection = state
                 .history_selection
-                .min(state.history.len().saturating_sub(1));
+                .min(state.history_request_ids().len().saturating_sub(1));
             state.enter_view(RawModeView::History, RawModeFocus::History);
         }
         RawModeAction::SelectHistory { delta } => {
             state.history_selection =
-                shifted_index(state.history_selection, state.history.len(), delta)
+                shifted_index(state.history_selection, state.history_request_ids().len(), delta)
         }
-        RawModeAction::ActivateHistory => activate_raw_history(state, catalog),
+        RawModeAction::ActivateHistory => open_raw_history_output(state, catalog),
+        RawModeAction::ReviewHistory => review_raw_history(state, catalog, authority),
+        RawModeAction::OpenExecutionTerminal => {},
         RawModeAction::OpenFavorites => {
             state.favorite_selection = state
                 .favorite_selection
@@ -230,6 +255,10 @@ pub fn reduce_raw_mode(
         RawModeAction::ActivateFavorite => activate_raw_favorite(state, catalog, authority),
         RawModeAction::ToggleFavorite => toggle_raw_favorite(state, catalog),
         RawModeAction::RenameFavorite { name } => rename_raw_favorite(state, name),
+        action @ (RawModeAction::BeginFavoriteRename | RawModeAction::AppendFavoriteName(_)
+            | RawModeAction::BackspaceFavoriteName | RawModeAction::ClearFavoriteName
+            | RawModeAction::ConfirmFavoriteRename | RawModeAction::CancelFavoriteRename) =>
+                edit_raw_favorite_name(state, action),
         RawModeAction::MoveFavorite { delta } => move_selected_raw_favorite(state, delta),
         RawModeAction::RemoveFavorite => request_raw_favorite_removal(state),
         RawModeAction::InspectFavorite => inspect_raw_favorite(state, catalog, authority),
