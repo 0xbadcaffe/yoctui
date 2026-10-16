@@ -93,7 +93,12 @@ fn typing_during_console_output_does_not_replace_the_entire_replica() {
         .unwrap();
     let mut writer = false;
     let mut accepted = false;
-    while !(writer && accepted) {
+    let mut ready = false;
+    let mut startup_output = Vec::new();
+    // Started means the PTY child was spawned, not that Python has configured
+    // raw input. Observe its first tick before sending bytes without a newline;
+    // otherwise canonical-mode input can strand the burst on a busy test host.
+    while !(writer && accepted && ready) {
         assert!(Instant::now() < deadline);
         match connection.receive::<ServerMessage>().unwrap() {
             ServerMessage::Snapshot(snapshot) => {
@@ -108,6 +113,11 @@ fn typing_during_console_output_does_not_replace_the_entire_replica() {
                 sequence = event.sequence;
                 if let DaemonEvent::PtyChanged(pty) = event.event {
                     writer |= pty.writer_epoch == 1;
+                } else if let DaemonEvent::PtyOutput { bytes, .. } = event.event {
+                    startup_output.extend(bytes);
+                    ready |= startup_output
+                        .windows(b"console tick".len())
+                        .any(|bytes| bytes == b"console tick");
                 }
             }
             ServerMessage::CommandResult(result) if result.request_id == RequestId(2) => {
@@ -137,7 +147,7 @@ fn typing_during_console_output_does_not_replace_the_entire_replica() {
     while acknowledgements < 20 || !echo {
         assert!(
             started.elapsed() < Duration::from_secs(3),
-            "input burst stalled"
+            "input burst stalled: acknowledgements={acknowledgements}, echo={echo}"
         );
         match connection.receive::<ServerMessage>().unwrap() {
             ServerMessage::Snapshot(_) => {
