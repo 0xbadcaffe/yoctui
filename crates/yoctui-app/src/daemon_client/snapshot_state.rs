@@ -69,6 +69,9 @@ impl DaemonClientSnapshot {
         event: &yoctui_protocol::daemon::SequencedEvent,
     ) -> Result<(), DaemonClientSyncError> {
         self.apply_event(event)?;
+        if self.install_terminal_event(app, &event.event) {
+            return Ok(());
+        }
         match &event.event {
             yoctui_protocol::daemon::DaemonEvent::Build(build_event) => {
                 apply_daemon_build_event(app, build_event.clone());

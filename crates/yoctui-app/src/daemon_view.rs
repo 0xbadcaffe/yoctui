@@ -5,10 +5,7 @@ pub(crate) fn daemon_client_view(
     snapshot: Option<&yoctui_protocol::daemon::DaemonSnapshot>,
     telemetry: Option<yoctui_protocol::daemon::DaemonTelemetry>,
 ) -> yoctui_model::ClientDaemonView {
-    use yoctui_model::{
-        ClientDaemonJobSummary, ClientDaemonPtyDetails, ClientDaemonPtyKind, ClientDaemonPtyScreen,
-        ClientDaemonPtySummary, ClientDaemonTerminalCell, ClientDaemonView,
-    };
+    use yoctui_model::{ClientDaemonJobSummary, ClientDaemonPtySummary, ClientDaemonView};
     let Some(snapshot) = snapshot else {
         return ClientDaemonView {
             status,
@@ -87,91 +84,12 @@ pub(crate) fn daemon_client_view(
         pty_details: snapshot
             .pty_sessions
             .iter()
-            .map(|pty| ClientDaemonPtyDetails {
-                id: pty.id.0,
-                kind: match pty.kind {
-                    yoctui_protocol::daemon::PtyKind::BuildShell => ClientDaemonPtyKind::BuildShell,
-                    yoctui_protocol::daemon::PtyKind::SourceShell => {
-                        ClientDaemonPtyKind::SourceShell
-                    }
-                    yoctui_protocol::daemon::PtyKind::LayerShell => ClientDaemonPtyKind::LayerShell,
-                    yoctui_protocol::daemon::PtyKind::RecipeShell => {
-                        ClientDaemonPtyKind::RecipeShell
-                    }
-                    yoctui_protocol::daemon::PtyKind::DevtoolShell => {
-                        ClientDaemonPtyKind::DevtoolShell
-                    }
-                    yoctui_protocol::daemon::PtyKind::Devshell => ClientDaemonPtyKind::Devshell,
-                    yoctui_protocol::daemon::PtyKind::Menuconfig => ClientDaemonPtyKind::Menuconfig,
-                    yoctui_protocol::daemon::PtyKind::SdkShell => ClientDaemonPtyKind::SdkShell,
-                    yoctui_protocol::daemon::PtyKind::NativeShell => {
-                        ClientDaemonPtyKind::NativeShell
-                    }
-                    yoctui_protocol::daemon::PtyKind::QemuConsole => {
-                        ClientDaemonPtyKind::QemuConsole
-                    }
-                    yoctui_protocol::daemon::PtyKind::SshConsole => ClientDaemonPtyKind::SshConsole,
-                    yoctui_protocol::daemon::PtyKind::Utility => ClientDaemonPtyKind::Utility,
-                },
-                cwd: pty.cwd.clone(),
-                columns: pty.dimensions.columns,
-                rows: pty.dimensions.rows,
-                writer: pty.writer.map(|writer| writer.0),
-                writer_epoch: pty.writer_epoch,
-                exit_code: pty.exit_code,
-                restartable: pty.restartable,
-            })
+            .map(crate::terminal_view::terminal_details)
             .collect(),
         pty_screens: snapshot
             .pty_screens
             .iter()
-            .map(|screen| {
-                let capacity =
-                    usize::from(screen.dimensions.columns) * usize::from(screen.dimensions.rows);
-                let mut cells = vec![ClientDaemonTerminalCell::default(); capacity];
-                for cell in &screen.cells {
-                    if let Some(destination) = cells.get_mut(cell.index as usize) {
-                        *destination = ClientDaemonTerminalCell {
-                            contents: cell.contents.clone(),
-                            foreground: client_daemon_terminal_color(cell.foreground),
-                            background: client_daemon_terminal_color(cell.background),
-                            bold: cell.bold,
-                            dim: cell.dim,
-                            italic: cell.italic,
-                            underline: cell.underline,
-                            inverse: cell.inverse,
-                            wide: cell.wide,
-                            wide_continuation: cell.wide_continuation,
-                        };
-                    }
-                }
-                let rows = cells
-                    .chunks(usize::from(screen.dimensions.columns))
-                    .map(|cells| {
-                        cells
-                            .iter()
-                            .filter(|cell| !cell.wide_continuation)
-                            .map(|cell| cell.contents.as_str())
-                            .collect::<String>()
-                            .trim_end()
-                            .to_owned()
-                    })
-                    .collect();
-                ClientDaemonPtyScreen {
-                    session_id: screen.session_id.0,
-                    columns: screen.dimensions.columns,
-                    rows_count: screen.dimensions.rows,
-                    cursor_column: screen.cursor_column,
-                    cursor_row: screen.cursor_row,
-                    cursor_hidden: screen.cursor_hidden,
-                    application_cursor: screen.application_cursor,
-                    scrollback_offset: screen.scrollback_offset,
-                    rows,
-                    cells,
-                    scrollback_lines: screen.scrollback_lines,
-                    dropped_line_feeds_lower_bound: screen.dropped_line_feeds_lower_bound,
-                }
-            })
+            .map(crate::terminal_view::terminal_screen)
             .collect(),
         connected_clients: telemetry.map_or(snapshot.clients.len(), |value| {
             usize::from(value.connected_clients)

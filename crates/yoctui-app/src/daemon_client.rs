@@ -1,4 +1,5 @@
 //! Daemon client.
+mod terminal_events;
 
 include!("daemon_client/snapshot_state.rs");
 

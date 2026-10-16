@@ -23,12 +23,12 @@ pub(crate) enum SearchExit {
     Close,
 }
 
-pub(crate) struct TerminalReplicaCell {
-    pub(crate) source: yoctui_model::ClientDaemonTerminalCell,
+pub(crate) struct TerminalReplicaCell<'a> {
+    pub(crate) source: &'a yoctui_model::ClientDaemonTerminalCell,
     pub(crate) color_enabled: bool,
 }
 
-impl tui_term::widget::Cell for TerminalReplicaCell {
+impl tui_term::widget::Cell for TerminalReplicaCell<'_> {
     fn has_contents(&self) -> bool {
         !self.source.contents.is_empty() && !self.source.wide_continuation
     }
@@ -74,21 +74,21 @@ impl tui_term::widget::Cell for TerminalReplicaCell {
     }
 }
 
-pub(crate) struct TerminalReplicaAdapter {
+pub(crate) struct TerminalReplicaAdapter<'a> {
     pub(crate) columns: u16,
     pub(crate) rows: u16,
     pub(crate) cursor_column: u16,
     pub(crate) cursor_row: u16,
     pub(crate) cursor_hidden: bool,
     pub(crate) scrollback_offset: u32,
-    pub(crate) cells: Vec<TerminalReplicaCell>,
+    pub(crate) cells: Vec<TerminalReplicaCell<'a>>,
     pub(crate) row_offset: u16,
     pub(crate) column_offset: u16,
 }
 
-impl TerminalReplicaAdapter {
+impl<'a> TerminalReplicaAdapter<'a> {
     pub(crate) fn new(
-        screen: &yoctui_model::ClientDaemonPtyScreen,
+        screen: &'a yoctui_model::ClientDaemonPtyScreen,
         row_offset: usize,
         column_offset: usize,
         color_enabled: bool,
@@ -119,7 +119,8 @@ impl TerminalReplicaAdapter {
             cells.extend(
                 screen.cells[start..start + usize::from(columns)]
                     .iter()
-                    .cloned()
+                    // Borrow the replica's cells: typing/redraw must not clone
+                    // thousands of strings on every terminal frame.
                     .map(|source| TerminalReplicaCell {
                         source,
                         color_enabled,
@@ -140,8 +141,8 @@ impl TerminalReplicaAdapter {
     }
 }
 
-impl tui_term::widget::Screen for TerminalReplicaAdapter {
-    type C = TerminalReplicaCell;
+impl<'a> tui_term::widget::Screen for TerminalReplicaAdapter<'a> {
+    type C = TerminalReplicaCell<'a>;
 
     fn cell(&self, row: u16, column: u16) -> Option<&Self::C> {
         if row >= self.rows || column >= self.columns {

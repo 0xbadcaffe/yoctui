@@ -97,6 +97,7 @@ mod daemon_client;
 pub use daemon_client::DaemonClientSnapshot;
 
 mod daemon_view;
+mod terminal_view;
 pub use daemon_view::DaemonClientSyncError;
 use daemon_view::daemon_client_view;
 

@@ -3,6 +3,7 @@
 use super::*;
 mod gitui_native_workspace;
 mod rootfs_browser;
+mod terminal_incremental_projection;
 mod terminal_kill_safety;
 
 pub(crate) fn compatibility_workspace_authority(
