@@ -136,6 +136,17 @@ Enter browses a configured layer, `e` opens the editor, and `o` uses the externa
 editor. Arrows expand/collapse, `.` shows hidden files, and `r` refreshes.
 Ctrl+S saves; conflicting disk changes block a save.
 
+F12 → Settings → Editor selects the editor used when opening source files.
+Enter a command such as `vi`, `vim`, `nvim -u NONE`, or an absolute executable
+path; install that editor first. Tab chooses an embedded terminal session
+(default) or the full-screen current terminal; Enter saves, Esc cancels.
+Arguments support quoted spaces without an implicit shell. The filename is
+appended automatically. Select `builtin` to restore the built-in editor.
+Embedded editors use terminal writer control; Ctrl+B e restores the retained
+workbench. Save and quit the external editor to reload its changes in Yoctui.
+The choice persists across launches. A missing executable leaves the built-in
+editor available instead.
+
 ### Recipes and Devtool
 
 Enter loads details; `b` reviews a recipe build, `f` chooses a task, `e` opens
@@ -204,6 +215,18 @@ Testing launches supported tests, imports exact result paths, compares fingerpri
 and exports JUnit. Security inspects CVE/SBOM; QA offers recipe/kernel/layer checks.
 Requests use typed review and owned cancellation; missing/partial results stay explicit.
 Raw Mode provides a structured command catalog, argument reviews, favorites, and history.
+In its workspace, `/` filters commands, `Enter` finishes filtering, and another
+`Enter` opens the selected command form. `Tab`/`Shift+Tab` changes fields; review
+the exact arguments before confirming execution. `PgUp`/`PgDn` scroll long reviews.
+`Esc` steps back through search, review, form, commands, and categories before
+returning focus to the navigator. Leaving running output detaches, not cancels.
+
+`Alt+h` opens Raw history: `Enter` views retained output; `r` reviews a **new**
+command without running it. Metadata-only history cannot recreate old output.
+`Alt+f` manages favorites (`r` rename, `[`/`]` reorder, `x` review removal).
+In execution output, `/` finds text, `1`/`2` selects stdout/stderr, and `End`
+resumes following. For an interactive command, `o` opens its real terminal with
+the usual writer-control checks. `c` requests cancellation of a running command.
 
 ## Maintenance
 
@@ -247,8 +270,20 @@ Config; Preferences is first in View. Disabled actions explain why.
 
 F1 opens the keyboard/action reference (arrows, PgUp/PgDn and Home/End scroll).
 F12 → Help → Operator guide opens the separate interactive workflow guide;
-`g` in Help opens it too. The startup wordmark stays visible for at least 750 ms,
+`g` in Help opens it too. F12 → Help → About Yoctui shows the startup wordmark,
+version, build revision and project description; F1 returns to keyboard help.
+The startup wordmark stays visible for at least 750 ms,
 including time spent connecting to the daemon.
+
+In the operator guide, Enter opens the selected step; `n` completes the current
+step only when its evidence is available, and `s` explicitly skips it. The image
+picker uses the connected workspace's current recipe inventory and returns to
+the guide on selection or cancellation. At the build step, Enter opens options,
+`b` reviews the target, and Enter advances to the final build confirmation.
+Cancelling returns to the guide without starting a job. After a confirmed build,
+reopen the guide with F12 → Help → Operator guide to continue through logs,
+artifacts/rootfs and Terminal Sessions. Unrelated recipe/raw jobs do not count
+as a completed build of the selected image.
 
 ## File comparison
 

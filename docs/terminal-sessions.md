@@ -9,6 +9,7 @@ It follows the client lifecycle. After a damaged terminal, use `reset`/`stty san
 
 Open Terminal Sessions from Navigator/menu/palette to browse the session tree.
 Use arrows/j/k, Page Up/Down or Home/End, then Enter to open the selected session.
+In the session tree, `/` opens global search; Esc closes search and keeps the tree.
 The console fills the workspace beside the navigator, hiding the session list
 and inspector, and requests writer control. If another client holds the lease,
 it opens read-only.
@@ -20,6 +21,18 @@ original shell. Optional Bash-completion packages provide additional tool-specif
 completions.
 Exited, lost and otherwise unavailable sessions disappear from the list
 automatically; daemon-owned history is preserved. Only the writer can type/resize.
+
+Search the displayed terminal output with **Alt+/** or **Ctrl+B, then /**.
+The console footer shows one direct shortcut, **Alt+/ find output**. **Alt+o sessions**
+returns to the tree without stopping the process. **Ctrl+B, then ?** opens the
+terminal shortcut reference; press Esc to close it. In writer mode, Tab and `q`
+belong to the shell/application. F1/F2/F12 remain Yoctui shortcuts except in GitUI,
+which receives its own function keys. Use Alt+o to return to Yoctui navigation.
+When you own the writer, a plain `/` goes to the shell/application; it does not
+open Yoctui search. Read-only viewers can use plain `/` directly. While searching,
+use arrows or Page Up/Down to browse retained history (Home/End for oldest/live),
+Ctrl+U to clear the query, and Enter/Esc to finish. The match count covers the
+currently displayed viewport, not a search of all unseen history.
 
 The daemon owns PTYs, emulation, and bounded screen/scrollback; clients receive
 styled cells. Navigation, client reconnect, pane close, and detach keep processes.

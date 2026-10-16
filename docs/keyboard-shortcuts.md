@@ -89,6 +89,12 @@ Press Ctrl+B, then a command within one second:
 | Alt+k | Confirm process-group termination |
 | Ctrl+B | Send literal Ctrl+B |
 
+In the Terminal Sessions tree, `/` opens global search without opening a console.
+In an open terminal, Alt+/ also opens Yoctui search directly. A writer's plain
+`/` is passed through to the shell or application; viewers can use `/` to search.
+Search mode supports arrows, PgUp/PgDn and Home/End to inspect retained history;
+Ctrl+U clears the query without leaving search. Matches are counted in the current viewport.
+
 The inherited `!` shell uses Ctrl+] to return. See [Terminal sessions](terminal-sessions.md).
 
 ## Customize safely
