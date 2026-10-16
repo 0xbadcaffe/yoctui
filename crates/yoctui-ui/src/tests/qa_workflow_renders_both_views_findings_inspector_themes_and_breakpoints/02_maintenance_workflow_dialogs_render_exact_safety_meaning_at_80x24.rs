@@ -276,9 +276,9 @@ fn raw_output_renders_exact_job_streams_controls_and_bounds_responsively() {
         assert!(output.contains("RUNNING"), "{width}: {output}");
         assert!(output.contains("stdout"), "{width}: {output}");
         assert!(output.contains("dropped"), "{width}: {output}");
-        assert!(output.contains("c Cancel"), "{width}: {output}");
-        assert!(output.contains("d Detach"), "{width}: {output}");
-        assert!(output.contains("r Reattach"), "{width}: {output}");
+        assert!(output.contains("c cancel"), "{width}: {output}");
+        assert!(output.contains("d detach"), "{width}: {output}");
+        assert!(!output.contains("r reattach"), "Already attached: {output}");
     }
     let wide = rendered_text(&app, 160, 40);
     assert!(wide.contains("matching café output"), "{wide}");

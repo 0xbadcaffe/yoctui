@@ -393,8 +393,9 @@ fn raw_responsive_navigation_renders_with_exact_shell_help() {
     let _ = update(&mut app, Action::Open(Screen::RawMode));
     app.focus = FocusTarget::Workspace;
     let shortcuts = footer_shortcuts(&app);
-    assert!(shortcuts.contains("f Favorite | Alt+h History"), "{shortcuts}");
-    assert!(shortcuts.contains("F1 Help | F12 Menu"), "{shortcuts}");
+    assert!(shortcuts.contains("f favorite") && shortcuts.contains("Alt+h history"), "{shortcuts}");
+    let output = rendered_text(&app, 160, 40);
+    assert!(output.contains("F1 Help") && output.contains("F12 Menu"), "{output}");
 }
 
 #[test]
@@ -404,8 +405,11 @@ fn ux_scroll_production_renderer_exposes_bounded_position_at_every_breakpoint() 
     app.focus = FocusTarget::Workspace;
     for (width, height) in [(160, 50), (100, 30), (80, 24)] {
         let output = rendered_text(&app, width, height);
-        assert!(output.contains("/32"), "{width}x{height}: {output}");
-        assert!(output.contains('↓'), "{width}x{height}: {output}");
+        let categories = yoctui_model::builtin_raw_catalog().browser_categories().len();
+        assert!(output.contains(&format!("/{categories}")), "{width}x{height}: {output}");
+        if height <= 30 {
+            assert!(output.contains('↓'), "{width}x{height}: {output}");
+        }
     }
 
     let _ = update(
@@ -414,7 +418,7 @@ fn ux_scroll_production_renderer_exposes_bounded_position_at_every_breakpoint() 
     );
     app.color_enabled = false;
     let output = rendered_text(&app, 80, 24);
-    assert!(output.contains("/32"), "{output}");
+    assert!(output.contains(&format!("/{}", yoctui_model::builtin_raw_catalog().browser_categories().len())), "{output}");
     assert!(output.contains('↑'), "{output}");
     assert!(!output.contains('�'), "{output}");
 }

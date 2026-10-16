@@ -214,7 +214,7 @@ pub(crate) fn concept_editor_menu_app() -> App {
 pub(crate) fn concept_terminal_sessions_app() -> App {
     let mut app = concept_idle_dashboard_app();
     app.screen = Screen::TerminalSessions;
-    app.navigator_selection = 19;
+    app.navigator_selection = 20;
     app.focus = FocusTarget::Workspace;
     app.terminal.client_id = Some([1; 16]);
     app.terminal.query = "busybox".into();

@@ -105,7 +105,7 @@ fn ux_terminal_workbench_renders_writer_read_only_recovery_and_help_states() {
     let help = rendered_text(&app, 120, 35);
     assert!(help.contains("literal Ctrl+B"), "{help}");
     assert!(
-        help.contains("close pane (process keeps running)"),
+        help.contains("Close pane; the process keeps running"),
         "{help}"
     );
 
@@ -117,7 +117,8 @@ fn ux_terminal_workbench_renders_writer_read_only_recovery_and_help_states() {
         empty_help.contains("Terminal keyboard help"),
         "{empty_help}"
     );
-    assert!(empty_help.contains("literal Ctrl+B"), "{empty_help}");
+    // Short terminals prioritize ownership/search and explain the prefix first.
+    assert!(empty_help.contains("Ctrl+B is a prefix"), "{empty_help}");
 
     app = ux_terminal_render_fixture();
     app.daemon.pty_sessions[0].lifecycle = yoctui_model::ClientDaemonLifecycle::Exited;
