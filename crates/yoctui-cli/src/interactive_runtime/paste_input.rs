@@ -41,6 +41,10 @@ impl InteractiveRuntime {
     }
 
     pub(super) fn handle_paste(&mut self, text: String) -> Result<()> {
+        if self.app.editor_settings.draft.is_some() {
+            self.editor_preferences_paste(&text);
+            return Ok(());
+        }
         #[cfg(unix)]
         if self.app.screen == Screen::Daemons
             && self.app.daemon_manager.editing

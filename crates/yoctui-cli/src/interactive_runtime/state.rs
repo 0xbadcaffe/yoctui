@@ -89,6 +89,7 @@ pub(super) struct InteractiveRuntime {
     pub(super) hardware_io: hardware_io::HardwareIo,
     pub(super) kernel_debug_io: kernel_debug_io::KernelDebugIo,
     pub(super) editor_gitui_io: EditorGitUiIo,
+    pub(super) preferred_editor_attempt: Option<(String, PathBuf)>,
     pub(super) hardware_native_graphics: hardware_native_graphics::HardwareNativeGraphics,
     pub(super) recipe_inspection_operation:
         Option<super::recipe_inspection_operation::RecipeInspectionOperation>,

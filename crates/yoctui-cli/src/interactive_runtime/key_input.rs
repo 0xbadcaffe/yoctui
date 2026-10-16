@@ -14,6 +14,11 @@ impl KeyRouteOutcome {
 impl InteractiveRuntime {
     pub(super) async fn handle_key(&mut self, k: crossterm::event::KeyEvent) -> Result<bool> {
         let runtime = self;
+        if let Some(input) = input_from_key(k)
+            && runtime.editor_preferences_key(input).await?
+        {
+            return Ok(true);
+        }
         if let Some(action) = terminal_kill_review_key(&runtime.app, k) {
             if let Some(action) = action
                 && let Some(effect) = compatibility_workspace_action(&mut runtime.app, action)

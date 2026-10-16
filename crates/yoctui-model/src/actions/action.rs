@@ -2,6 +2,7 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     FileDiff(FileDiffAction),
+    EditorSettings(EditorSettingsAction),
     ScrollHelp { delta: isize },
 
     Hardware(HardwareAction),

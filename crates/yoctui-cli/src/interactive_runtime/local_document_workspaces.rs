@@ -2,6 +2,9 @@ use super::*;
 
 impl InteractiveRuntime {
     pub(super) async fn poll_local_documents(&mut self) -> Result<()> {
+        let editor_changed = self.poll_preferred_editor().await;
+        self.render_scheduler
+            .invalidate_if(editor_changed, RenderCause::State);
         if matches!(self.app.screen, Screen::DiffTool | Screen::Help) {
             let size = self.terminal.size()?;
             let extra = u16::from(self.app.offline_notice().is_some()) * 2
@@ -12,8 +15,7 @@ impl InteractiveRuntime {
                     .file_diff
                     .reconcile_viewport(usize::from(height.saturating_sub(8)));
             } else {
-                let logo = if height >= 38 { 6 } else { 0 };
-                self.app.help_visible_rows = usize::from(height.saturating_sub(2 + logo));
+                self.app.help_visible_rows = usize::from(height.saturating_sub(2));
                 let _ = update(&mut self.app, Action::ScrollHelp { delta: 0 });
             }
         }

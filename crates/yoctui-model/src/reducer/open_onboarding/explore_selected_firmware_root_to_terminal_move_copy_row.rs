@@ -378,13 +378,19 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
                 return Some(match dialog.destination {
                     TerminalLaunchDestination::Embedded => {
-                        if dialog.request.kind == TerminalCreationKind::GitUi && !app.is_offline() {
+                        if (dialog.request.kind == TerminalCreationKind::GitUi
+                            || matches!(
+                                dialog.request.completion,
+                                Some(TerminalCompletion::ReturnEditor { .. })
+                            ))
+                            && !app.is_offline()
+                        {
                             crate::editor_gitui::suspend(app);
                             app.screen = Screen::TerminalSessions;
                             app.focus = FocusTarget::Workspace;
                             app.focus_return = None;
                             app.prepare_created_terminal_selection();
-                            app.notification = Some("GitUI requested. Press o for writer control; Ctrl+B e returns to the retained editor; Ctrl+B t shows sessions.".into());
+                            app.notification = Some("Terminal tool requested. Ctrl+B e returns to the retained editor; Ctrl+B t shows sessions.".into());
                         } else if dialog.request.kind == TerminalCreationKind::Menuconfig
                             && matches!(app.screen, Screen::Kernel | Screen::Firmware)
                         {

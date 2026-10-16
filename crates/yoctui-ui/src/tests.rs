@@ -110,3 +110,4 @@ mod compact_workspaces;
 mod daemon_manager;
 
 mod application_menus;
+mod editor_preferences;

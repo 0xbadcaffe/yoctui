@@ -356,6 +356,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             }
             match row.setting {
+                Setting::Editor => {
+                    return update(app, Action::EditorSettings(EditorSettingsAction::Begin));
+                }
                 Setting::Theme => app.theme = cycle_theme(app.theme, backwards),
                 Setting::Density => {
                     app.preferences.density = match app.preferences.density {

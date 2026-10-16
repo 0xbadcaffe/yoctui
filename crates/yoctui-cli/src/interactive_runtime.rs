@@ -10,6 +10,7 @@ mod daemon_workspace;
 mod dependency_workspace;
 mod devtool_status_operation;
 mod editor_dialogs;
+mod editor_preferences;
 mod extended_devtool_dialogs;
 mod hardware_workspace;
 mod input;
@@ -19,6 +20,7 @@ mod local_document_workspaces;
 mod metadata_backend;
 mod native_metadata_scope;
 mod notification_input;
+mod preferred_editor;
 mod terminal_launch_dialog;
 mod terminal_workspace;
 #[cfg(test)]
@@ -443,6 +445,7 @@ pub(crate) async fn tui(
         hardware_io,
         kernel_debug_io: kernel_debug_io::KernelDebugIo::default(),
         editor_gitui_io: EditorGitUiIo::default(),
+        preferred_editor_attempt: None,
         hardware_native_graphics,
         recipe_inspection_operation,
         devtool_status_operation,

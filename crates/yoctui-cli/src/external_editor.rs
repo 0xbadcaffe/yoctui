@@ -19,7 +19,21 @@ pub(crate) fn run_editor_process(
     editor: &std::ffi::OsStr,
     path: &Path,
 ) -> std::io::Result<std::process::ExitStatus> {
-    ProcessCommand::new(editor).arg(path).status()
+    let command = editor.to_str().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidInput, "editor command must be UTF-8")
+    })?;
+    let mut arguments = yoctui_bitbake::parse_utility_arguments(command)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error))?;
+    if arguments.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "editor command is empty",
+        ));
+    }
+    ProcessCommand::new(arguments.remove(0))
+        .args(arguments)
+        .arg(path)
+        .status()
 }
 
 pub(crate) fn editor_exit_error(status: std::process::ExitStatus, path: &str) -> Option<String> {
@@ -36,8 +50,13 @@ pub(crate) async fn open_in_editor(
         app.notification = Some(error);
         return;
     }
-    let editor = preferred_editor
+    let editor = app
+        .preferences
+        .terminal_editor
+        .as_deref()
+        .or(preferred_editor)
         .map(Into::into)
+        .or_else(|| env::var_os("VISUAL"))
         .or_else(|| env::var_os("EDITOR"))
         .unwrap_or_else(|| "vi".into());
     let path_label = path.display().to_string();

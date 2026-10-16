@@ -143,6 +143,9 @@ impl InteractiveRuntime {
             for completion in daemon_client.take_terminal_completions() {
                 match completion {
                     client_runtime::TerminalCompletionOutcome::Succeeded(
+                        yoctui_model::TerminalCompletion::ReturnEditor { path, name },
+                    ) => runtime.finish_preferred_editor(path, name).await,
+                    client_runtime::TerminalCompletionOutcome::Succeeded(
                         yoctui_model::TerminalCompletion::OpenDeviceTree { component, path },
                     ) => {
                         open_single_workspace_file(

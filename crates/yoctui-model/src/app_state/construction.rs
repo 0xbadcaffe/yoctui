@@ -2,6 +2,7 @@ impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
             file_diff: FileDiffState::default(),
+            editor_settings: EditorSettingsState::default(),
             help_scroll: 0,
             help_visible_rows: 20,
             saved_builds: SavedBuildState::default(),

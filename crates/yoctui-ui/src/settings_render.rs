@@ -2,6 +2,30 @@
 use super::*;
 
 pub(crate) fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    if let Some(command) = &app.editor_settings.draft {
+        let chunks = Layout::vertical([
+            Constraint::Length(4),
+            Constraint::Length(3),
+            Constraint::Min(3),
+        ])
+        .split(area);
+        frame.render_widget(Paragraph::new("Choose the editor used to open source files.\nUse builtin, vi, vim, nvim, or any terminal editor command.\nExamples: nvim -u NONE · /usr/bin/vi · micro").wrap(Wrap { trim: false }), chunks[0]);
+        let style = if app.editor_settings.replace_selection {
+            ThemePalette::for_app(app).selected()
+        } else {
+            ThemePalette::for_app(app).base()
+        };
+        frame.render_widget(
+            Paragraph::new(command.as_str()).style(style).block(
+                Block::default()
+                    .title("Editor command")
+                    .borders(Borders::ALL),
+            ),
+            chunks[1],
+        );
+        frame.render_widget(Paragraph::new(format!("Enter save · Esc cancel · Ctrl+u clear · Ctrl+v paste\nTab placement: {}\nCommands are executed as arguments, never through a shell.\n{}", if app.editor_settings.embedded { "Embedded Yoctui terminal" } else { "Full-screen current terminal" }, app.editor_settings.error.as_deref().unwrap_or("Your current choice is unchanged until saved."))).wrap(Wrap { trim: false }), chunks[2]);
+        return;
+    }
     let rows = app.preference_rows();
     let chunks = Layout::vertical([Constraint::Min(5), Constraint::Length(9)]).split(area);
     let visible = usize::from(chunks[0].height.saturating_sub(3)).max(1);
@@ -316,7 +340,7 @@ pub(crate) fn onboarding_overlay(frame: &mut Frame, app: &App, area: Rect) {
         || "No workflow step is selected.".into(),
         |row| {
             format!(
-                "{}\nPrerequisite: {}\nEnter opens {}. It does not bypass confirmation or create a process.",
+                "{}\nPrerequisite: {}\nEnter opens {}. Return via F12 > Help > Operator guide; n completes the current step only when verified.",
                 row.instruction, row.prerequisite, row.destination
             )
         },
@@ -334,7 +358,7 @@ pub(crate) fn onboarding_overlay(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(bounded_cell_text(
-            "Esc dismiss · Enter open · n next · s skip · r restart · j/k select",
+            "Esc close · Enter open · n complete current · s skip current · r reset · j/k select",
             regions[3].width,
         ))
         .style(palette.role(palette.secondary_foreground, Modifier::DIM)),

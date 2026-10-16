@@ -62,6 +62,9 @@ pub struct WorkbenchPreferences {
     pub charts: ChartPreference,
     pub image_previews: ImagePreviewPreference,
     pub terminal_prefix: TerminalPrefixPreference,
+    /// None keeps Yoctui's built-in editor. Commands are argv, never shell scripts.
+    pub terminal_editor: Option<String>,
+    pub terminal_editor_embedded: bool,
     pub keymap: KeymapPreferences,
 }
 
@@ -84,6 +87,8 @@ impl Default for WorkbenchPreferences {
             charts: ChartPreference::default(),
             image_previews: ImagePreviewPreference::default(),
             terminal_prefix: TerminalPrefixPreference::default(),
+            terminal_editor: None,
+            terminal_editor_embedded: true,
             keymap: KeymapPreferences::default(),
         }
     }
@@ -109,10 +114,17 @@ impl WorkbenchPreferences {
             Setting::ImagePreviews => self.image_previews = defaults.image_previews,
             Setting::TerminalPrefix => self.terminal_prefix = defaults.terminal_prefix,
             Setting::Keybindings => self.keymap = defaults.keymap,
+            Setting::Editor => {
+                self.terminal_editor = None;
+                self.terminal_editor_embedded = true;
+            }
         }
     }
 
     pub fn validate(&self) -> Result<(), String> {
+        if let Some(command) = &self.terminal_editor {
+            crate::editor_preferences::validate_editor_command(command)?;
+        }
         if self.schema_version != WORKBENCH_PREFERENCES_SCHEMA_VERSION {
             return Err(format!(
                 "unsupported workbench preference schema {}; expected {}",
@@ -147,10 +159,11 @@ pub enum Setting {
     Charts,
     ImagePreviews,
     TerminalPrefix,
+    Editor,
     Keybindings,
 }
 
-pub const SETTINGS: [Setting; 16] = [
+pub const SETTINGS: [Setting; 17] = [
     Setting::Theme,
     Setting::Density,
     Setting::Inspector,
@@ -166,6 +179,7 @@ pub const SETTINGS: [Setting; 16] = [
     Setting::Charts,
     Setting::ImagePreviews,
     Setting::TerminalPrefix,
+    Setting::Editor,
     Setting::Keybindings,
 ];
 
@@ -329,6 +343,7 @@ impl App {
                         "Ctrl+B".into(),
                         Some("Ctrl+B is reserved to keep PTY input, workbench commands, and keymaps unambiguous."),
                     ),
+                    Setting::Editor => ("Editor", preferences.terminal_editor.clone().unwrap_or_else(|| "Built-in".into()), None),
                     Setting::Keybindings => (
                         "Keybindings",
                         format!(

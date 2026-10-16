@@ -37,15 +37,7 @@ impl InteractiveRuntime {
         } else if input == Input::Char('!') {
             open_yocto_shell(&runtime.guard, &mut runtime.app).await;
         } else if input == Input::Char('i') {
-            let images = runtime
-                .app
-                .workspace
-                .recipes
-                .iter()
-                .map(|recipe| recipe.name.as_str())
-                .filter(|name| name.contains("image"))
-                .map(str::to_owned)
-                .collect();
+            let images = runtime.app.image_targets();
             let _ =
                 compatibility_workspace_action(&mut runtime.app, Action::OpenImagePicker(images));
         } else if runtime.app.screen == yoctui_model::Screen::Devtool

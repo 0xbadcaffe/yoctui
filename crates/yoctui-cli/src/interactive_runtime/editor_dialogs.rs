@@ -228,8 +228,16 @@ impl InteractiveRuntime {
             && let Some(action) = pane_focus_route(&runtime.app, input)
         {
             let effect = compatibility_workspace_action(&mut runtime.app, action);
-            if let Some(effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_))) =
-                effect
+            if let Some(Effect::LoadLayerBrowserDirectory {
+                layer,
+                root,
+                directory,
+            }) = effect
+            {
+                load_layer_browser_directory(&mut runtime.app, layer, root, directory).await;
+            } else if let Some(
+                effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
+            ) = effect
             {
                 begin_package_operation(
                     &mut runtime.app,

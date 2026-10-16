@@ -1,6 +1,7 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
     pub file_diff: FileDiffState,
+    pub editor_settings: EditorSettingsState,
     pub help_scroll: usize,
     pub help_visible_rows: usize,
     pub saved_builds: SavedBuildState,

@@ -3,6 +3,9 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) async fn handle_mouse(&mut self, mouse: crossterm::event::MouseEvent) -> Result<()> {
         let runtime = self;
+        if runtime.app.editor_settings.draft.is_some() {
+            return Ok(());
+        }
         if runtime.app.screen == Screen::Daemons
             && (runtime.app.daemon_manager.editing || runtime.app.daemon_manager.review.is_some())
         {

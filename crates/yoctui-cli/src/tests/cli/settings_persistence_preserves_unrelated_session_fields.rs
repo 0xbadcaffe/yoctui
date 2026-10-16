@@ -17,6 +17,8 @@ fn settings_persistence_preserves_unrelated_session_fields() {
     app.color_enabled = false;
     app.logs.wrap = true;
     app.logs.follow = false;
+    app.preferences.terminal_editor = Some("nvim -u NONE".into());
+    app.preferences.terminal_editor_embedded = false;
 
     persist_settings(Some(&path), &mut session, &app, true).unwrap();
     let saved = read_session(Some(&path)).unwrap();
@@ -29,6 +31,8 @@ fn settings_persistence_preserves_unrelated_session_fields() {
     assert!(!preferences.color_enabled);
     assert!(preferences.log_wrap);
     assert!(!preferences.log_follow);
+    assert_eq!(preferences.terminal_editor.as_deref(), Some("nvim -u NONE"));
+    assert!(!preferences.terminal_editor_embedded);
     assert_eq!(saved.theme, None, "legacy fields are normalized away");
 
     fs::remove_file(path).unwrap();
