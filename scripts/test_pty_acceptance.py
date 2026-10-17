@@ -57,7 +57,7 @@ class AcceptanceHelpers(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 binary_path(tmp, {})
 
-    def test_environment_is_private_nonmutating_and_disables_desktop_handoff(self):
+    def test_environment_is_private_nonmutating_and_disables_terminal_graphics(self):
         original = {"DISPLAY": ":0", "YOCTUI_BRIDGE_PATH": "/real/bridge",
                     "YOCTUI_BUILD_DIR": "/real/build", "BUILDDIR": "/real/build",
                     "BBPATH": "/real", "PYTHONHOME": "/real/python",

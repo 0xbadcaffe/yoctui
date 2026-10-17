@@ -3,12 +3,10 @@ use maintenance_cli::MaintenanceCliCoordinator;
 use yoctui_utils::unix_ms;
 mod build_archive;
 mod error_log;
-mod graphics_terminal_handoff;
+mod hardware_native_graphics;
 mod kernel_instrumentation;
 mod kgdb_serial;
 mod qemu_debug;
-use graphics_terminal_handoff::uses_interactive_terminal;
-mod hardware_native_graphics;
 mod terminal_graphics;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
@@ -248,10 +246,6 @@ async fn main() -> Result<()> {
     }
     if let Some(Command::KgdbSerialSession { spec }) = &cli.command {
         return kgdb_serial::run(spec);
-    }
-    if uses_interactive_terminal(&cli) && graphics_terminal_handoff::handoff_if_needed()?.is_some()
-    {
-        return Ok(());
     }
     if let Some(result) = cli_arguments::menuconfig_helper(&cli.command) {
         return result;

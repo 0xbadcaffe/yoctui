@@ -40,6 +40,10 @@ Run as the build user. Split layouts may use layers/openembedded-core; BSPs can
 require a vendor setup wrapper. Configure MACHINE and parallelism before building.
 An existing daemon is not retargeted by daemon start.
 
+Yoctui runs in the terminal where you start it, including with `yoctui attach`
+over SSH or on a Linux text console. It does not automatically open another
+terminal window. Quit returns to your shell; daemon-owned work keeps running.
+
 Without an initialized shell, open **Build Environment**, press `e`, and select
 Source/Build/Script. `b` browses, `s` saves, and `V` explicitly initializes/verifies.
 Use an existing build directory; custom scripts stay editable. The process backend
@@ -251,8 +255,9 @@ See [Hardware projects](hardware-projects.md) for imports, schematics, and manua
 
 ## View Hardware PDFs
 
-Select a PDF and press Enter. Native pages need SIXEL and document tools;
-Yoctui can hand off to a suitable XTerm. Click the viewer toolbar, or use `=`/`+`
+Select a PDF and press Enter. Native pages need a SIXEL-capable terminal and
+document tools; without graphics, use `v` for embedded text or `o` for a desktop
+reader when a graphical desktop is available. Click the viewer toolbar, or use `=`/`+`
 and `-` for centered zoom, `0` for fit-to-page and `w` for fit-to-width.
 Arrows or mouse dragging pan; the wheel pans a magnified page (changes pages
 when fitted), and Ctrl+wheel zooms. PgUp/PgDn always change page; `v` shows

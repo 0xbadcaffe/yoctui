@@ -41,8 +41,7 @@ def measure(binary, timeout, probe_graphics=False):
     with tempfile.TemporaryDirectory(prefix="yoctui-attach-measure-") as directory:
         master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 50, 160, 0, 0))
-        env = dict(os.environ, TERM="xterm-256color", YOCTUI_TERMINAL_GRAPHICS="none",
-                   YOCTUI_GRAPHICS_TERMINAL_HANDOFF="1")
+        env = dict(os.environ, TERM="xterm-256color", YOCTUI_TERMINAL_GRAPHICS="none")
         if probe_graphics:
             env.pop("YOCTUI_TERMINAL_GRAPHICS", None)
         screen = Screen(160, 50)

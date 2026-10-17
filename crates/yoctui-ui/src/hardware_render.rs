@@ -381,9 +381,9 @@ fn render_pdf_graphics_help(
                 palette.role(palette.warning, Modifier::BOLD),
             ),
             Line::from(""),
-            Line::from("Yoctui normally opens its graphics terminal automatically."),
+            Line::from("Yoctui stays in your current terminal; PDF graphics are optional."),
             Line::styled(
-                "Install XTerm or use a graphical session, then run yoctui attach again.",
+                "For page graphics, use a SIXEL-capable terminal.",
                 Style::default().fg(palette.informational),
             ),
             Line::from(""),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check two production PTY attachments against an isolated timed IPC fixture.
+"""Check same-terminal desktop/console attachment and retained build timing.
 
 This is client integration evidence, not live BitBake timing evidence.
 """
@@ -8,7 +8,6 @@ import json
 import os
 from pathlib import Path
 import pty
-import select
 import socket
 import struct
 import subprocess
@@ -18,7 +17,7 @@ import termios
 import threading
 import time
 
-from terminal_capture import Screen
+from pty_acceptance import TerminalAcceptance, isolated_environment
 
 
 def send(connection, value):
@@ -94,47 +93,57 @@ def serve(listener, failures):
         failures.append(repr(error))
 
 
-def capture(binary, root):
+def capture(binary, root, environment, desktop):
     master, slave = pty.openpty()
     fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 50, 160, 0, 0))
-    env = {key: value for key, value in os.environ.items() if key not in ("BUILDDIR", "YOCTUI_BUILD_DIR", "PYTHONPATH")}
-    # The PTY must own the rendered screen even on graphics-enabled desktops;
-    # the product's normal XTerm/PDF handoff remains independently covered.
-    env.update(TERM="xterm-256color", YOCTUI_TERMINAL_GRAPHICS="none", XDG_RUNTIME_DIR=str(root), XDG_CONFIG_HOME=str(root / "config"), XDG_STATE_HOME=str(root / "state"))
+    env = environment.copy()
+    env["XDG_RUNTIME_DIR"] = str(root)
+    # Do not mask an automatic desktop relaunch with a graphics override.
+    env.pop("YOCTUI_TERMINAL_GRAPHICS", None)
+    env.pop("DISPLAY", None)
+    env.pop("WAYLAND_DISPLAY", None)
+    env["TERM"] = "xterm-256color" if desktop else "linux"
+    env["PATH"] = str(root / "bin") + os.pathsep + env.get("PATH", "")
+    if desktop:
+        env["DISPLAY"] = ":99"
     def setup():
         os.setsid()
         fcntl.ioctl(0, termios.TIOCSCTTY, 0)
     process = subprocess.Popen([binary, "attach"], stdin=slave, stdout=slave, stderr=slave, env=env, preexec_fn=setup)
     os.close(slave)
-    screen = Screen(160, 50)
+    terminal = TerminalAcceptance(master, process, bytearray(), 160, 50)
     try:
         deadline = time.monotonic() + 8
         observed = None
         while time.monotonic() < deadline and process.poll() is None:
-            if select.select([master], [], [], 0.1)[0]:
-                try:
-                    screen.feed(os.read(master, 65536))
-                except OSError:
-                    break
-            if "00:01:04" in screen.text():
+            terminal.read(timeout=0.1)
+            if "00:01:04" in terminal.screen.text():
                 if observed is None:
                     observed = time.monotonic()
                 elif time.monotonic() - observed >= 1.2:
-                    return screen.text()
-        raise AssertionError("production attach did not retain fixed 64-second duration:\n" + screen.text())
+                    return terminal.screen.text()
+        raise AssertionError("production attach did not render timing in the original terminal:\n" + terminal.screen.text())
     finally:
-        process.terminate()
-        try:
-            process.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait()
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
         os.close(master)
 
 
 def main():
     with tempfile.TemporaryDirectory(prefix="yoctui-timing-") as temporary:
         root = Path(temporary)
+        environment = isolated_environment(root)
+        bin_dir = root / "bin"
+        bin_dir.mkdir()
+        marker = root / "unexpected-xterm"
+        xterm = bin_dir / "xterm"
+        xterm.write_text('#!/bin/sh\n: > "$(dirname "$0")/../unexpected-xterm"\nexit 91\n')
+        xterm.chmod(0o700)
         directory = root / "yoctui"
         directory.mkdir(mode=0o700)
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
@@ -145,12 +154,13 @@ def main():
             failures = []
             server = threading.Thread(target=serve, args=(listener, failures), daemon=True)
             server.start()
-            for _ in range(2):
-                capture(sys.argv[1], root)
+            for desktop in (True, False):
+                capture(sys.argv[1], root, environment, desktop)
+                assert not marker.exists(), "attach unexpectedly launched another terminal"
             server.join(timeout=5)
             assert not server.is_alive(), "fixture server did not finish"
             assert not failures, failures
-    print("PASS: two production PTY attachments retain injected 64-second terminal duration")
+    print("PASS: desktop and text-console attach stay in the original PTY and retain build timing")
 
 
 if __name__ == "__main__":

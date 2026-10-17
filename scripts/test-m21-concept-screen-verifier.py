@@ -84,6 +84,26 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
         self.assert_rejected("semantic capture is missing anchor")
 
+    def test_terminal_scene_rejects_invented_search_matches(self) -> None:
+        path = self.verifier.MANIFEST
+        text = path.read_text(encoding="utf-8").replace(
+            '"search: busybox · 0 visible match(es)"',
+            '"search: busybox · 3 visible match(es)"',
+            1,
+        )
+        path.write_text(text, encoding="utf-8")
+        self.assert_rejected("semantic capture is missing anchor")
+
+    def test_terminal_scene_requires_current_writer_shortcuts(self) -> None:
+        path = self.verifier.MANIFEST
+        text = path.read_text(encoding="utf-8").replace(
+            'fixture_anchors = ["Alt+o sessions", "Alt+/ find output",',
+            'fixture_anchors = ["Alt+o sessions", "missing output-search shortcut",',
+            1,
+        )
+        path.write_text(text, encoding="utf-8")
+        self.assert_rejected("feature prefix-help is missing fixture anchor")
+
     def test_rejects_corrupt_cell_dimensions(self) -> None:
         path = (
             self.root

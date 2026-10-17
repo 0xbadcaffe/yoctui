@@ -89,6 +89,8 @@ jobs:
           ./scripts/test-tui-flow.sh
           ./scripts/test-tui-snapshots.sh
           ./scripts/test-tui-performance.sh
+          python3 scripts/test-m21-concept-screen-verifier.py
+          ./scripts/verify-design-contracts.sh
       - name: Run utility and embedded-shell gates
         run: |
           ./scripts/verify-utility-coverage.sh

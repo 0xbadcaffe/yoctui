@@ -36,7 +36,7 @@ def isolated_environment(directory, environment=None):
         }
     }
     isolated["TERM"] = "xterm-256color"
-    # Keep the real PTY under observation even on a graphical desktop.
+    # Keep graphics deterministic in PTYs that do not emulate image protocols.
     isolated["YOCTUI_TERMINAL_GRAPHICS"] = "none"
     for variable, name in (("XDG_CONFIG_HOME", "config"),
                            ("XDG_STATE_HOME", "state"),

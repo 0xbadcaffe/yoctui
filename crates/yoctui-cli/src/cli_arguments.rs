@@ -78,7 +78,7 @@ pub(crate) enum Command {
         #[arg(long)]
         json: bool,
     },
-    /// Attach the interactive client to the persistent daemon.
+    /// Attach to the persistent daemon in the current terminal.
     Attach,
     /// List daemon-owned terminal sessions.
     Sessions,
@@ -129,6 +129,16 @@ pub(crate) enum DaemonServiceCommand {
     Stop,
     Restart,
     Status,
+}
+
+// Graphics are an optional capability of the current terminal, not a reason
+// to relaunch the client in a different terminal emulator.
+pub(crate) fn uses_interactive_terminal(cli: &Cli) -> bool {
+    !cli.headless
+        && matches!(
+            cli.command,
+            None | Some(Command::Attach | Command::Build { .. })
+        )
 }
 
 pub(crate) fn menuconfig_helper(command: &Option<Command>) -> Option<Result<()>> {
