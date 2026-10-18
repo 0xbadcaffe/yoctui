@@ -2,6 +2,7 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     FileDiff(FileDiffAction),
+    BitBakeSetup(BitBakeSetupAction),
     EditorSettings(EditorSettingsAction),
     ScrollHelp { delta: isize },
     OpenAbout,
