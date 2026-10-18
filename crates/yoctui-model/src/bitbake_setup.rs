@@ -224,6 +224,8 @@ pub(crate) fn reduce(app: &mut App, action: BitBakeSetupAction) -> Option<Effect
                 return None;
             }
             let plan = BitBakeSetupPlan::from_values(&w.values).ok()?;
+            app.bitbake_setup.top_dir = plan.top_dir.display().to_string();
+            app.bitbake_setup.tool = plan.tool.display().to_string();
             app.bitbake_setup.generation = app.bitbake_setup.generation.wrapping_add(1);
             let generation = app.bitbake_setup.generation;
             if let Some(Dialog::BitBakeSetup(w)) = app.active_dialog_mut() {

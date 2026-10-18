@@ -98,3 +98,27 @@ fn bitbake_setup_catalogue_rejects_stale_results_and_bounds_selection() {
     assert_eq!(app.bitbake_setup.selected, 0);
     assert!(!app.bitbake_setup.loading);
 }
+
+#[test]
+fn bitbake_setup_import_reviews_profile_without_running_commands() {
+    let mut app = App::new(100, 65536);
+    let profile = BuildEnvironmentProfile {
+        source_dir: "/tmp/sources".into(),
+        build_dir: "/tmp/setups/demo/build".into(),
+        init_script: "/tmp/setups/demo/build/init-build-env".into(),
+    };
+    app.bitbake_setup.entries.push(BitBakeSetupEntry {
+        name: "demo".into(),
+        profile,
+    });
+    assert!(send(&mut app, BitBakeSetupAction::Import).is_none());
+    let Some(Dialog::EnvironmentSetup(setup)) = app.active_dialog() else {
+        panic!("missing import review")
+    };
+    assert_eq!(setup.values[1], "/tmp/setups/demo/build");
+    assert_eq!(setup.values[2], "/tmp/setups/demo/build/init-build-env");
+    assert!(matches!(
+        app.build_environment,
+        BuildEnvironmentState::Unconfigured
+    ));
+}
