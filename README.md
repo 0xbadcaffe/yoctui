@@ -213,7 +213,7 @@ for verification and safe daemon switching.
 [All documentation](https://github.com/0xbadcaffe/yoctui/blob/master/docs/README.md)
 
 [Build from source](https://github.com/0xbadcaffe/yoctui/blob/master/docs/development.md#build-from-source) ·
-[Profiling and Flamegraph](https://github.com/0xbadcaffe/yoctui/blob/master/docs/profiling.md#flamegraph) ·
+[Flamegraph and renderer results](https://github.com/0xbadcaffe/yoctui/blob/master/docs/profiling.md#flamegraph) ·
 [Issues](https://github.com/0xbadcaffe/yoctui/issues) ·
 [Third-party notices](https://github.com/0xbadcaffe/yoctui/blob/master/docs/compliance/THIRD_PARTY_NOTICES.md)
 

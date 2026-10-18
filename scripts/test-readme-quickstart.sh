@@ -9,6 +9,7 @@ from html import unescape
 from html.parser import HTMLParser
 from urllib.parse import parse_qs, urlsplit
 import hashlib
+import json
 import re
 import struct
 import subprocess
@@ -216,7 +217,24 @@ assert "artifacts/flamegraph/yoctui.svg" in profile and "artifacts/flamegraph/su
 assert f'{int(summary["workload_frames"]):,} frames' in words
 assert f'{int(summary["total_samples"]):,} real userspace samples' in words
 assert f'`{summary["workload_checksum"]}`' in profile
-assert "v0.1.64" in profile and "September 6, 2026" in profile and "historical" in profile
+assert re.fullmatch(r"\d+\.\d+\.\d+", summary["application_version"])
+assert f'v{summary["application_version"]}' in profile
+assert summary["captured_utc"][:10] in profile
+assert re.fullmatch(r"[0-9a-f]{40}", summary["source_revision"])
+assert summary["runtime_source_dirty"] == "false"
+assert summary["event_unit"] == "cycles"
+assert re.fullmatch(r"[0-9a-f]{64}", summary["benchmark_sha256"])
+receipt = json.loads(Path("docs/performance/renderer-hotspots-0.1.353.json").read_text())
+assert receipt["schema"] == "yoctui.renderer-hotspots.v1"
+comparison = receipt["final_comparison"]
+assert len(comparison["results"]) == 10
+for result in comparison["results"].values():
+    assert re.fullmatch(r"[0-9a-f]{16}", result["checksum"])
+    assert len(result["baseline_ns_per_frame"]) == comparison["paired_repeats"]
+    assert len(result["candidate_ns_per_frame"]) == comparison["paired_repeats"]
+if source_version == receipt["release_version"]:
+    for name, digest in receipt["optimized_runtime_files_sha256"].items():
+        assert hashlib.sha256(Path(name).read_bytes()).hexdigest() == digest, name
 print("Manual Flamegraph report checks passed")
 PY
 printf 'README quickstart and relocated manual checks passed\n'

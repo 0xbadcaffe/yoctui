@@ -1,15 +1,29 @@
 schema=yoctui.flamegraph.summary.v1
 workload_frames=6000
-workload_checksum=95d507f9b14b71d6
-workload_elapsed_ms=4796
-total_samples=2403
-total_event_count=15472248669
+workload_checksum=7e8fe45e6dd05858
+workload_elapsed_ms=5469
+total_samples=2749
+total_event_count=15050003286
 unresolved_frames=0
 raw_unresolved_stack_lines=0
 dropped_unresolved_event_count=0
 dropped_unresolved_ppm=0
-dominant_1_samples=10767994163 dominant_1_symbol=render_at
-dominant_2_samples=4293216012 dominant_2_symbol=recipes
-dominant_3_samples=4293216012 dominant_3_symbol=workspace
-dominant_4_samples=2961555986 dominant_4_symbol=layers
-dominant_5_samples=45278872 dominant_5_symbol=update
+dominant_1_samples=10052864693 dominant_1_symbol=render_at
+dominant_2_samples=6562714647 dominant_2_symbol=workspace
+dominant_3_samples=3361641797 dominant_3_symbol=recipes
+dominant_4_samples=2825294851 dominant_4_symbol=layers
+dominant_5_samples=44592735 dominant_5_symbol=update
+captured_utc=2026-10-18T11:22:26Z
+source_revision=3682a5fe4e9b0b5e52d045f78ad5b2995a6b9e1a
+runtime_source_dirty=false
+application_version=0.1.353
+host=rcx1cg6
+kernel=Linux 7.0.0-34-generic x86_64 GNU/Linux
+rustc=rustc 1.97.0 (2d8144b78 2026-07-07)
+workload_scenario=large-metadata
+terminal=160x48
+event_unit=cycles
+sampling_hz=499
+call_graph=fp
+benchmark_sha256=de9e5566fbef5d336b89aa4b2b468fcbbf8cb002b28bc4d2c3c2a80f98113d1a
+workload_source_sha256=724a61bb913d29f6392f0bf608e4b25681e4b06f89bf082e2db4fef93b32682d

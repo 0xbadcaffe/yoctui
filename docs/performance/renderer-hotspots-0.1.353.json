@@ -1,0 +1,581 @@
+{
+  "schema": "yoctui.renderer-hotspots.v1",
+  "release_version": "0.1.353",
+  "baseline_runtime_revision": "e0c2fd8b8d1151a2be48c220e7f261d55ee4a29b",
+  "optimized_runtime_revision": "3682a5fe4e9b0b5e52d045f78ad5b2995a6b9e1a",
+  "compared_binary_version": "0.1.352",
+  "cpu": "Intel Core i7-8650U; shared laptop, existing QEMU guest left running",
+  "notes": [
+    "Both compared binaries retain version 0.1.352 so version glyphs cannot change checksums. Optimized runtime source hashes below match the 0.1.353 commit; its package/version metadata and golden headers were bumped after comparison.",
+    "Both baselines use the same shared renderer fixture and private benchmark harness. The menu fixture uses Dashboard behind its overlay to avoid equally valid narrow Recipe column constraint solutions. Its earlier unstable checksums were rejected, not treated as passes.",
+    "Baseline benchmark source SHA256 49e489583296f424a23808c129b51a318a7744c621302308d35af716d5aa6078 differs from the final fixture SHA256 only in rustfmt formatting of optional screen-dump diagnostics.",
+    "Sequential unsampled alternating pairs; no Cargo compilation or profiler ran in the comparison windows. Per-frame timings exclude fixture construction and process startup, but include one final buffer checksum per run.",
+    "Checksums cover final rendered symbols; full UI goldens and viewport/style equivalence tests separately cover styles and wrapping.",
+    "Small scenario differences are not universal speedup claims: active-build, telemetry and dense-terminal medians were slightly slower in the final batch. Shared-host variability and preliminary samples are retained.",
+    "Preliminary and final batches have different candidate implementations and frame counts; do not pool their statistics.",
+    "These are TestBackend renderer fixtures, not proof of live daemon CPU limits, completed image builds or target debugging."
+  ],
+  "optimized_runtime_files_sha256": {
+    "crates/yoctui-model/src/editor_types.rs": "d1c66482465aebcd934866366a4a0b84ad41220218baeb3eef31e05ff35f207f",
+    "crates/yoctui-model/src/textarea/text_algorithms.rs": "f855a4dcf36c3feab42f888212add04f03fb28279d53fe895c1ec7350c78af69",
+    "crates/yoctui-model/src/textarea/validation_layout_and_save.rs": "5917d15ec109906bd457aecfedfe8ad4f29065ef9b518aeb83985d0ff15dc4a8",
+    "crates/yoctui-ui/src/widgets.rs": "90056da41bdf48a328246eb3f66fd139b827b4a530472fa6a87c2ad6c65b5771",
+    "crates/yoctui-ui/src/render/entry.rs": "6cdab9a31db8fa54fe90f9afea81c2c0faf590bd0e40feee8fa9634268a8bbe9",
+    "crates/yoctui-ui/src/package_render/layer_browser.rs": "d9000ac832b6ba033f68da55192240eb44a26ea298bddbf1ad858dbe67665a92",
+    "crates/yoctui-ui/src/package_render/recipes.rs": "e113a8f86cbc55add38d324c965b6db311b0c1c019f0cb90958de2f3539e1871",
+    "crates/yoctui-ui/src/editor_render.rs": "232c59a37ead2edb9c39b99f5a42d88a3cccacc4e4538ddaf4022eb425ea44e6",
+    "crates/yoctui-ui/src/lib.rs": "a9fecc735260c444350fb30bad22188933abe28b4114762c6f59dd035964c26a",
+    "crates/yoctui-ui/src/source_render.rs": "c12de13bbfd7b54c2b9e2cac74015c3ae297f63a37185f862ca6e6256d6fe239",
+    "crates/yoctui-ui/src/source_render/viewport.rs": "8988d620329d4f4f833718199fa87e1b4cfab79d5032b18da459c24f950646cd"
+  },
+  "final_comparison": {
+    "schema": "yoctui.renderer-comparison.v1",
+    "captured_utc": "2026-10-18T11:09:54.501536+00:00",
+    "started_utc": "2026-10-18T11:05:56.568075+00:00",
+    "terminal": "160x48",
+    "host": "rcx1cg6",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "workload_sha256": "724a61bb913d29f6392f0bf608e4b25681e4b06f89bf082e2db4fef93b32682d",
+    "frames_per_run": 500,
+    "paired_repeats": 7,
+    "warmup_frames": 128,
+    "method": "sequential unsampled frame-pointer builds; alternating paired order; medians",
+    "baseline": {
+      "path": "/home/bspguy-dev/projects/yoctui/artifacts/profile/hotspots-0.1.353/baseline-stable-bench",
+      "sha256": "a6515e6a13155f3c3a7df29df016e03d405a0107e7f44df9151b5a4d53a96c61"
+    },
+    "candidate": {
+      "path": "/home/bspguy-dev/projects/yoctui/artifacts/profile/hotspots-0.1.353/optimized-bench",
+      "sha256": "cb348fb47305739f7e562ff305ec4f4bd439ff98648a6aa550c710e341c1e37c"
+    },
+    "results": {
+      "idle": {
+        "checksum": "59e31d181237bbe8",
+        "baseline_ns_per_frame": [
+          609048,
+          642040,
+          640609,
+          716406,
+          979935,
+          685414,
+          631332
+        ],
+        "candidate_ns_per_frame": [
+          583939,
+          617897,
+          631045,
+          652899,
+          750425,
+          596159,
+          586498
+        ],
+        "baseline_median_ns": 642040,
+        "candidate_median_ns": 617897,
+        "reduction_percent": 3.76
+      },
+      "active-build": {
+        "checksum": "3a2b166cfe518d29",
+        "baseline_ns_per_frame": [
+          748533,
+          812179,
+          1022941,
+          1015209,
+          1040797,
+          755792,
+          857530
+        ],
+        "candidate_ns_per_frame": [
+          702435,
+          798826,
+          966785,
+          927562,
+          905860,
+          1254177,
+          907761
+        ],
+        "baseline_median_ns": 857530,
+        "candidate_median_ns": 907761,
+        "reduction_percent": -5.86
+      },
+      "large-metadata": {
+        "checksum": "ff11f8ee124d64f5",
+        "baseline_ns_per_frame": [
+          904135,
+          892807,
+          1142171,
+          862406,
+          963094,
+          873760,
+          981250
+        ],
+        "candidate_ns_per_frame": [
+          819414,
+          831557,
+          854725,
+          797981,
+          815522,
+          885459,
+          924337
+        ],
+        "baseline_median_ns": 904135,
+        "candidate_median_ns": 831557,
+        "reduction_percent": 8.03
+      },
+      "log-heavy": {
+        "checksum": "fd952b33bb923355",
+        "baseline_ns_per_frame": [
+          1177633,
+          1126399,
+          1102547,
+          1221326,
+          1076731,
+          1492483,
+          1173075
+        ],
+        "candidate_ns_per_frame": [
+          1107853,
+          1107518,
+          1116063,
+          1097006,
+          1154295,
+          1113852,
+          1053660
+        ],
+        "baseline_median_ns": 1173075,
+        "candidate_median_ns": 1107853,
+        "reduction_percent": 5.56
+      },
+      "telemetry": {
+        "checksum": "bfa1d1d73791d1f5",
+        "baseline_ns_per_frame": [
+          751564,
+          722630,
+          778437,
+          769623,
+          744106,
+          847770,
+          758644
+        ],
+        "candidate_ns_per_frame": [
+          721856,
+          714628,
+          775243,
+          778578,
+          748178,
+          846486,
+          791242
+        ],
+        "baseline_median_ns": 758644,
+        "candidate_median_ns": 775243,
+        "reduction_percent": -2.19
+      },
+      "menu-heavy": {
+        "checksum": "408c8e82fc4713df",
+        "baseline_ns_per_frame": [
+          1284110,
+          1034959,
+          1027990,
+          1131876,
+          1071538,
+          1089380,
+          1083278
+        ],
+        "candidate_ns_per_frame": [
+          987897,
+          1010557,
+          1068635,
+          987444,
+          1002849,
+          991927,
+          982397
+        ],
+        "baseline_median_ns": 1083278,
+        "candidate_median_ns": 991927,
+        "reduction_percent": 8.43
+      },
+      "large-rootfs": {
+        "checksum": "644d908617ab574b",
+        "baseline_ns_per_frame": [
+          2105536,
+          2288362,
+          2042245,
+          2225977,
+          2151619,
+          2151515,
+          2154765
+        ],
+        "candidate_ns_per_frame": [
+          2114906,
+          2096356,
+          2219714,
+          2718952,
+          2086576,
+          2110193,
+          2183617
+        ],
+        "baseline_median_ns": 2151619,
+        "candidate_median_ns": 2114906,
+        "reduction_percent": 1.71
+      },
+      "large-graph": {
+        "checksum": "25fa39b52cc10fda",
+        "baseline_ns_per_frame": [
+          7492610,
+          7468952,
+          7012631,
+          7273448,
+          6899728,
+          7068276,
+          7341240
+        ],
+        "candidate_ns_per_frame": [
+          8626375,
+          7370175,
+          7437832,
+          6874535,
+          7068539,
+          7218652,
+          6767841
+        ],
+        "baseline_median_ns": 7273448,
+        "candidate_median_ns": 7218652,
+        "reduction_percent": 0.75
+      },
+      "large-editor": {
+        "checksum": "ed631d09920c8f98",
+        "baseline_ns_per_frame": [
+          23473134,
+          21832338,
+          21881330,
+          22271323,
+          22234330,
+          21724984,
+          22052540
+        ],
+        "candidate_ns_per_frame": [
+          8397587,
+          8162215,
+          8691477,
+          8586831,
+          8470752,
+          8489283,
+          8081889
+        ],
+        "baseline_median_ns": 22052540,
+        "candidate_median_ns": 8470752,
+        "reduction_percent": 61.59
+      },
+      "dense-terminal": {
+        "checksum": "e82796fd45d0c640",
+        "baseline_ns_per_frame": [
+          1343297,
+          1253186,
+          1226418,
+          1439503,
+          1350090,
+          1168569,
+          1230734
+        ],
+        "candidate_ns_per_frame": [
+          1481085,
+          1261351,
+          1259383,
+          1458255,
+          1243584,
+          1255720,
+          1203721
+        ],
+        "baseline_median_ns": 1253186,
+        "candidate_median_ns": 1259383,
+        "reduction_percent": -0.49
+      }
+    }
+  },
+  "preliminary_style_and_metadata_only_comparison": {
+    "schema": "yoctui.renderer-comparison.v1",
+    "captured_utc": "2026-10-18T10:53:57.485681+00:00",
+    "terminal": "160x48",
+    "host": "rcx1cg6",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "workload_sha256": "49e489583296f424a23808c129b51a318a7744c621302308d35af716d5aa6078",
+    "frames_per_run": 1000,
+    "paired_repeats": 5,
+    "warmup_frames": 128,
+    "method": "sequential unsampled frame-pointer builds; alternating paired order; medians",
+    "baseline": {
+      "path": "/home/bspguy-dev/projects/yoctui/artifacts/profile/hotspots-0.1.353/baseline-stable-bench",
+      "sha256": "a6515e6a13155f3c3a7df29df016e03d405a0107e7f44df9151b5a4d53a96c61"
+    },
+    "candidate": {
+      "path": "/home/bspguy-dev/projects/yoctui/artifacts/profile/hotspots-0.1.353/candidate-stable-bench",
+      "sha256": "e11257b8a0d84c9647ee2573a869f22ffe8aef40b092948fb89ea1d38b1d492a"
+    },
+    "results": {
+      "idle": {
+        "checksum": "59e31d181237bbe8",
+        "baseline_ns_per_frame": [
+          898312,
+          1012633,
+          890092,
+          758822,
+          768282
+        ],
+        "candidate_ns_per_frame": [
+          764863,
+          772488,
+          769909,
+          757664,
+          735389
+        ],
+        "baseline_median_ns": 890092,
+        "candidate_median_ns": 764863,
+        "reduction_percent": 14.07
+      },
+      "active-build": {
+        "checksum": "81b1967217afd976",
+        "baseline_ns_per_frame": [
+          1003282,
+          998981,
+          1089512,
+          971760,
+          981023
+        ],
+        "candidate_ns_per_frame": [
+          872303,
+          1101718,
+          900680,
+          1070693,
+          931551
+        ],
+        "baseline_median_ns": 998981,
+        "candidate_median_ns": 931551,
+        "reduction_percent": 6.75
+      },
+      "large-metadata": {
+        "checksum": "ff11f8ee124d64f5",
+        "baseline_ns_per_frame": [
+          1321066,
+          1165599,
+          1183077,
+          1103204,
+          1117162
+        ],
+        "candidate_ns_per_frame": [
+          1102818,
+          1077458,
+          1104796,
+          1148154,
+          1274835
+        ],
+        "baseline_median_ns": 1165599,
+        "candidate_median_ns": 1104796,
+        "reduction_percent": 5.22
+      },
+      "log-heavy": {
+        "checksum": "b055e9a9529cbc26",
+        "baseline_ns_per_frame": [
+          1494565,
+          1474527,
+          1545294,
+          1480144,
+          1470267
+        ],
+        "candidate_ns_per_frame": [
+          1600082,
+          1512913,
+          1463166,
+          1675512,
+          1667770
+        ],
+        "baseline_median_ns": 1480144,
+        "candidate_median_ns": 1600082,
+        "reduction_percent": -8.1
+      },
+      "telemetry": {
+        "checksum": "5683fe7d48806c52",
+        "baseline_ns_per_frame": [
+          961862,
+          986003,
+          1001297,
+          1049139,
+          1062393
+        ],
+        "candidate_ns_per_frame": [
+          916235,
+          941073,
+          915994,
+          1103480,
+          954427
+        ],
+        "baseline_median_ns": 1001297,
+        "candidate_median_ns": 941073,
+        "reduction_percent": 6.01
+      },
+      "menu-heavy": {
+        "checksum": "5211c0830eac5084",
+        "baseline_ns_per_frame": [
+          1391572,
+          1368642,
+          1281001,
+          1307049,
+          1639723
+        ],
+        "candidate_ns_per_frame": [
+          1253460,
+          1693450,
+          1291211,
+          1296426,
+          1351078
+        ],
+        "baseline_median_ns": 1368642,
+        "candidate_median_ns": 1296426,
+        "reduction_percent": 5.28
+      },
+      "large-rootfs": {
+        "checksum": "f3fc4a4e94337c48",
+        "baseline_ns_per_frame": [
+          4112420,
+          3147760,
+          3016383,
+          2922801,
+          3124112
+        ],
+        "candidate_ns_per_frame": [
+          3504799,
+          2831589,
+          2817772,
+          2862616,
+          2915289
+        ],
+        "baseline_median_ns": 3124112,
+        "candidate_median_ns": 2862616,
+        "reduction_percent": 8.37
+      },
+      "large-graph": {
+        "checksum": "9c376427ff9e4ae3",
+        "baseline_ns_per_frame": [
+          9170276,
+          9159931,
+          9344807,
+          9183767,
+          9209418
+        ],
+        "candidate_ns_per_frame": [
+          9038698,
+          9194508,
+          9754756,
+          9159184,
+          9427738
+        ],
+        "baseline_median_ns": 9183767,
+        "candidate_median_ns": 9194508,
+        "reduction_percent": -0.12
+      },
+      "large-editor": {
+        "checksum": "84be4f16ff68401f",
+        "baseline_ns_per_frame": [
+          28600390,
+          26679832,
+          18332044,
+          18837557,
+          19448870
+        ],
+        "candidate_ns_per_frame": [
+          28222937,
+          29154115,
+          18580885,
+          17752554,
+          18966808
+        ],
+        "baseline_median_ns": 19448870,
+        "candidate_median_ns": 18966808,
+        "reduction_percent": 2.48
+      },
+      "dense-terminal": {
+        "checksum": "87a740cadb4d342f",
+        "baseline_ns_per_frame": [
+          1147044,
+          1245828,
+          1299456,
+          1237109,
+          1437527
+        ],
+        "candidate_ns_per_frame": [
+          1145257,
+          1149735,
+          1149962,
+          1225204,
+          1377394
+        ],
+        "baseline_median_ns": 1245828,
+        "candidate_median_ns": 1149962,
+        "reduction_percent": 7.69
+      }
+    }
+  },
+  "editor_diagnostic_profiles": {
+    "method": "perf record -F 499 -e cycles:u --call-graph fp -g; 1000 large-editor frames; self-time from perf report --no-inline --no-children; diagnostic timing, not acceptance",
+    "before": {
+      "binary_sha256": "e11257b8a0d84c9647ee2573a869f22ffe8aef40b092948fb89ea1d38b1d492a",
+      "checksum": "84be4f16ff68401f",
+      "samples": 11802,
+      "profiled_elapsed_ms": 23784,
+      "event_cycles": 63276129673,
+      "dominant_grapheme_iterator_self_percent": 33.95,
+      "sha256_compress_self_percent": 9.64
+    },
+    "after": {
+      "binary_sha256": "cb348fb47305739f7e562ff305ec4f4bd439ff98648a6aa550c710e341c1e37c",
+      "checksum": "84be4f16ff68401f",
+      "samples": 3972,
+      "profiled_elapsed_ms": 7987,
+      "event_cycles": 22497615058,
+      "dominant_grapheme_iterator_self_percent": 1.83,
+      "sha256_note": "Repeated save-preview digest work removed from live redraws; save/load/conflict APIs still hash revisions."
+    }
+  },
+  "verification": {
+    "workspace_command": "CARGO_BUILD_JOBS=2 cargo test --locked --workspace --all-features -- --test-threads=2",
+    "workspace_passed": 2427,
+    "workspace_failed": 0,
+    "workspace_ignored": 15,
+    "clippy_command": "CARGO_BUILD_JOBS=2 cargo clippy --locked --workspace --all-targets --all-features -- -D warnings",
+    "clippy": "passed",
+    "golden_updates": "34 cell/text goldens changed only version glyphs; 23 README PNGs regenerated from those exact goldens",
+    "flamegraph_quality": "passed: 6000 frames, 2749 real samples, no unresolved or dropped stacks",
+    "renderer_ceiling": "Both next-generation UI and workbench UX gates passed all ten scenarios at 10000000 ns/frame, frame-pointer build"
+  },
+  "flamegraph": {
+    "schema": "yoctui.flamegraph.summary.v1",
+    "workload_frames": "6000",
+    "workload_checksum": "7e8fe45e6dd05858",
+    "workload_elapsed_ms": "5469",
+    "total_samples": "2749",
+    "total_event_count": "15050003286",
+    "unresolved_frames": "0",
+    "raw_unresolved_stack_lines": "0",
+    "dropped_unresolved_event_count": "0",
+    "dropped_unresolved_ppm": "0",
+    "dominant_1_samples": "10052864693 dominant_1_symbol=render_at",
+    "dominant_2_samples": "6562714647 dominant_2_symbol=workspace",
+    "dominant_3_samples": "3361641797 dominant_3_symbol=recipes",
+    "dominant_4_samples": "2825294851 dominant_4_symbol=layers",
+    "dominant_5_samples": "44592735 dominant_5_symbol=update",
+    "captured_utc": "2026-10-18T11:22:26Z",
+    "source_revision": "3682a5fe4e9b0b5e52d045f78ad5b2995a6b9e1a",
+    "runtime_source_dirty": "false",
+    "application_version": "0.1.353",
+    "host": "rcx1cg6",
+    "kernel": "Linux 7.0.0-34-generic x86_64 GNU/Linux",
+    "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+    "workload_scenario": "large-metadata",
+    "terminal": "160x48",
+    "event_unit": "cycles",
+    "sampling_hz": "499",
+    "call_graph": "fp",
+    "benchmark_sha256": "de9e5566fbef5d336b89aa4b2b468fcbbf8cb002b28bc4d2c3c2a80f98113d1a",
+    "workload_source_sha256": "724a61bb913d29f6392f0bf608e4b25681e4b06f89bf082e2db4fef93b32682d",
+    "svg_sha256": "2cf90ee62e008028db9a73ee958c096016cbc46d2bc4393ab8aedc08eaed43c2",
+    "summary_path": "artifacts/flamegraph/summary.txt"
+  }
+}
