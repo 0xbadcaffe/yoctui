@@ -2,6 +2,10 @@
 use super::*;
 
 pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    if app.bitbake_setup.catalogue {
+        bitbake_setup_render::catalogue(frame, app, area);
+        return;
+    }
     let status = match &app.build_environment {
         BuildEnvironmentState::Unconfigured => "not configured".to_owned(),
         BuildEnvironmentState::Configured(profile) => format!(

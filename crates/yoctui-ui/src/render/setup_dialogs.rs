@@ -1,5 +1,8 @@
 fn render_setup_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
-    if let Some(Dialog::EnvironmentSetup(setup)) = app.active_dialog() {
+    if let Some(Dialog::BitBakeSetup(wizard)) = app.active_dialog() {
+        bitbake_setup_render::wizard(frame, app, wizard, area);
+        return true;
+    } else if let Some(Dialog::EnvironmentSetup(setup)) = app.active_dialog() {
         environment_setup::environment_setup_popup(frame, app, setup, area);
         return true;
     } else if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) = app.active_dialog() {

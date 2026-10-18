@@ -185,3 +185,5 @@ pub use keyboard::{terminal_owns_input, workspace_text_input_active};
 
 mod build_archive;
 pub use build_archive::*;
+mod bitbake_setup;
+pub use bitbake_setup::bitbake_setup_action;

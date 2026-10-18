@@ -4,6 +4,7 @@ mod branding;
 mod dialogs;
 mod file_diff_render;
 pub use branding::render_startup;
+mod bitbake_setup_render;
 mod environment_setup;
 mod hardware_native_projection;
 mod hardware_projects_render;
