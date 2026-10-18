@@ -87,6 +87,7 @@ jobs:
           ./scripts/test-tui-pty.sh
           ./scripts/test-tui-keymap.sh
           ./scripts/test-tui-flow.sh
+          python3 scripts/test_bitbake_setup_pty.py
           ./scripts/test-tui-snapshots.sh
           ./scripts/test-tui-performance.sh
           python3 scripts/test-m21-concept-screen-verifier.py
