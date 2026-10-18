@@ -61,3 +61,47 @@ fn setup_paste_is_one_unicode_text_action_and_rejects_newlines() {
             .is_err()
     );
 }
+
+#[test]
+fn setup_management_typing_is_literal_and_default_update_options_are_explicit() {
+    use yoctui_model::{SetupManageAction as M, SetupOperation};
+    let mut app = wizard_app();
+    update(&mut app, Action::BitBakeSetup(A::Cancel));
+    app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+    app.build_environment =
+        yoctui_model::BuildEnvironmentState::Configured(yoctui_model::BuildEnvironmentProfile {
+            source_dir: "/tmp/setup/layers/core".into(),
+            build_dir: "/tmp/setup/build".into(),
+            init_script: "/tmp/setup/build/init-build-env".into(),
+        });
+    update(&mut app, Action::BitBakeSetup(A::Manage(M::Custom)));
+    let action = bitbake_setup_action(&app, Input::Char('e')).unwrap();
+    update(&mut app, action);
+    for key in ['q', 'c', 'b', 'n'] {
+        assert_eq!(
+            bitbake_setup_action(&app, Input::Char(key)),
+            Some(Action::BitBakeSetup(A::Manage(M::Insert(key.to_string()))))
+        );
+    }
+    let actions = crate::text_paste_actions(
+        &app,
+        "machine/qemuarm64".into(),
+        TextAreaPasteSource::Clipboard,
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(actions.len(), 1);
+    for action in actions {
+        update(&mut app, action);
+    }
+    update(&mut app, Action::BitBakeSetup(A::Manage(M::AcceptEdit)));
+    let Some(Dialog::BitBakeSetupOperation(d)) = app.active_dialog() else {
+        panic!("missing review")
+    };
+    assert_eq!(d.fragment, "machine/qemuarm64");
+    assert_eq!(d.operation, SetupOperation::Enable);
+    assert_eq!(
+        bitbake_setup_action(&app, Input::Enter),
+        Some(Action::BitBakeSetup(A::Manage(M::Confirm)))
+    );
+}

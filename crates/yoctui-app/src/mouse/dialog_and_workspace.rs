@@ -164,7 +164,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         ),
         Screen::Logs => log_workspace_action(app, key),
         Screen::Errors => errors_action(app, key),
-        Screen::BuildEnvironment => build_environment_action(key),
+        Screen::BuildEnvironment => crate::bitbake_setup_action(app,key).or_else(||build_environment_action(key)),
         Screen::Compatibility => {
             compatibility_ui_inspector_action(app.compatibility_ui.searching, key)
         }

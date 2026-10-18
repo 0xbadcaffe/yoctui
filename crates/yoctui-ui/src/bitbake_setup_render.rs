@@ -53,7 +53,7 @@ pub(crate) fn catalogue(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(Paragraph::new(lines), rows[1]);
     frame.render_widget(
         Paragraph::new(format!(
-            "{}\n↑/↓ PgUp/PgDn Home/End select · r refresh · Esc environment",
+            "{}\nf/3 fragments · s status · u update · r refresh · Esc environment",
             state.error.as_deref().unwrap_or(
                 "Creation may download sources; only trusted templates/registries should be used."
             )

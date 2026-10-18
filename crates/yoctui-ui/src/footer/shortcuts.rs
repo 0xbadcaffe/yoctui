@@ -224,7 +224,9 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             "↑/↓ select | ←/→ change | r retry save | Ctrl+P commands | Tab focus | q quit"
         }
         Screen::BuildEnvironment => {
-            if app.bitbake_setup.catalogue {
+            if app.bitbake_setup.management.visible {
+                "1 environment | 2 setups | r refresh | e enable | d disable | Enter show | Esc back"
+            } else if app.bitbake_setup.catalogue {
                 "1 environment | w new setup | o directory | r refresh | Enter import | Esc back"
             } else {
                 "2 setups | w new setup | e configure | b browse | Alt+v verify | Tab focus"

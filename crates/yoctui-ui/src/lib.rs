@@ -15,6 +15,7 @@ mod kernel_instrumentation_render;
 mod layout;
 mod overview;
 pub mod primitives;
+mod setup_management_render;
 mod shell;
 mod telemetry;
 mod theme;

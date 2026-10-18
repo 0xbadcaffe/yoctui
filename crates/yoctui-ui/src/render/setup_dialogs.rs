@@ -1,4 +1,7 @@
 fn render_setup_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
+    if let Some(Dialog::BitBakeSetupOperation(dialog))=app.active_dialog() {
+        setup_management_render::review(frame,app,dialog,area);return true;
+    }
     if let Some(Dialog::BitBakeSetup(wizard)) = app.active_dialog() {
         bitbake_setup_render::wizard(frame, app, wizard, area);
         return true;
