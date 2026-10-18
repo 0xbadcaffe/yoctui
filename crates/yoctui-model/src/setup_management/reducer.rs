@@ -21,14 +21,11 @@ pub(crate) fn reduce(app: &mut App, action: SetupManageAction) -> Option<Effect>
                 _ => SetupOperation::Enable,
             };
             let fragment = if matches!(action, A::Show | A::Enable | A::Disable) {
-                let Some(entry) = app
+                let entry = app
                     .bitbake_setup
                     .management
                     .fragments
-                    .get(app.bitbake_setup.management.selected)
-                else {
-                    return None;
-                };
+                    .get(app.bitbake_setup.management.selected)?;
                 entry
                     .name
                     .strip_suffix("...")

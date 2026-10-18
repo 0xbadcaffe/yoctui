@@ -5,6 +5,12 @@ setup wizard. Catalogue: `o` choose top directory, `r` refresh, arrows/Page/Home
 select, `Enter` import for review. Wizard: `Tab` field, `Enter` edit/accept,
 `Ctrl+U` clear field, `s` review, `Enter` confirm, `Esc` back/cancel.
 
+Selected setup: `f`/`3` fragments, `s` status, `u` update (review required).
+Fragments: `e` enable, `d` disable, `n` custom ID, `Enter` show, `r` refresh,
+arrows/Page/Home/End scroll. Operation review: `e` edit fragment ID; update
+`c` configuration policy, `b` conflict policy, `n` network; Enter confirms,
+Escape cancels. Details use arrows/Page/Home/End and Escape returns to the list.
+
 The focused dialog/editor/search/terminal owns input before global commands.
 F1, contextual Help, and the footer show the current view's exact bindings.
 

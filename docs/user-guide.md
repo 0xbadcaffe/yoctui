@@ -82,6 +82,50 @@ have finished. Generated `build/init-build-env` scripts are supported even witho
 an executable bit. `1` returns to the existing environment/profile view; legacy
 `oe-init-build-env` and vendor-wrapper profiles remain available.
 
+### Configuration fragments and setup updates
+
+In **Build Environment → 2 Setups**, select a setup and press `f` (or `3`) to
+review fragment inspection. `3` from the profile view uses that configured build.
+Confirm only trusted initializers: inspection sources the selected script and
+runs the build's `bitbake-config-build list-fragments`. It does not parse recipes
+or start an image build. Unsupported/changed tool output produces an error, not
+an invented fragment state.
+
+The fragment list shows enabled, unused and built-in pattern entries. Use arrows,
+Page Up/Down and Home/End; `r` refreshes and Enter reviews showing a fragment.
+`e` reviews enabling, `d` disabling, and `n` opens a custom fragment ID. In the
+review, `e` edits the ID (paste supported), Enter accepts it, then Enter confirms.
+For a built-in pattern enter a complete value, such as `machine/qemuarm64` or
+`distro/poky`. Enabling replaces the same built-in prefix according to the tool's
+rules. Prefix-wide disabling is deliberately unavailable. Changes go through the
+official tool to `build/conf/toolcfg.conf`; other configuration assignments can
+still override the effective result. Successful changes refresh the inventory
+while the client remains attached; otherwise reopen and refresh it explicitly.
+For built-in values the list's summary is the useful detail; some tool versions
+do not return content from `show-fragment` for these entries.
+
+`s` reviews setup status; its output remains in a scrollable native view. Escape
+returns from details to the list, then to the setup catalogue/profile. Inspection
+has a 60-second timeout and bounded output; Escape cancels its owned process.
+
+`u` reviews an **actual update**, not a dry run. This is available only for managed
+setups with `config/config-upstream.json`, not arbitrary legacy build directories.
+`c` cycles configuration handling: `prompt` (default), `no` (keep existing build
+configuration), or `yes` (apply changes). `b` changes rebase-conflict handling from
+`abort` (default) to `backup`, which can rename a repository and fetch a fresh clone.
+`n` toggles `--no-network` for status/update; otherwise configuration/source checks
+may fetch. Enter confirms and launches updates in a daemon-owned terminal; `o`
+takes writer control for upstream prompts. Closing the client does not cancel an
+update; use Terminal Sessions to manage its process.
+
+Yoctui refuses these operations while daemon jobs or live terminal sessions are
+active, and checks again before launching. Stop external BitBake processes too:
+client-side activity checks are not an atomic lock against other tools/users.
+Save/commit source changes first. Shared sources can affect other builds; aborting
+on a later repository conflict does **not** undo earlier changes. Yoctui never
+automatically rolls back repositories, retargets the daemon or starts a build.
+Refresh and reverify the selected environment before building after changes.
+
 ## Understand the persistent shell
 
 ### Daemon management
