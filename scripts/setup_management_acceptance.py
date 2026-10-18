@@ -90,6 +90,9 @@ def exercise(
         absent="Running reviewed inspection",
         timeout=60,
     )
+    if template is None:
+        count = int((top / "demo/config/status-reads").read_text())
+        press(b"r", f"SETUP_STATUS {count + 1}:")
     press(b"\x1b", "e enable", "Check setup status")
     press(b"u", "Update setup")
     assert "abort (default)" in terminal.screen.text()

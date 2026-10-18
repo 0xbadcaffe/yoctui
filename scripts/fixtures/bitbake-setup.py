@@ -19,7 +19,10 @@ operation = arguments[0]
 if operation in ("status", "update"):
     setup = Path(arguments[arguments.index("--setup-dir") + 1])
     if operation == "status":
-        print("SETUP_STATUS: synchronized local fixture")
+        counter = setup / "config/status-reads"
+        count = int(counter.read_text()) + 1 if counter.exists() else 1
+        counter.write_text(str(count))
+        print(f"SETUP_STATUS {count}: synchronized local fixture")
     else:
         assert arguments[arguments.index("--rebase-conflicts-strategy") + 1] == "abort"
         policy = arguments[arguments.index("--update-bb-conf") + 1]

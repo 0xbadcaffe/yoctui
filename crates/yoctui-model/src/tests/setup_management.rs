@@ -134,3 +134,37 @@ fn setup_management_rejects_stale_results_and_unwinds_detail_then_list() {
     send(&mut app, SetupManageAction::Cancel);
     assert!(!app.bitbake_setup.management.visible);
 }
+
+#[test]
+fn setup_management_refresh_keeps_status_semantics_and_clears_stale_output() {
+    let mut app = App::new(20, 2000);
+    app.daemon.status = ClientReplicaStatus::Current;
+    app.bitbake_setup.management.visible = true;
+    app.bitbake_setup.management.profile = Some(profile());
+    app.bitbake_setup.management.output = Some(vec!["old status".into()]);
+    app.bitbake_setup.management.last_read = Some(dialog(SetupOperation::Status));
+    let Some(Effect::BitBakeSetup(BitBakeSetupRequest::Manage(SetupManageRequest::Read {
+        generation,
+        dialog: d,
+    }))) = send(&mut app, SetupManageAction::Refresh)
+    else {
+        panic!("status refresh must not inspect/switch to fragments")
+    };
+    assert_eq!(d.operation, SetupOperation::Status);
+    assert!(
+        app.bitbake_setup
+            .management
+            .output
+            .as_ref()
+            .unwrap()
+            .is_empty()
+    );
+    send(
+        &mut app,
+        SetupManageAction::Read {
+            generation,
+            result: Ok(String::new()),
+        },
+    );
+    assert!(app.bitbake_setup.management.output.as_ref().unwrap()[0].contains("no text"));
+}

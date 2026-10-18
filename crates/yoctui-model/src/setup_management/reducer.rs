@@ -49,6 +49,26 @@ pub(crate) fn reduce(app: &mut App, action: SetupManageAction) -> Option<Effect>
             open_dialog(app, Dialog::BitBakeSetupOperation(Box::new(dialog)));
         }
         A::Refresh => {
+            if app.bitbake_setup.management.output.is_some()
+                && let Some(dialog) = app.bitbake_setup.management.last_read.clone()
+            {
+                if let Some(error) = setup_operation_blocked(app) {
+                    app.bitbake_setup.management.error = Some(error);
+                    return None;
+                }
+                let state = &mut app.bitbake_setup.management;
+                state.generation = state.generation.wrapping_add(1);
+                state.loading = true;
+                state.error = None;
+                state.output = Some(Vec::new());
+                state.output_scroll = 0;
+                return Some(Effect::BitBakeSetup(BitBakeSetupRequest::Manage(
+                    SetupManageRequest::Read {
+                        generation: state.generation,
+                        dialog,
+                    },
+                )));
+            }
             if let Some(profile) = app.bitbake_setup.management.profile.clone() {
                 return inspect(app, profile);
             }
@@ -99,7 +119,13 @@ pub(crate) fn reduce(app: &mut App, action: SetupManageAction) -> Option<Effect>
             }
             state.loading = false;
             match result {
-                Ok(text) => state.output = Some(text.lines().map(str::to_owned).collect()),
+                Ok(text) => {
+                    state.output = Some(if text.trim().is_empty() {
+                        vec!["The tool returned no text. Built-in values are shown in the fragment list; Esc returns there.".into()]
+                    } else {
+                        text.lines().map(str::to_owned).collect()
+                    })
+                }
                 Err(e) => state.error = Some(e),
             }
         }
@@ -193,6 +219,7 @@ pub(crate) fn reduce(app: &mut App, action: SetupManageAction) -> Option<Effect>
                         state.output = Some(Vec::new());
                         state.output_title = dialog.operation.label().into();
                         state.output_scroll = 0;
+                        state.last_read = Some((*dialog).clone());
                         return Some(Effect::BitBakeSetup(BitBakeSetupRequest::Manage(
                             SetupManageRequest::Read {
                                 generation,

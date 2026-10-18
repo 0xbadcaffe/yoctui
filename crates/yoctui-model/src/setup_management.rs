@@ -22,6 +22,7 @@ pub struct SetupManagementState {
     pub output: Option<Vec<String>>,
     pub output_title: String,
     pub output_scroll: usize,
+    pub last_read: Option<SetupOperationDialog>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -184,6 +185,8 @@ fn inspect(app: &mut App, profile: BuildEnvironmentProfile) -> Option<Effect> {
     let state = &mut app.bitbake_setup.management;
     state.generation = state.generation.wrapping_add(1);
     state.profile = Some(profile.clone());
+    state.output = None;
+    state.last_read = None;
     state.loading = true;
     state.error = None;
     Some(Effect::BitBakeSetup(BitBakeSetupRequest::Manage(
