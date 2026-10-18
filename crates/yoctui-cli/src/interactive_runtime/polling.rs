@@ -65,6 +65,7 @@ impl InteractiveRuntime {
         #[cfg(unix)]
         runtime.poll_saved_environment().await;
         let (internal_records, ingress_dropped) = runtime.internal_tracing_capture.drain(256);
+        runtime.poll_bitbake_setup().await;
         runtime.render_scheduler.invalidate_if(
             runtime.environment_browser_io.poll(&mut runtime.app).await,
             RenderCause::State,

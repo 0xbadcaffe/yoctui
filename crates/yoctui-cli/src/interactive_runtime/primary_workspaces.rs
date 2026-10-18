@@ -15,6 +15,11 @@ impl InteractiveRuntime {
             runtime
                 .route_terminal_workspace(input, replayed_context_action, key)
                 .await;
+        } else if let Some(action) = yoctui_app::bitbake_setup_action(&runtime.app, input) {
+            crate::bitbake_setup_io::defaults(&mut runtime.app);
+            if let Some(effect) = compatibility_workspace_action(&mut runtime.app, action) {
+                runtime.bitbake_setup_io.submit(effect);
+            }
         } else if runtime.route_hardware_workspace(input) || runtime.route_notification_input(input)
         {
         } else if matches!(runtime.app.screen, Screen::Kernel | Screen::Firmware)

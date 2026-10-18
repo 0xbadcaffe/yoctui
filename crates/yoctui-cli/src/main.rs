@@ -211,6 +211,7 @@ mod environment_operation;
 #[cfg(unix)]
 mod saved_environment;
 
+mod bitbake_setup_io;
 mod environment_setup;
 
 mod global_search;

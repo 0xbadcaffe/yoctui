@@ -119,6 +119,8 @@ impl InteractiveRuntime {
         }
         runtime.session.last_target = runtime.app.build.target;
         runtime.session.last_screen = Some(runtime.app.screen);
+        runtime.session.bitbake_setup_top_dir = (!runtime.app.bitbake_setup.top_dir.is_empty())
+            .then(|| runtime.app.bitbake_setup.top_dir.clone());
         runtime.session.log_filter = runtime.app.logs.filter;
         runtime.session.log_recipe_filter = runtime.app.logs.recipe_filter;
         runtime.session.log_task_filter = runtime.app.logs.task_filter;
