@@ -102,6 +102,7 @@ fn bitbake_setup_catalogue_rejects_stale_results_and_bounds_selection() {
 #[test]
 fn bitbake_setup_import_reviews_profile_without_running_commands() {
     let mut app = App::new(100, 65536);
+    let previous = app.build_environment.clone();
     let profile = BuildEnvironmentProfile {
         source_dir: "/tmp/sources".into(),
         build_dir: "/tmp/setups/demo/build".into(),
@@ -117,8 +118,5 @@ fn bitbake_setup_import_reviews_profile_without_running_commands() {
     };
     assert_eq!(setup.values[1], "/tmp/setups/demo/build");
     assert_eq!(setup.values[2], "/tmp/setups/demo/build/init-build-env");
-    assert!(matches!(
-        app.build_environment,
-        BuildEnvironmentState::Unconfigured
-    ));
+    assert_eq!(app.build_environment, previous);
 }
