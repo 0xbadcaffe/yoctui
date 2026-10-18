@@ -44,6 +44,8 @@ close the UI and reconnect later.
 
 ## Features
 
+- **Set up a workspace:** create or import `bitbake-setup` environments,
+  manage configuration fragments, and review source/configuration updates.
 - **Build and diagnose:** dashboard and insights, live BitBake tasks, logs,
   warnings, errors, and saved build history.
 - **Develop:** browse layers and recipes, use devtool and devshell, edit text
@@ -193,15 +195,15 @@ For an existing daemon, use the reviewed switch described above instead of
 starting another one. See the [upstream setup guide](https://docs.yoctoproject.org/bitbake/dev/bitbake-user-manual/bitbake-user-manual-environment-setup.html)
 for host requirements and template options.
 
-Alternatively, on `feature/bitbake-setup`, open **Build Environment → w** to
-create a setup inside Yoctui. Set the tool path above, top directory
+Alternatively, open **Build Environment → w** to create a setup inside Yoctui.
+Set the tool path above, top directory
 `$HOME/bitbake-builds` (enter its absolute path), and setup name `yoctui-demo`;
 review with `s` and confirm with Enter. Afterwards, **2 Setups → r** discovers it;
 Enter imports the profile for review. Use `f`/`3` for fragments, `s` for status
 or `u` for a reviewed update. Updates default to prompting about configuration
 changes and aborting on rebase conflicts. See the
-[setup workflow](https://github.com/0xbadcaffe/yoctui/blob/feature/bitbake-setup/docs/user-guide.md#create-or-import-a-modern-bitbake-setup)
-for verification and safe daemon switching. This wizard is not yet in a published release.
+[setup workflow](https://github.com/0xbadcaffe/yoctui/blob/master/docs/user-guide.md#create-or-import-a-modern-bitbake-setup)
+for verification and safe daemon switching.
 
 ## Documentation
 

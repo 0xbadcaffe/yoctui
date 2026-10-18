@@ -76,7 +76,7 @@ header_targets = {html or markdown for html, markdown in links_in(header)}
 assert "https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml" in header_targets
 assert "https://crates.io/crates/yoctui" in header_targets
 assert "#license" in header_targets and blob_base + "LICENSE" in readme
-for section in ("features", "install", "quickstart", "documentation", "contributing", "license"):
+for section in ("features", "install", "quickstart", "bitbake-setup", "daemon-and-systemd-service", "documentation", "contributing", "license"):
     assert "#" + section in header_targets, f"Missing README navigation: {section}"
 ci_badges = [urlsplit(target) for target in header_targets if "/actions/workflows/ci.yml/badge.svg" in target]
 assert len(ci_badges) == 1
@@ -127,9 +127,18 @@ for command in (
     "cargo install yoctui --locked -j 2",
     'export POKY_DIR="$HOME/src/poky"',
     'source "$POKY_DIR/oe-init-build-env" "$BUILDDIR"',
-    "yoctui daemon status", "yoctui daemon start", "yoctui --backend bridge",
+    "yoctui daemon status", "yoctui daemon start", "yoctui attach",
+    "yoctui daemon service install", "systemctl --user enable --now yoctui.service",
+    "yoctui daemon service status",
+    'python3 -m venv "$HOME/.venvs/bitbake-setup"',
+    'init --setup-dir-name yoctui-demo',
+    'source "$HOME/bitbake-builds/yoctui-demo/build/init-build-env"',
 ):
     assert command in readme, f"Missing install/quickstart command: {command}"
+assert "feature/bitbake-setup" not in readme, "Released instructions must link to master"
+assert "not yet in a published release" not in readme
+assert "`cargo install` does **not** install or enable a systemd service" in readme
+assert "**Build Environment → w**" in readme
 for instruction in ("`F8`", "`i` to choose an image", "`core-image-minimal`", "`b` to review the build"):
     assert instruction in readme, f"Missing image-build quickstart instruction: {instruction}"
 user = manuals["docs/user-guide.md"]
