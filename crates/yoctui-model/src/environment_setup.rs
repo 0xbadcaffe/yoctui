@@ -244,7 +244,17 @@ pub(crate) fn environment_setup_update(
                 && let Some(directory) = &browser.directory
             {
                 setup.values[setup.field] = directory.path.display().to_string();
-                if setup.field == 0 {
+                if let Some(script) = &directory.init_script
+                    && script
+                        .file_name()
+                        .is_some_and(|name| name == "init-build-env")
+                    && let Some(build) = script.parent()
+                {
+                    setup.values[0] = directory.path.display().to_string();
+                    setup.values[1] = build.display().to_string();
+                    setup.values[2] = script.display().to_string();
+                    setup.error = None;
+                } else if setup.field == 0 {
                     setup.values[2] = directory
                         .init_script
                         .as_ref()
