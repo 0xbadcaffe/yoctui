@@ -34,9 +34,9 @@ def exercise(
             terminal.read()
         raise AssertionError(status)
 
-    def edit_id():
+    def edit_id(identifier=target):
         press(b"e", "Edit fragment ID")
-        press(b"\x1b[200~" + target.encode() + b"\x1b[201~", "monitor-disk-space")
+        press(b"\x1b[200~" + identifier.encode() + b"\x1b[201~", identifier[-20:])
         press(b"\r", "Enter confirm", "Edit fragment ID")
 
     press(b"f", "Inspect configuration fragments")
@@ -66,6 +66,22 @@ def exercise(
     wait_idle()
     environment_view()
     terminal.wait_for("[ ] " + target, absent="Running reviewed inspection", timeout=60)
+    if template:
+        for machine in ("qemuarm64", "qemux86-64"):
+            press(b"n", "Enable fragment")
+            edit_id("machine/" + machine)
+            press(b"\r", "Terminal Sessions", "Enter confirm")
+            wait_file(lambda: "machine/" + machine in conf.read_text())
+            wait_idle()
+            environment_view()
+            terminal.wait_for(
+                "[x] machine/" + machine,
+                absent="Running reviewed inspection",
+                timeout=60,
+            )
+        assert "machine/qemuarm64" not in conf.read_text(), (
+            "built-in prefix must be replaced, not accumulated"
+        )
     press(b"s", "Check setup status")
     press(b"n", "disabled (--no-network)")
     press(b"\r", "3 Fragments / setup details", "Enter confirm")
@@ -90,6 +106,8 @@ def exercise(
     press(b"u", "Update setup")
     press(b"c", "Configuration policy: no")
     press(b"n", "disabled (--no-network)")
+    local = build / "conf/local.conf"
+    local.write_text(local.read_text() + "\n# Yoctui keep-config validation\n")
     press(b"\r", "Terminal Sessions", "Enter confirm")
     wait_idle()
     if template:
@@ -107,6 +125,9 @@ def exercise(
                 else False
             )
         )
+    assert "# Yoctui keep-config validation" in local.read_text(), (
+        "keep policy lost local configuration"
+    )
     environment_view()
     terminal.wait_for(target, absent="Running reviewed inspection", timeout=60)
     press(b"2", "Locally discovered setups")
