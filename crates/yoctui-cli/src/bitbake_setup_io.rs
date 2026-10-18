@@ -4,6 +4,7 @@ use yoctui_model::{
     Action, App, BitBakeSetupAction as A, BitBakeSetupEntry, BitBakeSetupPlan,
     BitBakeSetupRequest as Request, Effect, TerminalLaunchRequest,
 };
+mod management;
 
 #[derive(Default)]
 pub(crate) struct BitBakeSetupIo {
@@ -124,6 +125,27 @@ fn prepare(plan: &BitBakeSetupPlan) -> Result<TerminalLaunchRequest, String> {
 
 impl BitBakeSetupIo {
     pub fn submit(&mut self, effect: Effect) {
+        if matches!(effect, Effect::BitBakeSetup(Request::List { .. }))
+            && matches!(self.active, Some(Request::Manage(_)))
+        {
+            if let Some(worker) = self.worker.take() {
+                worker.abort();
+            }
+            self.active = None;
+        }
+        if matches!(effect, Effect::BitBakeSetup(Request::CancelManagement)) {
+            if matches!(self.active, Some(Request::Manage(_))) {
+                if let Some(worker) = self.worker.take() {
+                    worker.abort();
+                }
+                self.active = None;
+            }
+            if matches!(self.queued, Some(Request::Manage(_))) {
+                self.queued = None;
+            }
+            self.start();
+            return;
+        }
         if let Effect::BitBakeSetup(request) = effect {
             self.queued = Some(request);
             self.start();
@@ -137,15 +159,23 @@ impl BitBakeSetupIo {
             return;
         };
         self.active = Some(request.clone());
-        self.worker = Some(tokio::task::spawn_blocking(move || match request {
-            Request::List { generation, root } => A::Listed {
-                generation,
-                result: scan(&root),
-            },
-            Request::Prepare { generation, plan } => A::Prepared {
-                generation,
-                result: prepare(&plan),
-            },
+        self.worker = Some(tokio::spawn(async move {
+            if let Request::Manage(request) = request {
+                return A::Manage(management::perform(request).await);
+            }
+            tokio::task::spawn_blocking(move || match request {
+                Request::List { generation, root } => A::Listed {
+                    generation,
+                    result: scan(&root),
+                },
+                Request::Prepare { generation, plan } => A::Prepared {
+                    generation,
+                    result: prepare(&plan),
+                },
+                Request::Manage(_) | Request::CancelManagement => unreachable!(),
+            })
+            .await
+            .expect("setup filesystem worker failed")
         }));
     }
     pub async fn poll(&mut self, app: &mut App) -> (bool, Option<Effect>) {
@@ -155,6 +185,11 @@ impl BitBakeSetupIo {
         let result = self.worker.take().expect("finished worker").await;
         let request = self.active.take().expect("active request");
         let action = result.unwrap_or_else(|error| match request {
+            Request::CancelManagement => unreachable!(),
+            Request::Manage(request) => A::Manage(management::failed(
+                request,
+                format!("Setup operation failed: {error}"),
+            )),
             Request::List { generation, .. } => A::Listed {
                 generation,
                 result: Err(format!("Scan failed: {error}")),

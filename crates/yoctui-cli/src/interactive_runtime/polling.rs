@@ -144,6 +144,9 @@ impl InteractiveRuntime {
             for completion in daemon_client.take_terminal_completions() {
                 match completion {
                     client_runtime::TerminalCompletionOutcome::Succeeded(
+                        yoctui_model::TerminalCompletion::SetupChanged { profile },
+                    ) => runtime.finish_setup_operation(profile),
+                    client_runtime::TerminalCompletionOutcome::Succeeded(
                         yoctui_model::TerminalCompletion::ReturnEditor { path, name },
                     ) => runtime.finish_preferred_editor(path, name).await,
                     client_runtime::TerminalCompletionOutcome::Succeeded(
