@@ -99,9 +99,9 @@ sha256 = "a67cf0a1dda3b76d6814a99ae565f42fc3e5cbe58eb3af04c30b8814425174ec"
 [[artifact]]
 id = "cloning"
 source = "crates/yoctui-ui/tests/golden/readme-cloning-160x50.cells"
-source_sha256 = "cd37122a4a58118e0461bdaf77e0365b4f7ad59b35d0ba3c15e822a62e05010d"
+source_sha256 = "841f13373c710461bdaf862337f82fb52688975562a107887196ef4defcd8e64"
 file = "docs/media/screenshots/13-cloning.png"
-sha256 = "61ef70134f5931caa4e5e6a606b13f655ea4b60e8b135a7f3c5ca18db7b6adf4"
+sha256 = "a8fd8020fbcb7eb362112197fc81a96484ab18563dfd687c429d85c1ec776469"
 
 [[artifact]]
 id = "cancelling"

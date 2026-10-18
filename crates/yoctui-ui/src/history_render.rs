@@ -76,7 +76,7 @@ pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Re
         }
     };
     let text = format!(
-        "Enter/e Configure paths  |  b Browse directories\nAlt+a Advanced TOML  |  c Clone Poky  |  Alt+v Verify BitBake\nn/Alt+n profile item  |  p preview/open\n\n{status}{draft}{images}\n{profile}"
+        "1 Environment  |  2 Setups  |  w New BitBake setup wizard\nEnter/e Configure paths  |  b Browse directories\nAlt+a Advanced TOML  |  c Clone Poky  |  Alt+v Verify BitBake\nn/Alt+n profile item  |  p preview/open\n\n{status}{draft}{images}\n{profile}"
     );
     frame.render_widget(
         Paragraph::new(text)

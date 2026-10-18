@@ -51,6 +51,37 @@ is a fallback with fewer capabilities; see [Compatibility](compatibility.md).
 Install the release's [Yocto host requirements](https://docs.yoctoproject.org/brief-yoctoprojectqs/index.html)
 separately; Yoctui does not install BitBake, BSP layers, or target tools.
 
+### Create or import a modern BitBake setup
+
+Open **Build Environment** (also available through **F12 → Workspace**).
+Press `w` for the new-setup wizard. Set the `bitbake-setup` executable, top
+directory and a unique setup name; the template and registry are optional.
+`Enter` edits a field, `Tab` changes fields, and `s` opens the review. Nothing
+runs until you confirm the review with `Enter`.
+
+The official tool runs in an embedded, daemon-owned terminal. Press `o` if it
+offers writer control, then answer its new-top-directory confirmation and
+template/configuration, Machine and Distro choices. A connected local daemon is
+required, but it does not need an initialized BitBake environment. Use only
+trusted templates: setup may download sources and execute setup scripts. The
+tool may create a shared `site.conf`; cancellation can leave partial files.
+Existing destinations are refused, not overwritten or automatically deleted.
+Yoctui does not install the tool, modify its global settings or start an image build.
+Install it separately following the
+[upstream setup guide](https://docs.yoctoproject.org/bitbake/dev/bitbake-user-manual/bitbake-user-manual-environment-setup.html),
+or select `bitbake/bin/bitbake-setup` from a recent checkout.
+
+After setup finishes, `Alt+o` returns to the terminal list. Reopen Build Environment,
+press `2` for Setups and `r` to refresh. `o` chooses a top directory; the selection
+is remembered on normal exit. Discovery is local and bounded to 1024 immediate
+entries / 256 profiles, with no network calls or recursive walk. `Enter` imports
+the selected profile for review; `s` saves it and `Alt+v` explicitly verifies.
+This does not retarget your running daemon: use **Tools → Daemons → c** to review
+switching to the generated `build` directory after its existing jobs and terminals
+have finished. Generated `build/init-build-env` scripts are supported even without
+an executable bit. `1` returns to the existing environment/profile view; legacy
+`oe-init-build-env` and vendor-wrapper profiles remain available.
+
 ## Understand the persistent shell
 
 ### Daemon management
@@ -73,8 +104,8 @@ sessions and disconnects clients when successful. Controls target only the local
 No remote/TCP daemon is supported here; the shown IPs identify the host only.
 
 Configuration uses Tab to switch between the absolute build and source paths;
-the build needs `conf/local.conf` and `conf/bblayers.conf`, and the source needs
-`oe-init-build-env`. Clipboard paste is supported. Confirmation writes a separate
+the build needs `conf/local.conf` and `conf/bblayers.conf`, with either the generated
+`build/init-build-env` or a legacy `oe-init-build-env`. Clipboard paste is supported. Confirmation writes a separate
 `yoctui.service.d/zz-yoctui-manager.conf` drop-in, reloads systemd and restarts the
 daemon. It overrides any existing custom launch command without deleting it.
 Vendor setup wrappers may need their own service configuration instead.

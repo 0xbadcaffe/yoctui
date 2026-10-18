@@ -1,5 +1,10 @@
 # Keyboard shortcuts
 
+Build Environment: `1` environment profile, `2` setup catalogue, `w` new BitBake
+setup wizard. Catalogue: `o` choose top directory, `r` refresh, arrows/Page/Home/End
+select, `Enter` import for review. Wizard: `Tab` field, `Enter` edit/accept,
+`Ctrl+U` clear field, `s` review, `Enter` confirm, `Esc` back/cancel.
+
 The focused dialog/editor/search/terminal owns input before global commands.
 F1, contextual Help, and the footer show the current view's exact bindings.
 
