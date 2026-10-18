@@ -1,12 +1,10 @@
 pub(crate) fn recipes(frame: &mut Frame, app: &App, area: Rect) {
-    let recipes = app
-        .workspace
-        .recipes
-        .iter()
-        .enumerate()
-        .filter(|(_, recipe)| {
-            matches_metadata(
-                &app.metadata_query,
+    let recipes = MetadataRows::new(
+        &app.workspace.recipes,
+        &app.metadata_query,
+        |recipe, query| {
+            matches_folded_metadata(
+                query,
                 &[
                     recipe.name.as_str(),
                     recipe.version.as_deref().unwrap_or(""),
@@ -19,12 +17,10 @@ pub(crate) fn recipes(frame: &mut Frame, app: &App, area: Rect) {
                         .unwrap_or(""),
                 ],
             )
-        })
-        .collect::<Vec<_>>();
+        },
+    );
     let recipe_count = recipes.len();
-    let filtered_selection = recipes
-        .iter()
-        .position(|(index, _)| *index == app.recipe_selection);
+    let filtered_selection = recipes.ordinal(app.recipe_selection);
     let selected = app.workspace.recipes.get(app.recipe_selection);
     let chunks = if area.width >= 110 {
         Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)]).split(area)
@@ -49,10 +45,8 @@ pub(crate) fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Table::new(
-            recipes
-                .into_iter()
-                .skip(viewport.start)
-                .take(viewport.len())
+            viewport
+                .filter_map(|row| recipes.get(row))
                 .map(|(index, recipe)| {
                     Row::new(vec![
                         Cell::from(recipe.name.as_str()),
@@ -119,7 +113,11 @@ pub(crate) fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn recipe_page_viewport(selection: Option<usize>, total: usize, rows: usize) -> std::ops::Range<usize> {
+fn recipe_page_viewport(
+    selection: Option<usize>,
+    total: usize,
+    rows: usize,
+) -> std::ops::Range<usize> {
     if total == 0 || rows == 0 {
         return 0..0;
     }
@@ -131,14 +129,12 @@ fn recipe_page_viewport(selection: Option<usize>, total: usize, rows: usize) -> 
 }
 
 pub(crate) fn devtool_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let recipes = app
-        .workspace
-        .recipes
-        .iter()
-        .enumerate()
-        .filter(|(_, recipe)| {
-            matches_metadata(
-                &app.metadata_query,
+    let recipes = MetadataRows::new(
+        &app.workspace.recipes,
+        &app.metadata_query,
+        |recipe, query| {
+            matches_folded_metadata(
+                query,
                 &[
                     recipe.name.as_str(),
                     recipe.layer.as_deref().unwrap_or(""),
@@ -150,11 +146,9 @@ pub(crate) fn devtool_workspace(frame: &mut Frame, app: &App, area: Rect) {
                     devtool_compact_state(app, recipe).0,
                 ],
             )
-        })
-        .collect::<Vec<_>>();
-    let filtered_selection = recipes
-        .iter()
-        .position(|(index, _)| *index == app.recipe_selection);
+        },
+    );
+    let filtered_selection = recipes.ordinal(app.recipe_selection);
     let chunks = if area.width >= 100 {
         Layout::horizontal([Constraint::Percentage(48), Constraint::Percentage(52)]).split(area)
     } else {
@@ -162,11 +156,8 @@ pub(crate) fn devtool_workspace(frame: &mut Frame, app: &App, area: Rect) {
     };
     let list = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(chunks[0]);
     let visible_rows = usize::from(list[1].height.saturating_sub(3));
-    let viewport = yoctui_model::centered_viewport_range(
-        filtered_selection,
-        recipes.len(),
-        visible_rows,
-    );
+    let viewport =
+        yoctui_model::centered_viewport_range(filtered_selection, recipes.len(), visible_rows);
     frame.render_widget(
         Paragraph::new(search_line(
             app,
@@ -182,10 +173,8 @@ pub(crate) fn devtool_workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Table::new(
-            recipes
-                .iter()
-                .skip(viewport.start)
-                .take(viewport.len())
+            viewport
+                .filter_map(|row| recipes.get(row))
                 .map(|(index, recipe)| {
                     let (workspace, git) = devtool_compact_state(app, recipe);
                     Row::new(vec![
@@ -195,7 +184,7 @@ pub(crate) fn devtool_workspace(frame: &mut Frame, app: &App, area: Rect) {
                         Cell::from(git),
                         Cell::from(recipe_build_state(app, &recipe.name)),
                     ])
-                    .style(selected_style(app, *index == app.recipe_selection))
+                    .style(selected_style(app, index == app.recipe_selection))
                 }),
             [
                 Constraint::Min(14),
@@ -220,14 +209,10 @@ pub(crate) fn devtool_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ),
         list[1],
     );
-    let detail = app
-        .workspace
-        .recipes
-        .get(app.recipe_selection)
-        .map_or_else(
-            || "No authoritative recipes are available.".into(),
-            |recipe| devtool_workflow_detail(app, recipe),
-        );
+    let detail = app.workspace.recipes.get(app.recipe_selection).map_or_else(
+        || "No authoritative recipes are available.".into(),
+        |recipe| devtool_workflow_detail(app, recipe),
+    );
     frame.render_widget(
         Paragraph::new(detail)
             .block(
@@ -290,10 +275,10 @@ fn devtool_workflow_detail(app: &App, recipe: &Recipe) -> String {
             })
         });
     let source = status.and_then(|status| match &status.workspace {
-            DevtoolWorkspace::Present { source_path, .. }
-            | DevtoolWorkspace::MissingDirectory { source_path } => Some(source_path),
-            DevtoolWorkspace::NotMember => None,
-        });
+        DevtoolWorkspace::Present { source_path, .. }
+        | DevtoolWorkspace::MissingDirectory { source_path } => Some(source_path),
+        DevtoolWorkspace::NotMember => None,
+    });
     let git_detail = status.map_or_else(
         || "Repository: unavailable\nBranch: unavailable\nUpstream: unavailable\nSync: unavailable".into(),
         |status| match &status.git {

@@ -1,9 +1,14 @@
 pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rect) {
     let area = if browser.is_build_directory() {
         let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).split(area);
-        frame.render_widget(Paragraph::new(format!("Build directory: {}", browser.root.display())).bold(), rows[0]);
+        frame.render_widget(
+            Paragraph::new(format!("Build directory: {}", browser.root.display())).bold(),
+            rows[0],
+        );
         rows[1]
-    } else { area };
+    } else {
+        area
+    };
     let left_width = layer_browser_left_width(browser, area.width);
     let rootfs = browser.is_rootfs();
     let standalone = rootfs || browser.is_build_directory();
@@ -251,19 +256,18 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
 }
 
 pub(crate) fn layers(frame: &mut Frame, app: &App, area: Rect) {
-    let layers = app
-        .workspace
-        .layers
-        .iter()
-        .filter(|layer| {
-            matches_metadata(
-                &app.metadata_query,
+    let layers = MetadataRows::new(
+        &app.workspace.layers,
+        &app.metadata_query,
+        |layer, query| {
+            matches_folded_metadata(
+                query,
                 &[layer.name.as_str(), layer.path.to_str().unwrap_or("")],
             )
-        })
-        .collect::<Vec<_>>();
+        },
+    );
     let layer_count = layers.len();
-    let selected = layers.get(app.layer_selection).copied();
+    let selected = layers.get(app.layer_selection).map(|(_, layer)| layer);
     let recipes = selected.map_or_else(Vec::new, |layer| {
         let mut recipes = app
             .workspace
@@ -298,11 +302,8 @@ pub(crate) fn layers(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Table::new(
-            layers
-                .into_iter()
-                .enumerate()
-                .skip(layer_viewport.start)
-                .take(layer_viewport.len())
+            layer_viewport
+                .filter_map(|row| layers.get(row).map(|(_, layer)| (row, layer)))
                 .map(|(index, layer)| {
                     Row::new(vec![
                         Cell::from(format!("▸ {}", layer.name)),

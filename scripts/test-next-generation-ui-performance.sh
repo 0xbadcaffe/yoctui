@@ -30,7 +30,7 @@ for scenario in idle active-build large-metadata log-heavy telemetry; do
   output="$work_dir/$scenario.log"
   CARGO_TARGET_DIR="$perf_target_dir" \
     YOCTUI_PROFILE_FRAMES="$frames" YOCTUI_PROFILE_SCENARIO="$scenario" \
-    cargo bench -q -p yoctui --bench workbench_profile 2>&1 | tee "$output"
+    cargo bench -q -p yoctui-e2e --bench workbench_profile 2>&1 | tee "$output"
   result="$(sed -n "s/^yoctui ui performance: scenario=$scenario frames=$frames checksum=\([0-9a-f]\{16\}\) elapsed_ms=\([0-9][0-9]*\) ns_per_frame=\([0-9][0-9]*\)$/\1 \2 \3/p" "$output")"
   if [[ -z "$result" ]]; then
     printf 'performance workload %s did not emit a valid completion record\n' "$scenario" >&2

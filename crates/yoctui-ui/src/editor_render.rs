@@ -260,8 +260,15 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     let document_focus = editor.focus == yoctui_model::RecipeEditorFocus::Document;
     let document_rows = usize::from(document_area.height.saturating_sub(2)).max(1);
     let document_viewport = editor.document_viewport(document_rows);
+    let (content, scroll) = scrolled_source_preview(
+        &content,
+        &selected,
+        app,
+        document_area.width.saturating_sub(2),
+        document_viewport.start.min(u16::MAX as usize) as u16,
+    );
     frame.render_widget(
-        Paragraph::new(source_preview(&content, &selected, app))
+        Paragraph::new(content)
             .block(editor_pane_block(
                 app,
                 format!(
@@ -275,7 +282,7 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
                 document_focus,
             ))
             .wrap(Wrap { trim: false })
-            .scroll((document_viewport.start.min(u16::MAX as usize) as u16, 0)),
+            .scroll((scroll, 0)),
         document_area,
     );
     if integrated {

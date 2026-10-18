@@ -286,12 +286,9 @@ impl RecipeEditor {
         if !self.document.has_visual_diff() || maximum_lines == 0 {
             return Vec::new();
         }
-        let mut document = self.document.clone();
-        let mut preview = document
-            .preview_diff()
-            .lines
-            .iter()
-            .filter(|line| line.kind != TextAreaDiffKind::Context)
+        self.document
+            .changed_lines(maximum_lines)
+            .into_iter()
             .map(|line| {
                 let marker = match line.kind {
                     TextAreaDiffKind::Removed => '-',
@@ -301,9 +298,7 @@ impl RecipeEditor {
                 let number = line.new_line.or(line.old_line).map_or(0, |line| line + 1);
                 format!("{marker} {number:>3} {}", line.text)
             })
-            .collect::<Vec<_>>();
-        preview.truncate(maximum_lines);
-        preview
+            .collect()
     }
 }
 

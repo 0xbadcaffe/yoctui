@@ -46,6 +46,12 @@ impl TextAreaState {
         projected
     }
 
+    /// Bounded read-only changed rows for live presentation. Unlike a save
+    /// preview this does not clone history, hash revisions, or change save state.
+    pub fn changed_lines(&self, maximum_lines: usize) -> Vec<TextAreaDiffLine> {
+        changed_diff_lines(&self.advanced.diff_base_text, &self.text, maximum_lines)
+    }
+
     pub fn preview_diff(&mut self) -> &TextAreaDiffPreview {
         let preview = build_diff(&self.advanced.diff_base_text, &self.text);
         self.advanced.save = TextAreaSaveState::Preview { preview };
@@ -148,5 +154,4 @@ impl TextAreaState {
         };
         Ok(request)
     }
-
 }

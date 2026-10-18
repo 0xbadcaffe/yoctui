@@ -2,12 +2,13 @@
 set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
+python3 -m unittest scripts/test_measure_workbench_render.py
 
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 perf_target_dir="${YOCTUI_FLAMEGRAPH_TARGET_DIR:-$repo_root/target/ui-performance}"
 CARGO_TARGET_DIR="$perf_target_dir" YOCTUI_PROFILE_FRAMES=128 \
-  cargo bench -q -p yoctui --bench workbench_profile >"$work_dir/workload.log"
+  cargo bench -q -p yoctui-e2e --bench workbench_profile >"$work_dir/workload.log"
 grep -Eq '^yoctui workbench profile: frames=128 checksum=[0-9a-f]{16} elapsed_ms=[1-9][0-9]*$' "$work_dir/workload.log"
 
 python3 - "$work_dir" <<'PY'

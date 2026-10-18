@@ -223,7 +223,9 @@ fn scenario_workload(scenario: &str) -> App {
         }
         "menu-heavy" => {
             let mut app = workload();
-            app.screen = Screen::Recipes;
+            // Narrow recipe columns have multiple equally valid constraint
+            // solutions. Keep this menu-focused fixture's background stable.
+            app.screen = Screen::Dashboard;
             let _ = update(&mut app, Action::OpenApplicationMenu);
             app
         }
@@ -430,6 +432,19 @@ fn main() {
     }
     let checksum = black_box(checksum(&terminal));
     let elapsed = started.elapsed();
+    if std::env::var_os("YOCTUI_PROFILE_DUMP_SCREEN").is_some() {
+        for row in terminal
+            .backend()
+            .buffer()
+            .content
+            .chunks(usize::from(WIDTH))
+        {
+            eprintln!(
+                "{}",
+                row.iter().map(|cell| cell.symbol()).collect::<String>()
+            );
+        }
+    }
     let elapsed_ms = elapsed.as_millis();
     println!(
         "yoctui workbench profile: frames={frames} checksum={checksum:016x} elapsed_ms={elapsed_ms}"

@@ -182,7 +182,7 @@ fn wrap_ranges(text: &str, start: usize, end: usize, width: Option<usize>) -> Ve
     ranges
 }
 
-fn build_diff(base: &str, current: &str) -> TextAreaDiffPreview {
+fn diff_regions<'a>(base: &'a str, current: &'a str) -> (Vec<&'a str>, Vec<&'a str>, usize, usize) {
     let old: Vec<_> = base.lines().collect();
     let new: Vec<_> = current.lines().collect();
     let mut prefix = 0;
@@ -196,6 +196,43 @@ fn build_diff(base: &str, current: &str) -> TextAreaDiffPreview {
     {
         suffix += 1;
     }
+    (old, new, prefix, suffix)
+}
+
+fn changed_diff_lines(base: &str, current: &str, maximum_lines: usize) -> Vec<TextAreaDiffLine> {
+    if maximum_lines == 0 {
+        return Vec::new();
+    }
+    let (old, new, prefix, suffix) = diff_regions(base, current);
+    // Full previews spend up to two of their retained rows on prefix context.
+    let limit = maximum_lines.min(TEXTAREA_MAX_DIFF_LINES.saturating_sub(prefix.min(2)));
+    let removed = old
+        .iter()
+        .enumerate()
+        .take(old.len() - suffix)
+        .skip(prefix)
+        .map(|(index, text)| TextAreaDiffLine {
+            kind: TextAreaDiffKind::Removed,
+            old_line: Some(index + 1),
+            new_line: None,
+            text: (*text).to_owned(),
+        });
+    let added = new
+        .iter()
+        .enumerate()
+        .take(new.len() - suffix)
+        .skip(prefix)
+        .map(|(index, text)| TextAreaDiffLine {
+            kind: TextAreaDiffKind::Added,
+            old_line: None,
+            new_line: Some(index + 1),
+            text: (*text).to_owned(),
+        });
+    removed.chain(added).take(limit).collect()
+}
+
+fn build_diff(base: &str, current: &str) -> TextAreaDiffPreview {
+    let (old, new, prefix, suffix) = diff_regions(base, current);
     let mut lines = Vec::new();
     let context_start = prefix.saturating_sub(2);
     for (index, text) in old.iter().enumerate().take(prefix).skip(context_start) {
@@ -263,4 +300,3 @@ fn bounded_utf8(mut value: String, limit: usize) -> String {
     truncate_utf8(&mut value, limit);
     value
 }
-

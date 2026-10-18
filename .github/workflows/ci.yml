@@ -88,6 +88,7 @@ jobs:
           ./scripts/test-tui-keymap.sh
           ./scripts/test-tui-flow.sh
           ./scripts/test-readme-quickstart.sh
+          python3 -m unittest scripts/test_measure_workbench_render.py
           python3 scripts/test_bitbake_setup_pty.py --manage
           ./scripts/test-tui-snapshots.sh
           ./scripts/test-tui-performance.sh

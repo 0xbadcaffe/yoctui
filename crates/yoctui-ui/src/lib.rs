@@ -109,7 +109,7 @@ pub use semantic_theme::SemanticTheme;
 use semantic_theme::ThemePalette;
 
 mod source_render;
-use source_render::{numbered_source_preview, source_preview};
+use source_render::{numbered_source_preview, scrolled_source_preview, source_preview};
 
 mod footer;
 use footer::{

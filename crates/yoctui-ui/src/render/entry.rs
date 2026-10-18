@@ -22,7 +22,7 @@ pub(crate) fn selected_table_viewport(
 pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     let area = frame.area();
     let palette = ThemePalette::for_app(app);
-    frame.render_widget(Block::default().style(palette.base()), area);
+    paint_frame_style(frame.buffer_mut(), area, palette.base());
     if area.width < 80 || area.height < 24 {
         frame.render_widget(
             Paragraph::new(format!(

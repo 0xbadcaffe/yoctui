@@ -2,6 +2,8 @@ use super::*;
 
 mod dirty_checks_follow_exact_text_and_independent_baselines;
 
+mod diff_summary;
+
 mod ux_textarea_unicode_motion_selection_and_bounded_history;
 
 mod ux_textarea_search_replace_undo_redo_remain_utf8_safe;
