@@ -10,6 +10,7 @@ pub struct BitBakeSetupEntry {
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct BitBakeSetupState {
+    pub management: SetupManagementState,
     pub catalogue: bool,
     pub top_dir: String,
     pub tool: String,
@@ -43,6 +44,7 @@ impl BitBakeSetupWizard {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BitBakeSetupAction {
+    Manage(SetupManageAction),
     Catalogue,
     Environment,
     Refresh,
@@ -72,6 +74,8 @@ pub enum BitBakeSetupAction {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BitBakeSetupRequest {
+    CancelManagement,
+    Manage(SetupManageRequest),
     List {
         generation: u64,
         root: PathBuf,
@@ -95,11 +99,23 @@ fn list(app: &mut App) -> Option<Effect> {
 pub(crate) fn reduce(app: &mut App, action: BitBakeSetupAction) -> Option<Effect> {
     use BitBakeSetupAction as A;
     match action {
+        A::Manage(action) => return crate::setup_management::reduce(app, action),
         A::Catalogue => {
+            app.bitbake_setup.management.visible = false;
+            app.bitbake_setup.management.generation =
+                app.bitbake_setup.management.generation.wrapping_add(1);
+            app.bitbake_setup.management.loading = false;
             app.bitbake_setup.catalogue = true;
             return list(app);
         }
-        A::Environment => app.bitbake_setup.catalogue = false,
+        A::Environment => {
+            app.bitbake_setup.catalogue = false;
+            app.bitbake_setup.management.visible = false;
+            app.bitbake_setup.management.generation =
+                app.bitbake_setup.management.generation.wrapping_add(1);
+            app.bitbake_setup.management.loading = false;
+            return Some(Effect::BitBakeSetup(BitBakeSetupRequest::CancelManagement));
+        }
         A::Refresh => return list(app),
         A::Select(delta) => {
             app.bitbake_setup.selected = app

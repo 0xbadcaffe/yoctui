@@ -226,7 +226,8 @@ impl Dialog {
             | Self::YoctoUtility(_)
             | Self::TerminalLaunch(_)
             | Self::RecipeEditor(_)
-            | Self::BitBakeSetup(_) => false,
+            | Self::BitBakeSetup(_)
+            | Self::BitBakeSetupOperation(_) => false,
         }
     }
 }

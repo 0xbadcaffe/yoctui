@@ -59,6 +59,9 @@ pub struct TerminalLaunchRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TerminalCompletion {
+    SetupChanged {
+        profile: crate::BuildEnvironmentProfile,
+    },
     ReturnEditor {
         path: PathBuf,
         name: String,
