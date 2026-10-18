@@ -27,6 +27,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", default="target/debug/yoctui")
     parser.add_argument(
+        "--manage",
+        action="store_true",
+        help="Also validate fragments/status/update in the disposable setup",
+    )
+    parser.add_argument(
         "--official-tool",
         help="Optionally test this upstream executable with sibling local OE-Core/BitBake sources; no network or image build",
     )
@@ -37,25 +42,13 @@ def main():
         environment = isolated_environment(directory)
         tool = root / "bitbake-setup"
         # Never calls BitBake or touches the developer's daemon/build/source trees.
-        tool.write_text(
-            "#!/usr/bin/env python3\n"
-            "import pathlib, sys\n"
-            "a = sys.argv[1:]\n"
-            "settings = {}\n"
-            "while a and a[0] == '--setting':\n"
-            "    settings[a[2]] = a[3]; a = a[4:]\n"
-            "assert a[:2] == ['init', '--no-init-vscode']\n"
-            "name = a[a.index('--setup-dir-name') + 1]\n"
-            "top = pathlib.Path(settings['top-dir-prefix']) / settings['top-dir-name']\n"
-            "machine = input('Choose fixture machine: ')\n"
-            "assert machine == 'qemux86-64', repr(machine)\n"
-            "build = top / name / 'build'\n"
-            "(build / 'conf').mkdir(parents=True)\n"
-            "(build / 'conf/local.conf').write_text('MACHINE = \\\"qemux86-64\\\"\\n')\n"
-            "(build / 'conf/bblayers.conf').write_text('BBLAYERS = \\\"\\\"\\n')\n"
-            "(build / 'init-build-env').write_text('# deterministic fixture only\\n')\n"
-            "print('SETUP_FIXTURE_COMPLETE', flush=True)\n"
-        )
+        fixtures = Path(__file__).with_name("fixtures")
+        tool.write_text((fixtures / "bitbake-setup.py").read_text())
+        bin_dir = root / "bin"
+        bin_dir.mkdir()
+        config_tool = bin_dir / "bitbake-config-build"
+        config_tool.write_text((fixtures / "bitbake-config-build.py").read_text())
+        config_tool.chmod(0o700)
         tool.chmod(0o700)
         template = None
         if args.official_tool:
@@ -198,6 +191,19 @@ def main():
             press(b"\r", "Configure build environment")
             assert str(top / "demo/build") in terminal.screen.text()
             press(b"\x1b", "> demo", "Configure build environment")
+            if args.manage:
+                from setup_management_acceptance import exercise
+
+                exercise(
+                    terminal,
+                    press,
+                    environment_view,
+                    top,
+                    template,
+                    binary,
+                    environment,
+                    root,
+                )
             terminal.finish()
             sessions = list(root.rglob("session.toml"))
             assert sessions, "client must persist normal-exit preferences"
@@ -212,6 +218,24 @@ def main():
             if terminal is not None:
                 terminal.cleanup()
                 os.close(terminal.master)
+            # Tinfoil may leave an idle server behind. Target only the build
+            # inside this TemporaryDirectory, never the developer's daemon/build.
+            owned_initializer = root / "setups/demo/build/init-build-env"
+            if args.manage and args.official_tool and owned_initializer.is_file():
+                subprocess.run(
+                    [
+                        "/bin/bash",
+                        "-c",
+                        'set -e; unset BBSERVER BBPATH BUILDDIR; init=$1; set --; source "$init" >/dev/null; exec bitbake --kill-server',
+                        "yoctui-test-cleanup",
+                        str(owned_initializer),
+                    ],
+                    env=environment,
+                    cwd=root,
+                    capture_output=True,
+                    timeout=15,
+                    check=False,
+                )
             subprocess.run(
                 [binary, "daemon", "stop"],
                 env=environment,
