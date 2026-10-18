@@ -14,6 +14,7 @@ pub(crate) fn next_filter<T: Clone + PartialEq>(values: &[T], current: Option<T>
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
     FileDiff(FileDiffRequest),
+    BitBakeSetup(BitBakeSetupRequest),
     SavedEnvironment(SavedEnvironmentRequest),
     Hardware(HardwareEffect),
     KernelDebug(KernelDebugRequest),

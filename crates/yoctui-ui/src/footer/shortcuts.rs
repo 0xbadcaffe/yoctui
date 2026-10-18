@@ -224,7 +224,13 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             "↑/↓ select | ←/→ change | r retry save | Ctrl+P commands | Tab focus | q quit"
         }
         Screen::BuildEnvironment => {
-            "e configure | b browse paths | Alt+a advanced | Alt+v verify | Tab focus | q quit"
+            if app.bitbake_setup.management.visible {
+                "1 environment | 2 setups | r refresh | e enable | d disable | Enter show | Esc back"
+            } else if app.bitbake_setup.catalogue {
+                "1 environment | w new setup | o directory | r refresh | Enter import | Esc back"
+            } else {
+                "2 setups | w new setup | e configure | b browse | Alt+v verify | Tab focus"
+            }
         }
     };
     if app.terminal_console_fullscreen() && app.focus == FocusTarget::Workspace {

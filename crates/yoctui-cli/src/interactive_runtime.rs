@@ -48,6 +48,7 @@ pub(crate) fn begin_startup_platform_inspection(app: &mut App) -> Option<Screen>
         _ => None,
     }
 }
+mod bitbake_setup;
 mod metadata_workspaces;
 mod mouse_input;
 mod paste_input;
@@ -150,6 +151,7 @@ pub(crate) async fn tui(
     debug_assert_eq!(app.reduced_motion, reduced_motion);
     install_session_raw_favorites(&session, &mut app)?;
     install_session_hardware(&session, &mut app)?;
+    app.bitbake_setup.top_dir = session.bitbake_setup_top_dir.clone().unwrap_or_default();
     if let Some(layout) = session.pane_layout.clone()
         && app.preferences.remember_pane_sizes
         && layout.validate().is_ok()
@@ -441,6 +443,7 @@ pub(crate) async fn tui(
         frame_interval,
         render_scheduler,
         environment_browser_io,
+        bitbake_setup_io: crate::bitbake_setup_io::BitBakeSetupIo::default(),
         file_diff_io: crate::file_diff_io::FileDiffIo::default(),
         hardware_io,
         kernel_debug_io: kernel_debug_io::KernelDebugIo::default(),

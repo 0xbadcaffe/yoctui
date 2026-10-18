@@ -113,6 +113,17 @@ impl InteractiveRuntime {
             runtime.render_scheduler.invalidate(RenderCause::State);
             return Ok(true);
         }
+        if matches!(
+            runtime.app.active_dialog(),
+            Some(Dialog::BitBakeSetup(_) | Dialog::BitBakeSetupOperation(_))
+        ) {
+            if let Some(action) = yoctui_app::bitbake_setup_action(&runtime.app, input)
+                && let Some(effect) = compatibility_workspace_action(&mut runtime.app, action)
+            {
+                runtime.bitbake_setup_io.submit(effect);
+            }
+            return Ok(true);
+        }
         if let Some(Dialog::EnvironmentSetup(setup)) = runtime.app.active_dialog() {
             if let Some(action) = yoctui_app::environment_setup_action(setup, input)
                 && let Some(effect) = compatibility_workspace_action(&mut runtime.app, action)

@@ -212,6 +212,17 @@ pub(super) fn terminal_completion_outcome(
             Some(0) => Some(TerminalCompletionOutcome::Succeeded(
                 pending.completion.clone(),
             )),
+            Some(code)
+                if matches!(
+                    pending.completion,
+                    yoctui_model::TerminalCompletion::SetupChanged { .. }
+                ) =>
+            {
+                Some(TerminalCompletionOutcome::Failed(format!(
+                    "{} exited with status {code}; changes may be partial. Refresh/reverify before building; no automatic rollback was attempted.",
+                    pending.name
+                )))
+            }
             Some(code) => Some(TerminalCompletionOutcome::Failed(format!(
                 "{} exited with status {code}; the generated file was not opened.",
                 pending.name

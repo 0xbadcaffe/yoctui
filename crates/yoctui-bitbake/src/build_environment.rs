@@ -254,16 +254,10 @@ impl BuildEnvironmentAdapter {
         if script.is_symlink() {
             return Err(BuildEnvironmentAdapterError::UnsafePath(script.clone()));
         }
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            if std::fs::metadata(script)
-                .map(|metadata| metadata.permissions().mode() & 0o111 == 0)
-                .unwrap_or(true)
-            {
-                return Err(BuildEnvironmentAdapterError::NotExecutable(script.clone()));
-            }
-        }
+        // Environment initializers are sourced, not executed. In particular,
+        // bitbake-setup generates a readable, non-executable init-build-env.
+        std::fs::File::open(script)
+            .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(script.clone()))?;
         Ok(profile.clone())
     }
 
@@ -274,7 +268,14 @@ impl BuildEnvironmentAdapter {
         let profile = self.validate(&profile)?;
         let script = r#"
 set -e
-source "$1" "$2"
+if [ "$3" = generated ]; then
+    yoctui_init_script=$1
+    set --
+    source "$yoctui_init_script"
+    unset yoctui_init_script
+else
+    source "$1" "$2"
+fi
 env -0
 "#;
         let mut command = Command::new("bash");
@@ -284,6 +285,13 @@ env -0
             .arg("yoctui-init")
             .arg(&profile.init_script)
             .arg(&profile.build_dir)
+            .arg(
+                if profile.init_script == profile.build_dir.join("init-build-env") {
+                    "generated"
+                } else {
+                    "legacy"
+                },
+            )
             .current_dir(&profile.source_dir)
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::piped())

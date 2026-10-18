@@ -1,6 +1,23 @@
 use super::*;
 
 #[test]
+fn bitbake_setup_catalogue_escape_returns_to_profile_before_navigator() {
+    let mut app = App::new(8, 1024);
+    app.screen = Screen::BuildEnvironment;
+    app.focus = yoctui_model::FocusTarget::Workspace;
+    app.bitbake_setup.catalogue = true;
+    assert!(workspace_owns_focus_key(&app, Input::Esc));
+    assert_eq!(
+        yoctui_app::bitbake_setup_action(&app, Input::Esc),
+        Some(Action::BitBakeSetup(
+            yoctui_model::BitBakeSetupAction::Environment
+        ))
+    );
+    app.bitbake_setup.catalogue = false;
+    assert!(!workspace_owns_focus_key(&app, Input::Esc));
+}
+
+#[test]
 fn raw_execution_escape_uses_workspace_route_so_detach_effect_is_submitted() {
     let mut app = App::new(8, 1024);
     app.screen = Screen::RawMode;

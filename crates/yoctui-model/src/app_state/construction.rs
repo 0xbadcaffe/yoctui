@@ -1,6 +1,7 @@
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
+            bitbake_setup: BitBakeSetupState::default(),
             file_diff: FileDiffState::default(),
             editor_settings: EditorSettingsState::default(),
             help_scroll: 0,

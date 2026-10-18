@@ -225,7 +225,9 @@ impl Dialog {
             | Self::DtcDecompile(_)
             | Self::YoctoUtility(_)
             | Self::TerminalLaunch(_)
-            | Self::RecipeEditor(_) => false,
+            | Self::RecipeEditor(_)
+            | Self::BitBakeSetup(_)
+            | Self::BitBakeSetupOperation(_) => false,
         }
     }
 }

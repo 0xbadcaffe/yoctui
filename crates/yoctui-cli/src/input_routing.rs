@@ -66,6 +66,10 @@ pub(crate) fn workspace_owns_focus_key(app: &App, input: Input) -> bool {
         && matches!(input, Input::Esc | Input::Tab | Input::BackTab))
         || (input == Input::Esc && app.screen == Screen::Layers && app.layer_browser.is_some())
         || (input == Input::Esc
+            && app.screen == Screen::BuildEnvironment
+            && (app.bitbake_setup.catalogue || app.bitbake_setup.management.visible)
+            && app.focus == yoctui_model::FocusTarget::Workspace)
+        || (input == Input::Esc
             && app.screen == Screen::Errors
             && app.error_workspace.viewer.is_some())
         || (input == Input::Esc

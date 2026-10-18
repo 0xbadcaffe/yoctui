@@ -135,9 +135,8 @@ pub(crate) async fn execute(action: DaemonControl, build: &str, source: &str) ->
         );
         let source = Path::new(source).canonicalize()?;
         anyhow::ensure!(
-            Path::new(source.to_str().context("non UTF-8 source")?).is_absolute()
-                && source.join("oe-init-build-env").is_file(),
-            "Source directory needs oe-init-build-env"
+            yoctui_bitbake::discover_build_environment(&canonical, Some(&source)).is_some(),
+            "Choose a generated build/init-build-env setup or a source directory with oe-init-build-env"
         );
         let contents = configuration(&executable, &canonical, &source)?;
         let destination = super::daemon_service::daemon_service_path()?

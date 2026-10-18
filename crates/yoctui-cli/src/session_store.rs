@@ -42,6 +42,8 @@ pub(crate) struct Session {
     #[serde(default)]
     pub(crate) hardware_last_directory: Option<PathBuf>,
     #[serde(default)]
+    pub(crate) bitbake_setup_top_dir: Option<String>,
+    #[serde(default)]
     pub(crate) keymap: yoctui_model::KeymapPreferences,
     #[serde(default)]
     pub(crate) onboarding: Option<OnboardingProgress>,

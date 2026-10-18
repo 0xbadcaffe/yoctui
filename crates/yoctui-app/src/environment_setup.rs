@@ -124,6 +124,8 @@ pub fn read_environment_directory(
     }
     children.sort();
     let init_script = [
+        "init-build-env",
+        "build/init-build-env",
         "oe-init-build-env",
         "layers/openembedded-core/oe-init-build-env",
     ]

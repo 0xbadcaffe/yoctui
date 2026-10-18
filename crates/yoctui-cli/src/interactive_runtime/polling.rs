@@ -65,6 +65,7 @@ impl InteractiveRuntime {
         #[cfg(unix)]
         runtime.poll_saved_environment().await;
         let (internal_records, ingress_dropped) = runtime.internal_tracing_capture.drain(256);
+        runtime.poll_bitbake_setup().await;
         runtime.render_scheduler.invalidate_if(
             runtime.environment_browser_io.poll(&mut runtime.app).await,
             RenderCause::State,
@@ -142,6 +143,9 @@ impl InteractiveRuntime {
         if let Some(daemon_client) = runtime.daemon_runtime.as_mut() {
             for completion in daemon_client.take_terminal_completions() {
                 match completion {
+                    client_runtime::TerminalCompletionOutcome::Succeeded(
+                        yoctui_model::TerminalCompletion::SetupChanged { profile },
+                    ) => runtime.finish_setup_operation(profile),
                     client_runtime::TerminalCompletionOutcome::Succeeded(
                         yoctui_model::TerminalCompletion::ReturnEditor { path, name },
                     ) => runtime.finish_preferred_editor(path, name).await,

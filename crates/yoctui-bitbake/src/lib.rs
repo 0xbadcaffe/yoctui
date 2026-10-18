@@ -5,6 +5,8 @@ mod bitbake_restart;
 mod bitbake_socket;
 mod build_cache;
 mod build_environment;
+mod build_environment_discovery;
+pub use build_environment_discovery::discover_build_environment;
 mod compatibility_api;
 mod compatibility_cache;
 mod compatibility_command;

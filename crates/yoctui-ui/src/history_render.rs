@@ -2,6 +2,14 @@
 use super::*;
 
 pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    if app.bitbake_setup.management.visible {
+        setup_management_render::workspace(frame, app, area);
+        return;
+    }
+    if app.bitbake_setup.catalogue {
+        bitbake_setup_render::catalogue(frame, app, area);
+        return;
+    }
     let status = match &app.build_environment {
         BuildEnvironmentState::Unconfigured => "not configured".to_owned(),
         BuildEnvironmentState::Configured(profile) => format!(
@@ -72,7 +80,7 @@ pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Re
         }
     };
     let text = format!(
-        "Enter/e Configure paths  |  b Browse directories\nAlt+a Advanced TOML  |  c Clone Poky  |  Alt+v Verify BitBake\nn/Alt+n profile item  |  p preview/open\n\n{status}{draft}{images}\n{profile}"
+        "1 Environment  |  2 Setups  |  w New BitBake setup wizard\nEnter/e Configure paths  |  b Browse directories\nAlt+a Advanced TOML  |  c Clone Poky  |  Alt+v Verify BitBake\nn/Alt+n profile item  |  p preview/open\n\n{status}{draft}{images}\n{profile}"
     );
     frame.render_widget(
         Paragraph::new(text)

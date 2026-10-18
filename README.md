@@ -4,9 +4,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master&amp;event=push&amp;refresh=0.1.351" alt="CI workflow status for master pushes"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master&amp;event=push&amp;refresh=0.1.352" alt="CI workflow status for master pushes"></a>
   <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/testing.md#completion-gate"><img src="https://img.shields.io/badge/coverage-gates-orange?style=flat-square" alt="Coverage verification gates"></a>
-  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.351" alt="Latest published crates.io version"></a>
+  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.352" alt="Latest published crates.io version"></a>
   <a href="#install"><img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&amp;logo=rust" alt="Rust stable toolchain"></a>
   <br>
   <a href="#license"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license"></a>
@@ -24,6 +24,8 @@
   <a href="https://github.com/0xbadcaffe/yoctui/issues">Issues</a>
   <br>
   <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/screenshots.md">Screenshots</a> ·
+  <a href="#bitbake-setup">BitBake setup</a> ·
+  <a href="#daemon-and-systemd-service">Daemon service</a> ·
   <a href="#contributing">Contributing</a> ·
   <a href="#license">License</a>
 </p>
@@ -93,6 +95,27 @@ QEMU, GDB, GitUI, and document viewers are optional tools needed for their
 respective workflows. Live builds also need your Yocto release's host dependencies;
 see [workspace setup](https://github.com/0xbadcaffe/yoctui/blob/master/docs/user-guide.md#start-a-workspace-safely).
 
+### Daemon and systemd service
+
+The UI and daemon use the **same `yoctui` binary and release version**;
+`yoctui --version` reports the installed binary. Upgrading it does not replace
+an already-running daemon: restart that daemon only after its jobs and terminal
+sessions have finished.
+
+`cargo install` does **not** install or enable a systemd service. For an optional
+user service, with no other Yoctui daemon running:
+
+```bash
+yoctui daemon service install
+systemctl --user enable --now yoctui.service
+yoctui daemon service status
+```
+
+The unit is installed at `${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/yoctui.service`
+and starts at login when enabled. It does not inherit your current shell's Yocto
+environment; use **Tools → Daemons → c** to review/configure its build and source
+directories. Without systemd, `yoctui daemon start` runs a detached daemon directly.
+
 ## Quickstart
 
 From an existing Poky checkout, initialize a build directory (adjust the paths):
@@ -108,18 +131,20 @@ Check `conf/local.conf` for your desired `MACHINE`, such as `qemux86-64`.
 See [workspace setup](https://github.com/0xbadcaffe/yoctui/blob/master/docs/user-guide.md#start-a-workspace-safely)
 for Yocto host dependencies and other source layouts.
 
-If no daemon is running, or it already uses this build:
+If no daemon is running, start one from this initialized shell:
 
 ```bash
 yoctui daemon start
-yoctui --backend bridge --build-dir "$BUILDDIR"
 ```
 
-To reconnect to an already-running daemon:
+Connect to the new daemon, or reconnect to one already using this build:
 
 ```bash
 yoctui attach
 ```
+
+If an existing daemon uses a different build, review switching it through
+**Tools → Daemons → c** after its jobs and terminal sessions finish.
 
 Yoctui opens in your current terminal, including over SSH or on a text console;
 no graphical desktop or separate terminal window is required.
@@ -137,6 +162,46 @@ Use `Tab` to focus the workspace if the Navigator has focus. These `i` and `b`
 shortcuts belong to Images; editors and terminal sessions have their own keys.
 `Alt+b` opens additional build options, `F1` opens Help, and `F12` opens the menu.
 Opening Yoctui does not start a build; exiting leaves daemon-owned work running.
+
+### BitBake setup
+
+For a modern source layout, install the separate upstream `bitbake-setup` tool
+in a Python virtual environment (Ubuntu/Debian example):
+
+```bash
+sudo apt install -y python3-venv
+python3 -m venv "$HOME/.venvs/bitbake-setup"
+"$HOME/.venvs/bitbake-setup/bin/pip" install bitbake-setup
+"$HOME/.venvs/bitbake-setup/bin/bitbake-setup" \
+  --setting default top-dir-prefix "$HOME" \
+  --setting default top-dir-name bitbake-builds \
+  init --setup-dir-name yoctui-demo
+```
+
+Choose a Poky configuration, `distro/poky` and `machine/qemux86-64` when offered.
+Use only trusted templates: setup downloads sources and may execute scripts.
+Then initialize the generated build and, **if no daemon is running**, start it:
+
+```bash
+source "$HOME/bitbake-builds/yoctui-demo/build/init-build-env"
+yoctui daemon start
+yoctui attach
+```
+
+Use Images → `i` → `core-image-minimal`, then `b` to review/start the build.
+For an existing daemon, use the reviewed switch described above instead of
+starting another one. See the [upstream setup guide](https://docs.yoctoproject.org/bitbake/dev/bitbake-user-manual/bitbake-user-manual-environment-setup.html)
+for host requirements and template options.
+
+Alternatively, on `feature/bitbake-setup`, open **Build Environment → w** to
+create a setup inside Yoctui. Set the tool path above, top directory
+`$HOME/bitbake-builds` (enter its absolute path), and setup name `yoctui-demo`;
+review with `s` and confirm with Enter. Afterwards, **2 Setups → r** discovers it;
+Enter imports the profile for review. Use `f`/`3` for fragments, `s` for status
+or `u` for a reviewed update. Updates default to prompting about configuration
+changes and aborting on rebase conflicts. See the
+[setup workflow](https://github.com/0xbadcaffe/yoctui/blob/feature/bitbake-setup/docs/user-guide.md#create-or-import-a-modern-bitbake-setup)
+for verification and safe daemon switching. This wizard is not yet in a published release.
 
 ## Documentation
 

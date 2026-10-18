@@ -11,6 +11,8 @@ enum Target {
     Kernel,
     Dtc,
     Setup,
+    BitBakeSetup,
+    SetupOperation,
     Raw(Box<yoctui_model::RawModeAction>),
     Single(fn(char) -> Action),
 }
@@ -76,6 +78,12 @@ fn target(app: &App) -> Option<Target> {
         );
     }
     match app.active_dialog() {
+        Some(Dialog::BitBakeSetup(wizard)) if wizard.editor.is_some() => {
+            return Some(Target::BitBakeSetup);
+        }
+        Some(Dialog::BitBakeSetupOperation(d)) if d.editor.is_some() => {
+            return Some(Target::SetupOperation);
+        }
         Some(Dialog::DtcDecompile(dialog))
             if dialog.editor.is_some() && dialog.browser.is_none() =>
         {
@@ -262,6 +270,14 @@ pub fn text_paste_actions(
                 )],
                 Target::Setup => vec![Action::EnvironmentSetup(
                     yoctui_model::EnvironmentSetupAction::Insert(text),
+                )],
+                Target::BitBakeSetup => vec![Action::BitBakeSetup(
+                    yoctui_model::BitBakeSetupAction::Insert(text),
+                )],
+                Target::SetupOperation => vec![Action::BitBakeSetup(
+                    yoctui_model::BitBakeSetupAction::Manage(
+                        yoctui_model::SetupManageAction::Insert(text),
+                    ),
                 )],
                 Target::FieldPopup => {
                     vec![Action::EditActivePopup(PopupEditorCommand::PasteText {
