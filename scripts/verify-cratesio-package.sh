@@ -5,7 +5,7 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 source "$repo_root/scripts/cratesio-package-contract.sh"
 
-version="0.1.350"
+version="0.1.351"
 public_crates=(
   yoctui-utils
   yoctui-model

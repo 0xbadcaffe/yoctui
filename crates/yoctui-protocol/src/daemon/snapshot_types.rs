@@ -365,7 +365,7 @@ impl Default for DaemonSnapshotLimits {
             // BitBake output. The journal remains sequence/event bounded;
             // clients can still follow incremental log events after attach.
             recent_logs: 512,
-            snapshot_bytes: MAX_FRAME_BYTES,
+            snapshot_bytes: MAX_SNAPSHOT_BYTES,
         }
     }
 }

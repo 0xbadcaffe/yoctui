@@ -65,7 +65,7 @@ pub(super) fn service(
                         ],
                         limits: ProtocolLimits {
                             maximum_frame_bytes: MAX_FRAME_BYTES as u32,
-                            maximum_snapshot_bytes: MAX_FRAME_BYTES as u32,
+                            maximum_snapshot_bytes: yoctui_protocol::daemon::MAX_SNAPSHOT_BYTES as u32,
                             maximum_pending_requests: 64,
                             maximum_queue_depth: 256,
                             maximum_terminal_rows: 512,
@@ -319,11 +319,32 @@ pub(super) fn service(
                     }
                     let request_id = request.request_id;
                     // A deferred query or an already-sent rejection has no immediate reply.
-                    let Some(outcome) = commands::dispatch(request, services, client)? else { continue; };
-                    client.connection.send(&ServerMessage::CommandResult(CommandResult {
+                    let outcome = match commands::dispatch(request, services, client) {
+                        Ok(outcome) => outcome,
+                        Err(error) if super::budget::is_size_error(&error) => {
+                            super::budget::report(&mut services.daemon_journal, &error);
+                            // Dispatch may already have sent part of a command's
+                            // events. Install a bounded checkpoint before the
+                            // cursor advances, including the budget diagnostic;
+                            // skipping it would create a gap in the next event.
+                            if client.attached {
+                                client.connection.send(&ServerMessage::Snapshot(
+                                    services.daemon_journal.snapshot().clone(),
+                                ))?;
+                            }
+                            Some(CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::LimitExceeded,
+                                message: format!("Update exceeds the daemon state budget: {error}"),
+                                current_generation: services.daemon_journal.snapshot().generation,
+                            })
+                        }
+                        Err(error) => return Err(error),
+                    };
+                    let Some(outcome) = outcome else { continue; };
+                    super::budget::send_command_result(&mut client.connection, &mut services.daemon_journal, CommandResult {
                         request_id,
                         outcome,
-                    }))?;
+                    })?;
                     // Command-created events are sent directly above. Advance
                     // this client's replay cursor so the next fan-out pass
                     // does not duplicate them.

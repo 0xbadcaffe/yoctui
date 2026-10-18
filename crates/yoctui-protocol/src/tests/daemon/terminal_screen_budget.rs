@@ -78,7 +78,7 @@ fn terminal_screen_budget_tracks_replacement_commas_escaping_and_counter_growth_
 }
 
 #[test]
-fn terminal_screen_budget_rejection_keeps_leaf_cache_and_snapshot_transactional() {
+fn terminal_screen_budget_validates_transactionally_and_evicts_reconstructible_screens() {
     let mut snapshot = daemon_snapshot_fixture();
     snapshot.pty_screens.push(screen(1, "a"));
     let limit = serde_json::to_vec(&snapshot).unwrap().len();
@@ -99,15 +99,14 @@ fn terminal_screen_budget_rejection_keeps_leaf_cache_and_snapshot_transactional(
     ));
     assert_eq!(journal.snapshot(), &snapshot);
     assert_eq!(journal.pty_screen_bytes, initial_cache);
-    assert!(matches!(
-        journal.publish(DaemonEvent::PtyScreen(screen(
+    journal
+        .publish(DaemonEvent::PtyScreen(screen(
             1,
-            "too large for this limit"
-        ))),
-        Err(DaemonSnapshotError::SnapshotTooLarge { .. })
-    ));
-    assert_eq!(journal.snapshot(), &snapshot);
-    assert_eq!(journal.pty_screen_bytes, initial_cache);
+            "too large for this limit",
+        )))
+        .unwrap();
+    assert!(journal.snapshot().pty_screens.is_empty());
+    assert!(journal.pty_screen_bytes.is_empty());
     journal
         .publish(DaemonEvent::PtyScreen(screen(1, "a")))
         .unwrap();

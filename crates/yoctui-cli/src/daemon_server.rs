@@ -21,6 +21,7 @@ use yoctui_protocol::{
 };
 
 mod background;
+mod budget;
 mod client_requests;
 mod commands;
 mod compatibility;
@@ -228,15 +229,17 @@ pub(crate) async fn run_daemon_foreground(
         drop(client_connections);
         services.bitbake_supervisor.consume_notification();
 
-        background::poll(&mut services)?;
-        telemetry::publish(
+        let background_result = background::poll(&mut services);
+        budget::recover(background_result, &mut services.daemon_journal)?;
+        let telemetry_result = telemetry::publish(
             &mut services,
             &mut telemetry,
             &clients,
             &record,
             &mut archive_recorder,
         )
-        .await?;
+        .await;
+        budget::recover(telemetry_result, &mut services.daemon_journal)?;
         if termination_requested(termination) {
             break;
         }
@@ -321,6 +324,10 @@ pub(crate) async fn run_daemon_foreground(
                     tracing::debug!(%error, "dropping daemon client after request delivery failure");
                     false
                 }
+                Err(error) if budget::is_size_error(&error) => {
+                    budget::report(&mut services.daemon_journal, &error);
+                    true
+                }
                 Err(error) => return Err(error),
             };
             let DaemonClient {
@@ -341,40 +348,15 @@ pub(crate) async fn run_daemon_foreground(
                 }
                 continue;
             }
-            if let Some(result) = rootfs_query.as_mut().and_then(|query| query.try_result()) {
-                let query = rootfs_query.take().expect("completed rootfs query");
-                let result = result.and_then(|sources| {
-                    let compatibility = services
-                        .daemon_state
-                        .compatibility
-                        .as_ref()
-                        .context("rootfs compatibility authority was lost")?;
-                    daemon_rootfs::validate_authority(
-                        &query.query,
-                        services.instance,
-                        compatibility,
-                    )?;
-                    Ok(sources)
-                });
-                let outcome = match result {
-                    Ok(sources) => CommandOutcome::RootfsSources {
-                        sources: Box::new(sources),
-                    },
-                    Err(error) => CommandOutcome::Rejected {
-                        code: yoctui_protocol::daemon::ProtocolErrorCode::Conflict,
-                        message: format!("rootfs metadata unavailable: {error:#}"),
-                        current_generation: services.daemon_journal.snapshot().generation,
-                    },
-                };
-                if connection
-                    .send(&ServerMessage::CommandResult(CommandResult {
-                        request_id: query.request_id,
-                        outcome,
-                    }))
-                    .is_err()
-                {
-                    keep_client = false;
-                }
+            if let Some(result) = background::poll_rootfs(&services, &mut rootfs_query)
+                && budget::send_command_result(
+                    &mut connection,
+                    &mut services.daemon_journal,
+                    result,
+                )
+                .is_err()
+            {
+                keep_client = false;
             }
             if attached {
                 match services.daemon_journal.synchronize_bounded(

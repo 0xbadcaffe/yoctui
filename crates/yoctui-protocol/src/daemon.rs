@@ -11,8 +11,15 @@ use crate::{TaskStatsData, WorkspaceData};
 pub const PROTOCOL_MAJOR: u16 = 1;
 pub const PROTOCOL_MINOR: u16 = 6;
 pub const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
+// Snapshots/events are nested in Attached/Snapshot/Event messages on the wire.
+// Reserve room for that envelope; accepting a frame-sized leaf can otherwise
+// make a valid journal impossible to transmit to an attached client.
+pub const MAX_SNAPSHOT_BYTES: usize = MAX_FRAME_BYTES - 1_024;
 pub const MAX_CAPABILITIES: usize = 128;
 pub const MAX_RETAINED_EVENTS: usize = 65_536;
+// Raw checkpoints and terminal events vary greatly in size. An event-count
+// bound alone can retain gigabytes and trigger memory pressure/disconnects.
+pub const MAX_RETAINED_EVENT_BYTES: usize = 16 * 1024 * 1024;
 pub const MAX_SNAPSHOT_LOGS: usize = 100_000;
 pub const MAX_DAEMON_CLIENTS: usize = 32;
 pub const MAX_DAEMON_PTY_SESSIONS: usize = 64;
@@ -85,6 +92,7 @@ include!("daemon/client_commands.rs");
 include!("daemon/qa_testing_messages.rs");
 include!("daemon/terminal_messages.rs");
 include!("daemon/snapshot_types.rs");
+include!("daemon/snapshot_budget.rs");
 include!("daemon/snapshot_journal.rs");
 include!("daemon/snapshot_reducer.rs");
 include!("daemon/errors_framing.rs");

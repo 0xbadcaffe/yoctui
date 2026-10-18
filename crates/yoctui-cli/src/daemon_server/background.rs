@@ -175,3 +175,33 @@ pub(super) fn poll(services: &mut DaemonServices) -> Result<()> {
 
     Ok(())
 }
+
+pub(super) fn poll_rootfs(
+    services: &DaemonServices,
+    pending: &mut Option<daemon_rootfs::PendingQuery>,
+) -> Option<CommandResult> {
+    let result = pending.as_mut()?.try_result()?;
+    let query = pending.take().expect("completed rootfs query");
+    let result = result.and_then(|sources| {
+        let compatibility = services
+            .daemon_state
+            .compatibility
+            .as_ref()
+            .context("rootfs compatibility authority was lost")?;
+        daemon_rootfs::validate_authority(&query.query, services.instance, compatibility)?;
+        Ok(sources)
+    });
+    Some(CommandResult {
+        request_id: query.request_id,
+        outcome: match result {
+            Ok(sources) => CommandOutcome::RootfsSources {
+                sources: Box::new(sources),
+            },
+            Err(error) => CommandOutcome::Rejected {
+                code: yoctui_protocol::daemon::ProtocolErrorCode::Conflict,
+                message: format!("rootfs metadata unavailable: {error:#}"),
+                current_generation: services.daemon_journal.snapshot().generation,
+            },
+        },
+    })
+}

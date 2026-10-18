@@ -12,6 +12,9 @@ use yoctui_protocol::{
     daemon_ipc::{DaemonConnection, runtime_paths_for},
 };
 
+#[path = "daemon_startup/oversized_update.rs"]
+mod oversized_update;
+
 struct Fixture {
     root: PathBuf,
     build: PathBuf,

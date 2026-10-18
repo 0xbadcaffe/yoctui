@@ -1,5 +1,6 @@
 use super::*;
 mod runqueue_completion;
+mod snapshot_byte_pressure;
 mod terminal_journal_performance;
 mod terminal_screen_budget;
 

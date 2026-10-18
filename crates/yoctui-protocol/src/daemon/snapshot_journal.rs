@@ -2,10 +2,14 @@ fn decimal_width(value: u64) -> usize {
     value.checked_ilog10().map_or(1, |log| log as usize + 1)
 }
 
-fn terminal_screen_sizes(snapshot: &DaemonSnapshot) -> Result<std::collections::HashMap<PtySessionId, usize>, DaemonSnapshotError> {
-    snapshot.pty_screens.iter().map(|screen| {
-        Ok((screen.session_id, serde_json::to_vec(screen)?.len()))
-    }).collect()
+fn terminal_screen_sizes(
+    snapshot: &DaemonSnapshot,
+) -> Result<std::collections::HashMap<PtySessionId, usize>, DaemonSnapshotError> {
+    snapshot
+        .pty_screens
+        .iter()
+        .map(|screen| Ok((screen.session_id, serde_json::to_vec(screen)?.len())))
+        .collect()
 }
 
 /// Single-owner snapshot/event journal. Calling `synchronize` while holding the
@@ -15,6 +19,8 @@ fn terminal_screen_sizes(snapshot: &DaemonSnapshot) -> Result<std::collections::
 pub struct DaemonSnapshotJournal {
     snapshot: DaemonSnapshot,
     events: VecDeque<SequencedEvent>,
+    event_sizes: VecDeque<usize>,
+    retained_event_bytes: usize,
     limits: DaemonSnapshotLimits,
     snapshot_bytes_upper_bound: usize,
     published_events: u64,
@@ -35,10 +41,14 @@ pub struct DaemonIpcMetrics {
 
 impl DaemonSnapshotJournal {
     pub fn new(
-        snapshot: DaemonSnapshot,
+        mut snapshot: DaemonSnapshot,
         limits: DaemonSnapshotLimits,
     ) -> Result<Self, DaemonSnapshotError> {
         let limits = limits.validate()?;
+        let limits = DaemonSnapshotLimits {
+            snapshot_bytes: limits.snapshot_bytes.min(MAX_SNAPSHOT_BYTES),
+            ..limits
+        };
         if let Some(compatibility) = &snapshot.compatibility {
             compatibility.validate()?;
         }
@@ -58,22 +68,23 @@ impl DaemonSnapshotJournal {
         for screen in &snapshot.pty_screens {
             validate_pty_screen(screen)?;
         }
-        let snapshot_bytes = serde_json::to_vec(&snapshot)?.len();
-        if snapshot_bytes > limits.snapshot_bytes {
-            return Err(DaemonSnapshotError::SnapshotTooLarge {
-                actual: snapshot_bytes,
-                maximum: limits.snapshot_bytes,
-            });
-        }
+        let mut snapshot_serializations = 0;
+        let snapshot_bytes = compact_snapshot(
+            &mut snapshot,
+            limits.snapshot_bytes,
+            &mut snapshot_serializations,
+        )?;
         Ok(Self {
             pty_screen_bytes: terminal_screen_sizes(&snapshot)?,
             snapshot,
             events: VecDeque::new(),
+            event_sizes: VecDeque::new(),
+            retained_event_bytes: 0,
             limits,
             snapshot_bytes_upper_bound: snapshot_bytes,
             published_events: 0,
             published_event_bytes: 0,
-            snapshot_serializations: 1,
+            snapshot_serializations,
         })
     }
 
@@ -109,32 +120,60 @@ impl DaemonSnapshotJournal {
             .generation
             .checked_add(1)
             .ok_or(DaemonSnapshotError::GenerationExhausted)?;
-        let sequenced = SequencedEvent {
+        let mut sequenced = SequencedEvent {
             sequence,
             generation,
             event,
         };
-        let event_bytes = serde_json::to_vec(&sequenced)?.len();
-        if event_bytes > MAX_FRAME_BYTES {
+        let mut event_bytes = serde_json::to_vec(&sequenced)?.len();
+        if event_bytes > MAX_SNAPSHOT_BYTES
+            && let DaemonEvent::RawExecutionChanged(execution) = &mut sequenced.event
+        {
+            // JSON escaping can expand a valid retained-output payload beyond
+            // the wire limit. Bound the event too, without losing the result,
+            // stream sequence, or truthful truncation counters.
+            execution.validate()?;
+            let wrapper = event_bytes - serde_json::to_vec(&*execution)?.len();
+            while event_bytes > MAX_SNAPSHOT_BYTES {
+                let mut needed = event_bytes - MAX_SNAPSHOT_BYTES;
+                trim_raw_output(&mut execution.stdout, &mut needed)?;
+                trim_raw_output(&mut execution.stderr, &mut needed)?;
+                let compacted = serde_json::to_vec(&*execution)?.len() + wrapper;
+                if compacted >= event_bytes {
+                    break;
+                }
+                event_bytes = compacted;
+            }
+            event_bytes = serde_json::to_vec(&sequenced)?.len();
+        }
+        if event_bytes > MAX_SNAPSHOT_BYTES {
             return Err(DaemonSnapshotError::EventTooLarge {
                 actual: event_bytes,
-                maximum: MAX_FRAME_BYTES,
+                maximum: MAX_SNAPSHOT_BYTES,
             });
         }
         let counter_growth = decimal_width(sequence) + decimal_width(generation)
-            - decimal_width(self.snapshot.sequence) - decimal_width(self.snapshot.generation);
+            - decimal_width(self.snapshot.sequence)
+            - decimal_width(self.snapshot.generation);
         let incoming_screen = if let DaemonEvent::PtyScreen(screen) = &sequenced.event {
             Some((screen.session_id, serde_json::to_vec(screen)?.len()))
-        } else { None };
+        } else {
+            None
+        };
         let conservative_bytes = match &sequenced.event {
             // These bytes are replayed but not retained in the snapshot.
-            DaemonEvent::PtyOutput { .. } => self.snapshot_bytes_upper_bound.saturating_add(counter_growth),
+            DaemonEvent::PtyOutput { .. } => self
+                .snapshot_bytes_upper_bound
+                .saturating_add(counter_growth),
             DaemonEvent::PtyScreen(_) => {
                 let (id, bytes) = incoming_screen.expect("screen size was measured");
                 let previous = self.pty_screen_bytes.get(&id).copied();
-                let comma = usize::from(previous.is_none() && !self.snapshot.pty_screens.is_empty());
-                self.snapshot_bytes_upper_bound.saturating_sub(previous.unwrap_or(0))
-                    .saturating_add(bytes).saturating_add(counter_growth + comma)
+                let comma =
+                    usize::from(previous.is_none() && !self.snapshot.pty_screens.is_empty());
+                self.snapshot_bytes_upper_bound
+                    .saturating_sub(previous.unwrap_or(0))
+                    .saturating_add(bytes)
+                    .saturating_add(counter_growth + comma)
             }
             _ => self.snapshot_bytes_upper_bound.saturating_add(event_bytes),
         };
@@ -174,24 +213,11 @@ impl DaemonSnapshotJournal {
             while candidate.recent_logs.len() > self.limits.recent_logs {
                 candidate.recent_logs.remove(0);
             }
-            let mut encoded_bytes = serde_json::to_vec(&candidate)?.len();
-            self.snapshot_serializations = self.snapshot_serializations.saturating_add(1);
-            while encoded_bytes > self.limits.snapshot_bytes && !candidate.recent_logs.is_empty() {
-                candidate.recent_logs.remove(0);
-                encoded_bytes = serde_json::to_vec(&candidate)?.len();
-                self.snapshot_serializations = self.snapshot_serializations.saturating_add(1);
-            }
-            while encoded_bytes > self.limits.snapshot_bytes && candidate.pty_screens.len() > 1 {
-                candidate.pty_screens.remove(0);
-                encoded_bytes = serde_json::to_vec(&candidate)?.len();
-                self.snapshot_serializations = self.snapshot_serializations.saturating_add(1);
-            }
-            if encoded_bytes > self.limits.snapshot_bytes {
-                return Err(DaemonSnapshotError::SnapshotTooLarge {
-                    actual: encoded_bytes,
-                    maximum: self.limits.snapshot_bytes,
-                });
-            }
+            let encoded_bytes = compact_snapshot(
+                &mut candidate,
+                self.limits.snapshot_bytes,
+                &mut self.snapshot_serializations,
+            )?;
             let screen_bytes = terminal_screen_sizes(&candidate)?;
             self.snapshot = candidate;
             self.pty_screen_bytes = screen_bytes;
@@ -206,8 +232,13 @@ impl DaemonSnapshotJournal {
             .published_event_bytes
             .saturating_add(u64::try_from(event_bytes).unwrap_or(u64::MAX));
         self.events.push_back(sequenced.clone());
-        while self.events.len() > self.limits.retained_events {
+        self.event_sizes.push_back(event_bytes);
+        self.retained_event_bytes += event_bytes;
+        while self.events.len() > self.limits.retained_events
+            || self.retained_event_bytes > MAX_RETAINED_EVENT_BYTES
+        {
             self.events.pop_front();
+            self.retained_event_bytes -= self.event_sizes.pop_front().expect("one size per event");
         }
         Ok(sequenced)
     }
