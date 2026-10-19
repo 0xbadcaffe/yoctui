@@ -15,6 +15,8 @@ def main():
             raw = sys.stdin.buffer.readline()
             if not raw:
                 return
+            # Match the Rust framer: the newline is transport, not payload.
+            raw = raw.removesuffix(b"\n")
             if len(raw) > MAX_LINE_BYTES:
                 error("message_too_large", f"limit is {MAX_LINE_BYTES} bytes")
                 continue

@@ -67,12 +67,13 @@ impl TextAreaState {
         if self.advanced.mode == TextAreaMode::Visual {
             self.advanced.mode = TextAreaMode::Normal;
         }
-        self.advanced.validation.clear();
-        self.rebuild_search();
         self.after_history_change();
     }
 
     fn after_history_change(&mut self) {
+        // Diagnostics refer to a particular text revision, including when an
+        // undo, redo or external edit replaces that revision.
+        self.advanced.validation.clear();
         self.rebuild_search();
         let base = TextAreaRevision::of(&self.advanced.base_text);
         let current = TextAreaRevision::of(&self.text);
@@ -94,6 +95,7 @@ impl TextAreaState {
             self.text
                 .match_indices(&self.advanced.search.query)
                 .map(|(start, matched)| (start, start + matched.len()))
+                .take(TEXTAREA_MAX_SEARCH_MATCHES + 1)
                 .collect::<Vec<_>>()
         } else {
             unicode_case_insensitive_matches(&self.text, &self.advanced.search.query)

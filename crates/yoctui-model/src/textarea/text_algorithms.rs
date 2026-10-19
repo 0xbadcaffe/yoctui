@@ -91,12 +91,24 @@ fn word_left(text: &str, cursor: usize) -> usize {
 fn unicode_case_insensitive_matches(text: &str, query: &str) -> Vec<(usize, usize)> {
     let folded_query = query.to_lowercase();
     let mut matches = Vec::new();
+    let mut previous_end = 0;
     for (start, _) in text.char_indices() {
+        // Match the non-overlapping semantics of str::match_indices. Overlapping
+        // ranges become invalid as replace_all edits the text from right to left.
+        if start < previous_end {
+            continue;
+        }
         let mut folded = String::new();
         for (relative, character) in text[start..].char_indices() {
             folded.extend(character.to_lowercase());
             if folded == folded_query {
-                matches.push((start, start + relative + character.len_utf8()));
+                previous_end = start + relative + character.len_utf8();
+                matches.push((start, previous_end));
+                // One extra match is sufficient to report truncation; never
+                // allocate an unbounded temporary list before applying the cap.
+                if matches.len() > TEXTAREA_MAX_SEARCH_MATCHES {
+                    return matches;
+                }
                 break;
             }
             if folded.len() >= folded_query.len() && !folded_query.starts_with(&folded) {

@@ -8,6 +8,11 @@ pub fn is_absolute_normal_path(path: &Path) -> bool {
         && path
             .components()
             .all(|component| !matches!(component, Component::ParentDir | Component::CurDir))
+        // Path::components normalizes away interior/trailing `.` components.
+        // Check the encoded spelling as well, without requiring UTF-8 paths.
+        && path.as_os_str().as_encoded_bytes()
+            .split(|byte| std::path::is_separator(char::from(*byte)))
+            .all(|component| component != b".")
 }
 
 pub fn is_absolute_normal_path_within(path: &Path, maximum_bytes: usize) -> bool {

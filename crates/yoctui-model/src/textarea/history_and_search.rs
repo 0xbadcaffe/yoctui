@@ -78,6 +78,11 @@ impl TextAreaState {
         let Some(&(start, end)) = self.advanced.search.matches.get(index) else {
             return Ok(false);
         };
+        if self.text.len().saturating_sub(end - start).saturating_add(replacement.len())
+            > TEXTAREA_MAX_BYTES
+        {
+            return Err(TextAreaError::TextLimit { limit: TEXTAREA_MAX_BYTES });
+        }
         self.select_range(start, end);
         self.try_insert(replacement)?;
         self.rebuild_search();

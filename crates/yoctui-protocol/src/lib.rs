@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
 pub const VERSION: u32 = 1;
+/// Maximum JSON payload bytes, excluding the terminating transport newline.
 pub const MAX_LINE_BYTES: usize = 1024 * 1024;
 pub const MAX_RECIPE_CHUNK_BYTES: usize = 512 * 1024;
 pub const MAX_RECIPE_INVENTORY_BYTES: usize = 3 * 1024 * 1024;
@@ -382,6 +383,9 @@ pub fn decode_line<T: for<'de> Deserialize<'de>>(
     line: &[u8],
     previous: Option<u64>,
 ) -> Result<Envelope<T>, ProtocolError> {
+    // The transport delimiter is not part of the JSON payload's byte budget.
+    // Accept both a framer's bare line and encode_line's complete wire output.
+    let line = line.strip_suffix(b"\n").unwrap_or(line);
     if line.len() > MAX_LINE_BYTES {
         return Err(ProtocolError::TooLarge);
     }
@@ -400,6 +404,9 @@ pub fn decode_line<T: for<'de> Deserialize<'de>>(
 }
 pub fn encode_line<T: Serialize>(e: &Envelope<T>) -> Result<Vec<u8>, ProtocolError> {
     let mut v = serde_json::to_vec(e)?;
+    if v.len() > MAX_LINE_BYTES {
+        return Err(ProtocolError::TooLarge);
+    }
     v.push(b'\n');
     Ok(v)
 }
