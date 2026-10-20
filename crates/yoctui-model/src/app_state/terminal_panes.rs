@@ -88,6 +88,8 @@ impl App {
         if replaced {
             self.terminal.releasing_writer = None;
             self.terminal.reopen_after_release = false;
+            self.terminal.retain_created_output = false;
+            self.terminal.retained_output_session = None;
         }
         if replaced && !self.terminal.pane_sessions.is_empty() {
             self.pty_selection = usize::MAX;
@@ -108,6 +110,25 @@ impl App {
             }
             true
         });
+        if self.terminal.awaiting_session {
+            if replaced {
+                self.terminal.awaiting_session = false;
+                self.terminal.awaiting_after_session = None;
+                self.pty_selection = usize::MAX;
+            } else if let Some((index, id)) = self.daemon.pty_sessions.iter().enumerate()
+                .filter(|(_, session)| session.id > self.terminal.awaiting_after_session.unwrap_or(0))
+                .min_by_key(|(_, session)| session.id)
+                .map(|(index, session)| (index, session.id)) {
+                self.bind_terminal_pane(self.pane_layout.focused, Some(id));
+                if self.terminal.retain_created_output {
+                    self.terminal.retained_output_session = Some(id);
+                }
+                self.terminal.retain_created_output = false;
+                self.pty_selection = index;
+                self.terminal.awaiting_session = false;
+                self.terminal.awaiting_after_session = None;
+            }
+        }
         if let Some((_, session)) = self
             .terminal
             .pane_sessions
@@ -124,15 +145,22 @@ impl App {
                 .unwrap_or(usize::MAX);
         }
         self.invalidate_terminal_kill_review();
-        if self.terminal.awaiting_session && self.selected_terminal_session().is_some() {
-            self.terminal.awaiting_session = false;
-        }
         // Do not delete daemon history or hide sessions on a transient disconnect.
         // A terminal that actually exited, disappeared, or belongs to an old
         // daemon identity is no longer an openable console in this browser.
+        // Keep an explicitly requested debug report readable until the user
+        // returns to the tree. It remains excluded from the tree itself.
+        let completed_report = !replaced && !self.terminal.browser_open
+            && self.selected_terminal_session().is_some_and(|session|
+                self.terminal.retained_output_session == Some(session.id)
+                    && matches!(session.lifecycle, ClientDaemonLifecycle::Exited
+                        | ClientDaemonLifecycle::Failed | ClientDaemonLifecycle::Cancelled))
+            && self.selected_terminal_details().is_some_and(|details|
+                details.kind == ClientDaemonPtyKind::Utility);
         if self.screen == Screen::TerminalSessions
             && self.daemon.status == ClientReplicaStatus::Current
             && !self.terminal.awaiting_session
+            && !completed_report
             && self.selected_terminal_session().is_none_or(|session| session.lifecycle.is_terminal()) {
             self.terminal.browser_open = true;
         }
@@ -163,6 +191,11 @@ impl App {
         self.remember_focused_terminal();
         self.terminal.browser_open = false;
         self.terminal.awaiting_session = true;
+        self.terminal.retain_created_output = false;
+        self.terminal.retained_output_session = None;
+        self.terminal.awaiting_after_session = Some(
+            self.daemon.pty_sessions.iter().map(|session| session.id).max().unwrap_or(0)
+        );
         self.terminal.single_session = true;
         self.terminal
             .pane_sessions

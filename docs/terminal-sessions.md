@@ -1,5 +1,9 @@
 # Terminal sessions
 
+Completed kernel-debugging reports stay visible as read-only output in the active
+pane. Use Alt+o to return to the session tree; finished sessions remain hidden
+from that tree. Shell/menuconfig exit behavior is unchanged.
+
 ## Inherited Yocto shell
 
 `!` suspends Yoctui and opens its inherited shell; `exit` or Ctrl+] returns.

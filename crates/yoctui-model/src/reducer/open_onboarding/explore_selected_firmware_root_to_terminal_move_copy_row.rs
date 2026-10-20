@@ -413,6 +413,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                             app.focus_return = None;
                             app.prepare_created_terminal_selection();
                             app.notification = Some("Debug tool requested. Press o to take writer control; Ctrl+B returns to Yoctui terminal controls.".into());
+                            app.terminal.retain_created_output = true;
                         } else if dialog.request.completion.is_none()
                             && (matches!(
                                 dialog.request.kind,

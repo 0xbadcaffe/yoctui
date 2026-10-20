@@ -121,7 +121,7 @@ fn arguments(draft: &KernelDebugDraft) -> Result<Vec<String>, String> {
             arguments.extend([
                 "-iex".into(),
                 "set auto-connect-native-target off".into(),
-                format!("--symbols={}", draft.symbols),
+                format!("--se={}", draft.symbols),
                 "-ex".into(),
                 format!("target remote {endpoint}"),
             ]);

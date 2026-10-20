@@ -45,6 +45,7 @@ fn interactive_launch_focus_embedded_waits_for_new_slot_not_old_history() {
                     if actual == kind
             ));
             assert_eq!(app.screen, Screen::TerminalSessions, "{kind:?}");
+            assert!(!app.terminal.retain_created_output, "{kind:?}");
             assert_eq!(app.focus, FocusTarget::Workspace);
             assert_eq!(app.focus_return, None);
             assert_eq!(app.selected_terminal_session(), None);

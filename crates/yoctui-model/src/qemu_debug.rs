@@ -176,7 +176,7 @@ impl QemuDebugSpec {
             "set debuginfod enabled off".into(),
             "-iex".into(),
             "set auto-connect-native-target off".into(),
-            format!("--symbols={}", self.symbols.display()),
+            format!("--se={}", self.symbols.display()),
             "-ex".into(),
             "set remotetimeout 10".into(),
             "-ex".into(),

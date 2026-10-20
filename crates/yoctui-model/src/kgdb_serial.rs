@@ -149,7 +149,9 @@ impl KgdbSerialSpec {
             "set debuginfod enabled off".into(),
             "-iex".into(),
             "set auto-connect-native-target off".into(),
-            format!("--symbols={}", self.symbols.display()),
+            // ELF also selects the architecture when KGDB has no target XML.
+            // auto-connect-native-target stays off: `run` cannot start a host inferior.
+            format!("--se={}", self.symbols.display()),
             "-ex".into(),
             format!("set serial baud {}", self.baud),
             "-ex".into(),

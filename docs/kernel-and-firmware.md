@@ -49,9 +49,10 @@ SSH runtime tools need explicit host/user/port and remote installation/permissio
 Host mode operates on the Yoctui host. Native diagnostics retain target failures.
 GDB init/auto-load/debuginfod and crashrc are disabled. No automatic sudo, installs,
 kernel changes, tracing configuration, or reboot. Debuggers can pause execution.
-Kernel routes load symbols without enabling host execution. GDB's "no executable
-specified" warning can occur in this symbols-only mode; missing/incorrect symbols
-or source files are separate problems, not proof of a working debug connection.
+Kernel routes load the matching ELF for symbols and architecture selection,
+including KGDB stubs without target-description XML. Automatic host-target
+connection stays disabled: `run` cannot start a host inferior. Missing/incorrect
+symbols or source files are not proof of a working debug connection.
 
 Managed QEMU debugging maps Yocto's `/usr/src/kernel` debug prefix to retained
 `tmp/work-shared/<machine>/kernel-source` when the selected qemuboot artifact and

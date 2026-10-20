@@ -2,6 +2,7 @@ use super::*;
 
 mod interactive_launch_focus;
 
+mod completed_utilities;
 mod session_browser;
 mod terminal_pane_bindings;
 mod terminal_search;

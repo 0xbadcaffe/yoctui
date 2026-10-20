@@ -32,7 +32,7 @@ fn kgdb_serial_closed_plan_is_host_client_with_explicit_board_transport() {
         "set serial baud 115200",
         "set remotetimeout 10",
         "target remote /dev/ttyUSB0",
-        "--symbols=/tmp/kernel build/vmlinux",
+        "--se=/tmp/kernel build/vmlinux",
     ] {
         assert!(arguments.iter().any(|arg| arg == required), "{required}");
     }

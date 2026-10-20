@@ -42,6 +42,7 @@ fn kernel_debug_managed_qemu_requires_inputs_and_preserves_typed_preview_until_c
     assert!(
         matches!(update(&mut app, Action::ConfirmTerminalLaunch), Some(Effect::Terminal(crate::TerminalEffect::Create { arguments, .. })) if arguments == prepared.arguments)
     );
+    assert!(app.terminal.retain_created_output);
 }
 
 #[test]

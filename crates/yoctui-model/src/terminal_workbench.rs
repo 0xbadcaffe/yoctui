@@ -24,6 +24,10 @@ pub struct TerminalWorkbenchState {
     /// Client-local browser; daemon sessions and retained history stay intact.
     pub browser_open: bool,
     pub awaiting_session: bool,
+    /// IDs are monotonic within one daemon; vector positions change on eviction.
+    pub awaiting_after_session: Option<u64>,
+    pub retain_created_output: bool,
+    pub retained_output_session: Option<u64>,
     pub single_session: bool,
     /// Do not reuse a writer lease while its release awaits daemon evidence.
     pub releasing_writer: Option<(u64, u64)>,

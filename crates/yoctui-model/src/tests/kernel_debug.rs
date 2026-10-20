@@ -1,4 +1,6 @@
 use super::*;
+#[path = "kernel_debug/elf_architecture.rs"]
+mod elf_architecture;
 #[path = "kernel_debug/perf.rs"]
 mod perf;
 #[path = "kernel_debug/source_mapping.rs"]
@@ -96,7 +98,7 @@ fn kernel_debug_gdb_disables_startup_scripts_and_remote_local_inferiors() {
             "set debuginfod enabled off",
             "-iex",
             "set auto-connect-native-target off",
-            "--symbols=/work/vmlinux",
+            "--se=/work/vmlinux",
             "-ex",
             "target remote 127.0.0.1:1234"
         ]
