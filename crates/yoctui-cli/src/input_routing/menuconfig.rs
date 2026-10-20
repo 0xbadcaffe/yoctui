@@ -22,7 +22,7 @@ pub(crate) fn platform_menuconfig_key(app: &mut App, key: KeyEvent) -> Option<Op
             compatibility_workspace_action(app, Action::TogglePlatformMenuconfigForeground);
         return Some(effect);
     }
-    if !app.platform_menuconfig_visible() {
+    if !app.platform_menuconfig_visible() || app.focus != yoctui_model::FocusTarget::Workspace {
         return None;
     }
     if !app.selected_terminal_is_writer() {

@@ -234,7 +234,7 @@ fn platform_menuconfig_stays_in_its_workspace_until_the_pty_screen_is_ready() {
         restartable: true,
     });
     app.reconcile_platform_menuconfigs();
-    assert!(app.platform_menuconfig_visible());
+    assert!(!app.platform_menuconfig_visible());
     assert_eq!(
         app.selected_terminal_session().map(|session| session.id),
         Some(52)
@@ -465,6 +465,7 @@ fn platform_menuconfig_recovers_current_build_and_resumes_without_metadata_or_sp
         app.screen = screen;
         assert!(!app.platform_menuconfig_running());
         app.daemon.pty_details[0].cwd = "/work/build".into();
+        app.daemon.pty_screens[0].application_cursor = true;
         app.reconcile_platform_menuconfigs();
         assert!(app.platform_menuconfig_hidden());
         let destination = if screen == Screen::Kernel {

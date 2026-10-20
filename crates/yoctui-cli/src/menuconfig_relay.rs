@@ -19,6 +19,7 @@ mod configuration;
 mod diagnostics;
 
 const MAX_HANDOFF_PATH_BYTES: usize = 16 * 1024;
+pub(crate) const SOCKET_ENV: &str = "YOCTUI_MENUCONFIG_SOCKET";
 
 pub(crate) fn command(
     bitbake: &Path,
@@ -51,8 +52,8 @@ pub(crate) fn run(bitbake: &Path, arguments: &[String]) -> Result<()> {
     let mut environment = std::env::vars().collect();
     configure_environment(&mut environment, &executable, &socket);
     let task = configuration::task_label(arguments);
-    let (_configuration, config) = configuration::create(&environment, &socket)?;
-    println!("Preparing {task} with BitBake… (Ctrl+B returns to Yoctui controls)");
+    let config = configuration::create(&environment, &socket)?;
+    println!("Preparing {task} with BitBake… (other Yoctui screens remain available)");
     std::io::stdout().flush()?;
     let mut bitbake_child = Command::new(bitbake);
     bitbake_child
@@ -121,8 +122,15 @@ fn isolate_outer_bitbake_console(command: &mut Command) {
         .stderr(Stdio::piped());
 }
 
-pub(crate) fn handoff(socket: &Path, command: &[PathBuf]) -> Result<()> {
-    let mut stream = UnixStream::connect(socket)
+pub(crate) fn handoff(socket: Option<&Path>, command: &[PathBuf]) -> Result<()> {
+    let socket = socket
+        .map(Path::to_owned)
+        .or_else(|| std::env::var_os(SOCKET_ENV).map(PathBuf::from))
+        .context("menuconfig handoff has no relay socket")?;
+    if !socket.is_absolute() {
+        bail!("menuconfig relay socket must be absolute");
+    }
+    let mut stream = UnixStream::connect(&socket)
         .with_context(|| format!("cannot connect to menuconfig relay {}", socket.display()))?;
     stream.set_read_timeout(Some(Duration::from_secs(60 * 60)))?;
     stream.set_write_timeout(Some(Duration::from_secs(5)))?;
@@ -241,12 +249,14 @@ pub(crate) fn configure_environment(
         }
     }
     environment.insert("OE_TERMINAL".into(), "custom".into());
+    // oe_terminal passes BB_ORIGENV to its child. Keep this per-launch value
+    // out of configuration variables so it cannot invalidate the recipe cache.
+    environment.insert(SOCKET_ENV.into(), socket.display().to_string());
     environment.insert(
         "OE_TERMINAL_CUSTOMCMD".into(),
         format!(
-            "{} __menuconfig-handoff --socket {} -- {{command}}",
+            "{} __menuconfig-handoff -- {{command}}",
             shell_word(executable.as_os_str()),
-            shell_word(socket.as_os_str())
         ),
     );
 }

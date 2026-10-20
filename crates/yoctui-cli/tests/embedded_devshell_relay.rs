@@ -103,7 +103,24 @@ sys.exit(result.returncode)
         phonehome.is_file() && wrapper.is_file(),
         "source fixtures must not be deleted by cleanup"
     );
-    assert_eq!(fs::read_dir(runtime.join("yoctui")).unwrap().count(), 0);
+    let retained = fs::read_dir(runtime.join("yoctui"))
+        .unwrap()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(
+        retained.len(),
+        1,
+        "only the reusable configuration may remain"
+    );
+    assert!(retained[0].file_type().unwrap().is_dir());
+    assert!(
+        retained[0]
+            .file_name()
+            .to_str()
+            .unwrap()
+            .starts_with("embedded-terminal-")
+    );
+    assert!(retained[0].path().join("terminal.conf").is_file());
     assert!(stdout.contains("Preparing devshell"), "{stdout}");
 }
 

@@ -14,7 +14,7 @@ fn relay_configuration_roundtrips_through_real_bitbake_parser_when_available() {
         Path::new("/opt/Roy's tools/yoctui"),
         &socket,
     );
-    let (_directory, config) = configuration::create(&environment, &socket).unwrap();
+    let config = configuration::create(&environment, &socket).unwrap();
     let output = Command::new("python3")
         .env("PYTHONPATH", library)
         .args([

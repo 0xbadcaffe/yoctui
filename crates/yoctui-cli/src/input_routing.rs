@@ -22,7 +22,7 @@ pub(crate) fn direct_menu_shortcut_action(
     {
         return None;
     }
-    if app.platform_menuconfig_visible() {
+    if app.platform_menuconfig_visible() && app.focus == yoctui_model::FocusTarget::Workspace {
         return None;
     }
     if yoctui_app::terminal_owns_input(app)

@@ -48,6 +48,22 @@ fn function_keys_are_forwarded_while_an_embedded_menuconfig_owns_input() {
         foreground: true,
         ..yoctui_model::PlatformTerminalState::default()
     };
+    app.daemon
+        .pty_screens
+        .push(yoctui_model::ClientDaemonPtyScreen {
+            session_id: 9,
+            columns: 80,
+            rows_count: 24,
+            cursor_column: 0,
+            cursor_row: 0,
+            cursor_hidden: false,
+            application_cursor: true,
+            scrollback_offset: 0,
+            rows: vec!["Linux Kernel Configuration".into()],
+            cells: Vec::new(),
+            scrollback_lines: 0,
+            dropped_line_feeds_lower_bound: 0,
+        });
 
     assert!(yoctui_app::terminal_owns_input(&app));
     assert_eq!(direct_menu_shortcut_action(&app, Input::F2, false), None);

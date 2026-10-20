@@ -1,9 +1,10 @@
 use super::*;
 
 mod bitbake_configuration;
+mod cache_reuse;
 
 #[test]
-fn relay_configuration_overrides_cached_terminal_selection_and_cleans_up() {
+fn relay_configuration_overrides_cached_terminal_selection_and_is_reusable() {
     let runtime = tempfile::tempdir().unwrap();
     let socket = runtime.path().join("relay.sock");
     let mut environment = std::collections::BTreeMap::new();
@@ -12,7 +13,7 @@ fn relay_configuration_overrides_cached_terminal_selection_and_cleans_up() {
         Path::new("/opt/Roy's tools/yoctui"),
         &socket,
     );
-    let (directory, config) = configuration::create(&environment, &socket).unwrap();
+    let config = configuration::create(&environment, &socket).unwrap();
     let contents = fs::read_to_string(&config).unwrap();
     assert!(contents.starts_with("OE_TERMINAL = \"custom\"\n"));
     assert!(contents.contains("\nOE_TERMINAL_CUSTOMCMD = \"${@bytes.fromhex('"));
@@ -20,9 +21,11 @@ fn relay_configuration_overrides_cached_terminal_selection_and_cleans_up() {
     assert!(!contents.contains("__anonymous"));
     assert!(contents.contains("PATH:prepend:task-devshell"));
     assert!(!contents.contains("HOSTTOOLS_DIR"));
-    let path = directory.path().to_owned();
-    drop(directory);
-    assert!(!path.exists());
+    assert_eq!(
+        configuration::create(&environment, &socket).unwrap(),
+        config
+    );
+    assert!(config.exists());
     assert_eq!(
         configuration::task_label(&["iw".into(), "-c".into(), "devshell".into()]),
         "devshell"

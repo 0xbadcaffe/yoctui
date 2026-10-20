@@ -59,7 +59,7 @@ pub(crate) enum Command {
     #[command(name = "__menuconfig-handoff", hide = true)]
     MenuconfigHandoff {
         #[arg(long)]
-        socket: PathBuf,
+        socket: Option<PathBuf>,
         #[arg(last = true, required = true)]
         command: Vec<PathBuf>,
     },
@@ -147,7 +147,7 @@ pub(crate) fn menuconfig_helper(command: &Option<Command>) -> Option<Result<()>>
             Some(crate::menuconfig_relay::run(bitbake, arguments))
         }
         Some(Command::MenuconfigHandoff { socket, command }) => {
-            Some(crate::menuconfig_relay::handoff(socket, command))
+            Some(crate::menuconfig_relay::handoff(socket.as_deref(), command))
         }
         _ => None,
     }

@@ -39,6 +39,7 @@ fn platform_menuconfig_ctrl_g_is_the_only_yoctui_escape() {
         exit_code: None,
         restartable: true,
     });
+    app.daemon.pty_screens.push(ready_screen(7));
 
     for input in [Input::F1, Input::F4, Input::F12, Input::CtrlB, Input::Up] {
         assert_eq!(direct_menu_shortcut_action(&app, input, false), None);
@@ -120,12 +121,26 @@ fn menuconfig_key_route_resumes_both_platforms_before_screen_shortcuts() {
             exit_code: None,
             restartable: true,
         });
+        app.daemon.pty_screens.push(ready_screen(7));
         app.reconcile_platform_menuconfigs();
         assert_eq!(begin_startup_platform_inspection(&mut app), None);
         let toggle = KeyEvent::new(KeyCode::Char('g'), KeyModifiers::CONTROL);
         assert_eq!(platform_menuconfig_key(&mut app, toggle), Some(None));
         assert!(app.platform_menuconfig_visible());
         app.focus = FocusTarget::Navigator;
+        assert_eq!(
+            platform_menuconfig_key(&mut app, KeyEvent::new(KeyCode::Up, KeyModifiers::NONE)),
+            None
+        );
+        assert_eq!(
+            direct_menu_shortcut_action(&app, Input::F12, false),
+            Some(Action::OpenApplicationMenu)
+        );
+        assert_eq!(
+            yoctui_app::global_search_action(&app, Input::Char('/')),
+            Some(Action::OpenGlobalSearch)
+        );
+        app.focus = FocusTarget::Workspace;
         app.terminal.mode = yoctui_model::TerminalWorkbenchMode::Copy;
         for key in [
             KeyCode::Enter,
@@ -150,5 +165,22 @@ fn menuconfig_key_route_resumes_both_platforms_before_screen_shortcuts() {
         assert!(app.platform_menuconfig_visible());
         assert_eq!(app.focus, FocusTarget::Workspace);
         assert_eq!(app.terminal.mode, yoctui_model::TerminalWorkbenchMode::Live);
+    }
+}
+
+fn ready_screen(id: u64) -> yoctui_model::ClientDaemonPtyScreen {
+    yoctui_model::ClientDaemonPtyScreen {
+        session_id: id,
+        columns: 120,
+        rows_count: 40,
+        cursor_column: 0,
+        cursor_row: 0,
+        cursor_hidden: false,
+        application_cursor: true,
+        scrollback_offset: 0,
+        rows: vec!["Linux Kernel Configuration".into()],
+        cells: Vec::new(),
+        scrollback_lines: 0,
+        dropped_line_feeds_lower_bound: 0,
     }
 }

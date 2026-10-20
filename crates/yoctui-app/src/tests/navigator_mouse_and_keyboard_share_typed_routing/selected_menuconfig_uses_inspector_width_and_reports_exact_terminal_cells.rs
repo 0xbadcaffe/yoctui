@@ -54,6 +54,22 @@ fn selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells() {
         foreground: true,
         ..yoctui_model::PlatformTerminalState::default()
     };
+    app.daemon
+        .pty_screens
+        .push(yoctui_model::ClientDaemonPtyScreen {
+            session_id: 9,
+            columns: 80,
+            rows_count: 24,
+            cursor_column: 0,
+            cursor_row: 0,
+            cursor_hidden: false,
+            application_cursor: true,
+            scrollback_offset: 0,
+            rows: vec!["Linux Kernel Configuration".into()],
+            cells: Vec::new(),
+            scrollback_lines: 0,
+            dropped_line_feeds_lower_bound: 0,
+        });
     assert_eq!(workbench_pane_widths(&app, 160, 50), [22, 138, 0]);
     assert_eq!(
         terminal_workspace_dimensions(&app, 160, 50),

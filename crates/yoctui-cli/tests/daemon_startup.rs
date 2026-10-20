@@ -148,7 +148,7 @@ fn daemon_build_preserves_the_prepared_inventory_environment() {
         true,
     );
     let record = "{key: os.environ.get(key) for key in ".to_owned()
-        + "('OE_TERMINAL', 'OE_TERMINAL_CUSTOMCMD', 'BB_ENV_PASSTHROUGH_ADDITIONS')}";
+        + "('OE_TERMINAL', 'OE_TERMINAL_CUSTOMCMD', 'YOCTUI_MENUCONFIG_SOCKET', 'BB_ENV_PASSTHROUGH_ADDITIONS')}";
     let bridge = include_str!("../../../scripts/fixtures/bitbake-ipc-latency-bridge.py")
         .replace(
             "emit({\"type\": \"recipes\", \"recipes\": []}, correlation)",
@@ -197,13 +197,24 @@ fn daemon_build_preserves_the_prepared_inventory_environment() {
     assert_eq!(build, inventory);
     assert_eq!(build["OE_TERMINAL"], "custom");
     assert!(
-        build["OE_TERMINAL_CUSTOMCMD"].as_str().unwrap().contains(
-            &fixture
-                .root
-                .join("yoctui/menuconfig.sock")
-                .display()
-                .to_string()
-        )
+        build["OE_TERMINAL_CUSTOMCMD"]
+            .as_str()
+            .unwrap()
+            .contains("__menuconfig-handoff")
+    );
+    assert!(
+        !build["OE_TERMINAL_CUSTOMCMD"]
+            .as_str()
+            .unwrap()
+            .contains("--socket")
+    );
+    assert_eq!(
+        build["YOCTUI_MENUCONFIG_SOCKET"],
+        fixture
+            .root
+            .join("yoctui/menuconfig.sock")
+            .display()
+            .to_string()
     );
     fixture.stop();
 }

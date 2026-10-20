@@ -35,6 +35,22 @@ fn platform_menuconfig_input_ownership_is_explicit() {
         exit_code: None,
         restartable: true,
     });
+    app.daemon
+        .pty_screens
+        .push(yoctui_model::ClientDaemonPtyScreen {
+            session_id: 52,
+            columns: 120,
+            rows_count: 40,
+            cursor_column: 0,
+            cursor_row: 0,
+            cursor_hidden: false,
+            application_cursor: true,
+            scrollback_offset: 0,
+            rows: vec!["Linux Kernel Configuration".into()],
+            cells: Vec::new(),
+            scrollback_lines: 0,
+            dropped_line_feeds_lower_bound: 0,
+        });
 
     assert!(terminal_owns_input(&app));
     assert_eq!(terminal_workspace_action(&app, Input::F12), None);

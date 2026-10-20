@@ -138,7 +138,9 @@ impl App {
 
     pub fn platform_menuconfig_visible(&self) -> bool {
         self.embedded_platform_terminal()
-            .filter(|terminal| terminal.foreground)
+            // A running relay is not yet an interactive menu. Keep the normal
+            // workbench and its navigation until ncurses publishes its screen.
+            .filter(|terminal| terminal.foreground && !platform_terminal_waiting(terminal, &self.daemon))
             .and_then(|terminal| terminal.session_id)
             .is_some_and(|id| {
                 self.daemon
@@ -146,6 +148,11 @@ impl App {
                     .iter()
                     .any(|session| session.id == id && !session.lifecycle.is_terminal())
             })
+    }
+
+    pub fn platform_menuconfig_preparing(&self) -> bool {
+        self.embedded_platform_terminal()
+            .is_some_and(|terminal| platform_terminal_waiting(terminal, &self.daemon))
     }
 
     pub fn platform_menuconfig_running(&self) -> bool {

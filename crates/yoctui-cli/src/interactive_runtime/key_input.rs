@@ -135,7 +135,8 @@ impl InteractiveRuntime {
         if runtime.app.active_dialog().is_none()
             && !runtime.app.menu.is_open()
             && !runtime.app.onboarding.open
-            && !runtime.app.platform_menuconfig_visible()
+            && !(runtime.app.platform_menuconfig_visible()
+                && runtime.app.focus == yoctui_model::FocusTarget::Workspace)
         {
             match runtime.prefix_state.feed(input, Instant::now()) {
                 PrefixEvent::Awaiting => {

@@ -149,6 +149,7 @@ fn platform_menuconfig_terminal_renders_in_place_and_keeps_waiting_activity_visi
         yoctui_model::PaneLayout::new(yoctui_model::PaneId(1)).expect("valid single pane");
     app.daemon.pty_sessions[0].name = "kernel menuconfig".into();
     app.daemon.pty_details[0].kind = yoctui_model::ClientDaemonPtyKind::Menuconfig;
+    app.daemon.pty_screens[0].application_cursor = true;
     app.kernel.menuconfig_terminal = yoctui_model::PlatformTerminalState {
         name: Some("kernel menuconfig".into()),
         session_id: Some(app.daemon.pty_sessions[0].id),

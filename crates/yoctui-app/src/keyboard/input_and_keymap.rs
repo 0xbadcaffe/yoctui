@@ -284,7 +284,7 @@ pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Actio
                 || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live))
         || app.screen == yoctui_model::Screen::Devtool
         || (app.screen == yoctui_model::Screen::RawMode && app.focus == FocusTarget::Workspace)
-        || app.platform_menuconfig_visible()
+        || (app.platform_menuconfig_visible() && app.focus == FocusTarget::Workspace)
         || workspace_text_input_active(app)
     {
         None

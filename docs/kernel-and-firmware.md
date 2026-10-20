@@ -9,6 +9,14 @@ Enter/`e` edits text, `o` explores the root, `r` refreshes; binary blobs are not
 Scans stop at 4,096 matching files, 16,384 directories, depth 32; no directory symlinks.
 
 `m` reviews the provider's supported menuconfig task in a persistent PTY.
+Preparation runs in the background: navigation, menus and other screens remain
+available. The interactive menu appears when ncurses is ready, without switching
+you away from another screen. In the kernel/U-Boot workspace, Ctrl+G returns to
+Yoctui or resumes the menu; during preparation it toggles automatic opening.
+Unchanged launches reuse the terminal configuration and BitBake recipe cache.
+The first launch, changed metadata or missing dependencies can still take time;
+normal configuration and recipe freshness checks remain enabled.
+
 With dtc available, `c` compiles to NAME.yoctui.dtb and `d` decompiles to
 NAME.yoctui.dts. Review covers symbols, sorting, padding, and reserve entries;
 existing outputs are never overwritten. Use [terminal writer controls](terminal-sessions.md).

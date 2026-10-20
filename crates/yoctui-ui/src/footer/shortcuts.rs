@@ -131,6 +131,8 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         Screen::Kernel => {
             if app.kernel_debug.visible {
                 "1/2/3 or Tab view | ↑/↓ technique | Enter tool/guide | r tools | b Debugging | F12 menu"
+            } else if app.platform_menuconfig_preparing() {
+                "Menuconfig preparing in background | navigation available | F12 menu | Ctrl+G toggle auto-open"
             } else if app.platform_menuconfig_hidden() {
                 "Ctrl+G Resume menuconfig | Tab view | ↑/↓ select | Enter view | e edit | o explore | r refresh"
             } else {
@@ -138,7 +140,9 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             }
         }
         Screen::Firmware => {
-            if app.platform_menuconfig_hidden() {
+            if app.platform_menuconfig_preparing() {
+                "Menuconfig preparing in background | navigation available | F12 menu | Ctrl+G toggle auto-open"
+            } else if app.platform_menuconfig_hidden() {
                 "Ctrl+G Resume menuconfig | Tab view | ↑/↓ select | Enter view | e edit | o explore | r refresh"
             } else {
                 "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
