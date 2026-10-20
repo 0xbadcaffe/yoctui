@@ -100,6 +100,7 @@ pub(crate) fn ssh_client_capability() -> yoctui_model::SshClientCapability {
 pub(crate) fn detached_terminal_command(
     launcher: &DetachedTerminalLauncher,
     request: &yoctui_model::TerminalLaunchRequest,
+    environment: Option<&BTreeMap<String, String>>,
 ) -> Result<ProcessCommand> {
     if !request.cwd.is_absolute() || !request.cwd.is_dir() {
         anyhow::bail!(
@@ -132,15 +133,45 @@ pub(crate) fn detached_terminal_command(
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());
+    if let Some(environment) = environment {
+        // Use the selected build's complete initialized environment. Inheriting
+        // an unsourced attach client's variables forks BitBake's recipe cache;
+        // merely overlaying also restores variables the initializer removed.
+        command.env_clear().envs(environment);
+    }
     Ok(command)
 }
 
-pub(crate) fn launch_detached_terminal(
+pub(crate) async fn detached_terminal_environment(
     request: &yoctui_model::TerminalLaunchRequest,
+    source_dir: Option<&Path>,
+) -> Result<Option<BTreeMap<String, String>>> {
+    if request.kind != yoctui_model::TerminalCreationKind::Menuconfig {
+        return Ok(None);
+    }
+    // The GUI terminal must get the same source/build initialization as an
+    // embedded daemon PTY, even when `yoctui attach` ran in an unsourced shell.
+    interactive_runtime::metadata_environment(&request.cwd, source_dir)
+        .await
+        .map(Some)
+        .context("could not initialize the selected build for detached menuconfig")
+}
+
+pub(crate) async fn launch_detached_terminal(
+    request: yoctui_model::TerminalLaunchRequest,
+    source_dir: Option<PathBuf>,
 ) -> Result<()> {
     let launcher = detect_detached_terminal_launcher().map_err(anyhow::Error::msg)?;
-    let command = detached_terminal_command(&launcher, request)?;
-    launch_and_probe_detached_terminal(command, &launcher.program, DETACHED_TERMINAL_STARTUP_PROBE)
+    let environment = detached_terminal_environment(&request, source_dir.as_deref()).await?;
+    let command = detached_terminal_command(&launcher, &request, environment.as_ref())?;
+    tokio::task::spawn_blocking(move || {
+        launch_and_probe_detached_terminal(
+            command,
+            &launcher.program,
+            DETACHED_TERMINAL_STARTUP_PROBE,
+        )
+    })
+    .await?
 }
 
 pub(crate) fn launch_and_probe_detached_terminal(
@@ -174,8 +205,9 @@ pub(crate) fn begin_detached_terminal_launch(
         return;
     }
     let name = request.name.clone();
+    let source_dir = app.workspace.source_dir.clone();
     app.notification = Some(format!("Opening detached terminal for {name}…"));
-    let handle = tokio::task::spawn_blocking(move || launch_detached_terminal(&request));
+    let handle = tokio::spawn(launch_detached_terminal(request, source_dir));
     *operation = Some(DetachedTerminalOperation { name, handle });
 }
 
@@ -194,7 +226,7 @@ pub(crate) async fn poll_detached_terminal_launch(
     };
     app.notification = Some(match operation.handle.await {
         Ok(Ok(())) => format!("Detached terminal opened for {}.", operation.name),
-        Ok(Err(error)) => format!("Could not open detached terminal: {error}"),
+        Ok(Err(error)) => format!("Could not open detached terminal: {error:#}"),
         Err(error) => format!("Could not open detached terminal: {error}"),
     });
 }

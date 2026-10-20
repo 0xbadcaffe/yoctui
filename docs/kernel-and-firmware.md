@@ -14,6 +14,8 @@ available. The interactive menu appears when ncurses is ready, without switching
 you away from another screen. In the kernel/U-Boot workspace, Ctrl+G returns to
 Yoctui or resumes the menu; during preparation it toggles automatic opening.
 Unchanged launches reuse the terminal configuration and BitBake recipe cache.
+Detached menuconfig initializes the selected source/build environment too, so
+an unsourced `yoctui attach` shell does not trigger a separate recipe-cache rebuild.
 The first launch, changed metadata or missing dependencies can still take time;
 normal configuration and recipe freshness checks remain enabled.
 

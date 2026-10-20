@@ -29,6 +29,7 @@ mod devwork_editor_atomic_save_rejects_symlinks_and_paths_outside_workspace;
 
 mod devwork_terminal_detached_plan_preserves_argv_without_shell_evaluation;
 
+mod detached_menuconfig_environment;
 mod detached_terminal_startup_is_verified_before_success;
 
 mod compatibility_config_query_parses_selected_utility_and_environment_forms;

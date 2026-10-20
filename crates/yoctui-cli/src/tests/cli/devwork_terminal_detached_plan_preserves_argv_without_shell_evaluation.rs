@@ -19,7 +19,7 @@ fn devwork_terminal_detached_plan_preserves_argv_without_shell_evaluation() {
         ],
         completion: None,
     };
-    let command = detached_terminal_command(&launcher, &request).unwrap();
+    let command = detached_terminal_command(&launcher, &request, None).unwrap();
     assert_eq!(
         command.get_program(),
         std::ffi::OsStr::new("/usr/bin/xterm")

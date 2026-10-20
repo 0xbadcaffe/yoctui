@@ -16,7 +16,7 @@ fn detached_terminal_profiles_preserve_exact_argv_and_wait_semantics() {
         completion: None,
     };
 
-    let command = detached_terminal_command(&launcher, &request).unwrap();
+    let command = detached_terminal_command(&launcher, &request, None).unwrap();
     let arguments = command
         .get_args()
         .map(|argument| argument.to_string_lossy().into_owned())
