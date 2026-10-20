@@ -1,6 +1,6 @@
 use std::time::Instant;
 use yoctui_model::{PtySessionKind, PtySessionSpec};
-use yoctui_protocol::daemon::{MAX_DAEMON_PTY_SESSIONS, MAX_PTY_OUTPUT_EVENT_BYTES};
+use yoctui_protocol::daemon::MAX_PTY_OUTPUT_EVENT_BYTES;
 
 use super::menuconfig_failure_prompt::MenuconfigFailurePrompt;
 use super::{
@@ -17,11 +17,7 @@ impl DaemonPtySupervisor {
         if id.0 == 0 || self.sessions.contains_key(&id) {
             return Err(format!("PTY session {} already exists or is invalid", id.0));
         }
-        if self.sessions.len() >= MAX_DAEMON_PTY_SESSIONS {
-            return Err(format!(
-                "PTY session limit reached ({MAX_DAEMON_PTY_SESSIONS})"
-            ));
-        }
+        self.reserve_capacity()?;
         let (control_tx, mut control_rx): (
             tokio::sync::mpsc::UnboundedSender<ControlMessage>,
             tokio::sync::mpsc::UnboundedReceiver<ControlMessage>,
@@ -59,6 +55,7 @@ impl DaemonPtySupervisor {
                 .unwrap_or_else(Instant::now);
             let mut screen_flush_pending = false;
             let mut failure_prompt = acknowledge_failure.then(MenuconfigFailurePrompt::default);
+            let mut completed = false;
             loop {
                 tokio::select! {
                     biased;
@@ -75,6 +72,10 @@ impl DaemonPtySupervisor {
                     control = control_rx.recv() => {
                         let Some((control, response)) = control else { return; };
                         if matches!(&control, Control::Terminate) {
+                            if completed {
+                                let _ = response.send(Ok(Response::Unit));
+                                continue;
+                            }
                             let result = session.terminate().await.map(|_| Response::Unit);
                             let snapshot = session.snapshot(0).ok();
                             let succeeded = result.is_ok();
@@ -94,7 +95,8 @@ impl DaemonPtySupervisor {
                                     exit_code,
                                     screen,
                                 });
-                                return;
+                                completed = true;
+                                screen_flush_pending = false;
                             }
                             continue;
                         }
@@ -119,7 +121,7 @@ impl DaemonPtySupervisor {
                             let _ = state_tx.send(DaemonPtyEvent::Changed { session_id, snapshot: snapshot_to_wire(&snapshot.listing) });
                         }
                     }
-                    event = session.next_event() => {
+                    event = session.next_event(), if !completed => {
                         match event {
                             Ok(PtyAttachEvent::Started) => {}
                             Ok(PtyAttachEvent::Output { mut bytes, .. }) => {
@@ -155,7 +157,11 @@ impl DaemonPtySupervisor {
                                     .ok()
                                     .map(|snapshot| terminal_to_wire(session_id, &snapshot.terminal));
                                 let _ = event_tx.send(DaemonPtyEvent::Exited { session_id, exit_code: code, screen });
-                                return;
+                                // Retain the bounded emulator for read-only
+                                // snapshot/search requests; do not poll an
+                                // ended child (which would spin on EOF).
+                                completed = true;
+                                screen_flush_pending = false;
                             }
                             Ok(PtyAttachEvent::Lost { message }) => {
                                 let _ = event_tx.send(DaemonPtyEvent::Lost { session_id, message });
@@ -174,6 +180,7 @@ impl DaemonPtySupervisor {
             id,
             SessionHandle {
                 control: control_tx,
+                ended_at: None,
             },
         );
         Ok(())

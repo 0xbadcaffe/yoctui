@@ -1,4 +1,8 @@
-use std::{collections::HashMap, sync::mpsc::SyncSender, time::Duration};
+use std::{
+    collections::HashMap,
+    sync::mpsc::SyncSender,
+    time::{Duration, Instant},
+};
 
 use yoctui_model::{PtyClientId, PtyDimensions, PtySessionId};
 
@@ -39,6 +43,9 @@ type ControlMessage = (Control, ControlReply);
 
 #[derive(Debug)]
 pub enum DaemonPtyEvent {
+    Removed {
+        session_id: PtySessionId,
+    },
     Started {
         session_id: PtySessionId,
         snapshot: yoctui_protocol::daemon::PtySessionSummary,
@@ -66,6 +73,7 @@ pub enum DaemonPtyEvent {
 
 struct SessionHandle {
     control: tokio::sync::mpsc::UnboundedSender<ControlMessage>,
+    ended_at: Option<Instant>,
 }
 
 pub struct DaemonPtySupervisor {

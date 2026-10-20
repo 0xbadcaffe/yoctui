@@ -9,6 +9,11 @@ pub(crate) fn publish_daemon_pty_event(
     use daemon_pty::DaemonPtyEvent;
     use yoctui_protocol::daemon::DaemonEvent;
     match event {
+        DaemonPtyEvent::Removed { session_id } => {
+            journal.publish(DaemonEvent::PtyRemoved {
+                session_id: yoctui_protocol::daemon::PtySessionId(session_id.0),
+            })?;
+        }
         DaemonPtyEvent::Started {
             session_id,
             snapshot,

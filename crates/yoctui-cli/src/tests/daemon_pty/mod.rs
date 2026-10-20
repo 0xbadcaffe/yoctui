@@ -6,6 +6,7 @@ use std::{
 use yoctui_model::{PtyClientId, PtyDimensions, PtySessionId, PtySessionKind};
 use yoctui_protocol::daemon::{PtyCommand, PtyKind, TerminalDimensions};
 
+mod completed_history;
 mod gitui_real_terminal_handles_input_resize_and_exit;
 mod image_console_wire_specs_preserve_qemu_and_ssh_session_kinds;
 mod menuconfig_children_always_receive_a_color_capable_terminal_identity;

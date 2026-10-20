@@ -3,6 +3,9 @@
 Completed kernel-debugging reports stay visible as read-only output in the active
 pane. Use Alt+o to return to the session tree; finished sessions remain hidden
 from that tree. Shell/menuconfig exit behavior is unchanged.
+The daemon retains bounded completed scrollback and reclaims the oldest ended
+terminal when capacity is needed. Running processes and writer leases are never
+evicted to make room for a new terminal.
 
 ## Inherited Yocto shell
 

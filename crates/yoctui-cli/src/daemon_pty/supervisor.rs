@@ -96,11 +96,6 @@ impl DaemonPtySupervisor {
         command: PtyCommand,
         dimensions: TerminalDimensions,
     ) -> Result<PtySessionId, String> {
-        if self.sessions.len() >= MAX_DAEMON_PTY_SESSIONS {
-            return Err(format!(
-                "PTY session limit reached ({MAX_DAEMON_PTY_SESSIONS})"
-            ));
-        }
         let id = PtySessionId(
             self.sessions
                 .keys()
@@ -222,10 +217,39 @@ impl DaemonPtySupervisor {
         // Worker-confirmed lease changes must not sit behind a console flood.
         // Started and Changed retain their own FIFO order; output and exit
         // events remain ordered in the regular queue.
-        self.state_rx
+        let event = self
+            .state_rx
             .try_recv()
             .ok()
-            .or_else(|| self.rx.try_recv().ok())
+            .or_else(|| self.rx.try_recv().ok())?;
+        if let DaemonPtyEvent::Exited { session_id, .. } | DaemonPtyEvent::Lost { session_id, .. } =
+            &event
+            && let Some(handle) = self.sessions.get_mut(session_id)
+        {
+            handle.ended_at.get_or_insert_with(std::time::Instant::now);
+        }
+        Some(event)
+    }
+
+    pub(super) fn reserve_capacity(&mut self) -> Result<(), String> {
+        // Keep bounded read-only scrollback, but never let finished tools
+        // exhaust the capacity needed for the next shell/debugger. No live
+        // process or writer lease is evicted and no control RPC is needed.
+        while self.sessions.len() >= MAX_DAEMON_PTY_SESSIONS {
+            let oldest = self.sessions.iter()
+                .filter_map(|(id, handle)| handle.ended_at.map(|ended| (*id, ended)))
+                .min_by_key(|(_, ended)| *ended)
+                .map(|(id, _)| id)
+                .ok_or_else(|| format!("PTY session limit reached ({MAX_DAEMON_PTY_SESSIONS}); all sessions are active"))?;
+            self.sessions.remove(&oldest);
+            // Removal must precede the replacement's Started event in the
+            // priority state queue, including during an output flood. The
+            // replica must never temporarily exceed the same session limit.
+            let _ = self
+                .state_tx
+                .send(DaemonPtyEvent::Removed { session_id: oldest });
+        }
+        Ok(())
     }
 
     fn request(&self, id: PtySessionId, control: Control) -> Result<Response, String> {

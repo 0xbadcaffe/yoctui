@@ -158,9 +158,9 @@ pub(super) fn poll(services: &mut DaemonServices) -> Result<()> {
             } => services
                 .raw_supervisor
                 .pty_finished(*session_id, None, Some(message.clone()))?,
-            daemon_pty::DaemonPtyEvent::Output { .. } | daemon_pty::DaemonPtyEvent::Screen(..) => {
-                None
-            }
+            daemon_pty::DaemonPtyEvent::Output { .. }
+            | daemon_pty::DaemonPtyEvent::Screen(..)
+            | daemon_pty::DaemonPtyEvent::Removed { .. } => None,
         };
         if let Some(state) = raw_state {
             services.daemon_journal.publish(
