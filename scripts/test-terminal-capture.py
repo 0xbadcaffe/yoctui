@@ -19,6 +19,40 @@ Screen = MODULE.Screen
 
 
 class TerminalCaptureTests(unittest.TestCase):
+    def test_alternate_screen_does_not_retain_startup_banner(self) -> None:
+        screen = Screen(20, 2)
+        screen.feed(b"STARTUP BANNER\x1b[?1049h\x1b[HUI")
+        self.assertEqual(screen.text(), "UI\n")
+
+    def test_alternate_exit_restores_primary_cells_cursor_and_style(self) -> None:
+        screen = Screen(20, 2)
+        screen.feed(b"\x1b[31mHOST\x1b[?1049h\x1b[H\x1b[32mAPP\x1b[?1049l!")
+        self.assertEqual(screen.text(), "HOST!\n")
+        self.assertEqual((screen.x, screen.y), (5, 0))
+        self.assertEqual(screen.cells[0][4].style.foreground, "Red")
+
+    def test_split_alternate_switch_is_atomic_and_keeps_the_cursor(self) -> None:
+        screen = Screen(20, 2)
+        screen.feed(b"BANNER\x1b[?10")
+        self.assertEqual(screen.text(), "BANNER\n")
+        screen.feed(b"49hUI")
+        self.assertEqual(screen.text(), "      UI\n")
+        self.assertEqual((screen.x, screen.y), (8, 0))
+
+    def test_repeated_switches_are_idempotent_and_new_entry_is_clear(self) -> None:
+        screen = Screen(20, 2)
+        screen.feed(b"HOST\x1b[?1049h\x1b[HAPP\x1b[?1049h")
+        self.assertEqual(screen.text(), "APP\n")
+        screen.feed(b"\x1b[?1049l\x1b[?1049l")
+        self.assertEqual(screen.text(), "HOST\n")
+        screen.feed(b"\x1b[?1049h")
+        self.assertEqual(screen.text(), "\n")
+
+    def test_other_mode_switches_do_not_clear_the_current_screen(self) -> None:
+        screen = Screen(20, 2)
+        screen.feed(b"CURRENT\x1b[?25l\x1b[?25h\x1b[1049h")
+        self.assertEqual(screen.text(), "CURRENT\n")
+
     def test_cursor_addressing_and_truecolor_survive_composition(self) -> None:
         screen = Screen(4, 2)
         screen.feed(b"\x1b[2J\x1b[2;2H\x1b[38;2;42;178;218;48;2;4;12;17;1mOK")

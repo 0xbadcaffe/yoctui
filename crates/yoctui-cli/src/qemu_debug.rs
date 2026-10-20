@@ -2,6 +2,7 @@
 use anyhow::{Context, Result, bail};
 use yoctui_model::QemuDebugSpec;
 mod source_map;
+pub(crate) use source_map::remote_source_map;
 mod validation;
 pub(crate) use validation::validate_files;
 pub(crate) use validation::validate_symbol_file;

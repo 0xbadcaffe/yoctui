@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "qemu_debug/network.rs"]
+mod network;
+
 fn spec() -> QemuDebugSpec {
     QemuDebugSpec {
         boot_mode: QemuDebugBootMode::DirectKernel,
@@ -11,6 +14,7 @@ fn spec() -> QemuDebugSpec {
         rootfs: "/build/image.ext4".into(),
         symbols: "/build/vmlinux".into(),
         memory_mib: 1024,
+        ssh_forward_port: None,
     }
 }
 

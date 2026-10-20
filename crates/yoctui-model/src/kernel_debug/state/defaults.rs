@@ -13,6 +13,7 @@ pub struct KernelDebugDefaults {
     pub values: Vec<(KernelDebugField, String)>,
     pub boot_mode: Option<crate::QemuDebugBootMode>,
     pub note: String,
+    pub source_map: Option<Box<crate::KernelDebugSourceMap>>,
 }
 
 impl KernelDebugState {
@@ -100,6 +101,11 @@ pub(super) fn finished(
         if let Some(target) = dialog.draft.value_mut(field) {
             *target = value;
         }
+    }
+    if tool == KernelDebugTool::GdbRemote {
+        dialog.draft.source_map = defaults
+            .source_map
+            .filter(|mapping| mapping.symbols.to_str() == Some(dialog.draft.symbols.as_str()));
     }
     if !edits.contains(&KernelDebugField::QemuBootMode)
         && tool == KernelDebugTool::QemuGdb

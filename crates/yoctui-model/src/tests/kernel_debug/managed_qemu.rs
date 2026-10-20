@@ -13,7 +13,9 @@ fn kernel_debug_managed_qemu_requires_inputs_and_preserves_typed_preview_until_c
     assert_eq!(dialog.draft.qemu.build_dir, "/work");
     assert_eq!(dialog.draft.qemu.runqemu, "/tools/runqemu");
     assert!(dialog.draft.qemu.qemuboot.is_empty());
-    assert_eq!(dialog.draft.fields().len(), 8);
+    assert_eq!(dialog.draft.fields().len(), 9);
+    assert!(dialog.draft.fields().contains(&KernelDebugField::QemuSshPort));
+    assert!(dialog.draft.qemu.ssh_forward_port.is_empty());
     assert!(dialog.draft.plan(&tools()).is_err());
     dialog.draft.qemu.qemuboot = "/work/image.qemuboot.conf".into();
     dialog.draft.qemu.kernel = "/work/bzImage".into();

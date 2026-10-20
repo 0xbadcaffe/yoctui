@@ -1,4 +1,8 @@
 use super::*;
+#[path = "kernel_debug/long_fields.rs"]
+mod long_fields;
+#[path = "kernel_debug/private_ssh.rs"]
+mod private_ssh;
 use yoctui_model::{
     KernelDebugDialog, KernelDebugDraft, KernelDebugTool, KernelDebugTools,
     TerminalLaunchDestination, TerminalLaunchDialog,

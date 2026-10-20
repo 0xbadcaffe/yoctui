@@ -28,7 +28,16 @@ pub(crate) fn validate_files(spec: &QemuDebugSpec) -> Result<()> {
             );
         }
     }
-    validate_qemuboot(&spec.qemuboot, spec.boot_mode)?;
+    validate_qemuboot(
+        &spec.qemuboot,
+        spec.boot_mode,
+        spec.ssh_forward_port.is_some(),
+    )?;
+    if let Some(port) = spec.ssh_forward_port {
+        std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, port)).with_context(|| {
+            format!("Localhost SSH port {port} is unavailable; choose another port")
+        })?;
+    }
     if spec.boot_mode == yoctui_model::QemuDebugBootMode::OpenBmcRomulusFlash {
         if fs::metadata(&spec.rootfs)?.len() != 32 * 1024 * 1024 {
             bail!("Romulus flash must be the complete 32-MiB static.mtd image");
@@ -42,7 +51,11 @@ pub(crate) fn validate_files(spec: &QemuDebugSpec) -> Result<()> {
     validate_symbols(&spec.symbols)
 }
 
-fn validate_qemuboot(path: &Path, mode: yoctui_model::QemuDebugBootMode) -> Result<()> {
+fn validate_qemuboot(
+    path: &Path,
+    mode: yoctui_model::QemuDebugBootMode,
+    private_ssh: bool,
+) -> Result<()> {
     let mut text = String::new();
     File::open(path)?
         .take(128 * 1024 + 1)
@@ -58,6 +71,38 @@ fn validate_qemuboot(path: &Path, mode: yoctui_model::QemuDebugBootMode) -> Resu
         }
         if section && let Some((name, value)) = line.split_once('=') {
             let name = name.trim();
+            if private_ssh
+                && (value.contains("hostfwd=")
+                    || value.contains("guestfwd=")
+                    || value.contains("tcp:")
+                    || value.contains("udp:")
+                    || value.split_whitespace().any(|argument| {
+                        matches!(
+                            argument
+                                .trim_matches(['\'', '"'])
+                                .split('=')
+                                .next()
+                                .unwrap_or_default(),
+                            "-net"
+                                | "-netdev"
+                                | "-nic"
+                                | "-redir"
+                                | "-gdb"
+                                | "-s"
+                                | "-qmp"
+                                | "-monitor"
+                                | "-chardev"
+                                | "-readconfig"
+                                | "-vnc"
+                                | "-spice"
+                                | "-incoming"
+                        )
+                    }))
+            {
+                bail!(
+                    "Private SSH does not allow additional qemuboot network/listener overrides ({name})"
+                );
+            }
             if matches!(
                 name,
                 "qb_system_name"
@@ -78,6 +123,16 @@ fn validate_qemuboot(path: &Path, mode: yoctui_model::QemuDebugBootMode) -> Resu
                 .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
     }) {
         bail!("qemuboot config needs a valid config_bsp qb_system_name");
+    }
+    if private_ssh
+        && !matches!(
+            values.get("qb_system_name").copied(),
+            Some("qemu-system-x86_64" | "qemu-system-i386")
+        )
+    {
+        bail!(
+            "Private SSH forwarding currently requires a direct x86 QEMU guest; other machines remain network-isolated"
+        );
     }
     if mode == yoctui_model::QemuDebugBootMode::OpenBmcRomulusFlash {
         for (name, expected) in [

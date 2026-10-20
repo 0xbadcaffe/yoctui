@@ -55,9 +55,19 @@ fn kernel_debug_defaults_find_bounded_poky_work_symbols_and_reject_ambiguity() {
         "",
     );
     fs::write(&symbols, &bytes).unwrap();
+    f.write(
+        "tmp/work-shared/qemux86-64/kernel-source/init/main.c",
+        "void start_kernel(void) {}\n",
+    );
+    f.write(
+        "tmp/work/qemux86_64-poky-linux/linux-yocto/7.2.8/linux-qemux86_64-standard-build/include/generated/autoconf.h",
+        "#define CONFIG_DEBUG_INFO 1\n",
+    );
     let mut context = f.context();
     context.machine = "qemux86-64".into();
     let defaults = discover_for_tool(&context, yoctui_model::KernelDebugTool::GdbRemote).unwrap();
+    assert_eq!(defaults.source_map.as_ref().unwrap().symbols, symbols);
+    assert!(!defaults.note.contains("Serial config"));
     assert!(
         defaults
             .values
@@ -69,6 +79,7 @@ fn kernel_debug_defaults_find_bounded_poky_work_symbols_and_reject_ambiguity() {
     );
     fs::write(&second, &bytes).unwrap();
     let defaults = discover_for_tool(&context, yoctui_model::KernelDebugTool::GdbRemote).unwrap();
+    assert!(defaults.source_map.is_none());
     assert!(
         !defaults
             .values

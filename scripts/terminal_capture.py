@@ -37,6 +37,7 @@ class Screen:
         self.style = Style()
         self.pending = ""
         self.decoder = codecs.getincrementaldecoder("utf-8")("replace")
+        self._primary: tuple[list[list[Cell]], int, int, tuple[int, int], Style] | None = None
 
     def clear(self) -> None:
         self.cells = [[Cell(style=self.style) for _ in range(self.width)] for _ in range(self.height)]
@@ -176,7 +177,16 @@ class Screen:
         values = [int(value) if value else 0 for value in parameters.lstrip("?").split(";")]
         first = values[0] if values else 0
         amount = first or 1
-        if command == "m":
+        if command in ("h", "l") and parameters.startswith("?") and 1049 in values:
+            if command == "h" and self._primary is None:
+                # DECSET 1049 clears a separate buffer, not the startup/shell
+                # screen. Preserve the cursor; applications position it next.
+                self._primary = (self.cells, self.x, self.y, self.saved, self.style)
+                self.cells = [[Cell(style=self.style) for _ in range(self.width)] for _ in range(self.height)]
+            elif command == "l" and self._primary is not None:
+                self.cells, self.x, self.y, self.saved, self.style = self._primary
+                self._primary = None
+        elif command == "m":
             self.sgr(values)
         elif command in ("H", "f"):
             self.y = min(self.height - 1, max(0, (values[0] if values else 1) - 1))

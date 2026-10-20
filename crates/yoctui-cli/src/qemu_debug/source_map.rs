@@ -1,6 +1,6 @@
 //! Map Yocto's reproducible kernel prefix only within the selected build/machine.
 use std::path::{Path, PathBuf};
-use yoctui_model::QemuDebugSpec;
+use yoctui_model::{KernelDebugDefaultContext, KernelDebugSourceMap, QemuDebugSpec};
 
 pub(super) fn discover(spec: &QemuDebugSpec) -> Option<PathBuf> {
     let build = spec.build_dir.canonicalize().ok()?;
@@ -10,6 +10,10 @@ pub(super) fn discover(spec: &QemuDebugSpec) -> Option<PathBuf> {
         return None;
     }
     let machine = machine_dir.file_name()?.to_str()?;
+    retained_source(&build, machine)
+}
+
+fn retained_source(build: &Path, machine: &str) -> Option<PathBuf> {
     if !safe_token(machine) || machine == "." || machine == ".." {
         return None;
     }
@@ -20,7 +24,7 @@ pub(super) fn discover(spec: &QemuDebugSpec) -> Option<PathBuf> {
         .canonicalize()
         .ok()?;
     let main = source.join("init/main.c").canonicalize().ok()?;
-    if !source.starts_with(&build) || !main.starts_with(&source) || !main.is_file() {
+    if !source.starts_with(build) || !main.starts_with(&source) || !main.is_file() {
         return None;
     }
     // This value becomes a GDB command argument, not a shell argument. Reject
@@ -62,22 +66,21 @@ pub(super) fn arguments(spec: &QemuDebugSpec, socket: &Path) -> Vec<String> {
 }
 
 fn build_mapping(spec: &QemuDebugSpec) -> Option<(String, PathBuf)> {
-    let build = spec.build_dir.canonicalize().ok()?;
-    let symbols = spec.symbols.canonicalize().ok()?;
+    let config = spec.qemuboot.canonicalize().ok()?;
+    let machine = config.parent()?.file_name()?.to_str()?;
+    generated_mapping(&spec.build_dir, machine, &spec.symbols)
+}
+
+fn generated_mapping(build: &Path, machine: &str, symbols: &Path) -> Option<(String, PathBuf)> {
+    let build = build.canonicalize().ok()?;
+    let symbols = symbols.canonicalize().ok()?;
     if !symbols.is_file() || !symbols.starts_with(build.join("tmp/work")) {
         return None;
     }
     let directory = symbols.parent()?.to_path_buf();
     let version_dir = directory.parent()?;
     let recipe_dir = version_dir.parent()?;
-    let machine = spec
-        .qemuboot
-        .canonicalize()
-        .ok()?
-        .parent()?
-        .file_name()?
-        .to_str()?
-        .replace('-', "_");
+    let machine = machine.replace('-', "_");
     let architecture = recipe_dir.parent()?.file_name()?.to_str()?;
     if !architecture.starts_with(&format!("{machine}-"))
         && !architecture.starts_with(&format!("{}-", machine.replace('_', "-")))
@@ -98,4 +101,22 @@ fn build_mapping(spec: &QemuDebugSpec) -> Option<(String, PathBuf)> {
         return None;
     }
     Some((format!("/usr/src/debug/{recipe}/{version}"), directory))
+}
+
+pub(crate) fn remote_source_map(
+    context: &KernelDebugDefaultContext,
+    symbols: &Path,
+) -> Option<KernelDebugSourceMap> {
+    let build_dir = context.build_dir.canonicalize().ok()?;
+    let kernel_source = retained_source(&build_dir, &context.machine)?;
+    let (_, kernel_build) = generated_mapping(&build_dir, &context.machine, symbols)?;
+    let mapping = KernelDebugSourceMap {
+        build_dir,
+        machine: context.machine.clone(),
+        symbols: symbols.canonicalize().ok()?,
+        kernel_source,
+        kernel_build,
+    };
+    mapping.arguments(&mapping.symbols).ok()?;
+    Some(mapping)
 }

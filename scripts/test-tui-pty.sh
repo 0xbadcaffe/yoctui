@@ -3,6 +3,8 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
+python3 scripts/test-terminal-capture.py
+python3 -m unittest scripts/test_pty_acceptance.py
 cargo build -p yoctui >/dev/null
 python3 - "$repo_root" <<'PY'
 import os, pty, select, struct, subprocess, sys, tempfile, time, termios, fcntl

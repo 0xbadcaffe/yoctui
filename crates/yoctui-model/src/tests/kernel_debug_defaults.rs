@@ -1,5 +1,7 @@
 use super::*;
 use crate::{Action, update};
+#[path = "kernel_debug_defaults/source_mapping.rs"]
+mod source_mapping;
 
 fn app() -> App {
     let mut app = App::new(32, 4096);
@@ -28,6 +30,7 @@ fn result(app: &mut App, generation: u64) {
                 ],
                 boot_mode: Some(crate::QemuDebugBootMode::OpenBmcRomulusFlash),
                 note: "Missing: symbols".into(),
+                source_map: None,
             })),
         }),
     );

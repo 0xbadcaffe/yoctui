@@ -31,6 +31,10 @@ pub struct QemuDebugSpec {
     pub rootfs: PathBuf,
     pub symbols: PathBuf,
     pub memory_mib: u32,
+    /// Optional, explicitly reviewed localhost-only SSH forwarding. GDB stays
+    /// on its private Unix socket; the guest cannot initiate outside traffic.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ssh_forward_port: Option<u16>,
 }
 
 pub const QEMU_DEBUG_SOCKET_TEMPLATE: &str = "/PRIVATE_SESSION/gdb.sock";
@@ -44,6 +48,7 @@ pub struct QemuDebugDraft {
     pub kernel: String,
     pub rootfs: String,
     pub memory: String,
+    pub ssh_forward_port: String,
 }
 impl Default for QemuDebugDraft {
     fn default() -> Self {
@@ -55,6 +60,7 @@ impl Default for QemuDebugDraft {
             kernel: String::new(),
             rootfs: String::new(),
             memory: "1024".into(),
+            ssh_forward_port: String::new(),
         }
     }
 }
@@ -99,6 +105,18 @@ impl QemuDebugSpec {
         if !(crate::MIN_QEMU_MEMORY_MIB..=crate::MAX_QEMU_MEMORY_MIB).contains(&self.memory_mib) {
             return Err("QEMU memory must be 128..=262144 MiB".into());
         }
+        if let Some(port) = self.ssh_forward_port {
+            if port < 1024 {
+                return Err(
+                    "Private SSH forwarding requires a host port from 1024 through 65535".into(),
+                );
+            }
+            if self.boot_mode != QemuDebugBootMode::DirectKernel {
+                return Err(
+                    "Private SSH forwarding currently supports direct x86 QEMU guests only".into(),
+                );
+            }
+        }
         Ok(())
     }
 
@@ -118,7 +136,18 @@ impl QemuDebugSpec {
         ];
         if self.boot_mode == QemuDebugBootMode::DirectKernel {
             arguments.insert(0, self.kernel.display().to_string());
-            arguments.push("bootparams=nokaslr".into());
+            if let Some(port) = self.ssh_forward_port {
+                // `nonetwork` suppresses runqemu's default NIC, TFTP and port
+                // forwards. Add only this restricted, localhost-bound NIC.
+                let parameters = arguments
+                    .iter_mut()
+                    .find(|arg| arg.starts_with("qemuparams="))
+                    .unwrap();
+                parameters.push_str(&format!(" -netdev user,id=yoctui_debug_net,restrict=on,hostfwd=tcp:127.0.0.1:{port}-:22 -device virtio-net-pci,netdev=yoctui_debug_net"));
+                arguments.push("bootparams=nokaslr ip=dhcp".into());
+            } else {
+                arguments.push("bootparams=nokaslr".into());
+            }
         }
         arguments
     }

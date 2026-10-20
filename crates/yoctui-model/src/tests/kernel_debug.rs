@@ -1,4 +1,8 @@
 use super::*;
+#[path = "kernel_debug/perf.rs"]
+mod perf;
+#[path = "kernel_debug/source_mapping.rs"]
+mod source_mapping;
 use crate::{
     Action, App, Dialog, Effect, FocusTarget, KernelDebugAction as A, KernelDebugOperation as Op,
     KernelDebugResult as R, PlatformView, Screen, update,
@@ -44,7 +48,7 @@ fn kernel_debug_all_launchable_tools_have_fixed_plans_and_guides_are_non_executa
             ready: "yes".into(),
             ..Default::default()
         };
-        draft.qemu = crate::QemuDebugDraft {
+        *draft.qemu = crate::QemuDebugDraft {
             build_dir: "/work".into(),
             qemuboot: "/work/image.qemuboot.conf".into(),
             kernel: "/work/bzImage".into(),

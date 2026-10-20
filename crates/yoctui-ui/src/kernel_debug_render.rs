@@ -1,5 +1,45 @@
 use super::*;
+use unicode_width::UnicodeWidthChar;
 use yoctui_model::{KernelDebugOperation, KernelDebugTool, TerminalLaunchDestination};
+
+/// Keep the edited suffix/cursor visible without changing the actual field.
+pub(super) fn field_line(label: &str, value: &str, active: bool, width: u16) -> String {
+    let marker = if active { "▶" } else { " " };
+    let cursor = if active { "_" } else { "" };
+    let mut prefix = format!("{marker} {label}: ");
+    let width = usize::from(width);
+    let cursor_width = usize::from(active).min(width);
+    if Line::from(format!("{prefix}{value}{cursor}")).width() > width {
+        let label_budget = (width / 2).saturating_sub(4).min(u16::MAX as usize) as u16;
+        prefix = format!("{marker} {}: ", bounded_cell_text(label, label_budget));
+    }
+    let prefix = bounded_cell_text(
+        &prefix,
+        width.saturating_sub(cursor_width).min(u16::MAX as usize) as u16,
+    );
+    let available = width.saturating_sub(Line::from(prefix.as_str()).width() + cursor_width);
+    let displayed = if Line::from(value).width() <= available {
+        value.to_owned()
+    } else if available == 0 {
+        String::new()
+    } else {
+        let mut start = value.len();
+        let mut used = 0;
+        for (index, character) in value.char_indices().rev() {
+            let cells = character.width().unwrap_or(0);
+            if used + cells > available - 1 {
+                break;
+            }
+            start = index;
+            used += cells;
+        }
+        format!("…{}", &value[start..])
+    };
+    format!(
+        "{prefix}{displayed}{}",
+        if cursor_width > 0 { cursor } else { "" }
+    )
+}
 
 pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
     let block = pane_block(app, "Kernel", app.focus == FocusTarget::Workspace);
@@ -33,32 +73,44 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
     for index in viewport {
         let tool = KernelDebugTool::ALL[index];
-        let status = tool.program().map_or(
-            if tool.configuration_prep() {
-                "Config prep"
+        let status = if tool.runtime_target() {
+            if state
+                .tools
+                .as_ref()
+                .is_some_and(|tools| tools.programs.contains_key("ssh"))
+            {
+                "SSH ready · target unchecked"
             } else {
-                "Guide only"
-            },
-            |program| {
-                if state
-                    .tools
-                    .as_ref()
-                    .is_some_and(|tools| tools.programs.contains_key(program))
-                    || (tool == KernelDebugTool::QemuGdb
-                        && app
-                            .workspace_compatibility
-                            .authority()
-                            .and_then(|authority| {
-                                authority.snapshot.environment.available_tools.value()
-                            })
-                            .is_some_and(|tools| tools.iter().any(|tool| tool.id == "runqemu")))
-                {
-                    "Host found"
+                "SSH client missing"
+            }
+        } else {
+            tool.program().map_or(
+                if tool.configuration_prep() {
+                    "Config prep"
                 } else {
-                    "Host missing"
-                }
-            },
-        );
+                    "Guide only"
+                },
+                |program| {
+                    if state
+                        .tools
+                        .as_ref()
+                        .is_some_and(|tools| tools.programs.contains_key(program))
+                        || (tool == KernelDebugTool::QemuGdb
+                            && app
+                                .workspace_compatibility
+                                .authority()
+                                .and_then(|authority| {
+                                    authority.snapshot.environment.available_tools.value()
+                                })
+                                .is_some_and(|tools| tools.iter().any(|tool| tool.id == "runqemu")))
+                    {
+                        "Host found"
+                    } else {
+                        "Host missing"
+                    }
+                },
+            )
+        };
         lines.push(Line::styled(
             format!(
                 "{} {:<40} {status}",
@@ -121,7 +173,7 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
                         .value(yoctui_model::KernelDebugField::Destination)
                 } else {
                     if tool == KernelDebugTool::QemuGdb {
-                        "MANAGED HOST GUEST · snapshot/nonetwork · Linux · not a physical target"
+                        "MANAGED HOST GUEST · snapshot · isolated by default; optional private localhost SSH (x86)"
                     } else if tool == KernelDebugTool::KgdbSerial {
                         "HOST GDB → PHYSICAL BOARD · requires already halted/configured exclusive serial target"
                     } else {
@@ -140,16 +192,11 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
             let lines = viewport
                 .map(|index| {
                     Line::styled(
-                        format!(
-                            "{} {}: {}{}",
-                            if index == dialog.selection {
-                                "▶"
-                            } else {
-                                " "
-                            },
+                        field_line(
                             fields[index].label(),
                             dialog.draft.value(fields[index]),
-                            if index == dialog.selection { "_" } else { "" }
+                            index == dialog.selection,
+                            rows[1].width,
                         ),
                         selected_style(app, index == dialog.selection),
                     )
@@ -224,6 +271,10 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
             ));
             lines.push(Line::from("Use hbreak start_kernel before firmware/MMU handoff; symbols must match flash kernel."));
             lines.push(Line::from("Quit stops owned guest; original flash stays unchanged. Relocation handling is manual."));
+        } else if let Some(port) = spec.ssh_forward_port {
+            lines.push(Line::from(format!("QEMU: snapshot, paused CPUs (-S), nokaslr; SSH only at 127.0.0.1:{port} → guest :22.")));
+            lines.push(Line::from("Guest outbound connections blocked; GDB stays on its private Unix socket. SSH needs a booted guest, server and credentials."));
+            lines.push(Line::from("Stopping at a GDB breakpoint pauses SSH too. Quit stops this owned guest and its SSH forward."));
         } else {
             lines.push(Line::from(
                 "QEMU: snapshot/nonetwork, paused CPUs (-S), nokaslr; quit stops owned guest.",

@@ -17,6 +17,7 @@ fn qemu_debug_flash_staging_is_private_bounded_and_cleans_on_error() {
         rootfs: source.clone(),
         symbols: "/build/vmlinux".into(),
         memory_mib: 512,
+        ssh_forward_port: None,
     };
     let socket = directory.join("gdb.sock");
     let staged = spec.session_rootfs(&socket);
@@ -58,6 +59,7 @@ fn qemu_debug_compressed_staging_preserves_source_and_cleans_only_owned_files() 
         rootfs: source.clone(),
         symbols: "/build/vmlinux".into(),
         memory_mib: 1024,
+        ssh_forward_port: None,
     };
     let socket = directory.join("gdb.sock");
     let staged = spec.session_rootfs(&socket);

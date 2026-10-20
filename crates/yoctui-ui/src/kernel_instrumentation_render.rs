@@ -29,12 +29,11 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, dialog: &KernelDebugDialog, a
         let lines = viewport
             .map(|i| {
                 Line::styled(
-                    format!(
-                        "{} {}: {}{}",
-                        if i == dialog.selection { "▶" } else { " " },
+                    crate::kernel_debug_render::field_line(
                         fields[i].label(),
                         dialog.draft.value(fields[i]),
-                        if i == dialog.selection { "_" } else { "" }
+                        i == dialog.selection,
+                        rows[1].width,
                     ),
                     selected_style(app, i == dialog.selection),
                 )
@@ -118,7 +117,7 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, dialog: &KernelDebugDialog, a
     } else if preview.is_some() {
         "↑/↓/PgUp/PgDn scroll exact report/fragment\nEnter export NEW .cfg · Esc back to edit (no write)"
     } else {
-        "Tab/↑/↓ field · ←/→/Space preset · type · Ctrl+U clear · PgUp/Dn guide\nEnter inspect and review (no write) · Esc cancel"
+        "Tab field · ←/→/Space preset · Ctrl+V paste · Ctrl+U clear\nEnter inspect/review (no write) · Esc cancel · PgUp/Dn guide"
     };
     frame.render_widget(Paragraph::new(hints).wrap(Wrap { trim: false }), rows[4]);
 }

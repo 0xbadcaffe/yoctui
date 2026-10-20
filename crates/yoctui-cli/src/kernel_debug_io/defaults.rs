@@ -62,14 +62,25 @@ pub(super) fn discover_for_tool(
     .or_else(|| work_symbols(&build, &context.machine));
     if let Some(path) = symbols {
         put(&mut defaults, F::Symbols, &path);
+        if tool == yoctui_model::KernelDebugTool::GdbRemote {
+            defaults.source_map =
+                crate::qemu_debug::remote_source_map(context, &path).map(Box::new);
+        }
     }
     if let Some(path) = regular(&build, &shared.join(".config")) {
         put(&mut defaults, F::KernelConfig, &path);
     }
     if tool != yoctui_model::KernelDebugTool::QemuGdb {
         let missing = !defaults.values.iter().any(|(f, _)| *f == F::Symbols);
-        defaults.note = if missing { "Missing/ambiguous: vmlinux symbols; enter matching files manually." }
-            else { "Selected build symbols found; confirm they match the target. Serial config/readiness remain explicit." }.into();
+        defaults.note = if missing {
+            "Missing/ambiguous: vmlinux symbols; enter matching files manually."
+        } else if tool == yoctui_model::KernelDebugTool::KgdbSerial {
+            "Selected build symbols found; confirm they match the target. Serial config/readiness remain explicit."
+        } else if defaults.source_map.is_some() {
+            "Selected build symbols/sources found; confirm target/TCP stub. Mapping is omitted if you select different symbols."
+        } else {
+            "Selected build symbols found; confirm target match and TCP stub. Sources unavailable; set substitute-path manually in GDB."
+        }.into();
         return Ok(defaults);
     }
     let configs = entries(&build, &deploy)?

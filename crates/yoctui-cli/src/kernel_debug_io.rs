@@ -62,6 +62,21 @@ pub(crate) fn prepare(
     if matches!(draft.tool, T::GdbRemote | T::GdbCore | T::Crash) {
         regular_file(Path::new(&draft.symbols))?;
     }
+    if draft.tool == T::GdbRemote
+        && let Some(mapping) = &draft.source_map
+        && mapping.symbols == Path::new(&draft.symbols)
+    {
+        let context = yoctui_model::KernelDebugDefaultContext {
+            build_dir: mapping.build_dir.clone(),
+            machine: mapping.machine.clone(),
+            image: None,
+        };
+        if crate::qemu_debug::remote_source_map(&context, Path::new(&draft.symbols)).as_ref()
+            != Some(mapping.as_ref())
+        {
+            return Err("Retained kernel source mapping changed; reopen the debug form to rediscover matching files".into());
+        }
+    }
     if matches!(draft.tool, T::GdbCore | T::Crash | T::TraceCmd) {
         regular_file(Path::new(&draft.data))?;
     }

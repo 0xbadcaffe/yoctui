@@ -56,7 +56,17 @@ pub(super) async fn run(spec: &QemuDebugSpec) -> Result<()> {
     let socket = directory.join("gdb.sock");
     let log = directory.join("qemu.log");
     let _staged = staging::Rootfs::prepare(spec, &socket)?;
-    println!("Managed QEMU → GDB: snapshot/nonetwork, CPU paused until continue.");
+    if let Some(port) = spec.ssh_forward_port {
+        println!("Managed QEMU → GDB: snapshot/private SSH, CPU paused until continue.");
+        println!(
+            "Guest SSH: 127.0.0.1:{port} → guest port 22. Outside guest traffic is blocked; GDB remains on a private Unix socket."
+        );
+        println!(
+            "Continue the guest to boot and use SSH-based diagnostics. Pausing in GDB also pauses SSH. Guest SSH tooling/authentication must be configured in the image."
+        );
+    } else {
+        println!("Managed QEMU → GDB: snapshot/nonetwork, CPU paused until continue.");
+    }
     println!("QEMU serial/startup log: {}", log.display());
     println!("Private debug socket: {}", socket.display());
     let file = fs::OpenOptions::new()

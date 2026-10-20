@@ -125,6 +125,9 @@ fn arguments(draft: &KernelDebugDraft) -> Result<Vec<String>, String> {
                 "-ex".into(),
                 format!("target remote {endpoint}"),
             ]);
+            if let Some(mapping) = &draft.source_map {
+                arguments.extend(mapping.arguments(std::path::Path::new(&draft.symbols))?);
+            }
             arguments
         }
         T::GdbCore => {
@@ -138,7 +141,23 @@ fn arguments(draft: &KernelDebugDraft) -> Result<Vec<String>, String> {
             arguments
         }
         T::Strace => vec!["-f".into(), "-tt".into(), "-T".into(), "-p".into(), pid()?],
-        T::Perf => vec!["top".into(), "-p".into(), pid()?],
+        T::Perf => {
+            if !matches!(
+                draft.event.as_str(),
+                "cpu-clock" | "task-clock" | "cycles" | "instructions"
+            ) {
+                return Err(
+                    "Select cpu-clock/task-clock, or supported hardware cycles/instructions".into(),
+                );
+            }
+            vec![
+                "top".into(),
+                "-e".into(),
+                draft.event.clone(),
+                "-p".into(),
+                pid()?,
+            ]
+        }
         T::TraceCmd => {
             path(&draft.data)?;
             vec![

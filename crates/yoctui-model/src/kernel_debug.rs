@@ -5,8 +5,10 @@ use crate::{TerminalCreationKind, TerminalLaunchRequest};
 
 mod catalogue;
 mod plan;
+mod source_map;
 mod state;
 pub use catalogue::*;
+pub use source_map::*;
 pub(crate) use state::reduce;
 pub use state::*;
 
@@ -23,12 +25,14 @@ pub enum KernelDebugField {
     Data,
     Endpoint,
     Event,
+    PerfEvent,
     Runqemu,
     BuildDirectory,
     Qemuboot,
     KernelImage,
     RootfsImage,
     Memory,
+    QemuSshPort,
     QemuBootMode,
     KernelConfig,
     SerialDevice,
@@ -52,12 +56,14 @@ impl KernelDebugField {
             Self::Data => "Absolute core/vmcore/trace.dat file",
             Self::Endpoint => "GDB TCP host:port (QEMU/KGDB stub)",
             Self::Event => "Syscall tracepoint (category:event)",
+            Self::PerfEvent => "perf counter (cpu-clock/task-clock/cycles/instructions)",
             Self::Runqemu => "Absolute runqemu executable",
             Self::BuildDirectory => "Initialized build directory",
             Self::Qemuboot => "Exact .qemuboot.conf file",
             Self::KernelImage => "Matching boot kernel image",
             Self::RootfsImage => "Root filesystem image",
             Self::Memory => "Guest memory (MiB)",
+            Self::QemuSshPort => "Optional localhost SSH port (x86; empty = isolated)",
             Self::QemuBootMode => "Boot mode (Left/Right/Space)",
             Self::KernelConfig => "Exact target kernel .config",
             Self::SerialDevice => "Host serial character tty device",
@@ -83,9 +89,10 @@ pub struct KernelDebugDraft {
     pub data: String,
     pub endpoint: String,
     pub event: String,
-    pub qemu: crate::QemuDebugDraft,
+    pub qemu: Box<crate::QemuDebugDraft>,
     pub serial: KgdbSerialDraft,
     pub instrumentation: Box<crate::KernelInstrumentationDraft>,
+    pub source_map: Option<Box<KernelDebugSourceMap>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -121,8 +128,13 @@ impl KernelDebugDraft {
             symbols: String::new(),
             data: String::new(),
             endpoint: "127.0.0.1:1234".into(),
-            event: "syscalls:sys_enter_openat".into(),
-            qemu: crate::QemuDebugDraft::default(),
+            event: if tool == KernelDebugTool::Perf {
+                "cpu-clock"
+            } else {
+                "syscalls:sys_enter_openat"
+            }
+            .into(),
+            qemu: Box::default(),
             serial: KgdbSerialDraft::default(),
             instrumentation: Box::new(crate::KernelInstrumentationDraft {
                 preset: if tool == KernelDebugTool::Lockdep {
@@ -132,6 +144,7 @@ impl KernelDebugDraft {
                 },
                 ..Default::default()
             }),
+            source_map: None,
         }
     }
 
@@ -170,12 +183,14 @@ impl KernelDebugDraft {
                 F::Symbols,
                 F::Memory,
                 F::QemuBootMode,
+                F::QemuSshPort,
             ]),
             KernelDebugTool::GdbRemote => fields.extend([F::Symbols, F::Endpoint]),
             KernelDebugTool::GdbCore | KernelDebugTool::Crash => {
                 fields.extend([F::Symbols, F::Data]);
             }
-            KernelDebugTool::Strace | KernelDebugTool::Perf => fields.push(F::Pid),
+            KernelDebugTool::Strace => fields.push(F::Pid),
+            KernelDebugTool::Perf => fields.extend([F::Pid, F::PerfEvent]),
             KernelDebugTool::TraceCmd => fields.push(F::Data),
             KernelDebugTool::Bpftrace => fields.push(F::Event),
             _ => {}
@@ -202,13 +217,14 @@ impl KernelDebugDraft {
             KernelDebugField::Symbols => &self.symbols,
             KernelDebugField::Data => &self.data,
             KernelDebugField::Endpoint => &self.endpoint,
-            KernelDebugField::Event => &self.event,
+            KernelDebugField::Event | KernelDebugField::PerfEvent => &self.event,
             KernelDebugField::Runqemu => &self.qemu.runqemu,
             KernelDebugField::BuildDirectory => &self.qemu.build_dir,
             KernelDebugField::Qemuboot => &self.qemu.qemuboot,
             KernelDebugField::KernelImage => &self.qemu.kernel,
             KernelDebugField::RootfsImage => &self.qemu.rootfs,
             KernelDebugField::Memory => &self.qemu.memory,
+            KernelDebugField::QemuSshPort => &self.qemu.ssh_forward_port,
             KernelDebugField::QemuBootMode => self.qemu.boot_mode.label(),
             KernelDebugField::KernelConfig => &self.serial.config,
             KernelDebugField::SerialDevice => &self.serial.device,
@@ -231,13 +247,14 @@ impl KernelDebugDraft {
             KernelDebugField::Symbols => Some(&mut self.symbols),
             KernelDebugField::Data => Some(&mut self.data),
             KernelDebugField::Endpoint => Some(&mut self.endpoint),
-            KernelDebugField::Event => Some(&mut self.event),
+            KernelDebugField::Event | KernelDebugField::PerfEvent => Some(&mut self.event),
             KernelDebugField::Runqemu => Some(&mut self.qemu.runqemu),
             KernelDebugField::BuildDirectory => Some(&mut self.qemu.build_dir),
             KernelDebugField::Qemuboot => Some(&mut self.qemu.qemuboot),
             KernelDebugField::KernelImage => Some(&mut self.qemu.kernel),
             KernelDebugField::RootfsImage => Some(&mut self.qemu.rootfs),
             KernelDebugField::Memory => Some(&mut self.qemu.memory),
+            KernelDebugField::QemuSshPort => Some(&mut self.qemu.ssh_forward_port),
             KernelDebugField::KernelConfig => Some(&mut self.serial.config),
             KernelDebugField::SerialDevice => Some(&mut self.serial.device),
             KernelDebugField::SerialBaud => Some(&mut self.serial.baud),
@@ -288,6 +305,13 @@ impl KernelDebugDraft {
                 .memory
                 .parse()
                 .map_err(|_| "Memory must be a whole number of MiB")?,
+            ssh_forward_port: if self.qemu.ssh_forward_port.is_empty() {
+                None
+            } else {
+                Some(self.qemu.ssh_forward_port.parse().map_err(
+                    |_| "SSH forward port must be a whole number from 1024 through 65535",
+                )?)
+            },
         };
         spec.validate()?;
         Ok(spec)

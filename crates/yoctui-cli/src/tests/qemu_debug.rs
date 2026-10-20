@@ -1,5 +1,9 @@
 use super::*;
 use std::fs;
+#[path = "qemu_debug/network.rs"]
+mod network;
+#[path = "qemu_debug/remote_source_map.rs"]
+mod remote_source_map;
 #[path = "qemu_debug/source_map.rs"]
 mod source_map;
 struct TestDir(std::path::PathBuf);
@@ -38,6 +42,7 @@ fn fixture() -> (TestDir, QemuDebugSpec) {
         rootfs: path.join("image.ext4"),
         symbols: path.join("vmlinux"),
         memory_mib: 1024,
+        ssh_forward_port: None,
     };
     fs::write(
         &spec.qemuboot,
