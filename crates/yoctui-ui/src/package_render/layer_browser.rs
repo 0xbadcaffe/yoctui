@@ -132,12 +132,13 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
         tree[0],
     );
     let title = format!(
-        "{} tree | hidden {} | rows {}-{} of {}{}{}",
+        "{} tree | hidden {} | rows {}-{} of {}{}{}{}",
         browser.layer,
         if browser.show_hidden { "on" } else { "off" },
         viewport.start.saturating_add(usize::from(viewport.end > 0)),
         viewport.end,
         browser.entries.len(),
+        if browser.incomplete.is_empty() { "" } else { " | partial" },
         if browser.tree_truncated {
             " | bounded"
         } else {

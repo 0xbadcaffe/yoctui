@@ -306,6 +306,7 @@ pub(crate) fn client_rootfs_composition_sources(
 pub(crate) async fn poll_rootfs_composition_operation(
     app: &mut App,
     operation: &mut Option<RootfsCompositionBackgroundOperation>,
+    browser_io: &mut crate::layer_browser_io::LayerBrowserIo,
 ) {
     #[cfg(unix)]
     if let Some(pending) = operation.as_ref()
@@ -339,7 +340,7 @@ pub(crate) async fn poll_rootfs_composition_operation(
             directory,
         }) = effect
         {
-            load_layer_browser_directory(app, layer, root, directory).await;
+            browser_io.directory(app, layer, root, directory);
         }
     }
     if !operation
@@ -380,7 +381,7 @@ pub(crate) async fn poll_rootfs_composition_operation(
             directory,
         }) = update(app, action)
     {
-        load_layer_browser_directory(app, layer, root, directory).await;
+        browser_io.directory(app, layer, root, directory);
     }
 }
 

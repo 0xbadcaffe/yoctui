@@ -61,6 +61,17 @@ fn rootfs_browser_opens_on_files_tab_and_correlated_composition_completion() {
         "Rootfs: image".into(),
         "/build/rootfs".into(),
     ));
+    assert!(update(&mut app, Action::BrowseRootfsFilesystem).is_none());
+    let root = PathBuf::from("/build/rootfs");
+    app.layer_browser
+        .as_mut()
+        .unwrap()
+        .incomplete
+        .insert(root.clone());
+    assert!(
+        matches!(update(&mut app, Action::BrowseRootfsFilesystem), Some(Effect::LoadLayerBrowserDirectory { directory, .. }) if directory == root)
+    );
+    app.layer_browser.as_mut().unwrap().incomplete.clear();
     app.layer_browser
         .as_mut()
         .unwrap()

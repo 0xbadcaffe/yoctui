@@ -167,7 +167,7 @@ impl InteractiveRuntime {
                 .and_then(yoctui_model::LayerBrowser::selected_entry)
                 .is_some_and(|entry| entry.path == path)
             {
-                load_layer_browser_preview(&mut self.app, path).await;
+                self.layer_browser_io.preview(&mut self.app, path);
             }
         }
     }

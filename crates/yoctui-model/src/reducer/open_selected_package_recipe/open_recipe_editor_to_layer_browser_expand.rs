@@ -289,11 +289,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     return None;
                 };
                 app.focus = FocusTarget::Workspace;
-                if app
-                    .layer_browser
-                    .as_ref()
-                    .is_some_and(|browser| browser.is_build_directory() && browser.root == root)
-                {
+                if app.layer_browser.as_ref().is_some_and(|browser| {
+                    browser.is_build_directory()
+                        && browser.root == root
+                        && !browser.incomplete.contains(&root)
+                }) {
                     return None;
                 }
                 app.metadata_query.clear();
@@ -335,6 +335,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 .filter(|browser| browser.layer == layer && browser.root == root)
             {
                 browser.directory = directory.clone();
+                browser.incomplete.remove(&directory);
                 browser.nodes.insert(directory.clone(), entries);
                 browser.expanded.insert(directory);
                 browser.rebuild(preferred.as_ref());
@@ -425,10 +426,14 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             let selected_is_file = selected.as_ref().is_some_and(|entry| !entry.is_dir);
             if let Some(entry) = selected.filter(|entry| entry.is_dir) {
                 let browser = app.layer_browser.as_mut().expect("browser was selected");
-                if browser.expanded.contains(&entry.path) {
+                if browser.expanded.contains(&entry.path)
+                    && !browser.incomplete.contains(&entry.path)
+                {
                     return None;
                 }
-                if browser.nodes.contains_key(&entry.path) {
+                if browser.nodes.contains_key(&entry.path)
+                    && !browser.incomplete.contains(&entry.path)
+                {
                     browser.expanded.insert(entry.path.clone());
                     browser.rebuild(Some(&entry.path));
                     return None;

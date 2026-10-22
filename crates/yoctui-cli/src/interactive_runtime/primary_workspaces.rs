@@ -194,7 +194,9 @@ impl InteractiveRuntime {
                     root,
                     directory,
                 }) => {
-                    load_layer_browser_directory(&mut runtime.app, layer, root, directory).await;
+                    runtime
+                        .layer_browser_io
+                        .directory(&mut runtime.app, layer, root, directory);
                 }
                 _ => {}
             }

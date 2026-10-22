@@ -1,6 +1,18 @@
 use super::*;
 
 #[test]
+fn incomplete_directory_is_not_presented_as_an_empty_filesystem() {
+    let app = App::new(8, 1024);
+    let mut browser = LayerBrowser::new("Build directory".into(), "/build".into());
+    browser.incomplete.insert(browser.root.clone());
+    let text = crate::package_render::layer_inspector_text(&app, &browser);
+    assert_eq!(
+        text,
+        Text::from("Directory listing is loading or incomplete; reopen or refresh to retry.")
+    );
+}
+
+#[test]
 fn build_directory_renders_real_root_and_tree_without_configured_layer_list() {
     let mut app = App::new(20, 1000);
     app.screen = Screen::Layers;

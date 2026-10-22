@@ -70,6 +70,7 @@ async fn ux_rootfs_workspace_resolves_exact_artifact_sources_and_updates_model()
         .variables
         .insert("IMAGE_ROOTFS".into(), rootfs.to_string_lossy().into_owned());
     let effect = update(&mut app, Action::BeginSelectedRootfsComposition).unwrap();
+    let mut browser_io = crate::layer_browser_io::LayerBrowserIo::default();
     let mut operation = None;
     let Effect::GetRootfsComposition(request) = effect else {
         unreachable!()
@@ -88,7 +89,8 @@ async fn ux_rootfs_workspace_resolves_exact_artifact_sources_and_updates_model()
     );
     tokio::time::timeout(Duration::from_secs(2), async {
         while operation.is_some() {
-            poll_rootfs_composition_operation(&mut app, &mut operation).await;
+            poll_rootfs_composition_operation(&mut app, &mut operation, &mut browser_io).await;
+            browser_io.poll(&mut app);
             tokio::task::yield_now().await;
         }
     })

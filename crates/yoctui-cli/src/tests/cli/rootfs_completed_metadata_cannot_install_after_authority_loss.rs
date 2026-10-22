@@ -23,6 +23,7 @@ async fn rootfs_completed_metadata_cannot_install_after_authority_loss() {
             reason: "old result must not install".into(),
         }
     });
+    let mut browser_io = crate::layer_browser_io::LayerBrowserIo::default();
     let mut operation = Some(RootfsCompositionBackgroundOperation {
         request,
         authority: Some(yoctui_protocol::rootfs::RootfsSourcesRequestData {
@@ -43,7 +44,8 @@ async fn rootfs_completed_metadata_cannot_install_after_authority_loss() {
     });
     tokio::time::timeout(Duration::from_secs(1), async {
         while operation.is_some() {
-            poll_rootfs_composition_operation(&mut app, &mut operation).await;
+            poll_rootfs_composition_operation(&mut app, &mut operation, &mut browser_io).await;
+            browser_io.poll(&mut app);
             tokio::task::yield_now().await;
         }
     })

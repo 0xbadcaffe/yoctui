@@ -469,6 +469,8 @@ mod firmware_inspection;
 use firmware_inspection::*;
 mod file_diff_io;
 mod layer_browser;
+mod layer_browser_io;
+#[cfg(test)]
 use layer_browser::*;
 mod recipe_editor;
 use recipe_editor::*;

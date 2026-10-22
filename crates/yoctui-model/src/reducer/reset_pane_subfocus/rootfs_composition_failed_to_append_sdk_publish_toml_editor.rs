@@ -123,11 +123,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     })
             {
                 app.images_view = ImagesView::RootfsFilesystem;
-                if app
-                    .layer_browser
-                    .as_ref()
-                    .is_some_and(|browser| browser.is_rootfs() && browser.root == root)
-                {
+                if app.layer_browser.as_ref().is_some_and(|browser| {
+                    browser.is_rootfs()
+                        && browser.root == root
+                        && !browser.incomplete.contains(&root)
+                }) {
                     return None;
                 }
                 app.metadata_query.clear();

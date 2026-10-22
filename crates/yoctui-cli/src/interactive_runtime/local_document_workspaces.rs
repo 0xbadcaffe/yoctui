@@ -2,6 +2,10 @@ use super::*;
 
 impl InteractiveRuntime {
     pub(super) async fn poll_local_documents(&mut self) -> Result<()> {
+        self.render_scheduler.invalidate_if(
+            self.layer_browser_io.poll(&mut self.app),
+            RenderCause::State,
+        );
         let editor_changed = self.poll_preferred_editor().await;
         self.render_scheduler
             .invalidate_if(editor_changed, RenderCause::State);

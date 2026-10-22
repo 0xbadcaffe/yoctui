@@ -172,8 +172,12 @@ impl InteractiveRuntime {
                         directory,
                     } = effect
                     {
-                        load_layer_browser_directory(&mut runtime.app, layer, root, directory)
-                            .await;
+                        runtime.layer_browser_io.directory(
+                            &mut runtime.app,
+                            layer,
+                            root,
+                            directory,
+                        );
                     } else if local_workspace_effect_route(&effect)
                         == LocalWorkspaceEffectRoute::ImageArtifacts
                     {

@@ -100,10 +100,12 @@ impl InteractiveRuntime {
                     root,
                     directory,
                 }) => {
-                    load_layer_browser_directory(&mut runtime.app, layer, root, directory).await;
+                    runtime
+                        .layer_browser_io
+                        .directory(&mut runtime.app, layer, root, directory);
                 }
                 Some(Effect::LoadLayerBrowserPreview(path)) => {
-                    load_layer_browser_preview(&mut runtime.app, path).await;
+                    runtime.layer_browser_io.preview(&mut runtime.app, path);
                 }
                 Some(Effect::OpenInEditor(path)) => {
                     open_in_editor(

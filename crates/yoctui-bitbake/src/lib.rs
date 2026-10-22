@@ -35,7 +35,10 @@ mod raw_job;
 mod recipe_inventory;
 mod rootfs;
 mod rootfs_browser;
-pub use rootfs_browser::{read_rootfs_browser_preview, scan_rootfs_browser_directory};
+pub use rootfs_browser::{
+    read_rootfs_browser_preview, scan_rootfs_browser_directory,
+    scan_rootfs_browser_directory_stream,
+};
 mod sdk;
 mod sdk_shell;
 mod sdk_tool;

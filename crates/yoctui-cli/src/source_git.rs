@@ -8,6 +8,28 @@ use watcher::WatchSetup;
 
 const FALLBACK_REFRESH: Duration = Duration::from_secs(30);
 
+pub(crate) async fn directory_git_status(source: &Path) -> Option<Vec<u8>> {
+    // Porcelain paths are always repository-relative, regardless of
+    // status.relativePaths. Obtain the exact prefix with a cheap bounded probe.
+    let (prefix, output) = tokio::join!(
+        watcher::git_output(source, &["rev-parse", "--show-prefix"]),
+        watcher::git_output(
+            source,
+            &[
+                "status",
+                "--porcelain=v1",
+                "-z",
+                "--no-renames",
+                "--ignored=matching",
+                "--untracked-files=normal",
+                "--",
+                ".",
+            ],
+        )
+    );
+    crate::layer_browser::directory_relative_git_output(&prefix?, &output?)
+}
+
 #[derive(Default)]
 pub(crate) struct SourceGitPoller {
     source: Option<PathBuf>,

@@ -26,12 +26,28 @@ pub fn scan_rootfs_browser_directory(
     root: &Path,
     directory: &Path,
 ) -> io::Result<Vec<LayerBrowserEntry>> {
+    scan_rootfs_browser_directory_stream(root, directory, |_| true)
+}
+
+/// Bounded progressive metadata acquisition. The callback returns false to
+/// cancel; callers must treat emitted prefixes as incomplete directory caches.
+pub fn scan_rootfs_browser_directory_stream(
+    root: &Path,
+    directory: &Path,
+    mut emit: impl FnMut(&[LayerBrowserEntry]) -> bool,
+) -> io::Result<Vec<LayerBrowserEntry>> {
     contained(root, directory)?;
     let owners = target_metadata::accounts(root, "etc/passwd");
     let groups = target_metadata::accounts(root, "etc/group");
     let target = target_metadata::PseudoMetadata::open(root);
     let mut entries = Vec::new();
     for child in fs::read_dir(directory)? {
+        if !emit(&entries) {
+            return Err(io::Error::new(
+                io::ErrorKind::Interrupted,
+                "directory scan cancelled",
+            ));
+        }
         if entries.len() == yoctui_model::MAX_ROOTFS_ENTRIES {
             return Err(io::Error::other("RootFS directory exceeds the entry bound"));
         }

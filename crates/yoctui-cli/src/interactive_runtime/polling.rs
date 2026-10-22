@@ -342,6 +342,7 @@ impl InteractiveRuntime {
         poll_rootfs_composition_operation(
             &mut runtime.app,
             &mut runtime.rootfs_composition_operation,
+            &mut runtime.layer_browser_io,
         )
         .await;
         poll_global_content_search(

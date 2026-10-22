@@ -445,6 +445,7 @@ pub(crate) async fn tui(
         environment_browser_io,
         bitbake_setup_io: crate::bitbake_setup_io::BitBakeSetupIo::default(),
         file_diff_io: crate::file_diff_io::FileDiffIo::default(),
+        layer_browser_io: crate::layer_browser_io::LayerBrowserIo::default(),
         hardware_io,
         kernel_debug_io: kernel_debug_io::KernelDebugIo::default(),
         editor_gitui_io: EditorGitUiIo::default(),

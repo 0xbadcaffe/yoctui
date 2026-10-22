@@ -85,7 +85,7 @@ impl WatchSetup {
     }
 }
 
-async fn git_output(source: &Path, arguments: &[&str]) -> Option<Vec<u8>> {
+pub(super) async fn git_output(source: &Path, arguments: &[&str]) -> Option<Vec<u8>> {
     let mut command = tokio::process::Command::new("git");
     command
         .args(["--no-optional-locks", "-C"])

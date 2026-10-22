@@ -86,6 +86,31 @@ First four establish normal CPU; floods also need latency/continuity/memory chec
 
 ## Responsiveness and rendering
 
+### Progressive filesystem browsing (0.1.360)
+
+Layers, build-directory and rootfs trees enqueue I/O without awaiting it in the
+input handler. Two blocking workers share a bounded two-message queue; geometric
+directory prefixes appear while metadata loads. Partial caches are marked loading
+and retried after cancellation. Changing screen, build, daemon or selection rejects
+obsolete results; collapsing a loading directory cannot be undone by its worker.
+File listings, target ownership and previews are read afresh, not persisted in a
+filesystem cache. Preview reads remain limited to regular files and 64 KiB; rootfs
+containment and symlink restrictions are unchanged.
+
+Git decorations arrive after the usable listing, using NUL-delimited,
+directory-relative output and linear-time status mapping. Nonrecursive watches,
+explicit refresh and a two-second fallback invalidate the 16-entry/8 MiB cache.
+Git output retains the existing five-second/8 MiB subprocess bounds. Source
+highlighting reuses a four-entry/16 MiB renderer-local cache keyed by exact text,
+filename, theme and color mode; scrolling clones only viewport-relevant lines
+without losing multiline syntax state. Rootfs command fallback resolves its three
+source variables with one authorized environment dump when available, retaining
+single-variable queries when that is the only supported capability.
+
+These are structural bounds verified by tests, not cold-cache or end-to-end
+speedup claims. The approach follows the asynchronous loading, cancellation and
+bounded caching principles described in [Why is Yazi fast?](https://yazi-rs.github.io/blog/why-is-yazi-fast/).
+
 All allowed CPUs runnable; at least 100 post-warmup observations:
 
 - key press to reducer action p95 <=100 ms;

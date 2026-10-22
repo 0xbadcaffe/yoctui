@@ -133,6 +133,9 @@ pub struct LayerBrowser {
     pub directory: PathBuf,
     pub entries: Vec<LayerBrowserEntry>,
     pub nodes: HashMap<PathBuf, Vec<LayerBrowserEntry>>,
+    /// Progressive directory snapshots are not complete cache hits. A cancelled
+    /// scan must be retried when that directory is opened again.
+    pub incomplete: HashSet<PathBuf>,
     pub expanded: HashSet<PathBuf>,
     pub show_hidden: bool,
     pub selection: usize,
@@ -162,6 +165,7 @@ impl LayerBrowser {
             root,
             entries: Vec::new(),
             nodes: HashMap::new(),
+            incomplete: HashSet::new(),
             expanded,
             show_hidden: false,
             selection: 0,

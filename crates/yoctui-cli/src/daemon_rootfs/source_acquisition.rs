@@ -34,6 +34,32 @@ pub(super) async fn acquire(
             &build,
         )?;
         let deadline = tokio::time::Instant::now() + query_timeout;
+        // Prefer one independently authorized environment dump. Some getvar
+        // utilities accept only one name, so never invent multi-name argv.
+        // Even the old getvar environment fallback already dumps every name.
+        let batch = planner
+            .environment_dump(Some(&query.request.image.image))
+            .ok()
+            .or_else(|| {
+                let command = planner
+                    .get_variable("IMAGE_MANIFEST", Some(&query.request.image.image))
+                    .ok()?;
+                (command.implementation
+                    == yoctui_bitbake::BITBAKE_GETVAR_ENVIRONMENT_IMPLEMENTATION)
+                    .then_some(command)
+            });
+        if let Some(command) = batch {
+            let output =
+                run_source_command(command, &build, &environment, &mut cancelled, deadline).await?;
+            let sources = RootfsSourcesData {
+                image_manifest: environment_value(&output, "IMAGE_MANIFEST"),
+                pkgdata_dir: environment_value(&output, "PKGDATA_DIR"),
+                image_rootfs: environment_value(&output, "IMAGE_ROOTFS"),
+                query,
+            };
+            sources.validate()?;
+            return Ok(sources);
+        }
         let mut values = Vec::with_capacity(3);
         for name in ["IMAGE_MANIFEST", "PKGDATA_DIR", "IMAGE_ROOTFS"] {
             let command = planner.get_variable(name, Some(&query.request.image.image))?;
@@ -105,6 +131,30 @@ pub(super) async fn acquire(
     }
     result
 }
+
+fn environment_value(output: &str, name: &str) -> Option<String> {
+    let prefix = format!("{name}=");
+    output
+        .lines()
+        .rev()
+        .find_map(|line| {
+            line.strip_prefix("export ")
+                .unwrap_or(line)
+                .strip_prefix(&prefix)
+        })
+        .map(|value| {
+            value
+                .strip_prefix('"')
+                .and_then(|v| v.strip_suffix('"'))
+                .unwrap_or(value)
+        })
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
+}
+
+#[cfg(test)]
+#[path = "../tests/daemon_rootfs/source_values.rs"]
+mod source_values;
 
 async fn run_source_command(
     command: yoctui_bitbake::AuthorizedBitBakeCommand,

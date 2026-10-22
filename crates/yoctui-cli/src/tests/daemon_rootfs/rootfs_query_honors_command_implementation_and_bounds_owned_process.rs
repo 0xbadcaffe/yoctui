@@ -10,6 +10,7 @@ async fn rootfs_query_honors_command_implementation_and_bounds_owned_process() {
 import os, sys, time
 from pathlib import Path
 Path('command.pid').write_text(str(os.getpid()))
+with Path('commands').open('a') as log: log.write(' '.join(sys.argv[1:])+'\n')
 assert os.environ['ROOTFS_MARKER']=='daemon-environment'
 mode=os.environ['ROOTFS_TEST_MODE']
 assert sys.argv[1:]==['-e','image'] or (sys.argv[1:4]==['--value','--recipe','image'] and len(sys.argv)==5)
@@ -74,6 +75,13 @@ else: print('' if mode=='absent' else values[sys.argv[-1]])
             cancellation.abort();
             if matches!(mode, "ok" | "absent") {
                 let sources = result.unwrap();
+                assert_eq!(
+                    fs::read_to_string(build.join("commands"))
+                        .unwrap()
+                        .lines()
+                        .count(),
+                    1
+                );
                 assert_eq!(sources.query, query);
                 assert_eq!(
                     sources.image_rootfs,

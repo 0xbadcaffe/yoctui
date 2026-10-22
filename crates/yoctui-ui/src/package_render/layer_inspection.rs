@@ -65,7 +65,9 @@ pub(crate) fn layer_entry_metadata(
 
 pub(crate) fn layer_inspector_text(app: &App, browser: &LayerBrowser) -> Text<'static> {
     let Some(entry) = browser.selected_entry() else {
-        return Text::from(if browser.is_rootfs() {
+        return Text::from(if !browser.incomplete.is_empty() {
+            "Directory listing is loading or incomplete; reopen or refresh to retry."
+        } else if browser.is_rootfs() {
             "This directory is empty."
         } else {
             "This layer is empty."

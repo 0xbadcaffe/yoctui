@@ -1,4 +1,8 @@
 pub(crate) fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
+    (*cached_source_preview(content, file_name, app)).clone()
+}
+
+fn highlight_source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
     let bitbake_source = ["bb", "bbappend", "bbclass", "inc", "conf", "wks", "wks.in"]
         .iter()
         .any(|extension| file_name.ends_with(&format!(".{extension}")));

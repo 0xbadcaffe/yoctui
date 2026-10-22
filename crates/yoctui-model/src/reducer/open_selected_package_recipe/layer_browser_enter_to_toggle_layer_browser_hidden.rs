@@ -14,7 +14,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     browser.rebuild(Some(&entry.path));
                     return None;
                 }
-                if browser.nodes.contains_key(&entry.path) {
+                if browser.nodes.contains_key(&entry.path)
+                    && !browser.incomplete.contains(&entry.path)
+                {
                     browser.expanded.insert(entry.path.clone());
                     browser.rebuild(Some(&entry.path));
                     return None;

@@ -266,6 +266,7 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
         app,
         document_area.width.saturating_sub(2),
         document_viewport.start.min(u16::MAX as usize) as u16,
+        document_area.height.saturating_sub(2),
     );
     frame.render_widget(
         Paragraph::new(content)

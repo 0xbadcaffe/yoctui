@@ -87,6 +87,7 @@ pub(super) struct InteractiveRuntime {
     pub(super) environment_browser_io: environment_setup::EnvironmentBrowserIo,
     pub(super) bitbake_setup_io: crate::bitbake_setup_io::BitBakeSetupIo,
     pub(super) file_diff_io: crate::file_diff_io::FileDiffIo,
+    pub(super) layer_browser_io: crate::layer_browser_io::LayerBrowserIo,
     pub(super) hardware_io: hardware_io::HardwareIo,
     pub(super) kernel_debug_io: kernel_debug_io::KernelDebugIo,
     pub(super) editor_gitui_io: EditorGitUiIo,

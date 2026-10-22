@@ -1,6 +1,8 @@
 //! Source render.
 use super::*;
 
+include!("source_render/preview_cache.rs");
+
 include!("source_render/source_preview.rs");
 
 include!("source_render/viewport.rs");

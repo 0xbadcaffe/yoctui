@@ -46,6 +46,7 @@ async fn rootfs_package_preview_installs_before_worker_finishes_and_rejects_canc
                 limitations: vec!["Still loading".into()],
             })
             .unwrap();
+        let mut browser_io = crate::layer_browser_io::LayerBrowserIo::default();
         let mut operation = Some(RootfsCompositionBackgroundOperation {
             request,
             #[cfg(unix)]
@@ -54,7 +55,8 @@ async fn rootfs_package_preview_installs_before_worker_finishes_and_rejects_canc
             package_preview: Some(receiver),
             handle: tokio::spawn(std::future::pending()),
         });
-        poll_rootfs_composition_operation(&mut app, &mut operation).await;
+        poll_rootfs_composition_operation(&mut app, &mut operation, &mut browser_io).await;
+        browser_io.poll(&mut app);
         assert!(!operation.as_ref().unwrap().handle.is_finished());
         if cancelled {
             assert!(matches!(
@@ -186,6 +188,7 @@ async fn rootfs_live_mtd_files_loading_benchmark() {
     app.rootfs_composition = yoctui_model::RootfsCompositionState::Loading {
         request: request.clone(),
     };
+    let mut browser_io = crate::layer_browser_io::LayerBrowserIo::default();
     let mut operation = None;
     let started = std::time::Instant::now();
     begin_rootfs_composition_operation_with_sources(
@@ -197,7 +200,8 @@ async fn rootfs_live_mtd_files_loading_benchmark() {
     );
     tokio::time::timeout(Duration::from_secs(5), async {
         while app.rootfs_browser().is_none() {
-            poll_rootfs_composition_operation(&mut app, &mut operation).await;
+            poll_rootfs_composition_operation(&mut app, &mut operation, &mut browser_io).await;
+            browser_io.poll(&mut app);
             tokio::task::yield_now().await;
         }
     })
@@ -214,7 +218,8 @@ async fn rootfs_live_mtd_files_loading_benchmark() {
     );
     tokio::time::timeout(Duration::from_secs(5), async {
         while operation.is_some() {
-            poll_rootfs_composition_operation(&mut app, &mut operation).await;
+            poll_rootfs_composition_operation(&mut app, &mut operation, &mut browser_io).await;
+            browser_io.poll(&mut app);
             tokio::task::yield_now().await;
         }
     })

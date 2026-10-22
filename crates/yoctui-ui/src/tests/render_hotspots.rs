@@ -25,7 +25,7 @@ fn source_viewport_fast_path_preserves_wrapping_unicode_and_multiline_styles() {
                     .scroll((scroll, 0))
                     .render(area, &mut expected);
                 let (text, remainder) =
-                    scrolled_source_preview(&content, file, &app, width, scroll);
+                    scrolled_source_preview(&content, file, &app, width, scroll, 8);
                 Paragraph::new(text)
                     .wrap(Wrap { trim: false })
                     .scroll((remainder, 0))
@@ -40,13 +40,13 @@ fn source_viewport_fast_path_preserves_wrapping_unicode_and_multiline_styles() {
 fn source_viewport_skips_only_rows_known_not_to_wrap() {
     let app = App::new(32, 8192);
     let content = "short\n".repeat(4096);
-    let (text, scroll) = scrolled_source_preview(&content, "file.txt", &app, 80, 4000);
+    let (text, scroll) = scrolled_source_preview(&content, "file.txt", &app, 80, 4000, 8);
     assert_eq!(scroll, 0);
-    assert_eq!(text.lines.len(), 96);
+    assert_eq!(text.lines.len(), 8);
     let (_, scroll) =
-        scrolled_source_preview("short\nlong wrapped line\ntail", "file.txt", &app, 5, 3);
+        scrolled_source_preview("short\nlong wrapped line\ntail", "file.txt", &app, 5, 3, 8);
     assert_eq!(scroll, 2);
-    let (_, scroll) = scrolled_source_preview(&content, "file.txt", &app, 0, 12);
+    let (_, scroll) = scrolled_source_preview(&content, "file.txt", &app, 0, 12, 8);
     assert_eq!(scroll, 12);
 }
 
