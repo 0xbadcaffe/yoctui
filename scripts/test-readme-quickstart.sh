@@ -117,6 +117,25 @@ width, height = struct.unpack(">II", png[16:24])
 assert 2 <= width / height <= 3.5 and len(png) <= 2 * 1024 * 1024
 print("README header and documentation links passed")
 
+# The main animation is a live capture, separate from the deterministic gallery.
+animation = Path("docs/media/yoctui-poky-workflow.gif")
+capture = json.loads(animation.with_suffix(".json").read_text())
+gif = animation.read_bytes()
+assert raw_base + str(animation) in readme
+assert gif[:6] in (b"GIF87a", b"GIF89a")
+assert struct.unpack("<HH", gif[6:10]) == (1600, 1000)
+assert 8 <= capture["frame_count"] <= 500
+assert len(gif) <= 10 * 1024 * 1024, "Keep README animation lightweight"
+assert hashlib.sha256(gif).hexdigest() == capture["gif_sha256"]
+assert len(gif) == capture["gif_bytes"]
+assert set(capture["chapters"]) == {"dashboard", "tasks", "composition", "files"}
+assert capture["authority"] == "native optimized Yoctui attached to a real daemon"
+assert capture["time_compressed"] is True
+assert re.fullmatch(r"[0-9a-f]{64}", capture["binary_sha256"])
+assert all(re.fullmatch(r"[0-9a-f]{64}", frame["sha256"]) for frame in capture["source_frames"])
+assert raw_base + "docs/media/screenshots/07-idle-dashboard.png" in readme
+print("Live README animation and static fallback checks passed")
+
 # Syntax only: these examples must never install, initialize, or launch work.
 for name, markdown in {"README.md": readme, **manuals}.items():
     for example in re.findall(r"^```(?:bash|sh)\n(.*?)^```", markdown, re.M | re.S):

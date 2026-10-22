@@ -1,0 +1,281 @@
+{
+  "schema_version": 1,
+  "authority": "native optimized Yoctui attached to a real daemon",
+  "captured_utc": "2026-10-22T11:12:29.511764+00:00",
+  "binary": "yoctui 0.1.359",
+  "capture_source_commit": "83a3f07b4ddc2a566e9c2c6cc7ae295bd2cb31fa",
+  "width": 160,
+  "height": 50,
+  "image": "core-image-base",
+  "binary_path": "/home/bspguy-dev/.cargo/bin/yoctui",
+  "binary_sha256": "f21347eb158be652873757da46e75d54b753181b190c2699698f7a4b6c46ac74",
+  "binary_source_commit": "aa18624554ddf7674f58b114e8803756bef2332d",
+  "dropped_raw_bytes": 0,
+  "file": "docs/media/yoctui-poky-workflow.gif",
+  "gif_sha256": "8a368507643863ba7eb2758bcfd2b4d8a6fa777d08e6c9ba83b7f39495cf7be5",
+  "gif_bytes": 821119,
+  "frame_count": 42,
+  "time_compressed": true,
+  "capture_manifest_sha256": "5772808e1fb070f27f614ea16d10287c7c0ad9fa8c2e070361e54a68eb615993",
+  "chapters": [
+    "dashboard",
+    "tasks",
+    "composition",
+    "files"
+  ],
+  "source_frames": [
+    {
+      "file": "frame-0000.cells",
+      "chapter": "dashboard",
+      "seconds": 9.535,
+      "sha256": "7e7e34b767a66ba3d958554fca77549ccaac4b4c569c2b76de9c4919c85b5259"
+    },
+    {
+      "file": "frame-0001.cells",
+      "chapter": "dashboard",
+      "seconds": 10.042,
+      "sha256": "9e683af0f554b5d070fa4a75a7b3c7b614e2f84324953dda0d1e315cf75bbfc2"
+    },
+    {
+      "file": "frame-0002.cells",
+      "chapter": "dashboard",
+      "seconds": 10.557,
+      "sha256": "3a4fa9fcd3340483f2d86e6de697e716eec3f577cf5e6fdaa22c4e54fcb7d60d"
+    },
+    {
+      "file": "frame-0003.cells",
+      "chapter": "dashboard",
+      "seconds": 11.071,
+      "sha256": "dbf62f5faad8edaca47406b6f750107c463f113526a9c4fbf999402e4949f1cb"
+    },
+    {
+      "file": "frame-0004.cells",
+      "chapter": "dashboard",
+      "seconds": 11.596,
+      "sha256": "2b49207fc8ab5e3e4898e9d558a5c65b95ec0d7c002650d6dd76380b7a39a899"
+    },
+    {
+      "file": "frame-0005.cells",
+      "chapter": "dashboard",
+      "seconds": 12.107,
+      "sha256": "7aa756f491233fc68ce92e96fdff7088b7c3713c2b0776834b059f2660f6610f"
+    },
+    {
+      "file": "frame-0006.cells",
+      "chapter": "dashboard",
+      "seconds": 12.624,
+      "sha256": "235f2e4782874d57817cde45a542c6f1c4fdc83203a2d5558413b6fa3e99c21a"
+    },
+    {
+      "file": "frame-0007.cells",
+      "chapter": "dashboard",
+      "seconds": 13.145,
+      "sha256": "b3b3913123ccd31cb9132b46f419c5c600d98dab2d569d2db61c565c2b4c5040"
+    },
+    {
+      "file": "frame-0008.cells",
+      "chapter": "dashboard",
+      "seconds": 13.66,
+      "sha256": "8ab62575eaecb0485c37df7735d4cf23e05add27a3a8ee9cbd6e57c16aaa56b9"
+    },
+    {
+      "file": "frame-0009.cells",
+      "chapter": "dashboard",
+      "seconds": 14.165,
+      "sha256": "3fbb68ee1845d5018fe2b8b5839ab2ffa1dbfe446de24b37e6759844c72eb190"
+    },
+    {
+      "file": "frame-0010.cells",
+      "chapter": "dashboard",
+      "seconds": 14.679,
+      "sha256": "9ea76cf705dbb8e325f577050b59f9846c70c0625a0e8034c3b12590d6699797"
+    },
+    {
+      "file": "frame-0011.cells",
+      "chapter": "dashboard",
+      "seconds": 15.192,
+      "sha256": "c593cc9b8af8a8fbaae0b388157c2bcbe7413cafdb3f742f2feb7a5efaac15c1"
+    },
+    {
+      "file": "frame-0012.cells",
+      "chapter": "tasks",
+      "seconds": 15.734,
+      "sha256": "8536105f9fd1d46cbff303323e5b2160128aab0896ac22ea90d787ea74743c7c"
+    },
+    {
+      "file": "frame-0023.cells",
+      "chapter": "tasks",
+      "seconds": 21.408,
+      "sha256": "0b61aa85bdc5312d11ad60a97d229701dc1d39b03906863c508350064a12c474"
+    },
+    {
+      "file": "frame-0034.cells",
+      "chapter": "tasks",
+      "seconds": 27.086,
+      "sha256": "c13070bf06131b14c12a4aa27a6f269a31963e70c819428088d7726132ebe079"
+    },
+    {
+      "file": "frame-0045.cells",
+      "chapter": "tasks",
+      "seconds": 32.773,
+      "sha256": "2c52ca6714130e410db6be8b83611b7f01d9743538c89e02c54a25dd4fa6665c"
+    },
+    {
+      "file": "frame-0057.cells",
+      "chapter": "tasks",
+      "seconds": 38.928,
+      "sha256": "25e9308e426a096bac3c4214cd666003203d02563ad69db71dd049cd3e0e7cb5"
+    },
+    {
+      "file": "frame-0068.cells",
+      "chapter": "tasks",
+      "seconds": 44.6,
+      "sha256": "ecbbc0173dd2bd10dbffc3bd992c45d308580190dd9d0080ab4216c9b31c760d"
+    },
+    {
+      "file": "frame-0079.cells",
+      "chapter": "tasks",
+      "seconds": 50.264,
+      "sha256": "7bf6fadbd44e697cfbcb9e5bcb80880abef218ec4a5376f843da89ce6549ef52"
+    },
+    {
+      "file": "frame-0090.cells",
+      "chapter": "tasks",
+      "seconds": 56.389,
+      "sha256": "34b5a16a0b6db1c74dea1b58792d2e275db429156b59176cb66ec6d173f2dfac"
+    },
+    {
+      "file": "frame-0101.cells",
+      "chapter": "tasks",
+      "seconds": 62.065,
+      "sha256": "3222602599b21cbf4565015edefe1ea5af2708be147eaeff71a76d43bb5bbeef"
+    },
+    {
+      "file": "frame-0112.cells",
+      "chapter": "tasks",
+      "seconds": 68.279,
+      "sha256": "0cbad7660d8561f3d2c49788e35c647856dd9baa3f8813192158a2e86f68ed13"
+    },
+    {
+      "file": "frame-0123.cells",
+      "chapter": "tasks",
+      "seconds": 73.968,
+      "sha256": "51c8f9b8ee37d3054125d35ae1c9220fbe82a60d4613939aa1f2733e8ce1ef88"
+    },
+    {
+      "file": "frame-0134.cells",
+      "chapter": "tasks",
+      "seconds": 79.626,
+      "sha256": "2bf8c64b211e2b63fc7c7e44459960326ee4012ee925b884377d02651c2016f5"
+    },
+    {
+      "file": "frame-0146.cells",
+      "chapter": "tasks",
+      "seconds": 86.263,
+      "sha256": "5a3043172da89bb80610d4e02ce79876ed78b7f44c0a03f4f82c308641707385"
+    },
+    {
+      "file": "frame-0157.cells",
+      "chapter": "tasks",
+      "seconds": 91.899,
+      "sha256": "44376ec6f6f9dc122c6abbe67f5e2e5f9ce4c0208adc583e7b9e2ed4dcdd2e5e"
+    },
+    {
+      "file": "frame-0168.cells",
+      "chapter": "tasks",
+      "seconds": 97.535,
+      "sha256": "34e7b2d9542c61f4a5effed0c54b0b52d6618f04e22ce1e3103b5891c24e7808"
+    },
+    {
+      "file": "frame-0179.cells",
+      "chapter": "tasks",
+      "seconds": 103.136,
+      "sha256": "708e2038b7c2798fea4e1f4e1c50d5fc9cfdb473abcf567530b867f6b986d44b"
+    },
+    {
+      "file": "frame-0190.cells",
+      "chapter": "tasks",
+      "seconds": 109.349,
+      "sha256": "2b71bf19acf8b16675a58efd70ce6e9655839e6f4c2ce3ca7bd896c2845d82a0"
+    },
+    {
+      "file": "frame-0201.cells",
+      "chapter": "tasks",
+      "seconds": 115.493,
+      "sha256": "96c5b47a8d9a23ddfd89b30e038916e3baa657aefd56abe8322217e12d28bbbd"
+    },
+    {
+      "file": "frame-0212.cells",
+      "chapter": "tasks",
+      "seconds": 121.124,
+      "sha256": "8aff46be4fc7daf57cad44dc1c53d6ce0b24ee47b730f97c4dc5c00f83c30e0a"
+    },
+    {
+      "file": "frame-0223.cells",
+      "chapter": "tasks",
+      "seconds": 126.726,
+      "sha256": "9148b33de2cbf8da018d371dea9230fc4a9a02e1c78173768ef577e00be91904"
+    },
+    {
+      "file": "frame-0235.cells",
+      "chapter": "tasks",
+      "seconds": 132.886,
+      "sha256": "fde2b6b8e243d223c50de4f042388a109d2e4d6486ae361a83895189501f41ee"
+    },
+    {
+      "file": "frame-0246.cells",
+      "chapter": "tasks",
+      "seconds": 138.509,
+      "sha256": "691ef9c5b58c5ec22a3b1c68929495b48717fd2149bdf3a714e822261aaa9ebf"
+    },
+    {
+      "file": "frame-0257.cells",
+      "chapter": "tasks",
+      "seconds": 144.201,
+      "sha256": "8ae3ed4bd2d80477b84092df89dfaaea4b181a7a24415e5449fe33b0304a28e3"
+    },
+    {
+      "file": "frame-0268.cells",
+      "chapter": "tasks",
+      "seconds": 203.463,
+      "sha256": "233f2ca3262e1a166816893661f87dc3efe895ba2862bb90e657ba59597f8b95"
+    },
+    {
+      "file": "frame-0269.cells",
+      "chapter": "composition",
+      "seconds": 242.732,
+      "sha256": "f51c91f02196f6cec31e9f1f7ea0444a49ed2daf047b00e8f878479eb57e26c1"
+    },
+    {
+      "file": "frame-0270.cells",
+      "chapter": "composition",
+      "seconds": 246.854,
+      "sha256": "45fd1e43e0d155cca70c503c64319812697ec2abc63a427d9498802eccd5a6ec"
+    },
+    {
+      "file": "frame-0271.cells",
+      "chapter": "composition",
+      "seconds": 249.378,
+      "sha256": "8c03b14b94ff201e40b19b4632cc956e4d44b6c2097ed5316aebbff9987ede5a"
+    },
+    {
+      "file": "frame-0272.cells",
+      "chapter": "files",
+      "seconds": 276.564,
+      "sha256": "299d47b55b37c7b63b2ad7bdc4ee67ba6a05b8bff9c50683dc6daf98d36e952d"
+    },
+    {
+      "file": "frame-0273.cells",
+      "chapter": "files",
+      "seconds": 279.145,
+      "sha256": "1009c9a182a866365523b654e84c4a5be1d984460ff47c6ebf1a19b74fab4c37"
+    },
+    {
+      "file": "frame-0274.cells",
+      "chapter": "files",
+      "seconds": 280.176,
+      "sha256": "d12ba6e5d27f448d8c35bf60724cffcdd6300fa146c6a9fd568aabfeac5590c3"
+    }
+  ],
+  "source_frame_offset": 0
+}

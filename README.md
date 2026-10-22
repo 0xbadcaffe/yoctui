@@ -39,8 +39,13 @@ A persistent daemon keeps builds and development terminals available when you
 close the UI and reconnect later.
 
 <p align="center">
-  <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/screenshots/07-idle-dashboard.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/07-idle-dashboard.png" width="1000" alt="Yoctui dashboard with workspace status, recent builds and CPU, RAM and filesystem usage"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/yoctui-poky-workflow.gif"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/yoctui-poky-workflow.gif" width="1000" alt="Live Poky image build in Yoctui: Dashboard, task progress, rootfs package pie chart and file browsing"></a>
 </p>
+
+Real Poky `core-image-base` / `qemux86-64` build using existing sstate;
+time-compressed, not simulated.
+[Static dashboard](https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/07-idle-dashboard.png) ·
+[Capture details](https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/yoctui-poky-workflow.json)
 
 ## Features
 
