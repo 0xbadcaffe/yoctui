@@ -133,6 +133,7 @@ class AcceptanceHelpers(unittest.TestCase):
     def test_wait_for_requires_popup_absence_as_well_as_footer(self):
         terminal = self.terminal()
         terminal.screen = Mock()
+        terminal.screen.pending = ""
         terminal.screen.text.side_effect = ["Quit Six-step workbench path", "Quit"]
         terminal.process.poll.return_value = None
         with patch("pty_acceptance.time.monotonic", side_effect=[0, 1, 2]):
@@ -153,6 +154,31 @@ class AcceptanceHelpers(unittest.TestCase):
         with patch("pty_acceptance.time.monotonic", side_effect=[0, 1, 2]):
             terminal.wait_for("Quit")
         self.assertEqual(terminal.read.call_count, 2)
+
+    def test_continuous_animation_does_not_hide_a_ready_current_screen(self):
+        terminal = self.terminal()
+        terminal.screen.feed("QEMU socket ready")
+        terminal.read.return_value = True
+        terminal.process.poll.return_value = None
+        with patch("pty_acceptance.time.monotonic", side_effect=[0, .01, .08, .21]):
+            terminal.wait_for("QEMU socket ready")
+        self.assertEqual(terminal.read.call_count, 3)
+
+    def test_split_escape_sequence_must_finish_before_readiness(self):
+        terminal = self.terminal()
+        terminal.process.poll.return_value = None
+        def read():
+            if not terminal.screen.text().strip():
+                terminal.screen.feed("Quit\x1b[")
+                return True
+            if terminal.screen.pending:
+                terminal.screen.feed("0m")
+                return True
+            return False
+        terminal.read.side_effect = read
+        with patch("pty_acceptance.time.monotonic", side_effect=[0, .01, .2, .3]):
+            terminal.wait_for("Quit")
+        self.assertEqual(terminal.read.call_count, 3)
 
     def test_forced_cleanup_is_not_a_successful_exit(self):
         terminal = self.terminal()

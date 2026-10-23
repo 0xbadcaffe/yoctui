@@ -103,11 +103,20 @@ class ProtocolClient:
             self.pending.extend(chunk)
 
     def attach(self) -> dict[str, object]:
+        # This source-checkout harness must speak the same protocol as the
+        # binary under measurement; an old hard-coded minor rejects live runs.
+        source = (ROOT / "crates/yoctui-protocol/src/daemon.rs").read_text()
+        version = {}
+        for name in ("major", "minor"):
+            match = re.search(rf"pub const PROTOCOL_{name.upper()}: u16 = (\d+);", source)
+            if match is None:
+                raise RuntimeError(f"cannot find daemon protocol {name}")
+            version[name] = int(match.group(1))
         self.send(
             {
                 "type": "hello",
-                "minimum_version": {"major": 1, "minor": 3},
-                "maximum_version": {"major": 1, "minor": 3},
+                "minimum_version": version,
+                "maximum_version": version,
                 "client_id": self.client_id,
                 "client_name": "ipc-latency-harness",
                 "capabilities": [

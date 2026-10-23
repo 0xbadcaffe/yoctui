@@ -1,6 +1,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from unittest.mock import Mock
 
 
 def load_measurement():
@@ -16,6 +17,23 @@ measurement = load_measurement()
 
 
 class IpcLatencyMeasurementTests(unittest.TestCase):
+    def test_live_handshake_uses_current_daemon_protocol(self):
+        client = object.__new__(measurement.ProtocolClient)
+        client.client_id = [71] * 16
+        client.send = Mock()
+        client.receive = Mock(side_effect=[
+            ({"type": "hello"}, 0),
+            ({"type": "attached", "snapshot": {"generation": 1}}, 0),
+        ])
+        self.assertEqual(client.attach(), {"generation": 1})
+        hello = client.send.call_args_list[0].args[0]
+        source = (Path(__file__).resolve().parents[1] /
+                  "crates/yoctui-protocol/src/daemon.rs").read_text()
+        for name in ("major", "minor"):
+            expected = int(source.split(f"pub const PROTOCOL_{name.upper()}: u16 = ")[1].split(";")[0])
+            self.assertEqual(hello["minimum_version"][name], expected)
+            self.assertEqual(hello["maximum_version"][name], expected)
+
     def test_nearest_rank_percentiles_preserve_tail(self):
         values = [float(value) for value in range(1, 101)]
         result = measurement.summarize(values)

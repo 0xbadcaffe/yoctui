@@ -135,13 +135,24 @@ class TerminalAcceptance:
 
     def wait_for(self, needle, absent=None, timeout=8):
         deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
+        matched_since = None
+        while (now := time.monotonic()) < deadline:
             received = self.read()
             text = self.screen.text()
             # Drain the completed frame and its cursor queries before sending
             # keys; otherwise a partial footer can merge Escape with the CPR.
-            if not received and needle in text and (absent is None or absent not in text):
-                return
+            matches = needle in text and (absent is None or absent not in text)
+            complete = not self.screen.pending and not self.cursor_query_pending
+            if matches and complete:
+                if matched_since is None:
+                    matched_since = now
+                # An animated, otherwise ready screen may never be quiet for
+                # a whole read interval. Accept a sustained complete match,
+                # while still draining split ANSI/CPR sequences before input.
+                if not received or now - matched_since >= 0.15:
+                    return
+            else:
+                matched_since = None
             if self.process.poll() is not None:
                 break
         raise AssertionError(f"PTY missing {needle!r}:\n{self.screen.text()}")
