@@ -71,6 +71,10 @@ impl InteractiveRuntime {
             runtime.render_scheduler.invalidate(RenderCause::State);
             return Ok(true);
         }
+        if runtime.workbench_key(k).await? {
+            runtime.render_scheduler.invalidate(RenderCause::State);
+            return Ok(true);
+        }
         if yoctui_app::raw_workspace_owns_input(&runtime.app, input) {
             runtime.route_remaining_workspaces(input).await?;
             return Ok(true);

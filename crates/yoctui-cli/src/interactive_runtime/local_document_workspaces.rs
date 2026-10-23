@@ -2,6 +2,7 @@ use super::*;
 
 impl InteractiveRuntime {
     pub(super) async fn poll_local_documents(&mut self) -> Result<()> {
+        self.poll_workbench().await;
         self.render_scheduler.invalidate_if(
             self.layer_browser_io.poll(&mut self.app),
             RenderCause::State,

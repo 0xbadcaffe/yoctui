@@ -149,6 +149,7 @@ pub fn compatibility_ui_command_action_definition(
         CommandId::OpenSignatures => compatibility_ui_destination_action_definition(Screen::Signatures),
         CommandId::OpenLayerRelationships => compatibility_ui_destination_action_definition(Screen::LayerRelationships),
         CommandId::OpenDevtoolWorkspace => compatibility_ui_destination_action_definition(Screen::Devtool),
+        CommandId::OpenWorkbench => compatibility_ui_destination_action_definition(Screen::Workbench),
         CommandId::OpenKernel => compatibility_ui_destination_action_definition(Screen::Kernel),
         CommandId::OpenFirmware => compatibility_ui_destination_action_definition(Screen::Firmware),
         CommandId::OpenBbmask => compatibility_ui_destination_action_definition(Screen::Bbmask),

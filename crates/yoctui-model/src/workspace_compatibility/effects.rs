@@ -4,6 +4,7 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
 
     match effect {
         Effect::Hardware(_)
+        | Effect::Workbench(_)
         | Effect::BitBakeSetup(_)
         | Effect::FileDiff(_)
         | Effect::ViewImageArtifact { .. }

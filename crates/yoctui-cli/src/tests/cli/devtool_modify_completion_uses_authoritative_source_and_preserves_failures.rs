@@ -67,19 +67,22 @@ async fn devtool_modify_completion_uses_authoritative_source_and_preserves_failu
     )
     .await;
     assert!(app.devtool_statuses.contains_key(&identity));
-    assert!(matches!(
-        app.active_dialog(),
-        Some(Dialog::RecipeEditor(editor))
-            if editor.recipe == "busybox"
-                && editor.root == directory
-                && editor.document.text.contains("int main")
-    ));
+    assert_eq!(app.screen, Screen::Workbench);
+    let workspace = app.workbench.current().expect("source development session");
+    assert_eq!(workspace.recipe.as_deref(), Some("busybox"));
+    assert_eq!(workspace.folders[0].browser.root, directory);
+    // Opening a large checkout must not eagerly walk it or read every source.
+    assert!(workspace.folders[0].browser.nodes.is_empty());
+    assert!(workspace.tabs.is_empty());
     assert_eq!(
         app.background_jobs.get(job_id).unwrap().status,
         yoctui_model::BackgroundJobStatus::Succeeded
     );
 
-    let _ = update(&mut app, Action::CloseRecipeEditor);
+    let _ = update(
+        &mut app,
+        Action::Workbench(yoctui_model::WorkbenchAction::Sessions),
+    );
     let missing = directory.join("missing");
     apply_completed_devtool_modify_status(
         &mut app,
@@ -136,7 +139,7 @@ async fn devtool_modify_completion_uses_authoritative_source_and_preserves_failu
     assert!(
         app.notification
             .as_deref()
-            .is_some_and(|message| message.contains("Could not list workspace files"))
+            .is_some_and(|message| message.contains("Could not open recipe workspace"))
     );
     assert_eq!(
         app.background_jobs.get(job_id).unwrap().status,

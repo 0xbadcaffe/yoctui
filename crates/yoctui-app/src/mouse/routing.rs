@@ -135,6 +135,7 @@ pub fn mouse_action_for_app(
         return None;
     }
     if region.target == FocusTarget::Workspace {
+        if app.screen == Screen::Workbench { return development_mouse_action(mouse, app, region.area); }
         if app.screen == Screen::DiffTool {
             return file_diff_mouse_action(mouse, app, region.area);
         }

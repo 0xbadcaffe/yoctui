@@ -1,6 +1,7 @@
 //! Workspace editor.
 use super::*;
 
+#[cfg(test)]
 pub(crate) fn recipe_editor_files(root: &Path) -> Result<Vec<PathBuf>> {
     fn visit(root: &Path, directory: &Path, files: &mut Vec<PathBuf>) -> std::io::Result<()> {
         if files.len() > yoctui_model::MAX_RECIPE_EDITOR_FILES {
@@ -34,25 +35,22 @@ pub(crate) fn recipe_editor_files(root: &Path) -> Result<Vec<PathBuf>> {
 }
 
 pub(crate) async fn open_workspace_editor(app: &mut App, recipe: String, root: PathBuf) {
-    let root_for_scan = root.clone();
-    let files = tokio::task::spawn_blocking(move || recipe_editor_files(&root_for_scan)).await;
-    match files {
-        Ok(Ok(files)) => {
-            if let Some(Effect::LoadRecipeEditorFile(path)) = compatibility_workspace_action(
+    if app.workbench.recovering {
+        app.workbench.deferred_recipe = Some((recipe, root));
+        app.screen = Screen::Workbench;
+        app.focus = yoctui_model::FocusTarget::Workspace;
+        return;
+    }
+    // Validate just the root. The Workbench expands directories lazily instead
+    // of recursively walking an entire kernel or Poky checkout before opening.
+    match tokio::task::spawn_blocking(move || root.canonicalize()).await {
+        Ok(Ok(root)) => {
+            let _ = update(
                 app,
-                Action::OpenRecipeEditor {
-                    recipe,
-                    root,
-                    files,
-                },
-            ) {
-                load_recipe_editor_file(app, path).await;
-            }
+                Action::Workbench(yoctui_model::WorkbenchAction::OpenRecipe { recipe, root }),
+            );
         }
-        Ok(Err(error)) => {
-            app.notification = Some(format!("Could not list workspace files: {error}"))
-        }
-        Err(error) => app.notification = Some(format!("Workspace file scan failed: {error}")),
+        result => app.notification = Some(format!("Could not open recipe workspace: {result:?}")),
     }
 }
 

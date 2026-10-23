@@ -36,6 +36,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         | CommandId::OpenFirmware => "F12 Navigate",
         CommandId::OpenBbmask => "F12 Config",
         CommandId::OpenDevtoolWorkspace => "F12 Devtool",
+        CommandId::OpenWorkbench => "F12 Build",
         CommandId::OpenBuildHistory => "F3 / F12 Navigate",
         CommandId::OpenCommandPalette => "F9 / Ctrl+P",
         CommandId::Quit => "q",
@@ -101,6 +102,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
 
 pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestination> {
     match command {
+        CommandId::OpenWorkbench => Some(WorkspaceDestination::Workbench),
         CommandId::OpenInsights => {
             Some(crate::workspace_screen_destination(crate::Screen::Insights))
         }

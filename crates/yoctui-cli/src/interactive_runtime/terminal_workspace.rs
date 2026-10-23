@@ -14,7 +14,14 @@ pub(crate) fn terminal_writer_key_effect(
     app: &App,
     key: crossterm::event::KeyEvent,
 ) -> Option<Effect> {
-    if app.screen != Screen::TerminalSessions
+    let workbench_terminal = app.screen == Screen::Workbench
+        && app.workbench.form.is_none()
+        && app.workbench.menu.is_none()
+        && app
+            .workbench
+            .current()
+            .is_some_and(|s| s.focus == yoctui_model::WorkbenchFocus::Terminal);
+    if (app.screen != Screen::TerminalSessions && !workbench_terminal)
         || app.terminal_browser_visible()
         || app.focus != yoctui_model::FocusTarget::Workspace
         || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live

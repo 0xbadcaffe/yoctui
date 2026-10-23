@@ -69,7 +69,13 @@ impl InteractiveRuntime {
         {
             return Ok(());
         }
-        if self.app.screen == Screen::TerminalSessions
+        if (self.app.screen == Screen::TerminalSessions
+            || (self.app.screen == Screen::Workbench
+                && self
+                    .app
+                    .workbench
+                    .current()
+                    .is_some_and(|s| s.focus == yoctui_model::WorkbenchFocus::Terminal)))
             && self.app.focus == yoctui_model::FocusTarget::Workspace
         {
             let _ = compatibility_workspace_action(&mut self.app, Action::TerminalStagePaste(text));

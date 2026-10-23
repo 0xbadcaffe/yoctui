@@ -135,10 +135,14 @@ pub use mouse::{
 };
 
 mod raw_input;
+mod workbench_input;
+mod workbench_layout;
 pub use raw_input::{
     RawArgvEditorAction, RawModeInputContext, popup_editor_action, raw_argv_editor_action,
     raw_mode_input, raw_workspace_owns_input, reduce_raw_mode_state, validate_raw_argv_editor,
 };
+pub use workbench_input::*;
+pub use workbench_layout::*;
 
 mod workspace_input;
 pub use workspace_input::{

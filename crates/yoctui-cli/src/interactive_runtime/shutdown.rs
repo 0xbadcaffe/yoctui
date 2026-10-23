@@ -3,6 +3,7 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) async fn shutdown(self) -> Result<()> {
         let mut runtime = self;
+        runtime.flush_workbench().await?;
         let render_metrics = runtime.render_scheduler.metrics();
         if let Some(path) = std::env::var_os("YOCTUI_PERFORMANCE_METRICS_PATH") {
             let elapsed_seconds = runtime.render_measurement_started.elapsed().as_secs_f64();

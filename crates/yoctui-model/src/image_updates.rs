@@ -292,6 +292,7 @@ pub(crate) fn current_collection_edge_action(app: &App, to_end: bool) -> Option<
     Some(match app.screen {
         Screen::Dashboard | Screen::Insights | Screen::Tasks => Action::ScrollBuildTasks { delta },
         Screen::BuildHistory => Action::SelectBuildHistory { delta },
+        Screen::Workbench => Action::Workbench(WorkbenchAction::Select(delta)),
         Screen::Dependencies => Action::SelectDependencyGraphNode { delta },
         Screen::Signatures => Action::SelectSignatureRecord { delta },
         Screen::Recipes | Screen::Devtool => Action::SelectRecipe { delta },

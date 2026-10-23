@@ -36,6 +36,10 @@ fn additional_global_metadata(command: CommandId) -> Option<GlobalMetadata> {
             &[],
             50,
         ),
+        CommandId::OpenWorkbench => navigation(
+            "navigate.workbench", "Open Workbench", "Open multi-folder development sessions, editor and Devtool actions",
+            &[], &["workbench", "workspace", "editor", "develop"], &[], 50,
+        ),
         CommandId::OpenDevtoolWorkspace => navigation(
             "navigate.devtool",
             "Open Devtool Workspace",

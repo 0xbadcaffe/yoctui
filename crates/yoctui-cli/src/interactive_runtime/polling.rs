@@ -5,9 +5,8 @@ fn set_local_background_activity(
     activity: yoctui_model::BackgroundActivity,
     active: bool,
 ) {
-    // This reducer only updates client-local flags and cannot emit an effect.
-    // The guarded reducer takes a whole-App rollback copy for external work;
-    // doing that three times on every poll copied the entire recipe inventory.
+    // These client-local flags cannot emit effects. Avoid cloning the complete
+    // recipe inventory three times on every poll for external-work rollback.
     let _ = update(app, Action::SetBackgroundActivity { activity, active });
 }
 
@@ -446,8 +445,10 @@ impl InteractiveRuntime {
                 ));
             }
         }
-        if (runtime.app.screen == Screen::TerminalSessions
-            || runtime.app.platform_menuconfig_visible())
+        if (matches!(
+            runtime.app.screen,
+            Screen::TerminalSessions | Screen::Workbench
+        ) || runtime.app.platform_menuconfig_visible())
             && runtime.app.selected_terminal_is_writer()
             && runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
             && let Some(daemon_client) = runtime.daemon_runtime.as_mut()

@@ -33,7 +33,7 @@ impl App {
             Screen::RawMode => InspectorMode::RawCommand,
             Screen::TerminalSessions => InspectorMode::DaemonSession,
             Screen::Maintenance => InspectorMode::Utility,
-            Screen::DiffTool => InspectorMode::File,
+            Screen::DiffTool | Screen::Workbench => InspectorMode::File,
             Screen::Logs => InspectorMode::Log,
             Screen::Errors => InspectorMode::Error,
             Screen::Help => InspectorMode::Help,

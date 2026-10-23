@@ -23,6 +23,7 @@ mod notification_input;
 mod preferred_editor;
 mod terminal_launch_dialog;
 mod terminal_workspace;
+mod workbench;
 #[cfg(test)]
 pub(crate) use metadata_backend::metadata_backend_start_required;
 pub(crate) use terminal_workspace::terminal_kill_review_key;
@@ -114,6 +115,7 @@ pub(crate) async fn tui(
     // Startup remains Navigator-focused; the saved destination is restored
     // after the daemon snapshot determines whether an environment is configured.
     app.focus = yoctui_model::FocusTarget::Navigator;
+    app.workbench.recovering = true;
     if app.screen == Screen::TerminalSessions {
         app.terminal.browser_open = true;
     }
@@ -445,6 +447,9 @@ pub(crate) async fn tui(
         environment_browser_io,
         bitbake_setup_io: crate::bitbake_setup_io::BitBakeSetupIo::default(),
         file_diff_io: crate::file_diff_io::FileDiffIo::default(),
+        workbench_io: crate::workbench_io::WorkbenchIo::default(),
+        workbench_store: crate::workbench_store::Store::start(),
+        pending_workbench_terminal: None,
         layer_browser_io: crate::layer_browser_io::LayerBrowserIo::default(),
         hardware_io,
         kernel_debug_io: kernel_debug_io::KernelDebugIo::default(),

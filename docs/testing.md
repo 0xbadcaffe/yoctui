@@ -27,6 +27,7 @@ checks the full ordered-fragment runtime projection without importing BitBake.
 | PTY/input/flow | `./scripts/test-terminal.sh`, `./scripts/test-tui-pty.sh`, `./scripts/test-tui-keymap.sh`, `./scripts/test-tui-flow.sh` |
 | Snapshots/setup | scripts/test-tui-snapshots.sh; python3 scripts/test-environment-setup.py |
 | PTY harness | python3 -m unittest scripts/test_pty_acceptance.py |
+| Development sessions | python3 scripts/test-workbench-pty.py; add --live-daemon to validate a shell against an already-verified local daemon |
 | Exact cells | ./scripts/verify-m21-concept-screens.sh |
 | Rasters | ./scripts/render-m22-concept-screenshots.sh --check; python3 scripts/test-m22-concept-raster.py |
 | README images | python3 scripts/render-readme-screenshots.py --check |

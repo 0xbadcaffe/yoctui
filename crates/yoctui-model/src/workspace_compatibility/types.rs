@@ -25,6 +25,7 @@ pub enum WorkspaceDestination {
     Qa,
     RawMode,
     Devtool,
+    Workbench,
     QemuWic,
     Maintenance,
     ProjectProfiles,
@@ -39,7 +40,7 @@ pub enum WorkspaceDestination {
 }
 
 impl WorkspaceDestination {
-    pub const ALL: [Self; 33] = [
+    pub const ALL: [Self; 34] = [
         Self::Dashboard,
         Self::Recipes,
         Self::Layers,
@@ -62,6 +63,7 @@ impl WorkspaceDestination {
         Self::Qa,
         Self::RawMode,
         Self::Devtool,
+        Self::Workbench,
         Self::QemuWic,
         Self::Maintenance,
         Self::ProjectProfiles,

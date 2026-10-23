@@ -461,6 +461,8 @@ mod devtool_completion;
 use devtool_completion::*;
 mod config_inspection;
 use config_inspection::*;
+mod workbench_io;
+mod workbench_store;
 mod workspace_editor;
 use workspace_editor::*;
 mod kernel_inspection;

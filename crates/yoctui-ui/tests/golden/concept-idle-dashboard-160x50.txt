@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.360 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.361 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -18,28 +18,28 @@
 │    U-Boot / BIOS        ││2   busybox                                                 ✓ Succeeded    00:00:17  ││                                            │
 │    SDK                  ││3   core-image-minimal                                      ✕ Failed       00:01:48  ││Enabled Actions                             │
 │▾ BUILD                  ││4   virtual/kernel                                          ✓ Succeeded    00:00:54  ││[Alt+b] Build image                         │
-│  ▱ Logs             LIVE││                                                                                     ││[F2] Monitor tasks                          │
-│  ▱ Errors               ││                                                                                     ││[l] View logs                               │
-│    Configuration        ││                                                                                     ││[e] View errors                             │
-│    Dependencies         ││                                                                                     ││[Alt+e] Verify environment                  │
-│  ▱ Build directory      ││                                                                                     ││[t] Open terminal                           │
-│▾ VALIDATE               ││                                                                                     ││[d] Open devtool                            │
-│    Testing              ││                                                                                     ││                                            │
-│    Security             ││                                                                                     ││Active Tasks                                │
-│    QA                   ││                                                                                     ││No active task events                       │
-│▾ TOOLS                  ││                                                                                     ││Next Action                                 │
-│    Raw Mode             ││                                                                                     ││Build image [Alt+b]                         │
-│    Terminal Sessions    │└─────────────────────────────────────────────────────────────────────────────────────┘│Attention                                   │
-│    Devtool              │┌Resource Telemetry · observed resources and cache────────────────────────────────────┐│No retained warnings or errors              │
-│    QEMU / Wic           ││CPU Usage               18%│RAM Usage                42%│Build FS Usage           63%││Workbench Center                            │
-│    Maintenance          ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫ ││Context: Work · core-image-minimal          │
-│  ▱ Build environment    ││          4 cores          │        6.7/16.0 GiB        │        55.5 GiB free       ││Active: tasks 0 · jobs 0                    │
-│  ▱ Compatibility        ││Sstate: summary not reported                                                         ││Favorite: none                              │
-│  ▱ Daemons              ││Downloads: 0 completed, 0 failed, 0 active                                           ││Terminal: none                              │
-│  ▱ Diff tool            ││Network: unknown; offline readiness: unverified                                      ││[t] Terminal sessions                       │
-│  ▱ GitUI                │└─────────────────────────────────────────────────────────────────────────────────────┘│Artifact: none retained                     │
-│  ▱ Settings             │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Recent: ✓ Succeeded core-image-minimal ·    │
-│                         ││[Alt+b] Build image        │[t] Open terminal           │[Alt+e] Verify environment  ││00:04:55                                    │
+│  ▱ Workbench            ││                                                                                     ││[F2] Monitor tasks                          │
+│  ▱ Logs             LIVE││                                                                                     ││[l] View logs                               │
+│  ▱ Errors               ││                                                                                     ││[e] View errors                             │
+│    Configuration        ││                                                                                     ││[Alt+e] Verify environment                  │
+│    Dependencies         ││                                                                                     ││[t] Open terminal                           │
+│  ▱ Build directory      ││                                                                                     ││[d] Open devtool                            │
+│▾ VALIDATE               ││                                                                                     ││                                            │
+│    Testing              ││                                                                                     ││Active Tasks                                │
+│    Security             ││                                                                                     ││No active task events                       │
+│    QA                   ││                                                                                     ││Next Action                                 │
+│▾ TOOLS                  ││                                                                                     ││Build image [Alt+b]                         │
+│    Raw Mode             │└─────────────────────────────────────────────────────────────────────────────────────┘│Attention                                   │
+│    Terminal Sessions    │┌Resource Telemetry · observed resources and cache────────────────────────────────────┐│No retained warnings or errors              │
+│    Devtool              ││CPU Usage               18%│RAM Usage                42%│Build FS Usage           63%││Workbench Center                            │
+│    QEMU / Wic           ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫ ││Context: Work · core-image-minimal          │
+│    Maintenance          ││          4 cores          │        6.7/16.0 GiB        │        55.5 GiB free       ││Active: tasks 0 · jobs 0                    │
+│  ▱ Build environment    ││Sstate: summary not reported                                                         ││Favorite: none                              │
+│  ▱ Compatibility        ││Downloads: 0 completed, 0 failed, 0 active                                           ││Terminal: none                              │
+│  ▱ Daemons              ││Network: unknown; offline readiness: unverified                                      ││[t] Terminal sessions                       │
+│  ▱ Diff tool            │└─────────────────────────────────────────────────────────────────────────────────────┘│Artifact: none retained                     │
+│  ▱ GitUI                │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Recent: ✓ Succeeded core-image-minimal ·    │
+│  ▱ Settings             ││[Alt+b] Build image        │[t] Open terminal           │[Alt+e] Verify environment  ││00:04:55                                    │
 │                         ││                           │                            │                            ││                                            │
 │                         ││Start the selected BitBake │Use the initialized Yocto   │Check layers and            ││                                            │
 │                         ││target                     │shell                       │configuration               ││                                            │

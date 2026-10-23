@@ -91,6 +91,7 @@ impl WorkspaceDestination {
             Self::Qa => "QA",
             Self::RawMode => "Raw Mode",
             Self::Devtool => "Devtool",
+            Self::Workbench => "Workbench",
             Self::QemuWic => "QEMU / Wic",
             Self::Maintenance => "Maintenance",
             Self::ProjectProfiles => "Project Profiles",

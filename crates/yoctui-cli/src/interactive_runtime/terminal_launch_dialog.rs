@@ -7,6 +7,9 @@ impl InteractiveRuntime {
         input: Input,
     ) -> Result<KeyRouteOutcome> {
         let runtime = self;
+        let workbench = (runtime.app.screen == Screen::Workbench)
+            .then_some(runtime.app.workbench.active)
+            .flatten();
         if native_metadata_scope::hold_pending_inspection_launch(
             &mut runtime.app,
             runtime.daemon_attached,
@@ -21,6 +24,31 @@ impl InteractiveRuntime {
             .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
         match effect {
             Some(effect @ Effect::Terminal(_)) => {
+                if let (
+                    Some(id),
+                    Effect::Terminal(yoctui_model::TerminalEffect::Create { name, .. }),
+                ) = (workbench, &effect)
+                {
+                    runtime.pending_workbench_terminal = Some((
+                        id,
+                        name.clone(),
+                        runtime
+                            .app
+                            .daemon
+                            .pty_sessions
+                            .iter()
+                            .map(|s| s.id)
+                            .max()
+                            .unwrap_or(0),
+                        runtime.app.daemon.instance_id,
+                        Instant::now(),
+                    ));
+                    runtime.app.screen = Screen::Workbench;
+                    if let Some(session) = runtime.app.workbench.current_mut() {
+                        session.focus = yoctui_model::WorkbenchFocus::Terminal;
+                        session.output = yoctui_model::WorkbenchOutput::Terminal;
+                    }
+                }
                 let routed =
                     submit_daemon_effect(&mut runtime.daemon_runtime, &mut runtime.app, &effect);
                 if routed == Some(false) {

@@ -1,6 +1,7 @@
 #[rustfmt::skip]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
+    Workbench(WorkbenchAction),
     FileDiff(FileDiffAction),
     BitBakeSetup(BitBakeSetupAction),
     EditorSettings(EditorSettingsAction),

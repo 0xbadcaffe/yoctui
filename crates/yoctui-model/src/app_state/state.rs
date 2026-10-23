@@ -1,5 +1,6 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
+    pub workbench: WorkbenchState,
     pub bitbake_setup: BitBakeSetupState,
     pub file_diff: FileDiffState,
     pub editor_settings: EditorSettingsState,

@@ -75,6 +75,29 @@ mouse wheel scroll; Home/End reach the first/last line. Alt+f searches that DTS.
 In Errors, Esc closes retained diagnostics back to the selected error list;
 a second Esc returns to the navigator.
 
+## Development Workbench
+
+Open **Build → Workbench** in the navigator or **F12 → Build → Open Workbench**.
+`n` creates a named session; Enter reopens one, `r` renames, Delete removes its
+saved session metadata only. Folders, source files and processes are not deleted.
+
+In a workspace, `Alt+a` adds an absolute folder, `Alt+m` opens workspace/Devtool
+actions, `Alt+f` focuses the explorer, `Alt+e` the editor, `Alt+t` the workspace
+terminal, `Alt+z` expands/restores the bottom panel, and `Alt+o` returns to sessions.
+Explorer arrows/Enter expand directories or open files; `[`/`]` (or Alt+Up/Down)
+switch folders, `.` toggles hidden files, and `r` refreshes. Ctrl+S saves the current
+file, Ctrl+W closes a saved tab, Alt+Left/Right switches tabs, Ctrl+Z/Y undo/redo,
+and Ctrl+F finds text. Unsaved buffers survive tab/session changes and reopening.
+Ctrl+A selects all, Shift+arrows extends selection, Ctrl+C copies and Ctrl+X cuts.
+Esc returns editor → explorer → session list → navigator. Inside the terminal,
+Esc, Tab, Ctrl+C and ordinary letters belong to the shell; Alt+e/f/o returns control.
+Alt+/ searches terminal output; multiline terminal paste uses the existing review.
+
+Bind a recipe in Alt+m before Alt+b reviews its build. Save edited tabs first.
+Build confirmation/cancellation stays in Workbench. Modify, devshell, patch
+creation, finish and reset use existing capability checks and review dialogs;
+nothing publishes a patch automatically. See [Workbench storage and limits](tools-and-workflows.md#development-workbench).
+
 ## Diff tool
 
 Open Tools → Diff tool (navigator or F12). Tab/Shift+Tab switches file trees;

@@ -18,6 +18,7 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
         | CommandId::OpenSignatures
         | CommandId::OpenLayerRelationships
         | CommandId::OpenDevtoolWorkspace
+        | CommandId::OpenWorkbench
         | CommandId::OpenKernel
         | CommandId::OpenFirmware
         | CommandId::OpenBbmask

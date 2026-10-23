@@ -68,25 +68,26 @@ fn tasks_navigator_literal_rows_keep_exact_visible_destinations() {
         (5, Screen::Images),
         (6, Screen::Tasks),
         (7, Screen::Tasks),
-        (8, Screen::Testing),
-        (9, Screen::Qa),
-        (10, Screen::Devtool),
-        (11, Screen::Images),
-        (12, Screen::Sdk),
-        (13, Screen::Security),
-        (14, Screen::Maintenance),
+        (8, Screen::Workbench),
+        (9, Screen::Testing),
+        (10, Screen::Qa),
+        (11, Screen::Devtool),
+        (12, Screen::Images),
+        (13, Screen::Sdk),
+        (14, Screen::Security),
+        (15, Screen::Maintenance),
     ] {
         app.navigator_selection = literal_navigator_selection_at_row(&app, row).unwrap();
         assert_eq!(app.navigator_screen(), expected, "literal row{row}");
     }
-    assert_eq!(literal_navigator_selection_at_row(&app, 15), None);
+    assert_eq!(literal_navigator_selection_at_row(&app, 16), None);
     assert_eq!(
-        literal_navigator_selection_at_row(&app, 16),
+        literal_navigator_selection_at_row(&app, 17),
         App::navigator_selection_for_destination(yoctui_model::WorkspaceDestination::DiffTool)
     );
     assert_eq!(
-        literal_navigator_selection_at_row(&app, 17),
+        literal_navigator_selection_at_row(&app, 18),
         App::navigator_selection_for_destination(yoctui_model::WorkspaceDestination::GitUi)
     );
-    assert_eq!(literal_navigator_selection_at_row(&app, 18), None);
+    assert_eq!(literal_navigator_selection_at_row(&app, 19), None);
 }

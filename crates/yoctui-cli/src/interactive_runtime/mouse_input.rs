@@ -47,6 +47,16 @@ impl InteractiveRuntime {
             )
         {
             match compatibility_workspace_action(&mut runtime.app, action) {
+                Some(effect @ Effect::Workbench(_)) => {
+                    runtime.workbench_io.submit(&mut runtime.app, effect)
+                }
+                Some(effect @ Effect::Terminal(_)) => {
+                    let _ = submit_daemon_effect(
+                        &mut runtime.daemon_runtime,
+                        &mut runtime.app,
+                        &effect,
+                    );
+                }
                 Some(effect @ Effect::FileDiff(_)) => runtime.file_diff_io.submit(effect),
                 Some(effect @ Effect::KernelDebug(_)) => runtime.kernel_debug_io.submit(effect),
                 Some(Effect::InspectKernel) => {

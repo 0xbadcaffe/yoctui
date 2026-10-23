@@ -18,7 +18,7 @@ pub fn authorize_workspace_effect(
 pub fn update_with_workspace_authority(app: &mut App, action: crate::Action) -> Option<Effect> {
     // These actions can only emit bounded, read-only client-local file requests.
     // Avoid cloning a complete comparison and the recipe inventory per arrow key.
-    if matches!(action, crate::Action::FileDiff(_) | crate::Action::ScrollHelp { .. }) {
+    if matches!(action, crate::Action::Workbench(_) | crate::Action::FileDiff(_) | crate::Action::ScrollHelp { .. }) {
         return crate::update(app, action);
     }
     let before = app.clone();

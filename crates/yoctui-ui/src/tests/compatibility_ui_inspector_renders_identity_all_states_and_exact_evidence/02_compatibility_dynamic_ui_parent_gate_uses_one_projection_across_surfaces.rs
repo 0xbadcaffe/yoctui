@@ -3,7 +3,7 @@ fn compatibility_dynamic_ui_parent_gate_uses_one_projection_across_surfaces() {
     let mut app = compatibility_ui_inspector_app();
     app.screen = Screen::Configuration;
     app.focus = FocusTarget::Navigator;
-    app.navigator_selection = 13;
+    app.navigator_selection = App::navigator_selection_for_destination(WorkspaceDestination::Configuration).unwrap();
     let navigator = rendered_text(&app, 180, 42);
     assert!(navigator.contains("Compatibility: Limited"), "{navigator}");
     assert!(

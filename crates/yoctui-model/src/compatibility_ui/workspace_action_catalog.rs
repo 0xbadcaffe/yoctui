@@ -483,7 +483,8 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::local("terminal.control", "Take writer control", "o"),
             Action::local("terminal.cancel", "Release writer control", "c"),
         ],
-        Destination::ProjectProfiles
+        Destination::Workbench
+        | Destination::ProjectProfiles
         | Destination::BuildDirectory
         | Destination::GitUi
         | Destination::DiffTool

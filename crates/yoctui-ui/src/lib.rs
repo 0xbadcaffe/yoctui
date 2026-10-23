@@ -20,6 +20,7 @@ mod shell;
 mod telemetry;
 mod theme;
 mod widgets;
+mod workbench_render;
 mod workspaces;
 
 use dialogs::*;

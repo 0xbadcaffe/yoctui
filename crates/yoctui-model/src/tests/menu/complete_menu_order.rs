@@ -33,6 +33,7 @@ fn menus_cover_every_screen_once_and_keep_common_actions_first() {
     let mut expected = MENU_SCREENS.to_vec();
     expected.push(Screen::Daemons);
     expected.push(Screen::DiffTool);
+    expected.push(Screen::Workbench);
     assert_eq!(screens, expected);
     assert!(
         app.application_menu_items(ApplicationMenuGroup::Tools)

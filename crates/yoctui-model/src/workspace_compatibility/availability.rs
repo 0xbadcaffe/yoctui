@@ -247,6 +247,7 @@ pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestinatio
         Screen::LayerRelationships => WorkspaceDestination::Layers,
         Screen::Recipes => WorkspaceDestination::Recipes,
         Screen::Devtool => WorkspaceDestination::Devtool,
+        Screen::Workbench => WorkspaceDestination::Workbench,
         Screen::Packages => WorkspaceDestination::Packages,
         Screen::Images => WorkspaceDestination::Images,
         Screen::Hardware => WorkspaceDestination::Hardware,

@@ -37,6 +37,10 @@ pub fn workbench_chrome_heights(_app: &yoctui_model::App, _width: u16, _height: 
 /// Wide pane widths in terminal cells, shared by rendering and hit testing.
 pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -> [u16; 3] {
     let compact = app.preferences.density == yoctui_model::UiDensity::Compact;
+    if app.screen == Screen::Workbench {
+        let navigator = if compact { 18 } else { 22 };
+        return [navigator, width.saturating_sub(navigator), 0];
+    }
     let concept = matches!(
         app.screen,
         Screen::Dashboard
@@ -125,7 +129,8 @@ pub fn terminal_workspace_dimensions(
     width: u16,
     height: u16,
 ) -> Option<yoctui_model::PtyDimensions> {
-    if (app.screen != Screen::TerminalSessions && !app.platform_menuconfig_visible())
+    let development = app.screen == Screen::Workbench && app.workbench.current().is_some_and(|s| s.focus == yoctui_model::WorkbenchFocus::Terminal);
+    if (app.screen != Screen::TerminalSessions && !app.platform_menuconfig_visible() && !development)
         || app.terminal_browser_visible()
         || app.selected_terminal_session().is_none()
         || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live
@@ -165,6 +170,13 @@ pub fn terminal_workspace_dimensions(
         width: workspace_width,
         height: workspace_height.saturating_sub(if app.platform_menuconfig_visible() { 4 } else { 1 }),
     };
+    if development {
+        let height = workspace_height.saturating_sub(u16::from(app.offline_notice().is_some()) * 2);
+        let layout = crate::development_workbench_layout(0, 0, workspace_width, height, app.workbench.current().is_some_and(|s| s.panel_zoom));
+        let columns = layout.output[2].saturating_sub(2).min(512);
+        let rows = layout.output[3].saturating_sub(4).min(512);
+        return (columns >= 2 && rows > 0).then_some(yoctui_model::PtyDimensions { columns, rows });
+    }
     let mut panes = Vec::new();
     if app.platform_menuconfig_visible() || app.terminal.single_session {
         panes.push((terminal_area, app.pane_layout.focused));

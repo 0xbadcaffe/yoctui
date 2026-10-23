@@ -2,6 +2,9 @@
 
 [Install Yoctui](../README.md#install), then open your initialized Yocto build.
 Opening a workspace does not start a build. The footer and F1 show current controls.
+For recipe patches or general source development, open **Build → Workbench**;
+see [development sessions](tools-and-workflows.md#development-workbench) and
+[their shortcuts](keyboard-shortcuts.md#development-workbench).
 Use `yoctui --help` for CLI options and [screenshots](screenshots.md) for the gallery.
 
 ## Installation requirements

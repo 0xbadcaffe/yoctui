@@ -333,6 +333,7 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenSignatures => Action::Open(Screen::Signatures),
         CommandId::OpenLayerRelationships => Action::Open(Screen::LayerRelationships),
         CommandId::OpenDevtoolWorkspace => Action::Open(Screen::Devtool),
+        CommandId::OpenWorkbench => Action::Open(Screen::Workbench),
         CommandId::OpenKernel => Action::Open(Screen::Kernel),
         CommandId::OpenFirmware => Action::Open(Screen::Firmware),
         CommandId::OpenBbmask => Action::Open(Screen::Bbmask),

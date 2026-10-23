@@ -5,6 +5,7 @@ use yoctui_model::{
 };
 
 enum Target {
+    Workbench,
     Popup,
     FieldPopup,
     Recipe,
@@ -126,6 +127,21 @@ fn target(app: &App) -> Option<Target> {
         Some(_) => return None,
         None => {}
     }
+    if crate::workbench_owns_input(app) {
+        if app.workbench.form.is_some() {
+            return Some(Target::Single(|c| {
+                Action::Workbench(yoctui_model::WorkbenchAction::FormText(c))
+            }));
+        }
+        if app.workbench.menu.is_none()
+            && app
+                .workbench
+                .current()
+                .is_some_and(|s| s.focus == yoctui_model::WorkbenchFocus::Editor)
+        {
+            return Some(Target::Workbench);
+        }
+    }
     if app.screen == Screen::RawMode
         && matches!(app.focus, FocusTarget::Workspace | FocusTarget::Dialog)
         && let Some(
@@ -237,6 +253,9 @@ pub fn text_paste_actions(
         return Err("Paste exceeds the 256 KiB limit.".into());
     }
     let actions = match target {
+        Target::Workbench => vec![Action::Workbench(yoctui_model::WorkbenchAction::Edit(
+            PopupEditorCommand::PasteText { text, source },
+        ))],
         Target::Popup => vec![Action::EditActivePopup(PopupEditorCommand::PasteText {
             text,
             source,

@@ -25,6 +25,8 @@ mod editor_gitui;
 mod embedded_shell;
 mod environment_setup;
 mod file_diff;
+mod workbench;
+pub use workbench::*;
 mod focus;
 pub use file_diff::*;
 mod editor_preferences;

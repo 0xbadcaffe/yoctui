@@ -232,7 +232,7 @@ pub(crate) fn concept_idle_dashboard_app() -> App {
 pub(crate) fn concept_failed_errors_app() -> App {
     let mut app = literal_reference_app();
     app.screen = Screen::Errors;
-    app.navigator_selection = 12;
+    app.navigator_selection = App::navigator_selection_for_destination(WorkspaceDestination::Errors).unwrap();
     app.focus = FocusTarget::Workspace;
     app.build.status = BuildStatus::Failed;
     app.build.exit_code = Some(1);
