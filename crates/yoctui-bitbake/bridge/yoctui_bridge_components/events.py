@@ -261,6 +261,15 @@ def normalize_event(event, task_identities_by_pid=None):
             ),
         }
     message = event_value(event, "message", "msg")
+    if normalized_kind == "logrecord":
+        formatter = getattr(event, "getMessage", None)
+        if callable(formatter):
+            try:
+                message = formatter()
+            except (TypeError, ValueError, KeyError):
+                # Retain the raw diagnostic if the producer supplied invalid
+                # formatting arguments; one bad log must not end the build.
+                pass
     diagnostic_levels = {
         "warning": "warning",
         "warn": "warning",

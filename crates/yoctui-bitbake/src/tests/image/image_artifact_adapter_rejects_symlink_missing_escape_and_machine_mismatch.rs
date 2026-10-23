@@ -6,10 +6,15 @@ async fn image_artifact_adapter_rejects_symlink_missing_escape_and_machine_misma
 
     let fixture = fixture();
     let missing = fixture.path().join("qemux86-64");
-    assert!(matches!(
-        ImageArtifactAdapter::new(missing).scan(request()).await,
-        Err(ImageArtifactAdapterError::InvalidDeployDirectory(_))
-    ));
+    let error = ImageArtifactAdapter::new(missing.clone())
+        .scan(request())
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error,
+        ImageArtifactAdapterError::MissingDeployDirectory(missing)
+    );
+    assert!(error.to_string().contains("build an image first"));
 
     let real = fixture.path().join("real");
     fs::create_dir(&real).unwrap();

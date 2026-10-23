@@ -20,20 +20,20 @@ const MAX_CHECKSUM_FILE_BYTES: u64 = 1024 * 1024;
 const MAX_CHECKSUM_TOTAL_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_CHECKSUM_LINES: usize = 4_096;
 const IMAGE_ARTIFACT_TIMEOUT: Duration = Duration::from_secs(30);
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImageArtifactResponse {
     pub request: ImageArtifactRequest,
     pub inventory: ImageArtifactInventory,
     pub limitations: Vec<String>,
 }
-
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum ImageArtifactAdapterError {
     #[error("invalid image artifact request: {0}")]
     InvalidRequest(String),
     #[error("configured DEPLOY_DIR_IMAGE must be an absolute directory: {0}")]
     InvalidDeployDirectory(PathBuf),
+    #[error("image artifact directory has not been created yet: {0}; build an image first")]
+    MissingDeployDirectory(PathBuf),
     #[error("configured DEPLOY_DIR_IMAGE must not be a symlink: {0}")]
     SymlinkDeployDirectory(PathBuf),
     #[error("configured DEPLOY_DIR_IMAGE does not match machine {machine}: {path}")]
@@ -45,12 +45,10 @@ pub enum ImageArtifactAdapterError {
     #[error("image artifact I/O failed: {0}")]
     Io(String),
 }
-
 #[derive(Debug, Clone, Default)]
 pub struct ImageArtifactCancellation {
     requested: Arc<AtomicBool>,
 }
-
 impl ImageArtifactCancellation {
     pub fn cancel(&self) -> bool {
         !self.requested.swap(true, Ordering::SeqCst)
@@ -60,13 +58,11 @@ impl ImageArtifactCancellation {
         self.requested.load(Ordering::SeqCst)
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct ImageArtifactAdapter {
     deploy_directory: PathBuf,
     timeout: Duration,
 }
-
 impl ImageArtifactAdapter {
     pub fn new(deploy_directory: PathBuf) -> Self {
         Self {
@@ -125,8 +121,13 @@ fn scan_deploy_directory(
             deploy_directory,
         ));
     }
-    let root_metadata = fs::symlink_metadata(&deploy_directory)
-        .map_err(|_| ImageArtifactAdapterError::InvalidDeployDirectory(deploy_directory.clone()))?;
+    let root_metadata = fs::symlink_metadata(&deploy_directory).map_err(|error| {
+        if error.kind() == std::io::ErrorKind::NotFound {
+            ImageArtifactAdapterError::MissingDeployDirectory(deploy_directory.clone())
+        } else {
+            ImageArtifactAdapterError::Io(error.to_string())
+        }
+    })?;
     if root_metadata.file_type().is_symlink() {
         return Err(ImageArtifactAdapterError::SymlinkDeployDirectory(
             deploy_directory,
