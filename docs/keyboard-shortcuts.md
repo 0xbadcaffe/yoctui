@@ -84,6 +84,10 @@ saved session metadata only. Folders, source files and processes are not deleted
 In a workspace, `Alt+a` adds an absolute folder, `Alt+m` opens workspace/Devtool
 actions, `Alt+f` focuses the explorer, `Alt+e` the editor, `Alt+t` the workspace
 terminal, `Alt+z` expands/restores the bottom panel, and `Alt+o` returns to sessions.
+In **Add folder**, type a path or press Tab/Down to browse directories. Arrows or
+j/k move the selection, Enter opens a directory, Left/Backspace opens its parent,
+and Space adds the selected folder. Enter on `./` adds the current directory.
+Tab returns to path entry; Esc cancels. Mouse clicks and the wheel also navigate.
 Explorer arrows/Enter expand directories or open files; `[`/`]` (or Alt+Up/Down)
 switch folders, `.` toggles hidden files, and `r` refreshes. Ctrl+S saves the current
 file, Ctrl+W closes a saved tab, Alt+Left/Right switches tabs, Ctrl+Z/Y undo/redo,
@@ -92,6 +96,24 @@ Ctrl+A selects all, Shift+arrows extends selection, Ctrl+C copies and Ctrl+X cut
 Esc returns editor → explorer → session list → navigator. Inside the terminal,
 Esc, Tab, Ctrl+C and ordinary letters belong to the shell; Alt+e/f/o returns control.
 Alt+/ searches terminal output; multiline terminal paste uses the existing review.
+
+Workbench editor controls:
+
+| Action | Shortcut |
+| --- | --- |
+| Compile / recipe build / Devtool build | Alt+c / Alt+b / Alt+u |
+| Devtool modify / prepare SDK | Alt+d / Alt+i |
+| GDB settings and launch review | Alt+g, or F5 in editor |
+| Stage/remove current-line breakpoint | Alt+k, F9 in editor, or click gutter |
+| Show spaces/tabs | Alt+w |
+| Find / next / previous match | Ctrl+f / Ctrl+g (or Alt+n) / Alt+p |
+| Tab picker / select tab / cycle tabs | Alt+v / Alt+1..9 / Alt+Left/Right |
+| Scroll without moving cursor | Mouse wheel, scrollbar, Ctrl+Up/Down |
+| Beginning/end of file | Ctrl+Home/End |
+
+Inside GDB, use its normal commands (`run`, `continue`, `next`, `step`, `bt`).
+Alt+e returns to the editor; Alt+t resumes that terminal. Editor breakpoint markers
+are staged for the next GDB launch. See [Workbench debugging](tools-and-workflows.md#development-workbench).
 
 Bind a recipe in Alt+m before Alt+b reviews its build. Save edited tabs first.
 Build confirmation/cancellation stays in Workbench. Modify, devshell, patch

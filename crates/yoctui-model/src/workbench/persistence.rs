@@ -14,6 +14,10 @@ pub struct SavedWorkbenchSession {
     pub folder: usize,
     pub tabs: Vec<SavedWorkbenchTab>,
     pub tab: usize,
+    #[serde(default)]
+    pub show_whitespace: bool,
+    #[serde(default)]
+    pub debug: WorkbenchDebugConfig,
 }
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SavedWorkbenchTab {
@@ -22,6 +26,8 @@ pub struct SavedWorkbenchTab {
     pub original: String,
     pub text: String,
     pub cursor: usize,
+    #[serde(default)]
+    pub breakpoints: BTreeSet<usize>,
 }
 impl WorkbenchState {
     pub fn saved(&self) -> SavedWorkbenches {
@@ -45,9 +51,12 @@ impl WorkbenchState {
                             original: t.original.clone(),
                             text: t.document.text.clone(),
                             cursor: t.document.cursor,
+                            breakpoints: t.breakpoints.clone(),
                         })
                         .collect(),
                     tab: s.tab,
+                    show_whitespace: s.show_whitespace,
+                    debug: s.debug.clone(),
                 })
                 .collect(),
         }
@@ -75,6 +84,11 @@ impl WorkbenchState {
                     Ok(WorkbenchTab {
                         reserved: t.text.len().max(t.original.len()),
                         saving: false,
+                        viewport: WorkbenchViewport {
+                            follow_cursor: true,
+                            ..Default::default()
+                        },
+                        breakpoints: t.breakpoints,
                         root: t.root,
                         path: t.path,
                         original: t.original,
@@ -110,6 +124,8 @@ impl WorkbenchState {
                 panel_zoom: false,
                 terminal: None,
                 terminal_daemon: None,
+                show_whitespace: session.show_whitespace,
+                debug: session.debug,
             });
         }
         Ok(state)
@@ -135,6 +151,8 @@ impl SavedWorkbenches {
                 || s.tabs.len() > WORKBENCH_MAX_TABS
                 || s.folder > s.folders.len().saturating_sub(1)
                 || s.tab > s.tabs.len().saturating_sub(1)
+                || s.tabs.iter().map(|t| t.breakpoints.len()).sum::<usize>()
+                    > WORKBENCH_MAX_BREAKPOINTS
             {
                 return Err("Invalid Workbench selection or size".into());
             }
@@ -145,7 +163,15 @@ impl SavedWorkbenches {
             }) {
                 return Err("Workbench folders must be absolute normalized paths".into());
             }
+            if s.debug
+                .fields()
+                .iter()
+                .any(|v| v.len() > 4096 || v.chars().any(char::is_control))
+            {
+                return Err("Invalid Workbench debug settings".into());
+            }
             for t in &s.tabs {
+                let line_count = t.text.bytes().filter(|b| *b == b'\n').count() + 1;
                 if !s.folders.contains(&t.root)
                     || !t.path.starts_with(&t.root)
                     || t.path
@@ -153,6 +179,10 @@ impl SavedWorkbenches {
                         .any(|c| matches!(c, std::path::Component::ParentDir))
                     || t.text.len() > TEXTAREA_MAX_BYTES
                     || t.original.len() > TEXTAREA_MAX_BYTES
+                    || t.breakpoints.len() > WORKBENCH_MAX_BREAKPOINTS
+                    || t.breakpoints
+                        .iter()
+                        .any(|line| *line == 0 || *line > line_count)
                 {
                     return Err("Invalid Workbench file recovery".into());
                 }

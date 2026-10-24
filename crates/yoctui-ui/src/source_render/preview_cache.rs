@@ -25,7 +25,7 @@ thread_local! {
     static PREVIEW_CACHE: RefCell<PreviewCache> = RefCell::default();
 }
 
-fn cached_source_preview(content: &str, file_name: &str, app: &App) -> Arc<Text<'static>> {
+pub(crate) fn cached_source_preview(content: &str, file_name: &str, app: &App) -> Arc<Text<'static>> {
     PREVIEW_CACHE.with(|cache| {
         let mut cache = cache.borrow_mut();
         if let Some(index) = cache.entries.iter().position(|entry| {

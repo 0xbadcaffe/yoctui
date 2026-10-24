@@ -90,7 +90,9 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         Screen::Devtool => {
             "↑/↓ recipe | Enter refresh | d/e/Alt+w source | b build | Alt+p deploy SSH/SCP | u create patches | Alt+f finish into layer | s shell | Alt+g GitUI | Alt+d reset | / search"
         }
-        Screen::Workbench => "Alt+m actions | Alt+f files | Alt+e editor | Alt+t terminal | Alt+z panel size | Alt+o sessions | Ctrl+s save | Alt+b build | Esc back",
+        Screen::Workbench if yoctui_app::workbench_modal_open(app) => "Tab field/list | Enter confirm/open | Esc cancel | See dialog for selection keys",
+        Screen::Workbench if app.workbench.current().is_some_and(|s| s.focus == yoctui_model::WorkbenchFocus::Terminal) => "Alt+e editor | Alt+f files | Alt+m actions | Alt+z terminal size | Alt+/ terminal search | Alt+o sessions",
+        Screen::Workbench => "Alt+m actions | Alt+f files | Alt+e editor | Alt+t terminal | Alt+v tabs | Ctrl+f find | Alt+w whitespace | Alt+k breakpoint | Alt+g GDB | Ctrl+s save | Esc back",
         Screen::Packages => {
             "↑/↓ select | Enter detail | / search | Alt+r refresh | Alt+d dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
         }

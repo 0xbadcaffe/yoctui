@@ -243,6 +243,10 @@ pub fn keymap_action_for_app(app: &mut yoctui_model::App, key: Input) -> KeymapI
 
 /// Layout controls precede workspace and PTY input, but never escape a modal.
 pub fn inspector_toggle_action(app: &App, key: Input) -> Option<Action> {
+    // Workbench owns Alt+i for its recipe SDK form, including its own modals.
+    if key == Input::Alt('i') && app.screen == Screen::Workbench && app.focus == FocusTarget::Workspace {
+        return None;
+    }
     // Results owns Alt+i for import; elsewhere the inspector binding remains
     // global, including when focus is in the navigator.
     if key == Input::Alt('i')

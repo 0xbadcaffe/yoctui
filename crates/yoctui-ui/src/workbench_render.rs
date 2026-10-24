@@ -1,5 +1,7 @@
 //! Development session browser and a native multi-folder editor workspace.
 use super::*;
+mod dialogs;
+mod editor;
 use yoctui_model::{WORKBENCH_MENU, WorkbenchFocus as Focus, WorkbenchFormKind};
 
 pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
@@ -82,7 +84,7 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         rect(layout.explorer),
         rect(layout.status),
     ];
-    frame.render_widget(Paragraph::new(format!(" {} · {}   Alt+m Actions   Alt+a Add folder   Alt+o Sessions\n Alt+f Files   Alt+e Editor   Alt+t Terminal   Ctrl+s Save   Alt+b Build", session.name, session.recipe.as_deref().unwrap_or("General development"))).style(palette.role(palette.informational, Modifier::empty())), rows[0]);
+    frame.render_widget(Paragraph::new(format!(" {} · {} · Alt+m Actions · Alt+a Folder\n Alt+c Compile  Alt+b Build  Alt+d Modify  Alt+g GDB  Alt+i SDK", session.name, session.recipe.as_deref().unwrap_or("Bind recipe in Alt+m"))).style(palette.role(palette.informational, Modifier::empty())), rows[0]);
     let right = [rect(layout.tabs), rect(layout.editor), rect(layout.output)];
     let tabs = session
         .tabs
@@ -96,11 +98,7 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         .take(usize::from(right[0].width / 20).max(1))
         .map(|(i, t)| {
             Span::styled(
-                format!(
-                    " {:<16.16}{}  ",
-                    t.path.file_name().unwrap_or_default().to_string_lossy(),
-                    if t.is_dirty() { "●" } else { " " }
-                ),
+                tab_label(i, &t.path, t.is_dirty()),
                 if i == session.tab {
                     selected_style(app, true)
                 } else {
@@ -111,55 +109,12 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         .collect::<Vec<_>>();
     frame.render_widget(Paragraph::new(Line::from(tabs)), right[0]);
     files(frame, app, rect(layout.explorer));
-    if let Some(tab) = session.tabs.get(session.tab) {
-        let position = tab.document.position();
-        let height = usize::from(right[1].height.saturating_sub(2)).max(1);
-        let first = position.line.saturating_sub(height.saturating_sub(2));
-        let text = popup_editor_text(&tab.document);
-        let filename = tab.path.display().to_string();
-        let (text, scroll) = scrolled_source_preview(
-            &text,
-            &filename,
-            app,
-            right[1].width.saturating_sub(2),
-            first.min(u16::MAX as usize) as u16,
-            right[1].height.saturating_sub(2),
-        );
-        frame.render_widget(
-            Paragraph::new(text)
-                .scroll((
-                    scroll,
-                    position
-                        .column
-                        .saturating_sub(usize::from(right[1].width.saturating_sub(5)))
-                        .min(u16::MAX as usize) as u16,
-                ))
-                .block(
-                    Block::bordered()
-                        .title(format!(
-                            "{} · Ln {} Col {} · {}",
-                            tab.path
-                                .strip_prefix(&tab.root)
-                                .unwrap_or(&tab.path)
-                                .display(),
-                            position.line + 1,
-                            position.column + 1,
-                            if tab.is_dirty() { "unsaved" } else { "saved" }
-                        ))
-                        .border_style(if session.focus == Focus::Editor {
-                            palette.role(palette.focused_border, Modifier::BOLD)
-                        } else {
-                            Style::default()
-                        }),
-                ),
-            right[1],
-        );
-    } else {
-        frame.render_widget(Paragraph::new("Open a file from the explorer.\n\nAlt+m: workspace and Devtool actions\nAlt+a: add a folder\nCtrl+w: close the current saved tab\nAlt+←/→: switch editor tabs\nAlt+↑/↓: switch workspace folders\nCtrl+f: find in the current file\n\nUnsaved tabs survive session switching and are recovered after reopening Yoctui.").wrap(Wrap { trim: false }).block(Block::bordered().title("Editor")), right[1]);
-    }
+    editor::render(frame, app, right[1]);
     output(frame, app, right[2]);
     let status = app.workbench.persistence_error.as_deref().unwrap_or(
-        if app.workbench.revision == app.workbench.persisted_revision {
+        if app.workbench.pending_compile.is_some() {
+            "Loading recipe tasks for Compile… Esc cancels; workspace remains available."
+        } else if app.workbench.revision == app.workbench.persisted_revision {
             "Workspace state saved · no patch is published automatically"
         } else {
             "Saving workspace recovery state…"
@@ -177,6 +132,31 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         rows[2],
     );
     overlay(frame, app, area);
+}
+
+fn tab_label(index: usize, path: &std::path::Path, dirty: bool) -> String {
+    let mut name = String::new();
+    let mut width = 0;
+    for c in path
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .chars()
+    {
+        let cells = unicode_width::UnicodeWidthChar::width(c).unwrap_or(0);
+        if width + cells > 14 {
+            break;
+        }
+        name.push(c);
+        width += cells;
+    }
+    format!(
+        "{:>2} {}{}{}  ",
+        index + 1,
+        name,
+        " ".repeat(14 - width),
+        if dirty { "●" } else { " " }
+    )
 }
 
 fn files(frame: &mut Frame, app: &App, area: Rect) {
@@ -340,6 +320,13 @@ fn output(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn overlay(frame: &mut Frame, app: &App, area: Rect) {
+    if dialogs::render(frame, app, area) {
+        return;
+    }
+    if app.workbench.form.is_some() && app.workbench.folder_browser.is_some() {
+        folder_dialog(frame, app, area);
+        return;
+    }
     if let Some(form) = &app.workbench.form {
         let title = match form.kind {
             WorkbenchFormKind::Create => "New workspace · name",
@@ -399,4 +386,110 @@ fn overlay(frame: &mut Frame, app: &App, area: Rect) {
             popup,
         );
     }
+}
+
+fn folder_dialog(frame: &mut Frame, app: &App, area: Rect) {
+    let form = app.workbench.form.as_ref().expect("folder form");
+    let browser = app
+        .workbench
+        .folder_browser
+        .as_ref()
+        .expect("folder browser");
+    let [x, y, width, height] =
+        yoctui_app::workbench_folder_dialog(area.x, area.y, area.width, area.height);
+    let popup = Rect::new(x, y, width, height);
+    let palette = ThemePalette::for_app(app);
+    frame.render_widget(Clear, popup);
+    frame.render_widget(
+        Block::bordered().title("Add folder · browse filesystem"),
+        popup,
+    );
+    if width < 4 || height < 6 {
+        return;
+    }
+    let path = format!(
+        "{}{}",
+        form.text,
+        if browser.editing_path { "▏" } else { "" }
+    );
+    frame.render_widget(
+        Paragraph::new(path.clone())
+            .scroll((
+                0,
+                unicode_width::UnicodeWidthStr::width(path.as_str())
+                    .saturating_sub(usize::from(width - 3))
+                    .min(u16::MAX as usize) as u16,
+            ))
+            .style(if browser.editing_path {
+                palette.role(palette.informational, Modifier::BOLD)
+            } else {
+                Style::default()
+            }),
+        Rect::new(x + 1, y + 1, width - 2, 1),
+    );
+    let help = if browser.editing_path {
+        "Enter add path · Tab/↓ browse · Ctrl+u clear\nEsc cancel"
+    } else {
+        "Enter open · Space add · Tab type path\n←/Backspace parent · Esc cancel"
+    };
+    frame.render_widget(Paragraph::new(help), Rect::new(x + 1, y + 2, width - 2, 2));
+    let visible = usize::from(height.saturating_sub(6));
+    let first = browser.selection.saturating_sub(visible.saturating_sub(1));
+    let rows = (first..(first + visible).min(browser.entries.len() + 1))
+        .map(|index| {
+            let label = if index == 0 {
+                "./  (add current folder)".to_string()
+            } else {
+                format!(
+                    "{}/",
+                    browser.entries[index - 1]
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                )
+            };
+            Line::styled(
+                format!(
+                    "{} {label}",
+                    if index == browser.selection {
+                        "▶"
+                    } else {
+                        " "
+                    }
+                ),
+                if index == browser.selection && !browser.editing_path {
+                    selected_style(app, true)
+                } else {
+                    Style::default()
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+    frame.render_widget(
+        Paragraph::new(rows),
+        Rect::new(x + 1, y + 4, width - 2, height - 6),
+    );
+    let status = if browser.loading {
+        "Loading directories…".to_string()
+    } else if let Some(error) = &browser.error {
+        error.clone()
+    } else {
+        format!(
+            "{} folder(s) · {} / {}",
+            browser.entries.len(),
+            browser.selection + 1,
+            browser.entries.len() + 1
+        )
+    };
+    frame.render_widget(
+        Paragraph::new(status).style(palette.role(
+            if browser.error.is_some() {
+                palette.warning
+            } else {
+                palette.informational
+            },
+            Modifier::empty(),
+        )),
+        Rect::new(x + 1, y + height - 2, width - 2, 1),
+    );
 }

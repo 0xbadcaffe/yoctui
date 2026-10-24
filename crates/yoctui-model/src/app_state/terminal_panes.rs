@@ -37,7 +37,14 @@ impl App {
         let reopen = self.terminal.reopen_after_release;
         self.terminal.releasing_writer = None;
         self.terminal.reopen_after_release = false;
-        if reopen && running && self.terminal_console_fullscreen()
+        let workbench_console = self.screen == Screen::Workbench
+            && !self.workbench.modal_open() && self.active_dialog().is_none()
+            && !self.menu.is_open() && !self.command_palette_open
+            && self.workbench.current().is_some_and(|session|
+                session.focus == crate::WorkbenchFocus::Terminal
+                    && session.terminal == Some(session_id)
+                    && session.terminal_daemon == self.daemon.instance_id);
+        if reopen && running && (self.terminal_console_fullscreen() || workbench_console)
             && self.focus == FocusTarget::Workspace
             && self.selected_terminal_session().is_some_and(|session| session.id == session_id)
             && let Some(details) = details.filter(|details| details.writer.is_none()) {

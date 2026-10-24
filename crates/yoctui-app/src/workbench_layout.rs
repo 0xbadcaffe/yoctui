@@ -1,4 +1,44 @@
 //! Shared development-pane geometry for painting, hit testing and PTY resizing.
+pub fn workbench_editor_rect(app: &yoctui_model::App, width: u16, height: u16) -> Option<[u16; 4]> {
+    let shell = crate::mouse::workbench_shell(app, width, height)?;
+    let region = crate::mouse::workbench_mouse_region(
+        crate::MouseInput {
+            kind: crate::MouseKind::Down,
+            column: width.saturating_sub(1),
+            row: shell.y + 2,
+        },
+        app,
+        shell,
+    )?;
+    if region.target != yoctui_model::FocusTarget::Workspace {
+        return None;
+    }
+    let mut area = region.area;
+    let offline = u16::from(app.offline_notice().is_some()) * 2;
+    area.y += offline;
+    area.height = area.height.saturating_sub(offline);
+    Some(
+        development_workbench_layout(
+            area.x,
+            area.y,
+            area.width,
+            area.height,
+            app.workbench.current()?.panel_zoom,
+        )
+        .editor,
+    )
+}
+/// Centered folder chooser; list rows start four cells below its top border.
+pub fn workbench_folder_dialog(x: u16, y: u16, width: u16, height: u16) -> [u16; 4] {
+    let popup_width = width.saturating_sub(4).min(90);
+    let popup_height = height.saturating_sub(2).min(20);
+    [
+        x + width.saturating_sub(popup_width) / 2,
+        y + height.saturating_sub(popup_height) / 2,
+        popup_width,
+        popup_height,
+    ]
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DevelopmentWorkbenchLayout {
     pub header: [u16; 4],

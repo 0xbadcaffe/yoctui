@@ -128,6 +128,14 @@ fn target(app: &App) -> Option<Target> {
         None => {}
     }
     if crate::workbench_owns_input(app) {
+        if let Some(d) = &app.workbench.debug_dialog {
+            return (!d.loading && d.field > 0).then_some(Target::Single(|c| {
+                Action::Workbench(yoctui_model::WorkbenchAction::DebugText(c))
+            }));
+        }
+        if app.workbench.tab_picker.is_some() {
+            return None;
+        }
         if app.workbench.form.is_some() {
             return Some(Target::Single(|c| {
                 Action::Workbench(yoctui_model::WorkbenchAction::FormText(c))

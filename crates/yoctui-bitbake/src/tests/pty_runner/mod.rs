@@ -1,4 +1,5 @@
 use super::*;
+mod descriptor_inheritance;
 use std::{
     fs,
     path::PathBuf,

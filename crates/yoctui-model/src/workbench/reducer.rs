@@ -1,62 +1,47 @@
 use super::*;
+mod editor;
+mod folder_browser;
 mod forms;
 mod results;
+mod sessions;
 mod tree;
+mod workflow;
 use forms::confirm_form;
 use tree::{directory_request, open_entry};
 
 pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
     use WorkbenchAction as W;
     match action {
-        W::OpenRecipe { recipe, root } => {
-            if !root.is_absolute() {
-                app.notification =
-                    Some("Recipe workspace must have an absolute source folder.".into());
-                return None;
-            }
-            let existing = app.workbench.sessions.iter().position(|s| {
-                s.build_dir == app.workspace.build_dir
-                    && s.recipe.as_ref() == Some(&recipe)
-                    && s.folders.iter().any(|f| f.browser.root == root)
-            });
-            let index = if let Some(index) = existing {
-                index
-            } else {
-                if app.workbench.sessions.len() >= WORKBENCH_MAX_SESSIONS {
-                    app.notification =
-                        Some("Remove a saved workspace session before opening another.".into());
-                    return None;
-                }
-                app.workbench.generation = app.workbench.generation.saturating_add(1);
-                app.workbench.sessions.push(WorkbenchSession {
-                    id: app.workbench.generation,
-                    name: recipe.clone(),
-                    recipe: Some(recipe),
-                    build_dir: app.workspace.build_dir.clone(),
-                    folders: vec![WorkbenchFolder {
-                        browser: LayerBrowser::new("Workbench".into(), root),
-                        request: 0,
-                        requests: HashMap::new(),
-                        loading: false,
-                        error: None,
-                    }],
-                    folder: 0,
-                    tabs: vec![],
-                    tab: 0,
-                    focus: WorkbenchFocus::Files,
-                    output: WorkbenchOutput::Build,
-                    panel_zoom: false,
-                    terminal: None,
-                    terminal_daemon: None,
-                });
-                app.workbench.sessions.len() - 1
-            };
-            app.workbench.selection = index;
-            app.workbench.active = Some(app.workbench.sessions[index].id);
-            app.screen = Screen::Workbench;
-            app.focus = FocusTarget::Workspace;
-            app.workbench.changed();
+        W::OpenRecipe { .. } | W::Sessions | W::RemoveSession => {
+            return sessions::reduce(app, action);
         }
+        W::Compile
+        | W::Utility(_)
+        | W::Debug
+        | W::DebugField(_)
+        | W::DebugText(_)
+        | W::DebugBackspace
+        | W::DebugClear
+        | W::DebugMode
+        | W::DebugReview
+        | W::DebugPrepared { .. } => return workflow::reduce(app, action),
+        W::ToggleWhitespace
+        | W::SearchMatch { .. }
+        | W::Tabs
+        | W::TabPickerSelect(_)
+        | W::TabPickerOpen
+        | W::TabPickerClose
+        | W::ScrollEditor(_)
+        | W::Viewport { .. }
+        | W::ToggleBreakpoint
+        | W::BreakpointAt(_) => return editor::reduce(app, action),
+        W::BrowseFolders
+        | W::BrowseSelect(_)
+        | W::BrowseSelectAt(_)
+        | W::BrowseOpen
+        | W::BrowseParent
+        | W::BrowseChoose
+        | W::FoldersBrowsed { .. } => return folder_browser::reduce(app, action),
         W::FolderLoaded { .. }
         | W::DirectoryLoaded { .. }
         | W::FileLoaded { .. }
@@ -75,18 +60,31 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                     .source_dir
                     .as_ref()
                     .map(|p| p.display().to_string())
-                    .unwrap_or_default(),
+                    .unwrap_or_else(|| "/".into()),
                 WorkbenchFormKind::Recipe => app
                     .workbench
                     .current()
                     .and_then(|s| s.recipe.clone())
                     .unwrap_or_default(),
+                WorkbenchFormKind::Find => app
+                    .workbench
+                    .current()
+                    .and_then(|s| s.tabs.get(s.tab))
+                    .map(|t| t.document.search_state().query.clone())
+                    .unwrap_or_default(),
                 _ => String::new(),
             };
             app.workbench.form = Some(WorkbenchForm { kind, text });
+            app.workbench.folder_browser = None;
             app.workbench.menu = None;
+            if kind == WorkbenchFormKind::AddFolder {
+                return folder_browser::start(app, true);
+            }
         }
         W::FormText(c) if !c.is_control() => {
+            if let Some(browser) = &mut app.workbench.folder_browser {
+                browser.editing_path = true;
+            }
             if let Some(f) = &mut app.workbench.form
                 && f.text.len() + c.len_utf8() <= 4096
             {
@@ -106,7 +104,19 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
         }
         W::ConfirmForm => return confirm_form(app),
         W::Cancel => {
+            if app.workbench.debug_dialog.take().is_some() {
+                app.workbench.debug_request = app.workbench.debug_request.saturating_add(1);
+                return None;
+            }
+            if app.workbench.tab_picker.take().is_some() {
+                return None;
+            }
+            let compiling = app.workbench.pending_compile.take().is_some();
+            app.workbench.folder_browser = None;
             if app.workbench.form.take().is_some() || app.workbench.menu.take().is_some() {
+                return None;
+            }
+            if compiling {
                 return None;
             }
             if let Some(s) = app.workbench.current_mut() {
@@ -151,26 +161,6 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                 return directory_request(app, None);
             }
             return open_entry(app);
-        }
-        W::Sessions => {
-            app.workbench.active = None;
-            app.workbench.form = None;
-            app.workbench.menu = None;
-        }
-        W::RemoveSession => {
-            let index = app.workbench.selection;
-            if app
-                .workbench
-                .sessions
-                .get(index)
-                .is_some_and(|s| s.tabs.iter().any(WorkbenchTab::is_dirty))
-            {
-                app.notification = Some("Save all workspace changes before removing its session. Files and terminals are never deleted by session removal.".into());
-            } else if index < app.workbench.sessions.len() {
-                app.workbench.sessions.remove(index);
-                app.workbench.selection = index.min(app.workbench.sessions.len().saturating_sub(1));
-                app.workbench.changed();
-            }
         }
         W::RemoveFolder => {
             if let Some(s) = app.workbench.current_mut()
@@ -250,7 +240,12 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
         W::Refresh => return directory_request(app, None),
         W::Tab(delta) => {
             if let Some(s) = app.workbench.current_mut() {
-                s.tab = shifted_index(s.tab, delta, s.tabs.len());
+                if !s.tabs.is_empty() {
+                    s.tab = (s.tab as isize + delta).rem_euclid(s.tabs.len() as isize) as usize;
+                }
+                if let Some(t) = s.tabs.get_mut(s.tab) {
+                    t.viewport.follow_cursor = true;
+                }
                 s.focus = WorkbenchFocus::Editor;
                 s.panel_zoom = false;
                 app.workbench.changed();
@@ -262,6 +257,9 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                 s.tab = index.min(s.tabs.len().saturating_sub(1));
                 s.focus = WorkbenchFocus::Editor;
                 s.panel_zoom = false;
+                if let Some(t) = s.tabs.get_mut(s.tab) {
+                    t.viewport.follow_cursor = true;
+                }
             }
         }
         W::CloseTab => {
@@ -335,6 +333,7 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                 .and_then(|s| s.tabs.get_mut(s.tab))
             {
                 t.document.editing = true;
+                let before = (!t.breakpoints.is_empty()).then(|| t.document.text.clone());
                 match crate::editor_types::apply_recipe_editor_command(&mut t.document, command) {
                     Ok(Some(text)) => return Some(Effect::CopyToClipboard(text)),
                     Ok(None) => {}
@@ -343,6 +342,11 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                 t.document.editing = true;
                 t.reserved = t.reserved.max(t.document.text.len());
                 t.diff = None;
+                if let Some(before) = before {
+                    t.relocate_breakpoints(&before);
+                }
+                t.viewport.follow_cursor = true;
+                t.reveal_cursor();
                 app.workbench.changed();
             }
         }
@@ -365,8 +369,13 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                 return None;
             }
             let text = t.document.copy_selection_or_line();
+            let before = (!t.breakpoints.is_empty()).then(|| t.document.text.clone());
             t.document.delete_forward();
             t.diff = None;
+            if let Some(before) = before {
+                t.relocate_breakpoints(&before);
+            }
+            t.reveal_cursor();
             app.workbench.changed();
             return Some(Effect::CopyToClipboard(text));
         }
@@ -397,6 +406,16 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                 11 => W::RecipeAction(Box::new(Action::BeginSelectedRecipeDevtoolReset)),
                 12 => W::Form(WorkbenchFormKind::Rename),
                 13 => W::RemoveFolder,
+                14 => W::Compile,
+                15 => W::Utility(DevtoolUtilityCommand::Build),
+                16 => W::Utility(DevtoolUtilityCommand::IdeSdk),
+                17 => W::Debug,
+                18 => W::ToggleBreakpoint,
+                19 => W::ToggleWhitespace,
+                20 => W::Tabs,
+                21 => W::Form(WorkbenchFormKind::Find),
+                22 => W::SearchMatch { backwards: false },
+                23 => W::SearchMatch { backwards: true },
                 _ => W::Sessions,
             };
             return reduce(app, command);
@@ -422,7 +441,9 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
         W::Terminal => {
             return crate::workbench::reducer::results::terminal(app);
         }
+        W::ReleaseTerminal => return results::release_terminal(app),
         W::RecipeAction(action) => {
+            app.workbench.pending_compile = None;
             let s = app.workbench.current()?;
             if !matches!(
                 *action,
@@ -433,6 +454,10 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                     | Action::BeginSelectedRecipeDevtoolPatch
                     | Action::BeginSelectedRecipeDevtoolFinish
                     | Action::BeginSelectedRecipeDevtoolReset
+                    | Action::BeginSelectedRecipeTask {
+                        task: Some(_),
+                        force: false
+                    }
             ) {
                 return None;
             }
@@ -459,8 +484,10 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                 return None;
             };
             app.recipe_selection = index;
-            if matches!(*action, Action::BeginSelectedRecipeBuild)
-                && let Some(s) = app.workbench.current_mut()
+            if matches!(
+                *action,
+                Action::BeginSelectedRecipeBuild | Action::BeginSelectedRecipeTask { .. }
+            ) && let Some(s) = app.workbench.current_mut()
             {
                 s.output = WorkbenchOutput::Build;
                 s.panel_zoom = false;

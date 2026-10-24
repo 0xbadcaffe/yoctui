@@ -402,7 +402,16 @@ fn open_pty(dimensions: PtyDimensions) -> Result<(OwnedFd, OwnedFd), PtyRunnerEr
         return Err(PtyRunnerError::Open(io::Error::last_os_error().to_string()));
     }
     // SAFETY: successful openpty returned uniquely owned file descriptors.
-    Ok(unsafe { (OwnedFd::from_raw_fd(master), OwnedFd::from_raw_fd(slave)) })
+    let pair = unsafe { (OwnedFd::from_raw_fd(master), OwnedFd::from_raw_fd(slave)) };
+    // Unrelated spawned tools must not retain a slave and prevent PTY EOF.
+    // Command's stdio setup duplicates the intended slave onto fd 0/1/2.
+    for descriptor in [&pair.0, &pair.1] {
+        // SAFETY: these are live, newly opened descriptors owned by pair.
+        if unsafe { libc::fcntl(descriptor.as_raw_fd(), libc::F_SETFD, libc::FD_CLOEXEC) } < 0 {
+            return Err(PtyRunnerError::Open(io::Error::last_os_error().to_string()));
+        }
+    }
+    Ok(pair)
 }
 
 fn set_window_size(fd: i32, dimensions: PtyDimensions) -> Result<(), PtyRunnerError> {

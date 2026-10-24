@@ -34,6 +34,13 @@ impl PlatformArtifactAdapter {
         &self,
         candidates: Vec<PathBuf>,
     ) -> Result<PlatformArtifactScan, PlatformArtifactAdapterError> {
+        // BitBake can resolve a provider and its tasks before unpack/configure
+        // has created S/B/WORKDIR. Keep that authority usable for first launch.
+        let unprepared = !candidates.is_empty()
+            && candidates.iter().all(|path| {
+                path.is_absolute()
+                    && matches!(fs::symlink_metadata(path), Err(error) if error.kind() == io::ErrorKind::NotFound)
+            });
         let mut roots = candidates
             .into_iter()
             .filter(|path| path.is_absolute() && path.is_dir())
@@ -42,6 +49,16 @@ impl PlatformArtifactAdapter {
         roots.sort();
         roots.dedup();
         if roots.is_empty() {
+            if unprepared {
+                return Ok(PlatformArtifactScan {
+                    roots,
+                    files: Vec::new(),
+                    dtc: resolve_executable("dtc"),
+                    limitations: vec![
+                        "The reported artifact directories do not exist yet; prepare the selected recipe to populate them.".into(),
+                    ],
+                });
+            }
             return Err(PlatformArtifactAdapterError::NoRoots);
         }
 

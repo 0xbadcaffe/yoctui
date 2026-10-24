@@ -6,14 +6,19 @@ impl InteractiveRuntime {
         if !yoctui_app::workbench_owns_input(&self.app) {
             return Ok(false);
         }
+        self.update_workbench_viewport();
         let input = input_from_key(key);
+        let modal = yoctui_app::workbench_modal_open(&self.app);
+        let editor = self
+            .app
+            .workbench
+            .current()
+            .is_some_and(|s| s.focus == F::Editor);
+        if input == Some(Input::F9) && !modal && !editor {
+            return Ok(false);
+        }
         // Application menus remain reachable; ordinary letters never leak to global actions.
-        if matches!(
-            input,
-            Some(Input::F1 | Input::F2 | Input::F3 | Input::F9 | Input::F12)
-        ) && self.app.workbench.form.is_none()
-            && self.app.workbench.menu.is_none()
-        {
+        if matches!(input, Some(Input::F1 | Input::F2 | Input::F3 | Input::F12)) && !modal {
             if self
                 .app
                 .workbench
@@ -36,7 +41,7 @@ impl InteractiveRuntime {
             .workbench
             .current()
             .is_some_and(|s| s.focus == F::Terminal);
-        if terminal && self.app.workbench.form.is_none() && self.app.workbench.menu.is_none() {
+        if terminal && !modal {
             if input == Some(Input::CtrlV) {
                 match crate::clipboard::read_system_clipboard().await {
                     Ok(text) => {
@@ -60,8 +65,24 @@ impl InteractiveRuntime {
         }
         let mut action = input.and_then(|i| yoctui_app::workbench_action(&self.app, i));
         use crossterm::event::{KeyCode as K, KeyModifiers as M};
-        if self.app.workbench.form.is_none() && self.app.workbench.menu.is_none() {
+        if !modal {
             action = match (key.code, key.modifiers) {
+                (K::Up, M::CONTROL) if editor => Some(Action::Workbench(W::ScrollEditor(-3))),
+                (K::Down, M::CONTROL) if editor => Some(Action::Workbench(W::ScrollEditor(3))),
+                (K::Home, M::CONTROL) if editor => Some(Action::Workbench(W::Edit(
+                    PopupEditorCommand::SelectPosition {
+                        line: 0,
+                        column: 0,
+                        extend: false,
+                    },
+                ))),
+                (K::End, M::CONTROL) if editor => Some(Action::Workbench(W::Edit(
+                    PopupEditorCommand::SelectPosition {
+                        line: usize::MAX,
+                        column: usize::MAX,
+                        extend: false,
+                    },
+                ))),
                 (K::Left, M::ALT) => Some(Action::Workbench(W::Tab(-1))),
                 (K::Right, M::ALT) => Some(Action::Workbench(W::Tab(1))),
                 (K::Up, M::ALT) => Some(Action::Workbench(W::Folder(-1))),
@@ -105,8 +126,7 @@ impl InteractiveRuntime {
                 self.dispatch_workbench_effect(effect).await;
             }
         } else if terminal
-            && self.app.workbench.form.is_none()
-            && self.app.workbench.menu.is_none()
+            && !modal
             && let Some(effect) = terminal_workspace::terminal_writer_key_effect(&self.app, key)
         {
             let _ = submit_daemon_effect(&mut self.daemon_runtime, &mut self.app, &effect);
@@ -120,6 +140,7 @@ impl InteractiveRuntime {
             Effect::OpenWorkspaceEditor { label, root } => {
                 open_workspace_editor(&mut self.app, label, root).await
             }
+            Effect::GetRecipeMetadata(recipe) => self.begin_recipe_metadata(recipe, None),
             Effect::InspectDevtoolStatus(_) => self.begin_selected_devtool_status(),
             Effect::Start(request) => {
                 begin_runtime_build(
@@ -137,24 +158,50 @@ impl InteractiveRuntime {
         }
     }
     pub(super) fn release_workbench_writer(&mut self) {
-        if !self.app.workbench.current().is_some_and(|s| {
-            s.terminal_daemon == self.app.daemon.instance_id
-                && s.terminal == self.app.selected_terminal_session().map(|pty| pty.id)
-        }) {
-            return;
-        }
-        if !self.app.selected_terminal_is_writer() {
-            return;
-        }
-        if let Some(details) = self.app.selected_terminal_details() {
-            let effect = Effect::Terminal(yoctui_model::TerminalEffect::ReleaseControl {
-                session_id: details.id,
-                writer_epoch: details.writer_epoch,
-            });
+        if let Some(effect) =
+            compatibility_workspace_action(&mut self.app, Action::Workbench(W::ReleaseTerminal))
+        {
             let _ = submit_daemon_effect(&mut self.daemon_runtime, &mut self.app, &effect);
         }
     }
+    fn update_workbench_viewport(&mut self) {
+        if self.app.screen != Screen::Workbench {
+            return;
+        }
+        let Ok(size) = self.terminal.size() else {
+            return;
+        };
+        let Some([_, _, width, height]) =
+            yoctui_app::workbench_editor_rect(&self.app, size.width, size.height)
+        else {
+            return;
+        };
+        let gutter = self
+            .app
+            .workbench
+            .current()
+            .and_then(|s| s.tabs.get(s.tab))
+            .map_or(5, |t| {
+                yoctui_model::workbench_gutter_width(t.document.line_count())
+            });
+        let _ = update(
+            &mut self.app,
+            Action::Workbench(W::Viewport {
+                rows: usize::from(height.saturating_sub(2)).max(1),
+                columns: usize::from(width.saturating_sub(2))
+                    .saturating_sub(gutter)
+                    .max(1),
+            }),
+        );
+    }
     pub(super) async fn poll_workbench(&mut self) {
+        self.update_workbench_viewport();
+        if let Some(action) = pending_compile_action(&mut self.app) {
+            if let Some(effect) = compatibility_workspace_action(&mut self.app, action) {
+                self.dispatch_workbench_effect(effect).await;
+            }
+            self.render_scheduler.invalidate(RenderCause::State);
+        }
         let changed = self.workbench_store.poll(&mut self.app).await;
         self.render_scheduler
             .invalidate_if(changed, RenderCause::State);
@@ -251,6 +298,27 @@ impl InteractiveRuntime {
             self.render_scheduler.invalidate(RenderCause::State);
         }
     }
+}
+
+fn pending_compile_action(app: &mut App) -> Option<Action> {
+    let (session, recipe, build) = app.workbench.pending_compile.clone()?;
+    if app.screen != Screen::Workbench
+        || app.workbench.active != Some(session)
+        || app.workspace.build_dir != build
+        || app.workbench.current().and_then(|s| s.recipe.as_ref()) != Some(&recipe)
+        || app.recipe_metadata_errors.contains_key(&recipe)
+    {
+        app.workbench.pending_compile = None;
+        return None;
+    }
+    if app.recipe_metadata.contains_key(&recipe)
+        && app.active_dialog().is_none()
+        && !yoctui_app::workbench_modal_open(app)
+    {
+        app.workbench.pending_compile = None;
+        return Some(Action::Workbench(W::Compile));
+    }
+    None
 }
 
 fn ready_terminal(app: &App, name: &str, after: u64) -> Option<usize> {

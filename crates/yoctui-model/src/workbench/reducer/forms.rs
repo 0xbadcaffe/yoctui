@@ -3,6 +3,15 @@ use super::*;
 pub(super) fn confirm_form(app: &mut App) -> Option<Effect> {
     let form = app.workbench.form.clone()?;
     let value = form.text.trim();
+    if value.is_empty() && form.kind == WorkbenchFormKind::Find {
+        if let Some(s) = app.workbench.current_mut()
+            && let Some(t) = s.tabs.get_mut(s.tab)
+        {
+            let _ = t.document.search("", false);
+        }
+        app.workbench.form = None;
+        return None;
+    }
     if value.is_empty() {
         app.notification = Some("Enter a value, or press Esc to cancel.".into());
         return None;
@@ -31,6 +40,8 @@ pub(super) fn confirm_form(app: &mut App) -> Option<Effect> {
                 panel_zoom: false,
                 terminal: None,
                 terminal_daemon: None,
+                show_whitespace: false,
+                debug: WorkbenchDebugConfig::default(),
             });
             app.workbench.selection = app.workbench.sessions.len() - 1;
             app.workbench.active = Some(id);
@@ -72,6 +83,7 @@ pub(super) fn confirm_form(app: &mut App) -> Option<Effect> {
                 .pending_folders
                 .insert(app.workbench.generation, id);
             app.workbench.form = None;
+            app.workbench.folder_browser = None;
             return Some(Effect::Workbench(WorkbenchRequest::Folder {
                 session: id,
                 generation: app.workbench.generation,
@@ -112,12 +124,13 @@ pub(super) fn confirm_form(app: &mut App) -> Option<Effect> {
             return Some(Effect::Workbench(request));
         }
         WorkbenchFormKind::Find => {
-            if let Some(t) = app
-                .workbench
-                .current_mut()
-                .and_then(|s| s.tabs.get_mut(s.tab))
-            {
-                let _ = t.document.search(value.to_owned(), false);
+            if let Some(s) = app.workbench.current_mut() {
+                s.focus = WorkbenchFocus::Editor;
+                if let Some(t) = s.tabs.get_mut(s.tab) {
+                    let _ = t.document.search(value.to_owned(), false);
+                    t.viewport.follow_cursor = true;
+                    t.reveal_cursor();
+                }
             }
         }
     }

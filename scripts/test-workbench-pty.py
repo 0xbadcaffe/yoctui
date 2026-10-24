@@ -60,7 +60,9 @@ def main():
         script.write_text("#!/bin/sh\necho original_marker\n")
         for index in range(100):
             (source / f"file-{index:03}.txt").write_text(f"payload_{index}\n")
-        extra = directory / "extra"
+        browse_root = directory / "browse"
+        browse_root.mkdir()
+        extra = browse_root / "extra"
         extra.mkdir()
         draft = extra / "draft.txt"
         draft.write_text("draft_original\n")
@@ -76,7 +78,7 @@ def main():
             terminal.wait_for("New workspace · name")
             paste(terminal, "Recipe lab")
             send(terminal, b"\r")
-            terminal.wait_for("Add folder · absolute path")
+            terminal.wait_for("Add folder · browse filesystem")
             send(terminal, b"\x15")
             paste(terminal, str(source))
             send(terminal, b"\r")
@@ -98,10 +100,23 @@ def main():
             send(terminal, b"\x1b[H")
             terminal.wait_for("000-script.sh")
             send(terminal, b"\x1ba")
-            terminal.wait_for("Add folder · absolute path")
+            terminal.wait_for("Add folder · browse filesystem")
             send(terminal, b"\x15")
-            paste(terminal, str(extra))
+            paste(terminal, str(browse_root))
+            send(terminal, b"\t")
+            terminal.wait_for("extra/")
+            # This parent has exactly one child directory.
+            send(terminal, b"\x1b[H")
+            terminal.wait_for("▶ ./")
+            send(terminal, b"\x1b[B")
+            terminal.wait_for("▶ extra/")
+            if capture is not None:
+                capture.mkdir(parents=True, exist_ok=True)
+                (capture / "folder-browser.cells").write_text(terminal.screen.cell_golden())
             send(terminal, b"\r")
+            terminal.wait_for(str(extra))
+            terminal.wait_for("0 folder(s)")
+            send(terminal, b" ")
             terminal.wait_for("draft.txt")
             send(terminal, b"\r")
             terminal.wait_for("draft_original")
@@ -146,7 +161,7 @@ def main():
             send(terminal, b"\x1b")
             terminal.wait_for("h/l groups")
             terminal.finish()
-            print("Workbench PTY PASS: create, multi-folder tree, end/home, edit, atomic save, dirty recovery/reopen")
+            print("Workbench PTY PASS: create, folder browser, multi-folder tree, end/home, edit, atomic save, dirty recovery/reopen")
             print("Real shell writer/exit: PASS" if live else "Shell validation skipped: fixture environment is not a verified Yocto build; use --live-daemon")
         finally:
             if terminal is not None:

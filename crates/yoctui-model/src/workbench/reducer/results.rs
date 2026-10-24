@@ -126,6 +126,11 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
                     s.tabs.push(WorkbenchTab {
                         reserved: content.len(),
                         saving: false,
+                        viewport: WorkbenchViewport {
+                            follow_cursor: true,
+                            ..Default::default()
+                        },
+                        breakpoints: BTreeSet::new(),
                         root,
                         path,
                         document,
@@ -197,6 +202,18 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
         _ => unreachable!("Workbench result router"),
     }
     None
+}
+
+pub(super) fn release_terminal(app: &mut App) -> Option<Effect> {
+    let session = app.workbench.current()?;
+    if session.terminal_daemon != app.daemon.instance_id
+        || session.terminal != app.selected_terminal_session().map(|s| s.id)
+        || !app.selected_terminal_is_writer()
+    {
+        return None;
+    }
+    // Use the shared release state machine so a quick return waits for its epoch.
+    update_with_workspace_authority(app, Action::TerminalReleaseControl)
 }
 
 pub(super) fn terminal(app: &mut App) -> Option<Effect> {

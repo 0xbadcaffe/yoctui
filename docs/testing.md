@@ -75,6 +75,21 @@ Fresh workbench inputs use test-live-workbench-ux.sh/verify-live-workbench-ux-ev
 optional six-scene captures use test-live-m22-concept-parity.sh. Record exact identities,
 commands/outcomes/limits/hashes/freshness. Missing prerequisites block the claim.
 
+## Workbench editor and GDB
+
+Workbench editor acceptance uses isolated files and a process-backend fixture
+daemon; it does not run BitBake or certify a cross-target SDK. With a built native
+binary in `target/debug/yoctui`, host C compiler, GDB and gdbserver:
+
+```bash
+python3 scripts/test-workbench-pty.py
+python3 scripts/test-workbench-debug-pty.py --capture-dir artifacts/workbench-debug --gdbserver "$(command -v gdbserver)"
+```
+
+The second check stages a source breakpoint, debugs a real host ELF locally and
+over loopback, inspects stack/registers/source, and resumes the same debugger after
+returning to the editor. Captures and owned test processes are isolated.
+
 ## Fuzz, stress, and sanitizers
 
 | Gate | Requirements / command |

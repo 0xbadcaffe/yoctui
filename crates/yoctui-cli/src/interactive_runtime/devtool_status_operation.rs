@@ -97,8 +97,7 @@ impl InteractiveRuntime {
             }
         };
         if operation.modify_completion
-            && matches!(self.app.screen, Screen::Recipes | Screen::Devtool)
-            && self.app.active_dialog().is_none()
+            && should_open_modified_workspace(&self.app, &operation.identity)
         {
             apply_completed_devtool_modify_status(&mut self.app, status).await;
         } else {
@@ -114,6 +113,20 @@ impl InteractiveRuntime {
             let _ = operation.handle.await;
         }
     }
+}
+
+fn should_open_modified_workspace(app: &App, identity: &RecipeIdentity) -> bool {
+    app.active_dialog().is_none()
+        && !app.menu.is_open()
+        && !app.command_palette_open
+        && (matches!(app.screen, Screen::Recipes | Screen::Devtool)
+            || (app.screen == Screen::Workbench
+                && !app.workbench.modal_open()
+                && app.workbench.current().is_some_and(|session| {
+                    session.recipe.as_deref() == Some(identity.name.as_str())
+                        && session.build_dir.is_some()
+                        && session.build_dir == app.workspace.build_dir
+                })))
 }
 
 #[cfg(test)]

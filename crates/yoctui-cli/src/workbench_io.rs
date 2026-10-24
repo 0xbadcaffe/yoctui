@@ -8,6 +8,7 @@ use std::{
 use yoctui_model::{
     Action, App, Effect, SavedWorkbenches, WorkbenchAction as W, WorkbenchRequest as R,
 };
+mod debug;
 
 #[derive(Default)]
 pub(crate) struct WorkbenchIo {
@@ -21,6 +22,7 @@ impl WorkbenchIo {
         };
         // Directory/read requests supersede obsolete navigation, not saves or creates.
         match &request {
+            R::BrowseFolders { .. } => self.queue.retain(|r| !matches!(r, R::BrowseFolders { .. })),
             R::Directory { session, root, directory, .. } => self.queue.retain(|r| !matches!(r, R::Directory { session: s, root: p, directory: d, .. } if s == session && p == root && d == directory)),
             R::Read { .. } => self.queue.retain(|r| !matches!(r, R::Read { .. })),
             _ => {},
@@ -69,6 +71,19 @@ fn rejected(request: R) -> W {
         "Workspace I/O queue is full; operation was not started. Buffer retained; retry shortly."
             .to_string();
     match request {
+        R::PrepareDebug {
+            session,
+            generation,
+            ..
+        } => W::DebugPrepared {
+            session,
+            generation,
+            result: Err(error),
+        },
+        R::BrowseFolders { generation, .. } => W::FoldersBrowsed {
+            generation,
+            result: Err(error),
+        },
         R::Folder {
             session,
             generation,
@@ -152,6 +167,40 @@ fn validate_path(root: &Path, path: &Path) -> anyhow::Result<PathBuf> {
 
 pub(crate) fn execute(request: R) -> W {
     match request {
+        R::PrepareDebug {
+            session,
+            generation,
+            root,
+            config,
+            breakpoints,
+        } => W::DebugPrepared {
+            session,
+            generation,
+            result: debug::prepare(session, root, config, breakpoints).map_err(|e| e.to_string()),
+        },
+        R::BrowseFolders { path, generation } => W::FoldersBrowsed {
+            generation,
+            result: (|| -> anyhow::Result<_> {
+                anyhow::ensure!(path.is_absolute(), "choose an absolute folder path");
+                let directory = path.canonicalize()?;
+                anyhow::ensure!(directory.is_dir(), "choose a directory");
+                let mut entries = Vec::new();
+                for (index, entry) in fs::read_dir(&directory)?.enumerate() {
+                    anyhow::ensure!(
+                        index < yoctui_model::MAX_ROOTFS_ENTRIES,
+                        "directory exceeds the entry bound; type a more specific path"
+                    );
+                    let entry = entry?;
+                    let kind = entry.file_type()?;
+                    if kind.is_dir() || (kind.is_symlink() && entry.path().is_dir()) {
+                        entries.push(entry.path());
+                    }
+                }
+                entries.sort();
+                Ok((directory, entries))
+            })()
+            .map_err(|error| error.to_string()),
+        },
         R::Folder {
             session,
             generation,

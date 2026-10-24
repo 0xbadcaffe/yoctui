@@ -62,6 +62,15 @@ pub fn mouse_action_for_app(
     if app.active_dialog().is_some() {
         return dialog_mouse_action(mouse, app, terminal_width, terminal_height);
     }
+    if app.screen == Screen::Workbench
+        && crate::workbench_modal_open(app)
+    {
+        let shell = workbench_shell(app, terminal_width, terminal_height)?;
+        let region = workbench_mouse_region(mouse, app, shell)?;
+        return (region.target == FocusTarget::Workspace)
+            .then(|| development_mouse_action(mouse, app, region.area))
+            .flatten();
+    }
     if matches!(mouse.kind, MouseKind::ContextDown) {
         return Some(Action::OpenContextMenu);
     }

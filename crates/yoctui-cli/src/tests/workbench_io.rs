@@ -1,5 +1,9 @@
 use super::*;
 use yoctui_model::TextAreaRevision;
+#[path = "workbench_debug.rs"]
+mod debug;
+#[path = "workbench_folder_browser.rs"]
+mod folder_browser;
 
 fn fixture() -> (tempfile::TempDir, PathBuf, PathBuf) {
     let temp = tempfile::tempdir().unwrap();
