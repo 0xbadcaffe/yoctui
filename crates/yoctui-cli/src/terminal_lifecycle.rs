@@ -68,6 +68,10 @@ impl TerminalGuard {
     pub(crate) fn take_full_redraw_request(&self) -> bool {
         self.redraw.take()
     }
+
+    pub(crate) fn stop_input_capture(&self) {
+        let _ = execute!(io::stdout(), DisableBracketedPaste, DisableMouseCapture);
+    }
 }
 
 impl Drop for TerminalGuard {
@@ -78,7 +82,6 @@ impl Drop for TerminalGuard {
 }
 
 pub(crate) fn restore_terminal() {
-    let _ = disable_raw_mode();
     let _ = execute!(
         io::stdout(),
         Show,
@@ -86,6 +89,16 @@ pub(crate) fn restore_terminal() {
         DisableMouseCapture,
         LeaveAlternateScreen
     );
+    // Mouse reports may still be queued after the quit confirmation was read.
+    // Restoring terminal modes alone leaves those bytes for the parent shell,
+    // where their semicolons and '<' can be interpreted as shell commands.
+    #[cfg(unix)]
+    if io::stdin().is_terminal() {
+        // SAFETY: stdin is the current process's open terminal descriptor.
+        // Discard only pending input owned by the exiting UI, never pipe data.
+        let _ = unsafe { libc::tcflush(libc::STDIN_FILENO, libc::TCIFLUSH) };
+    }
+    let _ = disable_raw_mode();
 }
 
 pub(crate) fn install_panic_hook() {

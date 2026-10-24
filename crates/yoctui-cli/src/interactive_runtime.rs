@@ -105,6 +105,10 @@ pub(crate) async fn tui(
     // NO_COLOR policy that contradicts the visible setting.
     crossterm::style::force_color_output(true);
     let hardware_graphics_capability = terminal_graphics::detect_hardware_graphics_capability();
+    // Register before entering raw mode: startup can also receive a terminal
+    // hangup or interrupt. Route them through the same save/detach/restore path.
+    #[cfg(unix)]
+    let termination = interactive_termination_receiver()?;
     let guard = TerminalGuard::enter()?;
     let mut terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
     let mut app = if build_dir_configured {
@@ -364,8 +368,6 @@ pub(crate) async fn tui(
     let detached_terminal_operation = None;
     let render_measurement_started = Instant::now();
     let prefix_state = PrefixState::default();
-    #[cfg(unix)]
-    let termination = termination_receiver()?;
     let runtime = InteractiveRuntime {
         guard,
         terminal,

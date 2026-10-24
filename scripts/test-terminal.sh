@@ -79,3 +79,6 @@ for sequence in $'\e[?1049h' $'\e[?1049l' $'\e[?25l' $'\e[?25h'; do
     exit 1
   fi
 done
+
+# Exercise normal quit with queued mouse input and catchable signal exits.
+python3 scripts/test-terminal-shutdown.py

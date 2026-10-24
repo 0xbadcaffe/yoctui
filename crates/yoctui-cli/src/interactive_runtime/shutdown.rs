@@ -3,6 +3,9 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) async fn shutdown(self) -> Result<()> {
         let mut runtime = self;
+        // No more terminal events are consumed once shutdown starts. Disable
+        // reporting before potentially slow saves and worker cleanup.
+        runtime.guard.stop_input_capture();
         runtime.flush_workbench().await?;
         let render_metrics = runtime.render_scheduler.metrics();
         if let Some(path) = std::env::var_os("YOCTUI_PERFORMANCE_METRICS_PATH") {
