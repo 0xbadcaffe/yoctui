@@ -179,3 +179,30 @@ PR checks cover event loops/render/coalescing/saturation/IPC, not image completi
 or 30-minute endurance. Scheduled/manual jobs measure fresh CPU/memory;
 real-Poky opt-in uses YOCTUI_LIVE_PERFORMANCE=1, YOCTUI_PERF_BUILD_DIR,
 YOCTUI_PERF_POKY_ROOT. See [Testing](testing.md) and [Profiling](profiling.md).
+
+## Build performance workspace
+
+Build → Performance exposes opt-in native BitBake PSI scheduling controls and
+cache/resource diagnostics; it does not replace BitBake's scheduler. Balanced uses
+reviewed BB_PRESSURE_MAX_CPU/IO/MEMORY values through a stable per-job postread
+configuration, preserving local.conf, disk guards, task/make/parser limits and
+cache/signature policy. Existing builds are untouched. CLI/raw builds keep their
+own configuration. Missing PSI, an old daemon or unsupported BitBake is an explicit
+unavailable/error state. These controls cannot shrink an already-running linker.
+
+The daemon samples host resources on one blocking worker: once per second during
+a build, every five seconds while attached and idle, and not while detached and
+idle. Sampling continues with an active detached build. No client-side BitBake
+queries or recursive source/build-tree scans are introduced. Process sampling
+uses authoritative task PIDs, at most 128 task roots and 2048 process visits per
+sample; at most 256 peak identities are retained and the top 16 are transmitted.
+Limits or missing/exiting processes mark samples partial. RSS is an approximation
+that can double-count shared pages; short-lived peaks can be missed.
+
+Available memory and filesystem cache are shown separately; swap traffic and PSI
+help distinguish pressure from useful cache. Missing metrics remain unavailable.
+Cache mirror/hash-server credentials are hidden. Cache configuration is not proof
+of mirror compatibility, availability, a completed build or a speed improvement.
+Native profile-file tests, reducer/input/render tests and isolated PTY acceptance
+protect this route. Compare identical real build inputs before claiming elapsed-time
+or memory improvements. See [the user guide](user-guide.md#build-performance).

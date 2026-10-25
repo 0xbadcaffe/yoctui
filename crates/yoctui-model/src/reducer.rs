@@ -18,6 +18,7 @@ mod yocto_utility_dialog;
 #[rustfmt::skip]
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     let action = match action {
+        Action::BuildPerformance(action) => return crate::build_performance::reduce(app, action),
         Action::Workbench(action) => return crate::workbench_reduce(app, action),
         Action::BitBakeSetup(action) => return crate::bitbake_setup::reduce(app, action),
         Action::FileDiff(action) => return crate::file_diff::reduce(app, action),
@@ -420,6 +421,6 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::VariableLoaded(..) | Action::RecipeSourcesLoaded { .. } | Action::HostTelemetryUpdated(..)
         | Action::Failure(..) | Action::Tick => set_layer_inspector_mode::reduce_actions(app, action),
         Action::Hardware(_) | Action::KernelDebug(_)
-        | Action::RecipeEditorGitUiInspected { .. } | Action::RestoreRecipeEditor | Action::Workbench(_) | Action::FileDiff(_) | Action::BitBakeSetup(_) | Action::EditorSettings(_) | Action::ScrollHelp { .. } => unreachable!("Local workspace actions are routed before the shared reducer"),
+        | Action::RecipeEditorGitUiInspected { .. } | Action::RestoreRecipeEditor | Action::BuildPerformance(_) | Action::Workbench(_) | Action::FileDiff(_) | Action::BitBakeSetup(_) | Action::EditorSettings(_) | Action::ScrollHelp { .. } => unreachable!("Local workspace actions are routed before the shared reducer"),
     }
 }

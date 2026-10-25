@@ -11,7 +11,7 @@ pub(crate) fn navigator(
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 31] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 32] = [
         (
             "Dashboard",
             Screen::Dashboard,
@@ -39,6 +39,11 @@ pub(crate) fn navigator(
             "Workbench",
             Screen::Workbench,
             WorkspaceDestination::Workbench,
+        ),
+        (
+            "Performance",
+            Screen::BuildPerformance,
+            WorkspaceDestination::BuildPerformance,
         ),
         ("Logs", Screen::Logs, WorkspaceDestination::Logs),
         ("Errors", Screen::Errors, WorkspaceDestination::Errors),
@@ -357,6 +362,7 @@ pub(crate) fn literal_project_navigator(
     for (label, screen) in [
         ("Build", Screen::Tasks),
         ("Workbench", Screen::Workbench),
+        ("Performance", Screen::BuildPerformance),
         ("Test", Screen::Testing),
         ("QA", Screen::Qa),
         ("Devtool", Screen::Devtool),

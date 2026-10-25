@@ -33,13 +33,14 @@ fn daemon_status_event_updates_client_telemetry_without_mutating_snapshot_shape(
                         forced_resynchronizations: 2,
                         slow_client_disconnects: 1,
                     },
+                    build_resources: None,
                     memory_bytes: Some(4096),
                     recovery: yoctui_protocol::daemon::DaemonRecoveryState::Recovered,
                 },
             ),
         })
         .unwrap();
-    let telemetry = client.telemetry.unwrap();
+    let telemetry = client.telemetry.as_ref().unwrap();
     assert_eq!(telemetry.uptime_seconds, 7);
     assert_eq!(telemetry.pressure.current_queue_depth, 3);
     assert_eq!(telemetry.pressure.maximum_queue_depth, 9);

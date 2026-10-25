@@ -1,6 +1,7 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
 use yoctui_utils::format_duration;
 mod branding;
+mod build_performance_render;
 mod dialogs;
 mod file_diff_render;
 pub use branding::render_startup;

@@ -145,6 +145,7 @@ fn journal_telemetry(uptime_seconds: u64) -> DaemonEvent {
         pty_sessions: 0,
         queue_depth: 1,
         pressure: DaemonPressureCounters::default(),
+        build_resources: None,
         memory_bytes: Some(24 * 1024 * 1024),
         recovery: DaemonRecoveryState::CleanStart,
     })

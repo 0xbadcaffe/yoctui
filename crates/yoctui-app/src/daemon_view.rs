@@ -91,7 +91,7 @@ pub(crate) fn daemon_client_view(
             .iter()
             .map(crate::terminal_view::terminal_screen)
             .collect(),
-        connected_clients: telemetry.map_or(snapshot.clients.len(), |value| {
+        connected_clients: telemetry.as_ref().map_or(snapshot.clients.len(), |value| {
             usize::from(value.connected_clients)
         }),
         recent_logs: snapshot
@@ -114,6 +114,7 @@ pub(crate) fn daemon_client_view(
                 forced_resynchronizations: telemetry.pressure.forced_resynchronizations,
                 slow_client_disconnects: telemetry.pressure.slow_client_disconnects,
             },
+            build_resources: telemetry.build_resources.clone(),
             memory_bytes: telemetry.memory_bytes,
             recovery: match telemetry.recovery {
                 yoctui_protocol::daemon::DaemonRecoveryState::CleanStart => {

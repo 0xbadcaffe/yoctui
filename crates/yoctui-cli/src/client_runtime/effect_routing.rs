@@ -60,7 +60,21 @@ pub(super) fn daemon_command_for_effect(
             .map(|path| path.display().to_string())
             .ok_or(ClientRuntimeError::MissingBuildDirectory)
     };
+    if matches!(effect, Effect::Start(_))
+        && app.preferences.build_performance.is_some()
+        && let Some(reason) = app.build_performance_unavailable()
+    {
+        return Err(ClientRuntimeError::BuildPerformanceUnavailable(reason));
+    }
     Ok(Some(match effect {
+        Effect::Start(request) if app.preferences.build_performance.is_some() => {
+            DaemonCommand::StartProfiledBuild {
+                targets: request.targets.clone(),
+                task: request.task.clone(),
+                force: request.force,
+                profile: app.preferences.build_performance.expect("profile guard"),
+            }
+        }
         Effect::Start(request) => DaemonCommand::StartBuild {
             targets: request.targets.clone(),
             task: request.task.clone(),

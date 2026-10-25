@@ -129,13 +129,14 @@ pub struct ClientDaemonTerminalCell {
     pub wide_continuation: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClientDaemonTelemetry {
     pub uptime_seconds: u64,
     pub active_jobs: usize,
     pub pty_sessions: usize,
     pub queue_depth: usize,
     pub pressure: ClientDaemonPressureCounters,
+    pub build_resources: Option<Box<crate::BuildResourceTelemetry>>,
     pub memory_bytes: Option<u64>,
     pub recovery: DaemonRecoveryState,
 }

@@ -70,6 +70,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         Screen::Dashboard => {
             "Alt+b build | f favorites | t terminals | F2 Tasks | e errors | Ctrl+B prefix | F8 artifacts | l logs | F3 work | Alt+e environment | Alt+m sstate | Ctrl+P commands | Tab focus | c cancel | ? help | q quit"
         }
+        Screen::BuildPerformance => "b Balanced | d existing config | 1/2/3 threshold | Left/Right adjust | Up/Down PgUp/PgDn scroll | c cache/Insights | s signatures | Tab focus | Esc navigator",
         Screen::Insights => "1-8 view | [/] previous/next | Tab focus | Esc dashboard",
         Screen::Tasks => {
             "↑/↓ select | f state | Alt+f field | / edit filter | d duration | c cancel | Tab focus"

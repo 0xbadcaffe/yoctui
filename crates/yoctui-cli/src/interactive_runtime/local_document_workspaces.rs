@@ -10,7 +10,10 @@ impl InteractiveRuntime {
         let editor_changed = self.poll_preferred_editor().await;
         self.render_scheduler
             .invalidate_if(editor_changed, RenderCause::State);
-        if matches!(self.app.screen, Screen::DiffTool | Screen::Help) {
+        if matches!(
+            self.app.screen,
+            Screen::DiffTool | Screen::Help | Screen::BuildPerformance
+        ) {
             let size = self.terminal.size()?;
             let extra = u16::from(self.app.offline_notice().is_some()) * 2
                 + u16::from(self.app.zoomed_pane.is_some() || size.width < 100);
@@ -19,6 +22,15 @@ impl InteractiveRuntime {
                 self.app
                     .file_diff
                     .reconcile_viewport(usize::from(height.saturating_sub(8)));
+            } else if self.app.screen == Screen::BuildPerformance {
+                self.app.build_performance.visible_rows =
+                    usize::from(height.saturating_sub(7)).max(1);
+                let maximum = self
+                    .app
+                    .build_performance_rows()
+                    .len()
+                    .saturating_sub(self.app.build_performance.visible_rows);
+                self.app.build_performance.scroll = self.app.build_performance.scroll.min(maximum);
             } else {
                 self.app.help_visible_rows = usize::from(height.saturating_sub(2));
                 let _ = update(&mut self.app, Action::ScrollHelp { delta: 0 });

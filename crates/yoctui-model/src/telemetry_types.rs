@@ -1,7 +1,8 @@
 //! Telemetry types.
 use super::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct HostTelemetry {
     pub cpu_utilization_percent: Option<u8>,
     pub logical_cpu_count: Option<u16>,

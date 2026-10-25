@@ -48,9 +48,6 @@ impl DaemonClientSnapshot {
         &mut self,
         event: &yoctui_protocol::daemon::SequencedEvent,
     ) -> Result<(), DaemonClientSyncError> {
-        if let yoctui_protocol::daemon::DaemonEvent::Telemetry(telemetry) = &event.event {
-            self.telemetry = Some(*telemetry);
-        }
         let Some(snapshot) = self.snapshot.as_mut() else {
             self.status = yoctui_model::ClientReplicaStatus::Stale;
             return Err(DaemonClientSyncError::MissingSnapshot);
@@ -58,6 +55,9 @@ impl DaemonClientSnapshot {
         if let Err(error) = yoctui_protocol::daemon::apply_sequenced_event(snapshot, event) {
             self.status = yoctui_model::ClientReplicaStatus::Stale;
             return Err(DaemonClientSyncError::Protocol(error));
+        }
+        if let yoctui_protocol::daemon::DaemonEvent::Telemetry(telemetry) = &event.event {
+            self.telemetry = Some(telemetry.clone());
         }
         self.status = yoctui_model::ClientReplicaStatus::Current;
         Ok(())
@@ -150,7 +150,7 @@ impl DaemonClientSnapshot {
             self.status == yoctui_model::ClientReplicaStatus::Current,
             std::time::SystemTime::now(),
         );
-        app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
+        app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry.clone());
         app.reconcile_platform_menuconfigs();
         app.reconcile_terminal_panes();
         if self.status == yoctui_model::ClientReplicaStatus::Current

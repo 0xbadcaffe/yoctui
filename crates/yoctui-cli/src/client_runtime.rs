@@ -93,6 +93,8 @@ pub enum ClientRuntimeError {
     MissingSecuritySession,
     #[error("maintenance tool is unavailable")]
     MissingMaintenanceTool,
+    #[error("build performance profile is unavailable: {0}")]
+    BuildPerformanceUnavailable(String),
 }
 
 #[cfg(test)]

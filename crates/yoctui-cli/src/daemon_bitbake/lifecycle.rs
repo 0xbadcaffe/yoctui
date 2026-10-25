@@ -23,6 +23,7 @@ impl DaemonBitBakeSupervisor {
         let (cancellation_terminal_tx, cancellation_terminal_rx) = mpsc::channel(1);
         Self {
             job_ids,
+            performance_profile: None,
             active: HashMap::new(),
             reliable_tx,
             reliable_rx,
@@ -63,7 +64,24 @@ impl DaemonBitBakeSupervisor {
         Ok(())
     }
 
+    pub fn performance_profile(&self) -> Option<yoctui_model::BuildPerformanceSettings> {
+        self.performance_profile
+    }
+
+    #[cfg(test)]
     pub fn start(&mut self, build_dir: PathBuf, request: BuildRequest) -> Result<JobId, String> {
+        self.start_with_performance(build_dir, request, None)
+    }
+
+    pub fn start_with_performance(
+        &mut self,
+        build_dir: PathBuf,
+        request: BuildRequest,
+        profile: Option<yoctui_model::BuildPerformanceSettings>,
+    ) -> Result<JobId, String> {
+        if profile.is_some_and(|p| !p.valid()) {
+            return Err("invalid build pressure limits".into());
+        }
         request.validate().map_err(|error| error.to_string())?;
         let compatibility = self.compatibility.clone().ok_or_else(|| {
             "daemon BitBake build requires current environment capability authority".to_owned()
@@ -83,6 +101,7 @@ impl DaemonBitBakeSupervisor {
         if self.active.values().len() >= 1 {
             return Err("another daemon-owned BitBake build is already active".into());
         }
+        self.performance_profile = profile;
         let job_id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(job_id, cancel_tx);
@@ -94,14 +113,22 @@ impl DaemonBitBakeSupervisor {
             .activity
             .as_ref()
             .map(|notification| notification.sender.clone());
-        let bridge_environment = self.bridge_environment.clone();
+        let mut bridge_environment = self.bridge_environment.clone().unwrap_or_default();
+        // Never inherit a profile from the daemon launch environment. Each job owns its selection.
+        bridge_environment.insert("YOCTUI_BUILD_PERFORMANCE".into(), String::new());
+        if let Some(profile) = profile {
+            bridge_environment.insert(
+                "YOCTUI_BUILD_PERFORMANCE".into(),
+                serde_json::to_string(&profile).map_err(|e| e.to_string())?,
+            );
+        }
         let cancellation_terminal_timeout = self.cancellation_terminal_timeout;
         tokio::spawn(async move {
             let python = std::env::var("PYTHON").unwrap_or_else(|_| "python3".into());
             let mut backend = match crate::spawn_configured_bridge_with_compatibility(
                 &python,
                 build_dir,
-                bridge_environment,
+                Some(bridge_environment),
                 compatibility,
             )
             .await

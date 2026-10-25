@@ -52,7 +52,11 @@ class TinfoilConnection:
         self.tinfoil = self.tinfoil_module.Tinfoil(
             output=sys.stderr, tracking=True, setup_logging=True
         )
-        self.tinfoil.prepare(config_only=True, quiet=2)
+        params = performance_config_params(self.module, self.tinfoil_module)
+        if params is None:
+            self.tinfoil.prepare(config_only=True, quiet=2)
+        else:
+            self.tinfoil.prepare(config_only=True, config_params=params, quiet=2)
         self.recipes_parsed = False
         self.active = False
         self.recipe_files = {}
@@ -153,6 +157,14 @@ class TinfoilConnection:
             "WKS_FILES_DIR",
             "PACKAGE_CLASSES",
             "BB_NUMBER_THREADS",
+            "BB_NUMBER_PARSE_THREADS",
+            "BB_PRESSURE_MAX_CPU",
+            "BB_PRESSURE_MAX_IO",
+            "BB_PRESSURE_MAX_MEMORY",
+            "SSTATE_MIRRORS",
+            "BB_HASHSERVE",
+            "BB_HASHSERVE_UPSTREAM",
+            "BB_SIGNATURE_HANDLER",
             "PARALLEL_MAKE",
         )
         variables = {}

@@ -63,6 +63,7 @@ pub(crate) fn literal_reference_app() -> App {
         pty_sessions: 1,
         queue_depth: 0,
         pressure: yoctui_model::ClientDaemonPressureCounters::default(),
+        build_resources: None,
         memory_bytes: Some(32 * 1024 * 1024),
         recovery: yoctui_model::DaemonRecoveryState::Recovered,
     });

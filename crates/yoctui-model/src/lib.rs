@@ -2,8 +2,10 @@
 mod action_catalog;
 mod background_activity;
 mod build_cache;
+mod build_performance;
 pub use background_activity::BackgroundActivity;
 pub use build_cache::{BuildCacheState, SstateSummary};
+pub use build_performance::*;
 mod bitbake_layers;
 mod bitbake_restart;
 mod bitbake_setup;

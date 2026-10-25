@@ -111,3 +111,19 @@ sanitizer, security, coverage, Valgrind, and profiling commands documented above
 Live workflows require fresh evidence and their host prerequisites; fixture
 checks do not certify board boot, image completion, or target debugging.
 See [Profiling](profiling.md) and [Performance](performance.md).
+
+## Build performance
+
+With a built native binary, run the isolated UI/daemon acceptance check:
+
+```bash
+python3 scripts/test-build-performance-pty.py --capture-dir artifacts/build-performance
+```
+
+It verifies actual daemon-host telemetry, navigation/focus, profile selection,
+threshold adjustment, scrolling/resizing, preferences and detach/reconnect without
+editing local.conf. Its metadata comes from a fixture; it does not prove an image
+build, cache effectiveness or build-speed improvement. Bridge tests cover native
+postread option construction, stable file reuse and unsupported/invalid profiles;
+model/input/render tests cover policy bounds and unavailable states. Compare the
+same real workload/configuration/cache state to establish a resource/speed result.

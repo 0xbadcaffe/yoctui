@@ -63,6 +63,7 @@ pub struct WorkbenchPreferences {
     pub image_previews: ImagePreviewPreference,
     pub terminal_prefix: TerminalPrefixPreference,
     /// None keeps Yoctui's built-in editor. Commands are argv, never shell scripts.
+    pub build_performance: Option<crate::BuildPerformanceSettings>,
     pub terminal_editor: Option<String>,
     pub terminal_editor_embedded: bool,
     pub keymap: KeymapPreferences,
@@ -87,6 +88,7 @@ impl Default for WorkbenchPreferences {
             charts: ChartPreference::default(),
             image_previews: ImagePreviewPreference::default(),
             terminal_prefix: TerminalPrefixPreference::default(),
+            build_performance: None,
             terminal_editor: None,
             terminal_editor_embedded: true,
             keymap: KeymapPreferences::default(),
@@ -130,6 +132,9 @@ impl WorkbenchPreferences {
                 "unsupported workbench preference schema {}; expected {}",
                 self.schema_version, WORKBENCH_PREFERENCES_SCHEMA_VERSION
             ));
+        }
+        if self.build_performance.is_some_and(|p| !p.valid()) {
+            return Err("build pressure thresholds must be between 1 and 1000000".into());
         }
         EffectiveKeymap::from_preferences(&self.keymap)
             .map(|_| ())

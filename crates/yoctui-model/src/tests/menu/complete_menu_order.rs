@@ -34,6 +34,7 @@ fn menus_cover_every_screen_once_and_keep_common_actions_first() {
     expected.push(Screen::Daemons);
     expected.push(Screen::DiffTool);
     expected.push(Screen::Workbench);
+    expected.push(Screen::BuildPerformance);
     assert_eq!(screens, expected);
     assert!(
         app.application_menu_items(ApplicationMenuGroup::Tools)

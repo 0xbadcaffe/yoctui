@@ -133,6 +133,7 @@ where
 
 pub(crate) const BUNDLED_BRIDGE_SOURCE: &str = concat!(
     include_str!("../../bridge/yoctui_bridge_components/protocol_and_compatibility.py"),
+    include_str!("../../bridge/yoctui_bridge_components/build_performance.py"),
     include_str!("../../bridge/yoctui_bridge_components/tinfoil_workspace.py"),
     include_str!("../../bridge/yoctui_bridge_components/tinfoil_metadata.py"),
     include_str!("../../bridge/yoctui_bridge_components/tinfoil_runtime.py"),

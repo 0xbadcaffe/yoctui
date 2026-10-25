@@ -57,6 +57,12 @@ pub enum DaemonCommand {
     InspectRootfsSources {
         query: crate::rootfs::RootfsSourcesRequestData,
     },
+    StartProfiledBuild {
+        targets: Vec<String>,
+        task: Option<String>,
+        force: bool,
+        profile: yoctui_model::BuildPerformanceSettings,
+    },
     StartBuild {
         targets: Vec<String>,
         task: Option<String>,

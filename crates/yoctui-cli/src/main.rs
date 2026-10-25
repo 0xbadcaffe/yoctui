@@ -334,6 +334,7 @@ mod session_store;
 use session_store::*;
 mod terminal_lifecycle;
 use terminal_lifecycle::*;
+mod build_resource_sampler;
 mod host_telemetry;
 use host_telemetry::*;
 mod project_profile;

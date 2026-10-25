@@ -272,7 +272,7 @@ pub enum DaemonRecoveryState {
     Degraded,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DaemonTelemetry {
     pub uptime_seconds: u64,
     pub bitbake: LifecycleState,
@@ -282,6 +282,8 @@ pub struct DaemonTelemetry {
     pub queue_depth: u16,
     #[serde(default)]
     pub pressure: DaemonPressureCounters,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build_resources: Option<Box<yoctui_model::BuildResourceTelemetry>>,
     pub memory_bytes: Option<u64>,
     pub recovery: DaemonRecoveryState,
 }

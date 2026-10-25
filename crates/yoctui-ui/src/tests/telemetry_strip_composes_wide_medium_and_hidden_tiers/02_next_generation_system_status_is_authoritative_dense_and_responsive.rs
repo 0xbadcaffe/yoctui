@@ -18,6 +18,7 @@ fn next_generation_system_status_is_authoritative_dense_and_responsive() {
         pty_sessions: 1,
         queue_depth: 3,
         pressure: yoctui_model::ClientDaemonPressureCounters::default(),
+        build_resources: None,
         memory_bytes: None,
         recovery: yoctui_model::DaemonRecoveryState::CleanStart,
     });
@@ -103,6 +104,7 @@ fn next_generation_health_indicators_cover_backend_disk_compat_logs_and_workspac
         pty_sessions: 0,
         queue_depth: 1,
         pressure: yoctui_model::ClientDaemonPressureCounters::default(),
+        build_resources: None,
         memory_bytes: None,
         recovery: yoctui_model::DaemonRecoveryState::CleanStart,
     });

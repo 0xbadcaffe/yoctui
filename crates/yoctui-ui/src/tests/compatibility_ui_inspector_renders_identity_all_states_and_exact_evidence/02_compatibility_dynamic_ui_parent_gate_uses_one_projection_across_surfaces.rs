@@ -121,6 +121,7 @@ fn workbench_shell_keeps_daemon_health_compact() {
         pty_sessions: 1,
         queue_depth: 3,
         pressure: yoctui_model::ClientDaemonPressureCounters::default(),
+        build_resources: None,
         memory_bytes: Some(8 * 1024 * 1024),
         recovery: yoctui_model::DaemonRecoveryState::Recovered,
     });

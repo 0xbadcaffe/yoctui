@@ -25,9 +25,10 @@ pub(crate) fn literal_navigator_selection_at_row(
     if row == tasks_start {
         return App::navigator_selection_for_destination(Destination::Tasks);
     }
-    const TASK_DESTINATIONS: [Destination; 9] = [
+    const TASK_DESTINATIONS: [Destination; 10] = [
         Destination::Tasks,
         Destination::Workbench,
+        Destination::BuildPerformance,
         Destination::Testing,
         Destination::Qa,
         Destination::Devtool,

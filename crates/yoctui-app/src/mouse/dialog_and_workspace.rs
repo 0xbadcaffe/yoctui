@@ -170,6 +170,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         }
         Screen::Daemons if !app.daemon_manager.editing && app.daemon_manager.review.is_none() => Some(Action::ScrollDaemonManager { delta }),
         Screen::Daemons => None,
+        Screen::BuildPerformance => crate::build_performance_action(app, key),
         Screen::DiffTool => crate::file_diff_action(app, key),
         Screen::Workbench => crate::workbench_action(app, key),
         Screen::Settings => settings_action(key),

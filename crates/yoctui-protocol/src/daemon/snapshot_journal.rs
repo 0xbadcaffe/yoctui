@@ -190,8 +190,8 @@ impl DaemonSnapshotJournal {
                     | DaemonEvent::PtyScreen(_)
             ) {
             // Build, log, job, telemetry and PTY metadata/output reduction cannot reject a payload
-            // after the frame and sequence checks above. Telemetry only advances
-            // the snapshot counters; its encoded event also covers their growth.
+            // after pre-mutation validation. Telemetry validates resource bounds before advancing
+            // snapshot counters; its encoded event also covers their growth.
             // PtyScreen validates its complete payload BEFORE mutating state.
             // Its measured leaf-size delta covers replacement, the array comma,
             // and counter growth; no other terminal/build data needs cloning.

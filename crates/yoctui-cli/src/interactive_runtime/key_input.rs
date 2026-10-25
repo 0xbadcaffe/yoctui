@@ -353,11 +353,28 @@ impl InteractiveRuntime {
             let _ = compatibility_workspace_action(&mut runtime.app, action);
             return Ok(true);
         }
-        if let Some(action) = yoctui_app::file_diff_action(&runtime.app, input)
+        if let Some(action) = yoctui_app::build_performance_action(&runtime.app, input)
+            .or_else(|| yoctui_app::file_diff_action(&runtime.app, input))
             .or_else(|| yoctui_app::help_workspace_action(&runtime.app, input))
         {
             if let Some(effect) = compatibility_workspace_action(&mut runtime.app, action) {
-                runtime.file_diff_io.submit(effect);
+                if effect == Effect::PersistSettings {
+                    let result = persist_settings(
+                        runtime.session_path.as_deref(),
+                        &mut runtime.session,
+                        &runtime.app,
+                        !runtime.color_forced_off,
+                    );
+                    update(
+                        &mut runtime.app,
+                        match result {
+                            Ok(()) => Action::SettingsPersisted,
+                            Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
+                        },
+                    );
+                } else {
+                    runtime.file_diff_io.submit(effect);
+                }
             }
             return Ok(true);
         }

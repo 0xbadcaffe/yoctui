@@ -11,6 +11,11 @@ fn tasks_navigator_clicks_actual_rendered_destinations_across_geometries() {
         (80, 24, false),
     ] {
         for (destination, label, expected) in [
+            (
+                WorkspaceDestination::BuildPerformance,
+                "Performance",
+                Screen::BuildPerformance,
+            ),
             (WorkspaceDestination::Devtool, "Devtool", Screen::Devtool),
             (WorkspaceDestination::QemuWic, "QEMU / Wic", Screen::Images),
         ] {

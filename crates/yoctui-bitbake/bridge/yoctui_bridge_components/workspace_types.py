@@ -18,6 +18,14 @@ def workspace_data(version):
         "WKS_FILES_DIR",
         "PACKAGE_CLASSES",
         "BB_NUMBER_THREADS",
+        "BB_NUMBER_PARSE_THREADS",
+        "BB_PRESSURE_MAX_CPU",
+        "BB_PRESSURE_MAX_IO",
+        "BB_PRESSURE_MAX_MEMORY",
+        "SSTATE_MIRRORS",
+        "BB_HASHSERVE",
+        "BB_HASHSERVE_UPSTREAM",
+        "BB_SIGNATURE_HANDLER",
         "PARALLEL_MAKE",
     )
     variables = {key: os.environ[key] for key in keys if key in os.environ}

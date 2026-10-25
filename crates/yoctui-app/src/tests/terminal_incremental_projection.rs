@@ -82,7 +82,7 @@ fn apply(client: &mut DaemonClientSnapshot, app: &mut App, event: DaemonEvent) {
         crate::daemon_view::daemon_client_view(
             client.status,
             client.snapshot.as_ref(),
-            client.telemetry
+            client.telemetry.clone()
         )
     );
 }

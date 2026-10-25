@@ -62,6 +62,7 @@ struct DaemonBitBakePressureShared {
 }
 
 pub struct DaemonBitBakeSupervisor {
+    performance_profile: Option<yoctui_model::BuildPerformanceSettings>,
     job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: HashMap<JobId, mpsc::UnboundedSender<()>>,
     reliable_tx: mpsc::Sender<DaemonBitBakeEvent>,

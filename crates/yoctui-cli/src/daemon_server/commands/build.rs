@@ -1,10 +1,27 @@
 use super::*;
 
 pub(super) fn handle(
-    request: CommandRequest,
+    mut request: CommandRequest,
     services: &mut DaemonServices,
     client: &mut DaemonClient,
 ) -> Result<Option<CommandOutcome>> {
+    let profile = if let DaemonCommand::StartProfiledBuild {
+        targets,
+        task,
+        force,
+        profile,
+    } = &request.command
+    {
+        let value = *profile;
+        request.command = DaemonCommand::StartBuild {
+            targets: targets.clone(),
+            task: task.clone(),
+            force: *force,
+        };
+        Some(value)
+    } else {
+        None
+    };
     Ok(Some(match request.command {
 DaemonCommand::StartBuild { .. } if services.rootfs_query_permit.available_permits() == 0 => {
                             CommandOutcome::Rejected {
@@ -48,9 +65,10 @@ DaemonCommand::StartBuild { targets, task, force } => {
                                 return Ok(None);
                             };
                             let build_targets = targets.clone();
-                            match services.bitbake_supervisor.start(
+                            match services.bitbake_supervisor.start_with_performance(
                                 build_dir,
                                 BuildRequest { targets, task, force },
+                                profile,
                             ) {
                                 Ok(job_id) => {
                                     let reset_event = services.daemon_journal.publish(

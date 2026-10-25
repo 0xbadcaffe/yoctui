@@ -159,3 +159,13 @@ Preferences → Keybindings: Enter/`c` captures up to three strokes; Ctrl+S save
 `x` removes, `r` resets one, `R` resets all, `e` exports, `p` retries persistence.
 Collisions, ambiguous/reserved prefixes, and loss of critical routes are rejected
 without replacing the working map.
+
+## Build performance
+
+Open **Build → Performance** or **F12 → Build → Build performance**, then Tab to
+focus the report. **b** selects Balanced; **d** uses existing BitBake configuration.
+**1/2/3** selects the CPU/I/O/memory threshold; **Left/Right** changes it.
+**Up/Down**, **j/k**, **PgUp/PgDn**, **Home/End** and the mouse wheel scroll.
+**c** opens Insights; **s** opens signatures; **Esc** focuses the navigator.
+Profiles apply to future confirmed UI builds, are shown in the review, and leave
+running tasks and local.conf unchanged. See the [user guide](user-guide.md#build-performance).

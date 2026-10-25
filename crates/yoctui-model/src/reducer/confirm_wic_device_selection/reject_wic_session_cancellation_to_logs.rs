@@ -114,6 +114,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::Start(r) => {
+            if app.preferences.build_performance.is_some()
+                && app.build_performance_unavailable().is_some()
+            {
+                app.notification = app.build_performance_unavailable();
+                return None;
+            }
             if !app.build_environment.connected() {
                 app.notification = Some("Configure and verify a BitBake environment first".into());
             } else if let Err(e) = r.validate() {

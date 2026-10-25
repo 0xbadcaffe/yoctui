@@ -24,3 +24,5 @@ mod standalone_mode_remains_an_explicit_local_fallback;
 mod terminal_resize_rejects_ended_writer;
 mod ux_terminal_runtime_prefix_maps_create_and_writer_commands;
 mod ux_terminal_runtime_preserves_explicit_local_build_authority;
+
+mod build_performance;

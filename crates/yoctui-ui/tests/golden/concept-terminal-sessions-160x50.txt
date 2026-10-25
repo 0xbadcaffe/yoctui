@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.363 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.364 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                                D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -19,18 +19,19 @@
 │    SDK                  ││                                                                                                                                   │
 │▾ BUILD                  ││                                                                                                                                   │
 │  ▱ Workbench            ││                                                                                                                                   │
+│  ▱ Performance          ││                                                                                                                                   │
 │  ▱ Logs             LIVE││                                                                                                                                   │
 │  ▱ Errors               ││                                                                                                                                   │
 │    Configuration        ││                                                                                                                                   │
-│    Dependencies         ││                                                                                                                                   │
-│  ▱ Build directory      │└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-│▾ VALIDATE               │┌ devshell:busybox #2 Running ──────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│    Testing              ││Devshell · read-only · 2 viewer(s) · 88x18 · history 312 · dropped ≥14 · /workspace/yocto/build                                    │
-│    Security             ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                                                                   │
-│    QA                   ││CC      coreutils/ls.o                                                                                                             │
-│▾ TOOLS                  ││CC      coreutils/cp.o                                                                                                             │
-│    Raw Mode             ││LD      busybox_unstripped                                                                                                         │
-│    Terminal Sessions    ││busybox-devshell$                                                                                                                  │
+│    Dependencies         │└───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+│  ▱ Build directory      │┌ devshell:busybox #2 Running ──────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│▾ VALIDATE               ││Devshell · read-only · 2 viewer(s) · 88x18 · history 312 · dropped ≥14 · /workspace/yocto/build                                    │
+│    Testing              ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                                                                   │
+│    Security             ││CC      coreutils/ls.o                                                                                                             │
+│    QA                   ││CC      coreutils/cp.o                                                                                                             │
+│▾ TOOLS                  ││LD      busybox_unstripped                                                                                                         │
+│    Raw Mode             ││busybox-devshell$                                                                                                                  │
+│    Terminal Sessions    ││                                                                                                                                   │
 │    Devtool              ││                                                                                                                                   │
 │    QEMU / Wic           ││                                                                                                                                   │
 │    Maintenance          ││                                                                                                                                   │
@@ -40,7 +41,6 @@
 │  ▱ Diff tool            ││                                                                                                                                   │
 │  ▱ GitUI                ││                                                                                                                                   │
 │  ▱ Settings             ││                                                                                                                                   │
-│                         ││                                                                                                                                   │
 │                         ││                                                                                                                                   │
 │                         ││                                                                                                                                   │
 │                         ││                                                                                                                                   │

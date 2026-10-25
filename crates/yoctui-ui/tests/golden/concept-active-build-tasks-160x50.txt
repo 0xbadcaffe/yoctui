@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.363 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
+│yoctui v0.1.364 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64                               D:✓ Connected/Local • BB:✓ Running • Local 19:28│
 │⣧ Build running · 1 active                                                                                                                                    │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -19,28 +19,28 @@
 │    SDK                  │││ NOTE: Executing Tasks                                                              ││Workdir     unavailable                     │
 │▾ BUILD                  │││ NOTE: Started: do_compile                                                          ││Log file                                    │
 │  ▱ Workbench            │││ |  CC     builtins/histfile.o                                                      ││/workspace/yocto/build/tmp/work/qemux86-64-p│
-│  ▱ Logs             LIVE│││ |  CC     builtins/jobs.o                                                          ││oky-linux/bash/5.2.21-r2/temp/log.do_compile│
-│  ▱ Errors               │││ |  CC     execute_cmd.o                                                            ││.85873                                      │
-│    Configuration        │││ [ 72%] Linking bash                                                                ││Dependencies none reported                  │
+│  ▱ Performance          │││ |  CC     builtins/jobs.o                                                          ││oky-linux/bash/5.2.21-r2/temp/log.do_compile│
+│  ▱ Logs             LIVE│││ |  CC     execute_cmd.o                                                            ││.85873                                      │
+│  ▱ Errors               │││ [ 72%] Linking bash                                                                ││Dependencies none reported                  │
+│    Configuration        ││                                                                                     ││                                            │
 │    Dependencies         ││                                                                                     ││                                            │
 │  ▱ Build directory      ││                                                                                     ││                                            │
 │▾ VALIDATE               ││                                                                                     ││                                            │
-│    Testing              ││                                                                                     ││                                            │
-│    Security             │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
-│    QA                   │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1────┐│                                            │
-│▾ TOOLS                  ││Status        Operation     Type         Target / Context         Started   Elapsed  ││Actions─────────────────────────────────────│
-│    Raw Mode             ││▶ Running     core-image-mi Build        4/10                     --        --       ││? Cancel active build  [c] — Unknown        │
-│    Terminal Sessions    ││✓ Succeeded   core-image-mi Build        core-image-minimal       19:12:10  00:04:55 ││  Reason: No current environment capability │
-│    Devtool              ││✓ Succeeded   busybox       Build        busybox                  19:11:42  00:00:17 ││✓ Open Logs            [l] — Local          │
-│    QEMU / Wic           ││✕ Failed      core-image-mi Build        core-image-minimal       19:08:33  00:01:48 ││✓ Build History        [h] — Local          │
-│    Maintenance          ││✓ Succeeded   virtual/kerne Build        virtual/kernel           19:07:18  00:00:54 ││? Build options        [Alt+b] — Unknown    │
-│  ▱ Build environment    ││                                                                                     ││  Reason: No current environment capability │
-│  ▱ Compatibility        ││                                                                                     ││                                            │
-│  ▱ Daemons              │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
-│  ▱ Diff tool            │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│                                            │
-│  ▱ GitUI                ││CPU Usage               24%│RAM ! unavailable           │BUILD FS ! unavailable      ││                                            │
-│  ▱ Settings             ││                           │                            │                            ││System Status───────────────────────────────│
-│                         ││                           │                            │                            ││✓ Daemon Connected · Local · version unavai…│
+│    Testing              │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
+│    Security             │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1────┐│                                            │
+│    QA                   ││Status        Operation     Type         Target / Context         Started   Elapsed  ││Actions─────────────────────────────────────│
+│▾ TOOLS                  ││▶ Running     core-image-mi Build        4/10                     --        --       ││? Cancel active build  [c] — Unknown        │
+│    Raw Mode             ││✓ Succeeded   core-image-mi Build        core-image-minimal       19:12:10  00:04:55 ││  Reason: No current environment capability │
+│    Terminal Sessions    ││✓ Succeeded   busybox       Build        busybox                  19:11:42  00:00:17 ││✓ Open Logs            [l] — Local          │
+│    Devtool              ││✕ Failed      core-image-mi Build        core-image-minimal       19:08:33  00:01:48 ││✓ Build History        [h] — Local          │
+│    QEMU / Wic           ││✓ Succeeded   virtual/kerne Build        virtual/kernel           19:07:18  00:00:54 ││? Build options        [Alt+b] — Unknown    │
+│    Maintenance          ││                                                                                     ││  Reason: No current environment capability │
+│  ▱ Build environment    ││                                                                                     ││                                            │
+│  ▱ Compatibility        │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
+│  ▱ Daemons              │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│                                            │
+│  ▱ Diff tool            ││CPU Usage               24%│RAM ! unavailable           │BUILD FS ! unavailable      ││                                            │
+│  ▱ GitUI                ││                           │                            │                            ││System Status───────────────────────────────│
+│  ▱ Settings             ││                           │                            │                            ││✓ Daemon Connected · Local · version unavai…│
 │                         ││                         ▅ │                            │                            ││✓ BitBake Running · v2.8.0 · Jobs 1         │
 │                         ││ ▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │                            │                            ││! Compat Unavailable · PTY 1 · Clients 1    │
 │                         ││        utilization        │                            │                            ││! Build FS unavailable · Workspace /workspa…│

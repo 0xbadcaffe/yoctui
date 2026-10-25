@@ -63,3 +63,23 @@ The separate one-shot --probe-capabilities bridge mode returns only bounded
 bitbake_version, unique catalog capabilities. Diagnostics use stderr. Deadline 30 s,
 64 KiB per stream; no recipe parsing/build/cancellation. Failed/custom/mismatched probes
 are inconclusive; ordinary operation handshakes still negotiate actual capabilities.
+
+## Build performance
+
+`start_profiled_build` carries the normal targets/task/force request plus a typed
+`profile` containing `cpu`, `io` and `memory` PSI thresholds (integers 1–1000000).
+It uses the same environment authority, generation, active-build and metadata
+exclusion checks as `start_build`. Ordinary builds have no profile. The daemon
+passes the selected profile only to the job's bridge, which requires native
+Tinfoil, BitBake 2.2+ and readable Linux PSI. A stable owner-only postread file
+sets BB_PRESSURE_MAX_CPU/IO/MEMORY through TinfoilConfigParameters; local.conf and
+task/make/parser limits are preserved. A later ordinary connection uses its
+ordinary configuration. Unsupported adapters fail instead of ignoring a profile.
+
+Telemetry optionally includes `build_resources`: daemon-host memory/swap/PSI,
+sample time, the requested current/last build profile, and at most 16 sampled
+recipe/task RSS peaks. The optional payload is boxed so ordinary high-rate events
+retain their previous stack footprint. Legacy telemetry without this field is
+valid and displays unavailable measurements. Invalid resource bounds or event
+sequences cannot replace client observations. Samples are retained in the daemon's
+bounded sampler while a build runs detached; a daemon restart clears them.

@@ -74,7 +74,7 @@ impl crate::App {
                 .map(|path| path.display().to_string())
                 .unwrap_or_else(|| "not loaded".into())
         ));
-        if let Some(t) = self.daemon.telemetry {
+        if let Some(t) = &self.daemon.telemetry {
             lines.push(format!(
                 "Uptime {}s · memory {:?} bytes · queue {} · resync {} · slow clients {}",
                 t.uptime_seconds,

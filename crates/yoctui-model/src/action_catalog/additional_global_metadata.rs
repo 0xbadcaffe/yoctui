@@ -36,6 +36,10 @@ fn additional_global_metadata(command: CommandId) -> Option<GlobalMetadata> {
             &[],
             50,
         ),
+        CommandId::OpenBuildPerformance => navigation(
+            "navigate.build-performance", "Build performance", "Inspect build pressure, memory, cache reuse and select an opt-in build profile",
+            &[], &["performance", "memory", "ram", "pressure", "cache", "balanced"], &[], 50,
+        ),
         CommandId::OpenWorkbench => navigation(
             "navigate.workbench", "Open Workbench", "Open multi-folder development sessions, editor and Devtool actions",
             &[], &["workbench", "workspace", "editor", "develop"], &[], 50,

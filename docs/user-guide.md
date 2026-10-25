@@ -7,6 +7,34 @@ see [development sessions](tools-and-workflows.md#development-workbench) and
 [their shortcuts](keyboard-shortcuts.md#development-workbench).
 Use `yoctui --help` for CLI options and [screenshots](screenshots.md) for the gallery.
 
+## Build performance
+
+Open **Build → Performance** in the navigator, or **F12 → Build → Build performance**.
+Press **Tab** to focus the report. It shows daemon-host available RAM, filesystem
+cache, swap rates, CPU/memory/I/O pressure, cache configuration and the top 16
+sampled recipe/task process-tree memory peaks from the current or last build.
+
+Press **b** to select Balanced for future confirmed image/recipe builds. Press
+**1**, **2** or **3** to select the CPU/I/O/memory pressure threshold and use
+**Left/Right** to adjust it. Press **d** to return to the existing BitBake settings.
+The selection is saved in your Yoctui preferences; every build review shows it.
+**c** opens Insights and **s** opens signature comparisons. **Up/Down**, **PgUp/PgDn**
+and **Home/End** scroll; **Esc** returns focus to the navigator.
+
+Balanced requires an updated, connected daemon, Linux PSI and BitBake 2.2+.
+The daemon passes a stable native BitBake postread file without editing local.conf.
+It limits starting additional tasks when pressure rises; existing task, make and
+parser limits remain unchanged. It is not a hard RAM cap and does not retune a
+running build. Raw commands and CLI builds retain their own configuration.
+
+Pressure percentages are 10-second observations; the editable thresholds use
+BitBake's raw pressure units. Defaults of 15000 are starting points to measure and
+tune. Memory peaks are samples, can miss short-lived processes and can count shared
+pages more than once. Sampling continues during detached active builds; reconnect
+gets the daemon's retained in-memory observations. Daemon restart clears these
+samples. Cache checks report configuration, not mirror reachability or compatibility.
+See [performance measurement](performance.md#build-performance-workspace).
+
 ## Installation requirements
 
 Linux, an 80×24+ terminal, Python 3, a C compiler/linker, and

@@ -129,17 +129,18 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
         );
         return true;
     } else if let Some(Dialog::RecipeTaskConfirmation(request)) = app.active_dialog() {
-        let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
+        let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 10);
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Run `bitbake {}{} {}`?\n\nPress Enter to continue or Esc to cancel.",
+                "Run `bitbake {}{} {}`?\n{}\n\nPress Enter to continue or Esc to cancel.",
                 if request.force { "-f " } else { "" },
                 request.targets.join(" "),
                 request
                     .task
                     .as_deref()
-                    .map_or(String::new(), |task| format!("-c {task}"))
+                    .map_or(String::new(), |task| format!("-c {task}")),
+                app.build_performance_profile_label()
             ))
             .block(dialog_block(
                 app,

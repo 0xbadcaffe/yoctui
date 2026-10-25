@@ -36,6 +36,7 @@ pub enum Screen {
     Recipes,
     Devtool,
     Workbench,
+    BuildPerformance,
     Packages,
     Images,
     Hardware,
@@ -337,7 +338,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-pub(crate) const NAVIGATOR_SCREENS: [Screen; 31] = [
+pub(crate) const NAVIGATOR_SCREENS: [Screen; 32] = [
     Screen::Dashboard,
     Screen::Tasks,
     Screen::Insights,
@@ -350,6 +351,7 @@ pub(crate) const NAVIGATOR_SCREENS: [Screen; 31] = [
     Screen::Firmware,
     Screen::Sdk,
     Screen::Workbench,
+    Screen::BuildPerformance,
     Screen::Logs,
     Screen::Errors,
     Screen::Configuration,
@@ -370,7 +372,7 @@ pub(crate) const NAVIGATOR_SCREENS: [Screen; 31] = [
     Screen::TerminalSessions,
     Screen::Settings,
 ];
-pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 31] = [
+pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 32] = [
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Tasks,
     WorkspaceDestination::Dashboard,
@@ -383,6 +385,7 @@ pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 31
     WorkspaceDestination::Firmware,
     WorkspaceDestination::Sdk,
     WorkspaceDestination::Workbench,
+    WorkspaceDestination::BuildPerformance,
     WorkspaceDestination::Logs,
     WorkspaceDestination::Errors,
     WorkspaceDestination::Configuration,
@@ -425,17 +428,17 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "BUILD",
         start: 11,
-        end: 17,
+        end: 18,
     },
     NavigatorGroupRange {
         label: "VALIDATE",
-        start: 17,
-        end: 20,
+        start: 18,
+        end: 21,
     },
     NavigatorGroupRange {
         label: "TOOLS",
-        start: 20,
-        end: 31,
+        start: 21,
+        end: 32,
     },
 ];
 

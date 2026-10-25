@@ -35,6 +35,7 @@ fn compatibility_decode_failure_is_not_repeated_for_unrelated_events() {
                         pty_sessions: 0,
                         queue_depth: 0,
                         pressure: yoctui_protocol::daemon::DaemonPressureCounters::default(),
+                        build_resources: None,
                         memory_bytes: None,
                         recovery: yoctui_protocol::daemon::DaemonRecoveryState::CleanStart,
                     },

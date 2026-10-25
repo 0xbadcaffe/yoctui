@@ -2,10 +2,11 @@ use super::*;
 
 #[test]
 fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
-    assert_eq!(WorkspaceDestination::ALL.len(), 34);
+    assert_eq!(WorkspaceDestination::ALL.len(), 35);
     for screen in [
         Screen::Dashboard,
         Screen::Insights,
+        Screen::BuildPerformance,
         Screen::Tasks,
         Screen::BuildHistory,
         Screen::Dependencies,

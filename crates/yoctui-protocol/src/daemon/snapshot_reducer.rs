@@ -126,8 +126,12 @@ pub fn apply_sequenced_event(
         | DaemonEvent::QaCapability(_)
         | DaemonEvent::SecuritySnapshot(_)
         | DaemonEvent::MaintenanceSnapshot(_)
-        | DaemonEvent::Telemetry(_)
         | DaemonEvent::Unknown => {}
+        DaemonEvent::Telemetry(telemetry) => {
+            if telemetry.build_resources.as_ref().is_some_and(|r| !r.valid()) {
+                return Err(DaemonSnapshotError::InvalidLimit("build resource telemetry"));
+            }
+        }
         DaemonEvent::ClientChanged(client) => {
             replace_by(&mut snapshot.clients, client.clone(), |item| item.id);
         }

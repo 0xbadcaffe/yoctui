@@ -25,6 +25,7 @@ mod budget;
 mod client_requests;
 mod commands;
 mod compatibility;
+mod resource_sampling;
 mod state;
 mod telemetry;
 use state::{ClientConnection, DaemonClient, DaemonServices};

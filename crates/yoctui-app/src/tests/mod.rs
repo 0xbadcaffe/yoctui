@@ -1,6 +1,7 @@
 //! Shared fixtures and regression modules.
 
 use super::*;
+mod build_performance_telemetry;
 mod gitui_native_workspace;
 mod raw_flow;
 mod rootfs_browser;

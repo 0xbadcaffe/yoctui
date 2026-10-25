@@ -17,6 +17,7 @@ fn navigator_workbench_order_keeps_build_and_validation_groups_contiguous() {
             Screen::Firmware,
             Screen::Sdk,
             Screen::Workbench,
+            Screen::BuildPerformance,
             Screen::Logs,
             Screen::Errors,
             Screen::Configuration,

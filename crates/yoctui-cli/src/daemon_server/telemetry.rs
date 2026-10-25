@@ -2,6 +2,7 @@ use super::*;
 
 #[derive(Default)]
 pub(super) struct TelemetryState {
+    pub(super) resources: super::resource_sampling::ResourceSampling,
     pub(super) recovered: bool,
     pub(super) last_telemetry_ms: u64,
     pub(super) maximum_client_backlog: usize,
@@ -41,6 +42,10 @@ pub(super) async fn publish(
         .iter()
         .filter(|(_, _, attached, _, _, _)| *attached)
         .count();
+    telemetry
+        .resources
+        .poll(services, attached_clients, now_ms)
+        .await;
     let telemetry_interval = daemon_telemetry_interval(attached_clients, active_work);
     if telemetry_interval.is_some_and(|interval| {
         now_ms.saturating_sub(telemetry.last_telemetry_ms)
@@ -91,6 +96,7 @@ pub(super) async fn publish(
                             forced_resynchronizations: telemetry.forced_client_resynchronizations,
                             slow_client_disconnects: telemetry.slow_client_disconnects,
                         },
+                        build_resources: telemetry.resources.latest.clone().map(Box::new),
                         memory_bytes: process_memory_bytes(),
                         recovery: if telemetry.recovered {
                             DaemonRecoveryState::Recovered
