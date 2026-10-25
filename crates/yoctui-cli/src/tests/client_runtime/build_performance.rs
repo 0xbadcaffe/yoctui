@@ -56,3 +56,43 @@ fn build_profile_is_only_transmitted_on_explicit_selection() {
         Some(DaemonCommand::StartBuild { .. })
     ));
 }
+#[test]
+fn cache_profile_is_build_scoped_and_requires_daemon_capability() {
+    let mut app = App::new(100, 4096);
+    let effect = Effect::Start(yoctui_model::BuildRequest {
+        targets: vec!["core-image-minimal".into()],
+        task: None,
+        force: false,
+    });
+    let cache = yoctui_model::SstateCacheProfile {
+        build_directory: "/build".into(),
+        settings: yoctui_model::SstateCacheSettings {
+            hash_server: "auto".into(),
+            ..Default::default()
+        },
+    };
+    app.preferences.sstate_cache_profiles.push(cache.clone());
+    app.workspace.build_dir = Some("/build".into());
+    assert!(daemon_command_for_effect(&app, &effect).is_err());
+    app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+    app.build_environment =
+        yoctui_model::BuildEnvironmentState::Connected(yoctui_model::BuildEnvironmentProfile {
+            source_dir: "/source".into(),
+            build_dir: "/build".into(),
+            init_script: "/source/oe-init-build-env".into(),
+        });
+    assert!(
+        daemon_command_for_effect(&app, &effect).is_err(),
+        "old daemon cannot silently ignore settings"
+    );
+    app.workspace.bitbake_version = Some("2.20.0".into());
+    app.sstate_cache.daemon_supports_profiles = true;
+    assert!(
+        matches!(daemon_command_for_effect(&app,&effect).unwrap(),Some(DaemonCommand::StartCachedBuild {cache:sent,pressure:None,..}) if sent==cache)
+    );
+    app.workspace.build_dir = Some("/other".into());
+    assert!(matches!(
+        daemon_command_for_effect(&app, &effect).unwrap(),
+        Some(DaemonCommand::StartBuild { .. })
+    ));
+}

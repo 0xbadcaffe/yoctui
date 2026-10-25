@@ -55,6 +55,6 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
             .style(palette.base()),
         regions[1],
     );
-    frame.render_widget(Paragraph::new("b Balanced · d existing config · 1/2/3 threshold · ←/→ adjust\nPgUp/PgDn Home/End scroll · c Insights · s signatures · Esc navigator")
+    frame.render_widget(Paragraph::new("b Balanced · d existing config · 1/2/3 threshold · ←/→ adjust\nPgUp/PgDn Home/End scroll · c sstate cache · s signatures · Esc navigator")
         .style(palette.base()), regions[2]);
 }

@@ -1,4 +1,8 @@
 pub(crate) fn maintenance_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    if app.maintenance.view == MaintenanceView::Sstate && app.sstate_cache.dashboard {
+        crate::sstate_cache_render::workspace(frame,app,area);
+        return;
+    }
     let palette = ThemePalette::for_app(app);
     let mut lines = vec![Line::from(
         [
@@ -22,6 +26,9 @@ pub(crate) fn maintenance_workspace(frame: &mut Frame, app: &App, area: Rect) {
         .collect::<Vec<_>>(),
     )];
     lines.push(Line::from(""));
+    if app.maintenance.view == MaintenanceView::Sstate {
+        lines.push(Line::from("p Cache performance · configure reuse, mirrors and hash equivalence"));
+    }
     match &app.maintenance.capability {
         MaintenanceCapability::NotInspected => lines.push(Line::styled(
             "Capability not inspected; press r to inspect.",

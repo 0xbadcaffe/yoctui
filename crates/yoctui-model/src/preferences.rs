@@ -62,8 +62,10 @@ pub struct WorkbenchPreferences {
     pub charts: ChartPreference,
     pub image_previews: ImagePreviewPreference,
     pub terminal_prefix: TerminalPrefixPreference,
-    /// None keeps Yoctui's built-in editor. Commands are argv, never shell scripts.
+    /// Reviewed cache settings bound to individual daemon-host build directories.
+    pub sstate_cache_profiles: Vec<crate::SstateCacheProfile>,
     pub build_performance: Option<crate::BuildPerformanceSettings>,
+    /// None keeps Yoctui's built-in editor. Commands are argv, never shell scripts.
     pub terminal_editor: Option<String>,
     pub terminal_editor_embedded: bool,
     pub keymap: KeymapPreferences,
@@ -88,6 +90,7 @@ impl Default for WorkbenchPreferences {
             charts: ChartPreference::default(),
             image_previews: ImagePreviewPreference::default(),
             terminal_prefix: TerminalPrefixPreference::default(),
+            sstate_cache_profiles: Vec::new(),
             build_performance: None,
             terminal_editor: None,
             terminal_editor_embedded: true,
@@ -132,6 +135,19 @@ impl WorkbenchPreferences {
                 "unsupported workbench preference schema {}; expected {}",
                 self.schema_version, WORKBENCH_PREFERENCES_SCHEMA_VERSION
             ));
+        }
+        if self.sstate_cache_profiles.len() > 16
+            || self
+                .sstate_cache_profiles
+                .iter()
+                .any(|p| p.validate().is_err())
+            || self.sstate_cache_profiles.iter().enumerate().any(|(i, p)| {
+                self.sstate_cache_profiles[..i]
+                    .iter()
+                    .any(|q| q.build_directory == p.build_directory)
+            })
+        {
+            return Err("Invalid or duplicate sstate cache profiles".into());
         }
         if self.build_performance.is_some_and(|p| !p.valid()) {
             return Err("build pressure thresholds must be between 1 and 1000000".into());

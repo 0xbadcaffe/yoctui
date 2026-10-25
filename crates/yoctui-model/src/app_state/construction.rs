@@ -3,6 +3,7 @@ impl App {
         Self {
             bitbake_setup: BitBakeSetupState::default(),
             file_diff: FileDiffState::default(),
+            sstate_cache: SstateCacheState::default(),
             build_performance: BuildPerformanceState::default(),
             workbench: WorkbenchState::default(),
             editor_settings: EditorSettingsState::default(),

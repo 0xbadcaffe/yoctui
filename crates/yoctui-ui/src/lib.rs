@@ -4,6 +4,7 @@ mod branding;
 mod build_performance_render;
 mod dialogs;
 mod file_diff_render;
+mod sstate_cache_render;
 pub use branding::render_startup;
 mod bitbake_setup_render;
 mod environment_setup;

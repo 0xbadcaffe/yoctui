@@ -1,5 +1,11 @@
 fn render_workflow_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
-    if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
+    if let Some(Dialog::SstateCache(dialog)) = app.active_dialog() {
+        match dialog.as_ref() {
+            yoctui_model::SstateCacheDialog::Configure {editor,validation,..} => toml_popup_editor(frame,app,area,"Sstate cache settings",editor,validation.as_deref()),
+            yoctui_model::SstateCacheDialog::Review(profile) => crate::sstate_cache_render::review(frame,app,profile,area),
+        }
+        return true;
+    } else if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
         recipe_editor(frame, app, editor, area);
         return true;
     } else if let Some(Dialog::ImageConsole(dialog)) = app.active_dialog() {

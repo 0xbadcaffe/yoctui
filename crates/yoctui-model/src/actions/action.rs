@@ -1,6 +1,7 @@
 #[rustfmt::skip]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
+    SstateCache(crate::SstateCacheAction),
     BuildPerformance(crate::BuildPerformanceAction),
     Workbench(WorkbenchAction),
     FileDiff(FileDiffAction),

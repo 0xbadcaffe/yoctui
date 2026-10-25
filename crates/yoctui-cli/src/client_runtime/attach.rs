@@ -51,6 +51,10 @@ impl InteractiveDaemonRuntime {
         }
         restore_local_build_dir(app, local_build_dir.as_ref());
         app.terminal.client_id = Some(client_id.0);
+        app.sstate_cache.daemon_supports_profiles = transport
+            .hello()
+            .capabilities
+            .contains(&yoctui_protocol::daemon::Capability::SstateCacheProfiles);
         app.reconcile_platform_menuconfigs();
         for session_id in [
             app.kernel.menuconfig_terminal.session_id,

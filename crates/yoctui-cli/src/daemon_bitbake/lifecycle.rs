@@ -73,12 +73,29 @@ impl DaemonBitBakeSupervisor {
         self.start_with_performance(build_dir, request, None)
     }
 
+    #[cfg(test)]
     pub fn start_with_performance(
         &mut self,
         build_dir: PathBuf,
         request: BuildRequest,
         profile: Option<yoctui_model::BuildPerformanceSettings>,
     ) -> Result<JobId, String> {
+        self.start_with_optimizations(build_dir, request, profile, None)
+    }
+
+    pub fn start_with_optimizations(
+        &mut self,
+        build_dir: PathBuf,
+        request: BuildRequest,
+        profile: Option<yoctui_model::BuildPerformanceSettings>,
+        cache: Option<yoctui_model::SstateCacheProfile>,
+    ) -> Result<JobId, String> {
+        if let Some(cache) = &cache {
+            cache.validate()?;
+            if cache.build_directory != build_dir {
+                return Err("Sstate profile belongs to a different build directory".into());
+            }
+        }
         if profile.is_some_and(|p| !p.valid()) {
             return Err("invalid build pressure limits".into());
         }
@@ -116,6 +133,15 @@ impl DaemonBitBakeSupervisor {
         let mut bridge_environment = self.bridge_environment.clone().unwrap_or_default();
         // Never inherit a profile from the daemon launch environment. Each job owns its selection.
         bridge_environment.insert("YOCTUI_BUILD_PERFORMANCE".into(), String::new());
+        bridge_environment.insert(
+            "YOCTUI_SSTATE_PROFILE".into(),
+            cache
+                .as_ref()
+                .map(|c| serde_json::to_string(&c.settings))
+                .transpose()
+                .map_err(|e| e.to_string())?
+                .unwrap_or_default(),
+        );
         if let Some(profile) = profile {
             bridge_environment.insert(
                 "YOCTUI_BUILD_PERFORMANCE".into(),

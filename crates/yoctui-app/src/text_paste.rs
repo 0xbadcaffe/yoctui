@@ -38,6 +38,9 @@ pub fn popup_accepts_text_paste(app: &App) -> bool {
         ) => editor.editing,
         Some(Dialog::Security(yoctui_model::SecurityDialog::Import { editor, .. }))
         | Some(Dialog::Qa(yoctui_model::QaDialog::Import { editor, .. })) => editor.editing,
+        Some(Dialog::SstateCache(dialog)) => {
+            matches!(dialog.as_ref(), yoctui_model::SstateCacheDialog::Configure { editor, .. } if editor.editing)
+        }
         Some(Dialog::Maintenance(dialog)) => match dialog.as_ref() {
             yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. }
             | yoctui_model::MaintenanceDialog::CleanupToml { editor, .. }

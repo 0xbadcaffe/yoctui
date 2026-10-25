@@ -18,7 +18,7 @@ Press **b** to select Balanced for future confirmed image/recipe builds. Press
 **1**, **2** or **3** to select the CPU/I/O/memory pressure threshold and use
 **Left/Right** to adjust it. Press **d** to return to the existing BitBake settings.
 The selection is saved in your Yoctui preferences; every build review shows it.
-**c** opens Insights and **s** opens signature comparisons. **Up/Down**, **PgUp/PgDn**
+**c** opens Sstate cache and **s** opens signature comparisons. **Up/Down**, **PgUp/PgDn**
 and **Home/End** scroll; **Esc** returns focus to the navigator.
 
 Balanced requires an updated, connected daemon, Linux PSI and BitBake 2.2+.
@@ -34,6 +34,48 @@ pages more than once. Sampling continues during detached active builds; reconnec
 gets the daemon's retained in-memory observations. Daemon restart clears these
 samples. Cache checks report configuration, not mirror reachability or compatibility.
 See [performance measurement](performance.md#build-performance-workspace).
+
+## Sstate cache performance
+
+The existing **Tools → Maintenance → Sstate** view includes readiness and protected
+cleanup tools. Press **p** there, **c** in Build Performance, or choose
+**F12 → Build → Sstate cache** for the reuse report. It displays BitBake's reported
+wanted/local/mirror/missed counts and current cache configuration. No summary means
+reuse has not been reported; completed setscene tasks alone are not a hit rate.
+
+Press **e** to configure a per-build profile. Blank fields preserve existing values:
+
+```toml
+sstate_directory = "/srv/yocto/sstate-cache"
+downloads_directory = "/srv/yocto/downloads"
+mirror_url = "https://cache.example.org/sstate-cache"
+hash_server = "auto"
+hash_upstream = ""
+```
+
+Paths refer to the daemon host. Use a mirror base URL or a template ending in
+`/PATH`; Yoctui supplies BitBake's mirror mapping. Put authenticated HTTP credentials
+in the daemon user's `~/.netrc` (mode 600), rather than in URLs or preferences.
+A remote hash endpoint must correspond to the shared cache; `hash_upstream` is
+optional and requires `hash_server = "auto"`. This profile selects `OEEquivHash`
+when a hash server is specified. See the official
+[mirror](https://docs.yoctoproject.org/dev-manual/sstate-mirrors-setup.html) and
+[hash-equivalence](https://docs.yoctoproject.org/dev/dev-manual/hashequivserver.html)
+guides for server setup and cache compatibility.
+
+Use **i** to edit, **Esc** to leave insert mode, **Enter** to review, then **Enter**
+to save. Settings are stored in Yoctui preferences for this exact build directory
+(maximum 16 profiles), and shown in subsequent image/recipe build reviews. An
+updated daemon and native BitBake 2.0+ are required. Profiles use the same secure
+postread mechanism as Balanced, without editing local.conf or existing work.
+Raw commands and CLI builds keep their own configuration. **u** disables the
+current profile; cache files remain intact.
+
+**Up/Down**, **PgUp/PgDn**, **Home/End** and the mouse wheel scroll the report.
+**t** or **Esc** returns to the original Sstate tools; **r**, **c**, **d** retain
+capability inspection, readiness review and protected cleanup. **[**/**]** switches
+Maintenance tabs. Compatible warm caches reduce repeated compilation/downloads;
+configuring a mirror does not prove reachability, cache hits or a speed improvement.
 
 ## Installation requirements
 

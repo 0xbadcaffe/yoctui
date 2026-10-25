@@ -38,6 +38,15 @@ inert disabled actions, prefix/writer ownership, detach/reconnect, and quit/rest
 Failures retain bounded captures. [Design fixtures](design/README.md) explain goldens;
 exact rasters use pinned Cairo 1.18.4/PyCairo 1.27.0/DejaVu on Ubuntu 26.04.
 
+## Sstate cache boundary checks
+
+`python3 scripts/test-sstate-cache-pty.py --capture-dir artifacts/sstate-cache`
+exercises the native UI against an isolated fixture daemon: profile review,
+persistence, detach/reconnect, scrolling/resizing and unchanged local.conf.
+`python3 -m pytest bridge/tests/test_sstate_cache.py` checks native postread mapping,
+literal validation and profile clearing. These checks do not prove cache hits or
+build-speed gains; measure equivalent cold/warm real image builds separately.
+
 ## Documentation checks
 
 ```bash

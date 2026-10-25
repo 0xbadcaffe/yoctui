@@ -68,9 +68,9 @@ class BitBakeAdapter:
                 pass
             except Exception as exc:
                 raise ServerUnavailable(f"could not initialize BitBake Tinfoil: {exc}")
-        if os.environ.get("YOCTUI_BUILD_PERFORMANCE"):
+        if os.environ.get("YOCTUI_BUILD_PERFORMANCE") or os.environ.get("YOCTUI_SSTATE_PROFILE"):
             raise ServerUnavailable(
-                "build pressure profiles require the native Tinfoil postread API"
+                "build optimization profiles require the native Tinfoil postread API"
             )
         server = getattr(self.module, "server", None) if self.module else None
         connector = getattr(server, "connect", None)

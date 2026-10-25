@@ -14,6 +14,7 @@ pub enum CommandId {
     OpenDevtoolWorkspace,
     OpenWorkbench,
     OpenBuildPerformance,
+    OpenSstateCache,
     OpenKernel,
     OpenFirmware,
     OpenBbmask,

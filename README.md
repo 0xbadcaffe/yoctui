@@ -4,9 +4,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master&amp;event=push&amp;refresh=0.1.364" alt="CI workflow status for master pushes"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master&amp;event=push&amp;refresh=0.1.365" alt="CI workflow status for master pushes"></a>
   <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/testing.md#completion-gate"><img src="https://img.shields.io/badge/coverage-gates-orange?style=flat-square" alt="Coverage verification gates"></a>
-  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.364" alt="Latest published crates.io version"></a>
+  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.365" alt="Latest published crates.io version"></a>
   <a href="#install"><img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&amp;logo=rust" alt="Rust stable toolchain"></a>
   <br>
   <a href="#license"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license"></a>
@@ -52,7 +52,8 @@ time-compressed, not simulated.
 - **Set up a workspace:** create or import `bitbake-setup` environments,
   manage configuration fragments, and review source/configuration updates.
 - **Build and diagnose:** dashboard and insights, live BitBake tasks, logs,
-  warnings, errors, and saved build history.
+  warnings, errors, and saved build history. Tune build pressure and review
+  [sstate reuse, mirrors and hash equivalence](https://github.com/0xbadcaffe/yoctui/blob/master/docs/user-guide.md#sstate-cache-performance).
 - **Develop:** browse layers and recipes, use devtool and devshell, edit text
   with syntax highlighting, compare files in a built-in two-pane diff tool,
   and open GitUI in persistent terminal sessions.

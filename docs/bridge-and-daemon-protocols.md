@@ -83,3 +83,20 @@ retain their previous stack footprint. Legacy telemetry without this field is
 valid and displays unavailable measurements. Invalid resource bounds or event
 sequences cannot replace client observations. Samples are retained in the daemon's
 bounded sampler while a build runs detached; a daemon restart clears them.
+
+## Sstate cache profiles
+
+The optional `sstate_cache_profiles` hello capability enables `start_cached_build`.
+It carries ordinary targets/task/force, optional pressure thresholds, and a cache
+profile bound to an exact build directory. The client refuses selected profiles
+when an older daemon lacks the capability. The daemon independently validates
+paths/endpoints/literal bounds and build-directory authority before spawning work.
+
+The native bridge requires BitBake 2.0+ and combines nonempty cache assignments
+with any selected pressure assignments in one owner-only, stable postread file.
+SSTATE_DIR, DL_DIR, SSTATE_MIRRORS, BB_HASHSERVE, BB_HASHSERVE_UPSTREAM and
+BB_SIGNATURE_HANDLER are the only cache overrides. Blank fields preserve existing
+metadata. URLs cannot contain inline credentials or configuration expansions.
+Ordinary builds explicitly clear job profile environment variables. Later native
+connections return to their ordinary configuration; local.conf is untouched.
+Profiles persist per build directory in local preferences, bounded to 16 entries.

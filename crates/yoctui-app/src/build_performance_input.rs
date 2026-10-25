@@ -26,7 +26,9 @@ pub fn build_performance_action(app: &App, input: Input) -> Option<Action> {
         Input::PageDown => P::Scroll(app.build_performance.visible_rows.max(1) as i32),
         Input::Home => P::First,
         Input::End => P::Last,
-        Input::Char('c') => return Some(Action::Open(Screen::Insights)),
+        Input::Char('c') => {
+            return Some(Action::SstateCache(yoctui_model::SstateCacheAction::Open));
+        }
         Input::Char('s') => return Some(Action::Open(Screen::Signatures)),
         Input::Esc => return Some(Action::Focus(FocusTarget::Navigator)),
         _ => return None,

@@ -139,6 +139,7 @@ pub(crate) fn dialog_is_open(app: &App) -> bool {
 impl Dialog {
     pub fn is_confirmation(&self) -> bool {
         match self {
+            Self::SstateCache(dialog) => matches!(dialog.as_ref(), SstateCacheDialog::Review(_)),
             Self::SavedEnvironmentReview(_)
             | Self::BuildEnvironmentCloneReview(_)
             | Self::BuildCompletion
@@ -333,6 +334,7 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenSignatures => Action::Open(Screen::Signatures),
         CommandId::OpenLayerRelationships => Action::Open(Screen::LayerRelationships),
         CommandId::OpenDevtoolWorkspace => Action::Open(Screen::Devtool),
+        CommandId::OpenSstateCache => Action::SstateCache(SstateCacheAction::Open),
         CommandId::OpenBuildPerformance => Action::Open(Screen::BuildPerformance),
         CommandId::OpenWorkbench => Action::Open(Screen::Workbench),
         CommandId::OpenKernel => Action::Open(Screen::Kernel),

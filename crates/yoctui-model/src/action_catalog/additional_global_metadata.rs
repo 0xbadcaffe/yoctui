@@ -36,6 +36,10 @@ fn additional_global_metadata(command: CommandId) -> Option<GlobalMetadata> {
             &[],
             50,
         ),
+        CommandId::OpenSstateCache => navigation(
+            "navigate.sstate-cache", "Sstate cache", "Configure and inspect sstate reuse in the existing Maintenance workspace",
+            &[], &["sstate", "cache", "mirror", "hash", "reuse"], &[], 50,
+        ),
         CommandId::OpenBuildPerformance => navigation(
             "navigate.build-performance", "Build performance", "Inspect build pressure, memory, cache reuse and select an opt-in build profile",
             &[], &["performance", "memory", "ram", "pressure", "cache", "balanced"], &[], 50,

@@ -27,6 +27,9 @@ pub fn maintenance_workspace_action(
         Input::Char('x') => maintenance(MaintenanceAction::BeginCancellation),
         Input::Char('o') => maintenance(MaintenanceAction::OpenSelectedEvidence),
         Input::Alt('s') | Input::Char('S') => maintenance(MaintenanceAction::OpenSignatures),
+        Input::Char('p') if view == MaintenanceView::Sstate => {
+            Some(Action::SstateCache(yoctui_model::SstateCacheAction::Open))
+        }
         Input::Char('c') if view == MaintenanceView::Sstate => {
             maintenance(MaintenanceAction::OpenReadinessForm)
         }

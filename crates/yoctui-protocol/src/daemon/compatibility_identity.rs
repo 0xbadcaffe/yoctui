@@ -13,6 +13,7 @@ pub enum Capability {
     EnvironmentCompatibility,
     RawExecution,
     RootfsSources,
+    SstateCacheProfiles,
     GracefulShutdown,
     #[serde(other)]
     Unknown,

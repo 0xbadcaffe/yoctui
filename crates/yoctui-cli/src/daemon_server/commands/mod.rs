@@ -21,7 +21,8 @@ pub(super) fn dispatch(
 ) -> Result<Option<CommandOutcome>> {
     match &request.command {
         DaemonCommand::InspectRootfsSources { .. } => rootfs::handle(request, services, client),
-        DaemonCommand::StartProfiledBuild { .. }
+        DaemonCommand::StartCachedBuild { .. }
+        | DaemonCommand::StartProfiledBuild { .. }
         | DaemonCommand::StartBuild { .. }
         | DaemonCommand::CancelJob { .. } => build::handle(request, services, client),
         DaemonCommand::StartDevtool { .. } | DaemonCommand::InspectDevtoolStatus { .. } => {

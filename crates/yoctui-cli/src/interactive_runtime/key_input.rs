@@ -353,7 +353,8 @@ impl InteractiveRuntime {
             let _ = compatibility_workspace_action(&mut runtime.app, action);
             return Ok(true);
         }
-        if let Some(action) = yoctui_app::build_performance_action(&runtime.app, input)
+        if let Some(action) = yoctui_app::sstate_cache_action(&runtime.app, input)
+            .or_else(|| yoctui_app::build_performance_action(&runtime.app, input))
             .or_else(|| yoctui_app::file_diff_action(&runtime.app, input))
             .or_else(|| yoctui_app::help_workspace_action(&runtime.app, input))
         {
@@ -372,10 +373,22 @@ impl InteractiveRuntime {
                             Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
                         },
                     );
+                } else if matches!(effect, Effect::Maintenance(_)) {
+                    let _ = route_independent_maintenance_effect(
+                        &runtime.guard,
+                        &mut runtime.app,
+                        &mut runtime.maintenance_coordinator,
+                        effect,
+                        runtime.editor_command.as_deref(),
+                    )
+                    .await;
                 } else {
                     runtime.file_diff_io.submit(effect);
                 }
             }
+            return Ok(true);
+        }
+        if matches!(runtime.app.active_dialog(), Some(Dialog::SstateCache(_))) {
             return Ok(true);
         }
         if let Some(action) =

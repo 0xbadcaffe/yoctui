@@ -129,7 +129,8 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
         );
         return true;
     } else if let Some(Dialog::RecipeTaskConfirmation(request)) = app.active_dialog() {
-        let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 10);
+        let height = if app.sstate_cache_profile().is_some() { 14 } else { 10 };
+        let popup = Rect::new(area.width / 4, area.height.saturating_sub(height) / 2, area.width / 2, height);
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
@@ -140,7 +141,7 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
                     .task
                     .as_deref()
                     .map_or(String::new(), |task| format!("-c {task}")),
-                app.build_performance_profile_label()
+                if app.sstate_cache_profile().is_some() { format!("{}\n{}", app.build_performance_profile_label(), app.sstate_cache_build_summary()) } else { app.build_performance_profile_label() }
             ))
             .block(dialog_block(
                 app,

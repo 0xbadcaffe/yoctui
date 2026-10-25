@@ -11,6 +11,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     | Dialog::SdkPublishTomlEditor(editor)
                     | Dialog::SdkNativeTomlEditor(editor),
                 ) => (editor, None),
+                Some(Dialog::SstateCache(dialog)) => match dialog.as_mut() {
+                    SstateCacheDialog::Configure {
+                        editor, validation, ..
+                    } => (editor, Some(validation)),
+                    _ => return None,
+                },
                 Some(Dialog::ConfigEdit { editor, .. }) => (editor, None),
                 Some(Dialog::BuildTarget { editor, .. }) => (editor, None),
                 Some(Dialog::WicCreateTomlEditor {

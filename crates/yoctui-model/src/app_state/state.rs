@@ -1,5 +1,6 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
+    pub sstate_cache: SstateCacheState,
     pub build_performance: BuildPerformanceState,
     pub workbench: WorkbenchState,
     pub bitbake_setup: BitBakeSetupState,

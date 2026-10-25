@@ -114,6 +114,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::Start(r) => {
+            if app.sstate_cache_profile().is_some()
+                && let Some(reason) = app.sstate_cache_unavailable()
+            {
+                app.notification = Some(reason);
+                return None;
+            }
             if app.preferences.build_performance.is_some()
                 && app.build_performance_unavailable().is_some()
             {

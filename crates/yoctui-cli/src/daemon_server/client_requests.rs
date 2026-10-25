@@ -61,6 +61,7 @@ pub(super) fn service(
                             Capability::EnvironmentCompatibility,
                             Capability::RawExecution,
                             Capability::RootfsSources,
+                            Capability::SstateCacheProfiles,
                             Capability::GracefulShutdown,
                         ],
                         limits: ProtocolLimits {

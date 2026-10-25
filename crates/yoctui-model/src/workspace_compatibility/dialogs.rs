@@ -84,6 +84,7 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
         Dialog::TestComparisonConfirmation(_) => WorkspaceEffectRequirement::one(Id::ResultTool),
         Dialog::Security(dialog) => security_dialog_requirement(dialog),
         Dialog::Qa(dialog) => qa_dialog_requirement(dialog),
+        Dialog::SstateCache(_) => WorkspaceEffectRequirement::ClientLocal,
         Dialog::Maintenance(dialog) => maintenance_dialog_requirement(dialog),
         Dialog::RecipeTaskConfirmation(request) => build_request_requirement(request),
         Dialog::SignatureTaskPicker(_) => WorkspaceEffectRequirement::one(Id::BitBakeDumpSig),

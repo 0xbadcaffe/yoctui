@@ -101,6 +101,7 @@ pub enum PopupEditorCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
+    SstateCache(Box<SstateCacheDialog>),
     BitBakeSetupOperation(Box<SetupOperationDialog>),
     BitBakeSetup(Box<BitBakeSetupWizard>),
     SavedEnvironmentReview(SavedEnvironmentPlan),

@@ -64,7 +64,7 @@ class BuildPerformanceTests(unittest.TestCase):
             first = profile.stat().st_mtime_ns
             self.assertEqual(
                 profile.read_text(),
-                '# Yoctui reviewed per-build pressure profile\nBB_PRESSURE_MAX_CPU = "15000"\nBB_PRESSURE_MAX_IO = "20000"\nBB_PRESSURE_MAX_MEMORY = "25000"\n',
+                '# Yoctui reviewed per-build optimization profile\nBB_PRESSURE_MAX_CPU = "15000"\nBB_PRESSURE_MAX_IO = "20000"\nBB_PRESSURE_MAX_MEMORY = "25000"\n',
             )
             self.assertEqual(self.params(value).postfile, params.postfile)
             self.assertEqual(profile.stat().st_mtime_ns, first)

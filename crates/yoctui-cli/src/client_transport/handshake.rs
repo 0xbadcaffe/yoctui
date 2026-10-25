@@ -90,6 +90,7 @@ pub(super) fn requested_capabilities() -> Vec<Capability> {
         Capability::PtyWriterLease,
         Capability::RawExecution,
         Capability::GracefulShutdown,
+        Capability::SstateCacheProfiles,
     ]
 }
 

@@ -15,6 +15,7 @@ mod rootfs_dbus;
 mod rootfs_systemd;
 mod runqueue_completion;
 mod saved_environment;
+mod sstate_cache;
 mod startup_screen;
 mod udev_syntax;
 use ratatui::{Terminal, backend::TestBackend};

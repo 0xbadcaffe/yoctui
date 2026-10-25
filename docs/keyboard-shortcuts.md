@@ -166,6 +166,13 @@ Open **Build → Performance** or **F12 → Build → Build performance**, then 
 focus the report. **b** selects Balanced; **d** uses existing BitBake configuration.
 **1/2/3** selects the CPU/I/O/memory threshold; **Left/Right** changes it.
 **Up/Down**, **j/k**, **PgUp/PgDn**, **Home/End** and the mouse wheel scroll.
-**c** opens Insights; **s** opens signatures; **Esc** focuses the navigator.
+**c** opens Sstate cache; **s** opens signatures; **Esc** focuses the navigator.
 Profiles apply to future confirmed UI builds, are shown in the review, and leave
 running tasks and local.conf unchanged. See the [user guide](user-guide.md#build-performance).
+
+**F12 → Build → Sstate cache** reuses Maintenance's Sstate workspace. **e** opens
+cache settings; **i** edits; **Esc** ends insertion; **Enter** reviews/saves.
+**u** restores existing configuration for future builds. **t**/**Esc** opens the
+original tools; **p** returns to the report. **r/c/d** inspect/readiness/cleanup,
+**[**/**]** switches Maintenance tabs. Scroll with arrows/jk, pages, Home/End or wheel.
+See [cache profiles](user-guide.md#sstate-cache-performance).

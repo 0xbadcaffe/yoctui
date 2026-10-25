@@ -66,6 +66,7 @@ impl ApplicationMenuGroup {
             CommandId::SelectImage
             | CommandId::BuildImage
             | CommandId::BuildSelectedRecipe
+            | CommandId::OpenSstateCache
             | CommandId::OpenBuildPerformance
             | CommandId::OpenWorkbench => Self::Build,
             CommandId::OpenDashboard
@@ -144,6 +145,7 @@ pub(crate) fn menu_item_order(group: ApplicationMenuGroup, item: &MenuItem) -> u
             BuildSelectedRecipe,
             OpenWorkbench,
             OpenBuildPerformance,
+            OpenSstateCache,
         ],
         ApplicationMenuGroup::Configuration => &[
             OpenConfiguration,

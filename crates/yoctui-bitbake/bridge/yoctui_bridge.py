@@ -5,6 +5,7 @@ from pathlib import Path
 
 _COMPONENTS = (
     "protocol_and_compatibility.py",
+    "build_cache.py",
     "build_performance.py",
     "tinfoil_workspace.py",
     "tinfoil_metadata.py",

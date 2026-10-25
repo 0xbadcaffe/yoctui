@@ -66,7 +66,22 @@ pub(super) fn daemon_command_for_effect(
     {
         return Err(ClientRuntimeError::BuildPerformanceUnavailable(reason));
     }
+    if matches!(effect, Effect::Start(_))
+        && app.sstate_cache_profile().is_some()
+        && let Some(reason) = app.sstate_cache_unavailable()
+    {
+        return Err(ClientRuntimeError::BuildPerformanceUnavailable(reason));
+    }
     Ok(Some(match effect {
+        Effect::Start(request) if app.sstate_cache_profile().is_some() => {
+            DaemonCommand::StartCachedBuild {
+                targets: request.targets.clone(),
+                task: request.task.clone(),
+                force: request.force,
+                pressure: app.preferences.build_performance,
+                cache: app.sstate_cache_profile().expect("profile guard").clone(),
+            }
+        }
         Effect::Start(request) if app.preferences.build_performance.is_some() => {
             DaemonCommand::StartProfiledBuild {
                 targets: request.targets.clone(),

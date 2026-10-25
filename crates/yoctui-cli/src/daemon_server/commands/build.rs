@@ -5,7 +5,22 @@ pub(super) fn handle(
     services: &mut DaemonServices,
     client: &mut DaemonClient,
 ) -> Result<Option<CommandOutcome>> {
-    let profile = if let DaemonCommand::StartProfiledBuild {
+    let (profile, cache) = if let DaemonCommand::StartCachedBuild {
+        targets,
+        task,
+        force,
+        pressure,
+        cache,
+    } = &request.command
+    {
+        let result = (*pressure, Some(cache.clone()));
+        request.command = DaemonCommand::StartBuild {
+            targets: targets.clone(),
+            task: task.clone(),
+            force: *force,
+        };
+        result
+    } else if let DaemonCommand::StartProfiledBuild {
         targets,
         task,
         force,
@@ -18,9 +33,9 @@ pub(super) fn handle(
             task: task.clone(),
             force: *force,
         };
-        Some(value)
+        (Some(value), None)
     } else {
-        None
+        (None, None)
     };
     Ok(Some(match request.command {
 DaemonCommand::StartBuild { .. } if services.rootfs_query_permit.available_permits() == 0 => {
@@ -65,10 +80,11 @@ DaemonCommand::StartBuild { targets, task, force } => {
                                 return Ok(None);
                             };
                             let build_targets = targets.clone();
-                            match services.bitbake_supervisor.start_with_performance(
+                            match services.bitbake_supervisor.start_with_optimizations(
                                 build_dir,
                                 BuildRequest { targets, task, force },
                                 profile,
+                                cache,
                             ) {
                                 Ok(job_id) => {
                                     let reset_event = services.daemon_journal.publish(

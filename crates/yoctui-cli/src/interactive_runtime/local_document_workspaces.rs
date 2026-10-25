@@ -12,9 +12,13 @@ impl InteractiveRuntime {
             .invalidate_if(editor_changed, RenderCause::State);
         if matches!(
             self.app.screen,
-            Screen::DiffTool | Screen::Help | Screen::BuildPerformance
+            Screen::DiffTool | Screen::Help | Screen::BuildPerformance | Screen::Maintenance
         ) {
             let size = self.terminal.size()?;
+            self.app.sstate_cache.review_width =
+                usize::from(size.width.saturating_sub(2).min(100).saturating_sub(2));
+            self.app.sstate_cache.review_visible_rows =
+                usize::from(size.height.saturating_sub(2).min(20).saturating_sub(4));
             let extra = u16::from(self.app.offline_notice().is_some()) * 2
                 + u16::from(self.app.zoomed_pane.is_some() || size.width < 100);
             let height = size.height.saturating_sub(8 + extra);
@@ -22,6 +26,14 @@ impl InteractiveRuntime {
                 self.app
                     .file_diff
                     .reconcile_viewport(usize::from(height.saturating_sub(8)));
+            } else if self.app.screen == Screen::Maintenance {
+                self.app.sstate_cache.visible_rows = usize::from(height.saturating_sub(7)).max(1);
+                let maximum = self
+                    .app
+                    .sstate_cache_rows()
+                    .len()
+                    .saturating_sub(self.app.sstate_cache.visible_rows);
+                self.app.sstate_cache.scroll = self.app.sstate_cache.scroll.min(maximum);
             } else if self.app.screen == Screen::BuildPerformance {
                 self.app.build_performance.visible_rows =
                     usize::from(height.saturating_sub(7)).max(1);

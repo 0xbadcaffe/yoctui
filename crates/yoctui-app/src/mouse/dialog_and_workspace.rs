@@ -40,6 +40,7 @@ pub(crate) fn dialog_mouse_action(
         MouseKind::Drag | MouseKind::Up | MouseKind::Down | MouseKind::ContextDown => return None,
     };
     match app.active_dialog()? {
+        yoctui_model::Dialog::SstateCache(_) => crate::sstate_cache_action(app, if delta < 0 {Input::Up} else {Input::Down}),
         yoctui_model::Dialog::RecipeEditor(editor) =>
             recipe_editor_action(editor, if delta < 0 { Input::Up } else { Input::Down }),
         yoctui_model::Dialog::EnvironmentSetup(setup) if setup.editor.is_none() => {
@@ -90,6 +91,10 @@ pub(crate) fn active_dialog_textarea(
         | yoctui_model::Dialog::TestJunitTomlEditor { editor, .. } => Some(editor),
         yoctui_model::Dialog::Security(yoctui_model::SecurityDialog::Import { editor, .. })
         | yoctui_model::Dialog::Qa(yoctui_model::QaDialog::Import { editor, .. }) => Some(editor),
+        yoctui_model::Dialog::SstateCache(dialog) => match dialog.as_ref() {
+            yoctui_model::SstateCacheDialog::Configure {editor,..} => Some(editor),
+            yoctui_model::SstateCacheDialog::Review(_) => None,
+        },
         yoctui_model::Dialog::Maintenance(dialog) => match dialog.as_ref() {
             yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. }
             | yoctui_model::MaintenanceDialog::CleanupToml { editor, .. }
@@ -153,6 +158,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         Screen::Configuration => config_workspace_action(app.metadata_searching, key),
         Screen::RawMode => raw_mode_input(app, key).map(Action::RawMode),
         Screen::TerminalSessions => terminal_workspace_action(app, key),
+        Screen::Maintenance if app.sstate_cache.dashboard && app.maintenance.view == MaintenanceView::Sstate => crate::sstate_cache_action(app, key),
         Screen::Maintenance => maintenance_workspace_action(
             app.maintenance.view,
             match app.maintenance.view {

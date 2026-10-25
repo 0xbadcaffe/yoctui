@@ -53,6 +53,8 @@ use yoctui_model::{
 mod tests;
 
 mod build_performance_input;
+mod sstate_cache_input;
+pub use sstate_cache_input::sstate_cache_action;
 mod file_diff_input;
 pub use build_performance_input::build_performance_action;
 mod rootfs_mapping;
