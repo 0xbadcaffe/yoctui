@@ -3,6 +3,12 @@ use super::*;
 impl InteractiveRuntime {
     pub(super) async fn run(mut self) -> Result<()> {
         loop {
+            // Check before rendering or reading input, even when the terminal
+            // disappears without delivering SIGHUP (for example in a harness).
+            #[cfg(unix)]
+            if terminal_disconnected()? {
+                break;
+            }
             if self.poll_runtime().await? {
                 break;
             }

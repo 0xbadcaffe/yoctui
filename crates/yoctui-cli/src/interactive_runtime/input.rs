@@ -2,10 +2,17 @@ use super::*;
 
 impl InteractiveRuntime {
     pub(super) async fn handle_terminal_event(&mut self) -> Result<bool> {
-        if !event::poll(crate::render_scheduler::terminal_event_wait(
+        let ready = event::poll(crate::render_scheduler::terminal_event_wait(
             &self.app,
             self.frame_interval,
-        ))? {
+        ));
+        // A hangup racing the timed poll can also surface as an I/O error.
+        // Treat it as a normal detach so recovery state still gets saved.
+        #[cfg(unix)]
+        if terminal_disconnected()? {
+            return Ok(false);
+        }
+        if !ready? {
             return Ok(false);
         }
         let terminal_event = event::read()?;

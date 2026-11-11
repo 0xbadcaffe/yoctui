@@ -1,6 +1,49 @@
 //! Terminal lifecycle.
 use super::*;
 
+/// A closed PTY remains readable forever; it must not reach the event reader.
+#[cfg(unix)]
+pub(crate) fn terminal_disconnected() -> io::Result<bool> {
+    let mut descriptor = libc::pollfd {
+        fd: libc::STDIN_FILENO,
+        events: libc::POLLIN,
+        revents: 0,
+    };
+    // SAFETY: descriptor is valid for the single entry passed to poll.
+    if unsafe { libc::poll(&mut descriptor, 1, 0) } < 0 {
+        let error = io::Error::last_os_error();
+        if error.kind() == io::ErrorKind::Interrupted {
+            return Ok(false);
+        }
+        return Err(error);
+    }
+    Ok(descriptor.revents & (libc::POLLHUP | libc::POLLERR | libc::POLLNVAL) != 0)
+}
+
+fn enter_raw_input_mode() -> io::Result<()> {
+    enable_raw_mode()?;
+    #[cfg(unix)]
+    {
+        // Crossterm's poll backend drains input until a read returns zero.
+        // Use terminal read settings rather than O_NONBLOCK, which would also
+        // change the file description inherited by the parent shell.
+        let mut settings = std::mem::MaybeUninit::<libc::termios>::uninit();
+        // SAFETY: tcgetattr initializes settings on success; stdin is open.
+        if unsafe { libc::tcgetattr(libc::STDIN_FILENO, settings.as_mut_ptr()) } < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        // SAFETY: tcgetattr succeeded above.
+        let mut settings = unsafe { settings.assume_init() };
+        settings.c_cc[libc::VMIN] = 0;
+        settings.c_cc[libc::VTIME] = 0;
+        // SAFETY: settings contains valid terminal attributes.
+        if unsafe { libc::tcsetattr(libc::STDIN_FILENO, libc::TCSANOW, &settings) } < 0 {
+            return Err(io::Error::last_os_error());
+        }
+    }
+    Ok(())
+}
+
 #[derive(Default)]
 pub(crate) struct RedrawLatch(pub(crate) Cell<bool>);
 
@@ -24,7 +67,7 @@ impl TerminalGuard {
     pub(crate) fn enter() -> Result<Self> {
         let shell_title = env::var("USER").unwrap_or_else(|_| "terminal".into());
         let application_title = format!("yoctui · {shell_title}");
-        enable_raw_mode()?;
+        enter_raw_input_mode()?;
         execute!(
             io::stdout(),
             SetTitle(&application_title),
@@ -52,7 +95,7 @@ impl TerminalGuard {
         Ok(())
     }
     pub(crate) fn resume(&self) -> Result<()> {
-        enable_raw_mode()?;
+        enter_raw_input_mode()?;
         execute!(
             io::stdout(),
             SetTitle(&self.application_title),
