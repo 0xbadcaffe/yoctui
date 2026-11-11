@@ -21,7 +21,9 @@ def performance_config_params(module, tinfoil_module):
         if (
             not isinstance(profile, dict)
             or set(profile) != {"cpu", "io", "memory"}
-            or any(type(v) is not int or not 1 <= v <= 1000000 for v in profile.values())
+            or any(
+                type(v) is not int or not 1 <= v <= 1000000 for v in profile.values()
+            )
         ):
             raise RuntimeError("invalid build pressure profile")
         if (major, minor) < (2, 2):
