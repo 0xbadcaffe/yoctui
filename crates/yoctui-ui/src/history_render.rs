@@ -10,7 +10,7 @@ pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Re
         bitbake_setup_render::catalogue(frame, app, area);
         return;
     }
-    let status = match &app.build_environment {
+    let mut status = match &app.build_environment {
         BuildEnvironmentState::Unconfigured => "not configured".to_owned(),
         BuildEnvironmentState::Configured(profile) => format!(
             "configured\nbuild: {}\nsource: {}\nscript: {}",
@@ -30,6 +30,12 @@ pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Re
             format!("failed: {message}\nbuild: {}", profile.build_dir.display())
         }
     };
+    if app.saved_builds.environment.preparing {
+        status.push_str("\nChecking environment paths and daemon; awaiting review...");
+    }
+    if app.saved_builds.environment.loading {
+        status.push_str("\nInitializing environment and refreshing daemon metadata...");
+    }
     let draft = app.build_environment_draft.as_ref().map(|draft| format!(
         "\n\nEdit profile (field: {:?})\nsource: {}\nbuild: {}\nscript: {}\n\nType path, ↑/↓ select field, s save, Esc cancel.",
         draft.field, draft.source, draft.build, draft.script
@@ -80,7 +86,7 @@ pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Re
         }
     };
     let text = format!(
-        "1 Environment  |  2 Setups  |  w New BitBake setup wizard\nEnter/e Configure paths  |  b Browse directories\nAlt+a Advanced TOML  |  c Clone Poky  |  Alt+v Verify BitBake\nn/Alt+n profile item  |  p preview/open\n\n{status}{draft}{images}\n{profile}"
+        "1 Environment  |  2 Setups  |  w New BitBake setup wizard\nEnter/e Configure paths  |  b Browse directories\nAlt+a Advanced TOML  |  c Clone Poky  |  Alt+v Verify BitBake / reconnect daemon\nn/Alt+n profile item  |  p preview/open\n\n{status}{draft}{images}\n{profile}"
     );
     frame.render_widget(
         Paragraph::new(text)

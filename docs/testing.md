@@ -38,6 +38,16 @@ inert disabled actions, prefix/writer ownership, detach/reconnect, and quit/rest
 Failures retain bounded captures. [Design fixtures](design/README.md) explain goldens;
 exact rasters use pinned Cairo 1.18.4/PyCairo 1.27.0/DejaVu on Ubuntu 26.04.
 
+## Build environment connection flow
+
+`python3 scripts/test-environment-reconnect-pty.py --capture-dir artifacts/environment-reconnect`
+uses the real UI and isolated daemons with fixture BitBake metadata. It checks
+save/review/confirm, custom initializers, new build directories, fresh recipe
+inventories, same-build refresh, client reopen, and preservation of the previous
+daemon/configuration when initialization fails. `python3 scripts/test-environment-setup.py`
+checks browsing and cancelling the review without sourcing a script. These do not
+certify a real BitBake build; use native Yocto metadata/build checks separately.
+
 ## Sstate cache boundary checks
 
 `python3 scripts/test-sstate-cache-pty.py --capture-dir artifacts/sstate-cache`

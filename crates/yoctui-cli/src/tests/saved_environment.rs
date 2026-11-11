@@ -293,6 +293,7 @@ async fn saved_environment_pending_worker_is_owned_and_nonblocking() {
 #[test]
 fn saved_environment_cancelled_discovery_does_not_connect_or_wait() {
     let plan = SavedEnvironmentPlan {
+        edited_profile: false,
         profile: BuildEnvironmentProfile {
             source_dir: "/source".into(),
             build_dir: "/build".into(),
@@ -307,3 +308,6 @@ fn saved_environment_cancelled_discovery_does_not_connect_or_wait() {
     assert!(result.is_err());
     assert!(started.elapsed() < Duration::from_millis(50));
 }
+
+#[path = "saved_environment_profiles.rs"]
+mod profiles;

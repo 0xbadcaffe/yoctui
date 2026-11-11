@@ -22,11 +22,21 @@ impl InteractiveDaemonRuntime {
             .workspace
             .as_ref()
             .map(|workspace| PathBuf::from(&workspace.canonical_build));
-        if app.workspace.build_dir != self.local_build_dir {
+        if app.workspace.build_dir != self.local_build_dir
+            || app.daemon.instance_id
+                != Some(yoctui_model::DaemonModelInstanceId(
+                    snapshot.daemon_instance_id.0,
+                ))
+        {
             yoctui_model::clear_saved_environment_views(app);
         }
         self.replica.replace_app(app, snapshot);
         app.terminal.client_id = Some(client_id);
+        app.sstate_cache.daemon_supports_profiles = self
+            .transport
+            .hello()
+            .capabilities
+            .contains(&yoctui_protocol::daemon::Capability::SstateCacheProfiles);
     }
     pub fn connect(app: &mut App, timeout: Duration) -> Result<Self, ClientRuntimeError> {
         let local_build_dir = app.workspace.build_dir.clone();

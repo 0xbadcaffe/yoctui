@@ -364,6 +364,19 @@ pub(crate) fn load(path: &Path) -> anyhow::Result<yoctui_model::WorkbenchState> 
     let saved: SavedWorkbenches = serde_json::from_slice(&bytes)?;
     yoctui_model::WorkbenchState::restore(saved).map_err(anyhow::Error::msg)
 }
+pub(crate) fn prepare_store_parent(path: &Path) -> anyhow::Result<&Path> {
+    use std::os::unix::fs::DirBuilderExt;
+    let parent = path
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("Workbench store has no parent"))?;
+    // The UI and daemon share XDG_STATE_HOME/yoctui. First UI startup must
+    // create it with the same private mode required by daemon persistence.
+    fs::DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(parent)?;
+    Ok(parent)
+}
 pub(crate) fn save(path: &Path, saved: &SavedWorkbenches) -> anyhow::Result<()> {
     anyhow::ensure!(
         path.is_absolute(),
@@ -381,10 +394,7 @@ pub(crate) fn save(path: &Path, saved: &SavedWorkbenches) -> anyhow::Result<()> 
         data.len() <= 20 * 1024 * 1024,
         "Workbench store exceeds 20 MiB"
     );
-    let parent = path
-        .parent()
-        .ok_or_else(|| anyhow::anyhow!("Workbench store has no parent"))?;
-    fs::create_dir_all(parent)?;
+    let parent = prepare_store_parent(path)?;
     let mut temporary = tempfile::NamedTempFile::new_in(parent)?;
     temporary.write_all(&data)?;
     temporary.as_file().sync_all()?;

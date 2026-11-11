@@ -1,7 +1,7 @@
 //! Transient onboarding drafts. Filesystem inspection belongs to the app adapter.
 use crate::{
-    Action, App, BuildEnvironmentProfile, BuildEnvironmentState, Dialog, Effect, TextAreaMotion,
-    TextAreaState, close_dialog, open_dialog, update,
+    App, BuildEnvironmentProfile, BuildEnvironmentState, Dialog, Effect, SavedEnvironmentAction,
+    TextAreaMotion, TextAreaState, close_dialog, open_dialog,
 };
 use std::path::PathBuf;
 
@@ -276,7 +276,10 @@ pub(crate) fn environment_setup_update(
                 setup.error = Some(error.to_string());
             } else {
                 close_dialog(app);
-                return update(app, Action::ConfigureBuildEnvironment(profile));
+                return crate::saved_environment::reduce_saved_environment(
+                    app,
+                    SavedEnvironmentAction::BeginProfile(profile),
+                );
             }
         }
         _ => {}

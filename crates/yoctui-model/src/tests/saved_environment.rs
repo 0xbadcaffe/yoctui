@@ -2,6 +2,7 @@ use super::*;
 
 fn fixture() -> (App, SavedEnvironmentPlan) {
     let plan = SavedEnvironmentPlan {
+        edited_profile: false,
         profile: BuildEnvironmentProfile {
             source_dir: "/yocto/source".into(),
             build_dir: "/yocto/build".into(),

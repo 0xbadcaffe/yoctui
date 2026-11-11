@@ -10,6 +10,7 @@ pub enum SavedEnvironmentMode {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SavedEnvironmentPlan {
+    pub edited_profile: bool,
     pub profile: BuildEnvironmentProfile,
     pub target: String,
     pub machine: Option<String>,
@@ -23,11 +24,16 @@ pub struct SavedEnvironmentState {
     pub loading: bool,
     pub plan: Option<SavedEnvironmentPlan>,
     pub error: Option<String>,
+    pub review_screen: Option<Screen>,
+    pub previous_environment: Option<BuildEnvironmentState>,
+    pub requested_profile: Option<BuildEnvironmentProfile>,
+    pub profile_instance: Option<DaemonModelInstanceId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SavedEnvironmentAction {
     Begin,
+    BeginProfile(BuildEnvironmentProfile),
     Prepared {
         generation: u64,
         result: Result<SavedEnvironmentPlan, String>,
@@ -42,6 +48,10 @@ pub enum SavedEnvironmentAction {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SavedEnvironmentRequest {
+    PrepareProfile {
+        generation: u64,
+        profile: BuildEnvironmentProfile,
+    },
     Prepare {
         generation: u64,
         record: SavedBuild,
@@ -57,6 +67,36 @@ pub(crate) fn reduce_saved_environment(
     action: SavedEnvironmentAction,
 ) -> Option<Effect> {
     match action {
+        SavedEnvironmentAction::BeginProfile(profile) => {
+            if app.active_dialog().is_some()
+                || app.saved_builds.environment.preparing
+                || app.saved_builds.environment.loading
+            {
+                return None;
+            }
+            if let Err(error) = profile.validate() {
+                app.notification = Some(error.to_string());
+                return None;
+            }
+            let previous = app.build_environment.clone();
+            app.build_environment = BuildEnvironmentState::Configured(profile.clone());
+            let state = &mut app.saved_builds.environment;
+            state.generation = state.generation.checked_add(1)?;
+            state.review_screen = Some(app.screen);
+            state.previous_environment = Some(previous);
+            state.requested_profile = Some(profile.clone());
+            state.preparing = true;
+            state.plan = None;
+            state.error = None;
+            app.notification =
+                Some("Checking environment paths and daemon; review before initialization.".into());
+            Some(Effect::SavedEnvironment(
+                SavedEnvironmentRequest::PrepareProfile {
+                    generation: state.generation,
+                    profile,
+                },
+            ))
+        }
         SavedEnvironmentAction::Begin => {
             if app.active_dialog().is_some()
                 || app.saved_builds.environment.preparing
@@ -78,6 +118,9 @@ pub(crate) fn reduce_saved_environment(
             }
             let state = &mut app.saved_builds.environment;
             state.generation = state.generation.checked_add(1)?;
+            state.review_screen = Some(Screen::BuildHistory);
+            state.previous_environment = None;
+            state.requested_profile = None;
             state.preparing = true;
             state.plan = None;
             state.error = None;
@@ -94,14 +137,16 @@ pub(crate) fn reduce_saved_environment(
             }
             app.saved_builds.environment.preparing = false;
             match result {
-                Ok(plan) if app.active_dialog().is_none() && app.screen == Screen::BuildHistory => {
+                Ok(plan) if app.active_dialog().is_none() && Some(app.screen)==app.saved_builds.environment.review_screen
+                    && plan.edited_profile==app.saved_builds.environment.requested_profile.is_some()
+                    && app.saved_builds.environment.requested_profile.as_ref().is_none_or(|p| p==&plan.profile) => {
                     app.saved_builds.environment.plan = Some(plan.clone());
                     open_dialog(app, Dialog::SavedEnvironmentReview(plan));
                     synchronize_focus(app);
                 }
                 Ok(_) => saved_environment_error(
                     app,
-                    "Environment review interrupted by navigation or another dialog; press o to retry.".into(),
+                    "Environment review interrupted by navigation or another dialog; return to its screen and retry loading.".into(),
                 ),
                 Err(error) => saved_environment_error(app, error),
             }
@@ -129,6 +174,11 @@ pub(crate) fn reduce_saved_environment(
             close_dialog(app);
             synchronize_focus(app);
             app.saved_builds.environment.plan = None;
+            if let Some(previous) = app.saved_builds.environment.previous_environment.take() {
+                app.build_environment = previous;
+                app.refresh_image_targets();
+            }
+            app.saved_builds.environment.requested_profile = None;
             None
         }
         SavedEnvironmentAction::Finished { generation, result } => {
@@ -142,11 +192,14 @@ pub(crate) fn reduce_saved_environment(
             match result {
                 Ok(profile) => {
                     app.build_environment = BuildEnvironmentState::Connected(profile.clone());
+                    app.saved_builds.environment.profile_instance = app.daemon.instance_id;
                     app.saved_builds.browsing = false;
                     app.saved_builds.view = None;
                     if app.active_dialog().is_none() {
                         let _ = update(app, Action::Open(Screen::Dashboard));
                     }
+                    app.saved_builds.environment.previous_environment = None;
+                    app.saved_builds.environment.requested_profile = None;
                     app.notification = Some(format!(
                         "Loaded environment {}. Select a target to start a new build; no saved job was replayed.",
                         profile.build_dir.display()
@@ -160,6 +213,12 @@ pub(crate) fn reduce_saved_environment(
 }
 
 fn saved_environment_error(app: &mut App, error: String) {
+    if let Some(profile) = app.saved_builds.environment.requested_profile.clone() {
+        app.build_environment = BuildEnvironmentState::Failed {
+            profile,
+            message: error.clone(),
+        };
+    }
     app.notification = Some(format!("Load environment failed: {error}"));
     app.saved_builds.environment.error = Some(error);
 }

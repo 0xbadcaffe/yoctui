@@ -2,6 +2,14 @@ use super::*;
 use yoctui_model::{SavedBuildAction, SavedEnvironmentAction, SavedEnvironmentRequest};
 
 impl InteractiveRuntime {
+    pub(super) fn submit_environment_setup_effect(&mut self, effect: Effect) {
+        if matches!(effect, Effect::SavedEnvironment(_)) {
+            self.submit_saved_environment_effect(Some(effect));
+        } else {
+            self.environment_browser_io.submit(effect);
+        }
+    }
+
     pub(super) fn handle_saved_environment_input(&mut self, input: Input) {
         if let Some(action) = yoctui_app::saved_build_workspace_action(&self.app, input) {
             let effect = compatibility_workspace_action(&mut self.app, action);
@@ -15,6 +23,7 @@ impl InteractiveRuntime {
         };
         let generation = match &request {
             SavedEnvironmentRequest::Prepare { generation, .. }
+            | SavedEnvironmentRequest::PrepareProfile { generation, .. }
             | SavedEnvironmentRequest::Load { generation, .. } => *generation,
         };
         // Local metadata workers are also tied to the old environment. Wait for
@@ -22,10 +31,13 @@ impl InteractiveRuntime {
         if self.environment_bound_work_active() {
             let error = "local work is still active; wait for it to finish before loading another environment".to_owned();
             let action = match request {
-                SavedEnvironmentRequest::Prepare { .. } => SavedEnvironmentAction::Prepared {
-                    generation,
-                    result: Err(error),
-                },
+                SavedEnvironmentRequest::Prepare { .. }
+                | SavedEnvironmentRequest::PrepareProfile { .. } => {
+                    SavedEnvironmentAction::Prepared {
+                        generation,
+                        result: Err(error),
+                    }
+                }
                 SavedEnvironmentRequest::Load { .. } => SavedEnvironmentAction::Finished {
                     generation,
                     result: Err(error),
@@ -124,10 +136,25 @@ impl InteractiveRuntime {
                 result: Err(format!("{error:#}")),
             },
         };
+        let connected = matches!(
+            &action,
+            SavedEnvironmentAction::Finished { result: Ok(_), .. }
+        );
         let _ = update(
             &mut self.app,
             Action::SavedBuild(SavedBuildAction::Environment(action)),
         );
+        if connected
+            && let Err(error) = persist_connected_environment(
+                self.session_path.as_deref(),
+                &mut self.session,
+                &self.app,
+            )
+        {
+            self.app.notification = Some(format!(
+                "Environment connected, but selected paths could not be saved: {error}"
+            ));
+        }
         self.render_scheduler.invalidate(RenderCause::State);
     }
 

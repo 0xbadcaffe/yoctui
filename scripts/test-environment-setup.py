@@ -113,7 +113,9 @@ def main() -> None:
             send(b"s")
             wait_for("Configure build environment", "Browse directories")
             send(b"s")
-            wait_for("configured", "Configure build environment")
+            wait_for("Load build environment", "Configure build environment")
+            send(b"\x1b")
+            wait_for("not configured", "Load build environment")
             assert not marker.exists(), "Browsing or saving executed the source script"
             assert not list((root / "xdg_runtime_dir").rglob("daemon.sock"))
             send(b"q")

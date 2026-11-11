@@ -6,6 +6,7 @@ fn saved_environment_review_shows_exact_paths_and_safe_narrow_rendering() {
     let mut app = App::new(32, 4096);
     app.dialogs
         .push_back(Dialog::SavedEnvironmentReview(SavedEnvironmentPlan {
+            edited_profile: false,
             profile: BuildEnvironmentProfile {
                 source_dir: "/yocto/source".into(),
                 build_dir: "/yocto/build".into(),

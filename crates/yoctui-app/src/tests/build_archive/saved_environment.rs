@@ -22,6 +22,7 @@ fn saved_environment_input_loads_from_list_or_details_and_traps_review() {
     assert!(saved_build_workspace_action(&app, crate::Input::Char('o')).is_none());
     app.dialogs
         .push_back(Dialog::SavedEnvironmentReview(SavedEnvironmentPlan {
+            edited_profile: false,
             profile: BuildEnvironmentProfile {
                 source_dir: "/source".into(),
                 build_dir: "/build".into(),

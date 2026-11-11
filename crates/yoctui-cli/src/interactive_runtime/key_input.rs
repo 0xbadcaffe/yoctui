@@ -132,7 +132,7 @@ impl InteractiveRuntime {
             if let Some(action) = yoctui_app::environment_setup_action(setup, input)
                 && let Some(effect) = compatibility_workspace_action(&mut runtime.app, action)
             {
-                runtime.environment_browser_io.submit(effect);
+                runtime.submit_environment_setup_effect(effect);
             }
             return Ok(true);
         }

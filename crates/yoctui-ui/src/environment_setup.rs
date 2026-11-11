@@ -114,7 +114,7 @@ pub(super) fn environment_setup_popup(
         hint = "Type/paste path  Left/Right Home/End  Ctrl-U clear\nEnter accept value  Esc discard edit";
     } else {
         lines.push(Line::from(
-            "Choose paths, save, then press Alt+v to initialize and verify.",
+            "Save opens a daemon connection review; confirm to initialize and refresh.",
         ));
         lines.push(Line::from(
             "No daemon or initialized build environment is needed to browse.",
@@ -146,7 +146,7 @@ pub(super) fn environment_setup_popup(
         lines.push(Line::from(
             "Script: detected when choosing Source; e sets a custom script.",
         ));
-        hint = "Tab/Shift-Tab Up/Down field  Enter/e edit  b browse\ns save profile (does not initialize)  Esc cancel";
+        hint = "Tab/Shift-Tab Up/Down field  Enter/e edit  b browse\ns save profile and review connection  Esc cancel";
     }
     frame.render_widget(Paragraph::new(lines).style(palette.base()), rows[0]);
     frame.render_widget(

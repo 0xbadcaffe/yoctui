@@ -368,8 +368,10 @@ impl InteractiveRuntime {
                 Input::Char(c) => Some(Action::AppendBuildEnvironmentField(c)),
                 _ => None,
             };
-            if let Some(action) = action {
-                let _ = compatibility_workspace_action(&mut runtime.app, action);
+            if let Some(action) = action
+                && let Some(effect) = compatibility_workspace_action(&mut runtime.app, action)
+            {
+                runtime.submit_environment_setup_effect(effect);
             }
         } else if runtime.app.screen == Screen::BuildEnvironment
             && build_environment_action(input).is_some()
@@ -378,22 +380,12 @@ impl InteractiveRuntime {
                 build_environment_action(input).expect("build environment action was checked");
             if matches!(action, Action::EnvironmentSetup(_)) {
                 if let Some(effect) = compatibility_workspace_action(&mut runtime.app, action) {
-                    runtime.environment_browser_io.submit(effect);
+                    runtime.submit_environment_setup_effect(effect);
                 }
                 return Ok(Some(KeyRouteOutcome::ContinueLoop));
             }
-            if let Some(Effect::VerifyBuildEnvironment {
-                profile,
-                generation,
-            }) = compatibility_workspace_action(&mut runtime.app, action)
-            {
-                environment_operation::start(
-                    &mut runtime.environment_operation,
-                    profile,
-                    generation,
-                    runtime.backend_kind.clone(),
-                    runtime.cancellation_timeout,
-                );
+            if let Some(effect) = compatibility_workspace_action(&mut runtime.app, action) {
+                runtime.submit_environment_setup_effect(effect);
             }
         } else if runtime.app.screen == Screen::Settings && settings_action(input).is_some() {
             if runtime.app.settings_selection == 0 && matches!(input, Input::Enter | Input::Right) {
@@ -414,6 +406,9 @@ impl InteractiveRuntime {
                         Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
                     };
                     let _ = compatibility_workspace_action(&mut runtime.app, persistence_action);
+                }
+                Some(effect @ Effect::SavedEnvironment(_)) => {
+                    runtime.submit_environment_setup_effect(effect)
                 }
                 Some(Effect::VerifyBuildEnvironment {
                     profile,

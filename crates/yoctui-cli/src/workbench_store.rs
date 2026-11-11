@@ -28,10 +28,7 @@ impl Store {
                     source.is_absolute(),
                     "Workbench requires an absolute XDG_STATE_HOME or HOME"
                 );
-                let parent = source
-                    .parent()
-                    .ok_or_else(|| anyhow::anyhow!("Workbench store has no directory"))?;
-                std::fs::create_dir_all(parent)?;
+                crate::workbench_io::prepare_store_parent(&source)?;
                 let lock = std::fs::OpenOptions::new()
                     .create(true)
                     .truncate(false)

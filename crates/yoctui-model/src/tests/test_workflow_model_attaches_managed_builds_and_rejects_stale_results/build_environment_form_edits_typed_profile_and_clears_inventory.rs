@@ -22,5 +22,10 @@ fn build_environment_form_edits_typed_profile_and_clears_inventory() {
         app.build_environment,
         BuildEnvironmentState::Configured(_)
     ));
-    assert!(app.available_images.is_empty());
+    assert_eq!(
+        app.available_images,
+        vec!["core-image-minimal"],
+        "Preserve the current inventory until a new daemon installs fresh metadata"
+    );
+    assert!(app.saved_builds.environment.preparing);
 }

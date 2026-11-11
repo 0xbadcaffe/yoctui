@@ -146,12 +146,22 @@ pub(crate) fn daemon_task_stats(stats: yoctui_protocol::TaskStatsData) -> yoctui
 }
 
 pub(crate) fn install_daemon_build_environment(app: &mut yoctui_model::App) {
+    // A reviewed selection owns its exact initializer until loading finishes.
+    // Workspace refreshes describe build/source roots, not which wrapper was sourced.
+    if app.saved_builds.environment.requested_profile.is_some() {return;}
     let (Some(source_dir), Some(build_dir)) = (
         app.workspace.source_dir.clone(),
         app.workspace.build_dir.clone(),
     ) else {
         return;
     };
+    if let yoctui_model::BuildEnvironmentState::Connected(profile)=&app.build_environment
+        && profile.build_dir==build_dir {
+        let verified=app.saved_builds.environment.profile_instance;
+        if verified.is_some() && verified==app.daemon.instance_id
+            || verified.is_none() && profile.source_dir==source_dir {return;}
+    }
+    app.saved_builds.environment.profile_instance=None;
     app.build_environment =
         yoctui_model::BuildEnvironmentState::Connected(yoctui_model::BuildEnvironmentProfile {
             init_script: source_dir.join("oe-init-build-env"),

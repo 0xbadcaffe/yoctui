@@ -204,10 +204,13 @@ impl InteractiveRuntime {
                 }
                 input => popup_editor_action(editor.editing, input),
             };
-            if let Some(Effect::CopyToClipboard(content)) =
-                action.and_then(|action| compatibility_workspace_action(&mut runtime.app, action))
+            match action.and_then(|action| compatibility_workspace_action(&mut runtime.app, action))
             {
-                copy_to_clipboard(&mut runtime.app, content).await;
+                Some(Effect::CopyToClipboard(content)) => {
+                    copy_to_clipboard(&mut runtime.app, content).await
+                }
+                Some(effect) => runtime.submit_environment_setup_effect(effect),
+                None => {}
             }
         } else if matches!(
             runtime.app.active_dialog(),

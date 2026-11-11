@@ -118,8 +118,14 @@ over SSH or on a Linux text console. It does not automatically open another
 terminal window. Quit returns to your shell; daemon-owned work keeps running.
 
 Without an initialized shell, open **Build Environment**, press `e`, and select
-Source/Build/Script. `b` browses, `s` saves, and `V` explicitly initializes/verifies.
-Use an existing build directory; custom scripts stay editable. The process backend
+Source/Build/Script. `b` browses and `s` opens a daemon connection review.
+Confirm with `Enter` to source the selected script, start/reload the daemon and
+refresh recipes, images and configuration. `Esc` cancels. `Alt+v` repeats this
+connection/refresh flow. A replacement is refused while jobs or terminals are
+active; finish or close them explicitly first. The UI remains responsive during
+initialization and shows failures. The initializer may create a new build directory;
+custom scripts stay editable. Verified paths are remembered for reattaching to
+the same daemon. The process backend
 is a fallback with fewer capabilities; see [Compatibility](compatibility.md).
 Install the release's [Yocto host requirements](https://docs.yoctoproject.org/brief-yoctoprojectqs/index.html)
 separately; Yoctui does not install BitBake, BSP layers, or target tools.
@@ -148,10 +154,9 @@ After setup finishes, `Alt+o` returns to the terminal list. Reopen Build Environ
 press `2` for Setups and `r` to refresh. `o` chooses a top directory; the selection
 is remembered on normal exit. Discovery is local and bounded to 1024 immediate
 entries / 256 profiles, with no network calls or recursive walk. `Enter` imports
-the selected profile for review; `s` saves it and `Alt+v` explicitly verifies.
-This does not retarget your running daemon: use **Tools → Daemons → c** to review
-switching to the generated `build` directory after its existing jobs and terminals
-have finished. Generated `build/init-build-env` scripts are supported even without
+the selected profile for review; `s` reviews the daemon connection. Confirming
+initializes the script and loads the generated `build` directory after its existing
+jobs and terminals have finished. `Alt+v` reviews a reconnect/refresh. Generated `build/init-build-env` scripts are supported even without
 an executable bit. `1` returns to the existing environment/profile view; legacy
 `oe-init-build-env` and vendor-wrapper profiles remain available.
 

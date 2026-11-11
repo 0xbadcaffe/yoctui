@@ -68,3 +68,23 @@ async fn workbench_loading_retains_deferred_devtool_handoff() {
     assert_eq!(app.workbench.deferred_recipe.as_ref().unwrap().0, "demo");
     assert!(!app.workbench.recovering);
 }
+#[tokio::test]
+async fn cold_ui_creates_private_shared_state_so_daemon_can_start_after_path_selection() {
+    use std::os::unix::fs::PermissionsExt;
+    let fixture = tempfile::tempdir().unwrap();
+    let state_root = fixture.path().join("state");
+    let mut store = Store::start_at(state_root.join("yoctui/workbenches.json"));
+    let mut app = App::new(16, 4096);
+    loaded(&mut store, &mut app).await;
+    assert!(store.ready());
+    assert_eq!(
+        std::fs::metadata(state_root.join("yoctui"))
+            .unwrap()
+            .permissions()
+            .mode()
+            & 0o777,
+        0o700
+    );
+    yoctui_protocol::daemon_persist::persist_paths_for(&state_root)
+        .expect("offline-first UI must not prevent later daemon startup");
+}

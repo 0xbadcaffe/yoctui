@@ -7,6 +7,7 @@ fn session_round_trip_preserves_preferences() {
     write_session(
         Some(&path),
         &Session {
+            verified_environment: None,
             bitbake_setup_top_dir: Some("/home/test/bitbake-builds".into()),
             preferences: None,
             last_target: Some("core-image-minimal".into()),
@@ -35,6 +36,7 @@ fn session_round_trip_preserves_preferences() {
     assert_eq!(
         read_session(Some(&path)).unwrap(),
         Session {
+            verified_environment: None,
             bitbake_setup_top_dir: Some("/home/test/bitbake-builds".into()),
             preferences: None,
             last_target: Some("core-image-minimal".into()),

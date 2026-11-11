@@ -70,30 +70,27 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     build_dir: PathBuf::from(draft.build),
                     init_script: PathBuf::from(draft.script),
                 };
-                let _ = update(app, Action::ConfigureBuildEnvironment(profile));
+                return crate::saved_environment::reduce_saved_environment(
+                    app,
+                    SavedEnvironmentAction::BeginProfile(profile),
+                );
             }
         }
         Action::BeginBuildEnvironmentVerification => {
             let profile = match &app.build_environment {
-                BuildEnvironmentState::Configured(profile)
-                | BuildEnvironmentState::Failed { profile, .. } => profile.clone(),
+                BuildEnvironmentState::Configured(p)
+                | BuildEnvironmentState::Connected(p)
+                | BuildEnvironmentState::Failed { profile: p, .. } => p.clone(),
                 BuildEnvironmentState::Verifying { .. } => return None,
-                BuildEnvironmentState::Unconfigured | BuildEnvironmentState::Connected(_) => {
-                    app.notification =
-                        Some("Select a build environment before verification.".into());
+                BuildEnvironmentState::Unconfigured => {
+                    app.notification = Some("Select a build environment before connecting.".into());
                     return None;
                 }
             };
-            app.build_environment_generation = app.build_environment_generation.wrapping_add(1);
-            let generation = app.build_environment_generation;
-            app.build_environment = BuildEnvironmentState::Verifying {
-                profile: profile.clone(),
-                generation,
-            };
-            return Some(Effect::VerifyBuildEnvironment {
-                profile,
-                generation,
-            });
+            return crate::saved_environment::reduce_saved_environment(
+                app,
+                SavedEnvironmentAction::BeginProfile(profile),
+            );
         }
         Action::BuildEnvironmentVerified { generation } => {
             if let BuildEnvironmentState::Verifying {

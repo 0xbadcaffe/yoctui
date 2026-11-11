@@ -33,13 +33,19 @@ impl Drop for Operation {
 
 pub(crate) fn start(request: SavedEnvironmentRequest) -> Operation {
     let (generation, loading) = match &request {
-        SavedEnvironmentRequest::Prepare { generation, .. } => (*generation, false),
+        SavedEnvironmentRequest::Prepare { generation, .. }
+        | SavedEnvironmentRequest::PrepareProfile { generation, .. } => (*generation, false),
         SavedEnvironmentRequest::Load { generation, .. } => (*generation, true),
     };
     let cancelled = Arc::new(AtomicBool::new(false));
     let worker_cancelled = cancelled.clone();
     let task = tokio::spawn(async move {
         match request {
+            SavedEnvironmentRequest::PrepareProfile { profile, .. } => {
+                tokio::task::spawn_blocking(move || prepare_profile(profile))
+                    .await?
+                    .map(Outcome::Prepared)
+            }
             SavedEnvironmentRequest::Prepare { record, .. } => {
                 tokio::task::spawn_blocking(move || prepare(&record))
                     .await?
@@ -120,6 +126,47 @@ fn revalidate_profile(profile: &BuildEnvironmentProfile) -> Result<()> {
     Ok(())
 }
 
+fn revalidate_plan(plan: &SavedEnvironmentPlan) -> Result<()> {
+    if plan.edited_profile {
+        anyhow::ensure!(
+            BuildEnvironmentAdapter::default().validate(&plan.profile)? == plan.profile,
+            "environment paths changed after review; refresh and retry"
+        );
+        Ok(())
+    } else {
+        revalidate_profile(&plan.profile)
+    }
+}
+fn prepare_profile(profile: BuildEnvironmentProfile) -> Result<SavedEnvironmentPlan> {
+    BuildEnvironmentAdapter::default().validate(&profile)?;
+    let mode = profile_mode(current_snapshot()?)?;
+    Ok(SavedEnvironmentPlan {
+        edited_profile: true,
+        profile,
+        target: String::new(),
+        machine: None,
+        mode,
+    })
+}
+fn profile_mode(snapshot: Option<DaemonSnapshot>) -> Result<SavedEnvironmentMode> {
+    Ok(match snapshot {
+        None => SavedEnvironmentMode::Start,
+        Some(snapshot) => {
+            anyhow::ensure!(
+                snapshot_build(&snapshot).is_some(),
+                "daemon environment discovery is pending; wait and retry"
+            );
+            if let Some((_, error)) = replacement_denial(&snapshot, None) {
+                anyhow::bail!(error);
+            }
+            // Even the same build may use a different source or init script now.
+            SavedEnvironmentMode::Restart {
+                instance: snapshot.daemon_instance_id.0,
+            }
+        }
+    })
+}
+
 fn current_snapshot() -> Result<Option<DaemonSnapshot>> {
     use yoctui_protocol::{
         daemon_ipc::{DaemonConnection, runtime_paths},
@@ -171,6 +218,7 @@ fn prepare(record: &SavedBuild) -> Result<SavedEnvironmentPlan> {
     let profile = saved_profile(record)?;
     let mode = reviewed_mode(&profile, current_snapshot()?)?;
     Ok(SavedEnvironmentPlan {
+        edited_profile: false,
         profile,
         target: record.target.clone(),
         machine: record.machine.clone(),
@@ -267,7 +315,7 @@ fn check_review(plan: &SavedEnvironmentPlan) -> Result<()> {
 async fn load(mut plan: SavedEnvironmentPlan, cancelled: Arc<AtomicBool>) -> Result<Outcome> {
     let checked = plan.clone();
     tokio::task::spawn_blocking(move || {
-        revalidate_profile(&checked.profile)?;
+        revalidate_plan(&checked)?;
         check_review(&checked)
     })
     .await??;
@@ -290,7 +338,7 @@ async fn load(mut plan: SavedEnvironmentPlan, cancelled: Arc<AtomicBool>) -> Res
         let checked_cancelled = cancelled.clone();
         tokio::task::spawn_blocking(move || {
             check_cancelled(&checked_cancelled)?;
-            revalidate_profile(&checked.profile)?;
+            revalidate_plan(&checked)?;
             check_review(&checked)?;
             if let SavedEnvironmentMode::Restart { instance } = checked.mode {
                 stop_reviewed_daemon(instance)?;

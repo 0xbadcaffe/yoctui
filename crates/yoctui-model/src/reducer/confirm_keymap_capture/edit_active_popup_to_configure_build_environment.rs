@@ -290,7 +290,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     init_script: PathBuf::from(values.remove("script").unwrap_or_default()),
                 };
                 close_dialog(app);
-                return update(app, Action::ConfigureBuildEnvironment(profile));
+                return crate::saved_environment::reduce_saved_environment(
+                    app,
+                    SavedEnvironmentAction::BeginProfile(profile),
+                );
             }
         }
         Action::CloseBuildEnvironmentEditor => {

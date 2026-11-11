@@ -9,11 +9,14 @@ fn render_project_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
                 "Restart idle daemon for this environment (other clients will reconnect)"
             }
         };
+        let title=if plan.edited_profile {"Load build environment"} else {"Load saved environment"};
+        let context=if plan.edited_profile {"Initialize the selected script and refresh build metadata.\nNo image build will be started.".to_owned()} else {format!("Historical target: {}\nHistorical machine: {}",plan.target,plan.machine.as_deref().unwrap_or("not recorded"))};
+        let details=if plan.edited_profile {"The selected build configuration supplies recipes, images and settings.\nActive jobs/terminals block replacement."} else {"Current configuration remains authoritative; MACHINE will not be changed.\nNo saved build, task or log is replayed. Active jobs/terminals block replacement."};
         frame.render_widget(Paragraph::new(format!(
-            "{mode}\nSource: {}\nBuild: {}\nInit script: {}\nHistorical target: {}\nHistorical machine: {}\n\nCurrent configuration remains authoritative; MACHINE will not be changed.\nNo saved build, task or log is replayed. Active jobs/terminals block replacement.\n\n[y/Enter] Load environment  [n/Esc] Cancel",
+            "{mode}\nSource: {}\nBuild: {}\nInit script: {}\n{}\n\n{details}\n\n[y/Enter] Load environment  [n/Esc] Cancel",
             plan.profile.source_dir.display(), plan.profile.build_dir.display(), plan.profile.init_script.display(),
-            plan.target, plan.machine.as_deref().unwrap_or("not recorded")
-        )).wrap(Wrap { trim: false }).block(dialog_block(app, "Load saved environment", DialogTone::Confirmation)), popup);
+            context
+        )).wrap(Wrap { trim: false }).block(dialog_block(app, title, DialogTone::Confirmation)), popup);
         return true;
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);

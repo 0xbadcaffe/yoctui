@@ -180,6 +180,7 @@ pub(crate) async fn tui(
     #[cfg(unix)]
     let next_daemon_reconnect = Instant::now() + client_runtime::DAEMON_RECONNECT_INTERVAL;
     let daemon_attached = daemon_runtime.is_some();
+    restore_session_environment(&session, &mut app);
     if daemon_attached && let Some(attached_build_dir) = app.workspace.build_dir.clone() {
         build_dir = attached_build_dir;
         build_dir_configured = true;

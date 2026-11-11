@@ -1,8 +1,16 @@
 //! Session store.
 use super::*;
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub(crate) struct SessionEnvironment {
+    pub profile: yoctui_model::BuildEnvironmentProfile,
+    pub daemon_instance: [u8; 16],
+}
+
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 pub(crate) struct Session {
+    #[serde(default)]
+    pub(crate) verified_environment: Option<SessionEnvironment>,
     #[serde(default)]
     pub(crate) preferences: Option<WorkbenchPreferences>,
     #[serde(default)]
@@ -104,6 +112,9 @@ pub(crate) fn read_session(path: Option<&Path>) -> Result<Session> {
             .map_err(anyhow::Error::msg)
             .with_context(|| format!("invalid onboarding progress in {}", path.display()))?;
     }
+    if let Some(environment) = &session.verified_environment {
+        environment.profile.validate().map_err(anyhow::Error::msg)?;
+    }
     Ok(session)
 }
 
@@ -136,6 +147,9 @@ pub(crate) fn write_session(path: Option<&Path>, session: &Session) -> Result<()
             .validate()
             .map_err(anyhow::Error::msg)
             .context("invalid onboarding progress cannot be persisted")?;
+    }
+    if let Some(environment) = &session.verified_environment {
+        environment.profile.validate().map_err(anyhow::Error::msg)?;
     }
     let text = toml::to_string(session)?;
     if text.len() as u64 > MAX_SESSION_BYTES {
@@ -302,6 +316,42 @@ pub(crate) fn persist_settings(
     updated.log_wrap = None;
     updated.log_follow = None;
     updated.keymap = yoctui_model::KeymapPreferences::default();
+    write_session(path, &updated)?;
+    *session = updated;
+    Ok(())
+}
+
+/// Saved paths are preferences; only the same live daemon instance can verify them.
+pub(crate) fn restore_session_environment(session: &Session, app: &mut App) {
+    if let Some(environment) = &session.verified_environment
+        && app.daemon.status == yoctui_model::ClientReplicaStatus::Current
+        && app.daemon.instance_id
+            == Some(yoctui_model::DaemonModelInstanceId(
+                environment.daemon_instance,
+            ))
+        && app.workspace.build_dir.as_ref() == Some(&environment.profile.build_dir)
+    {
+        app.build_environment =
+            yoctui_model::BuildEnvironmentState::Connected(environment.profile.clone());
+        app.saved_builds.environment.profile_instance = app.daemon.instance_id;
+    }
+}
+pub(crate) fn persist_connected_environment(
+    path: Option<&Path>,
+    session: &mut Session,
+    app: &App,
+) -> Result<()> {
+    let yoctui_model::BuildEnvironmentState::Connected(profile) = &app.build_environment else {
+        return Ok(());
+    };
+    let Some(instance) = app.daemon.instance_id else {
+        return Ok(());
+    };
+    let mut updated = session.clone();
+    updated.verified_environment = Some(SessionEnvironment {
+        profile: profile.clone(),
+        daemon_instance: instance.0,
+    });
     write_session(path, &updated)?;
     *session = updated;
     Ok(())

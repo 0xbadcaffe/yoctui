@@ -2,6 +2,7 @@ use super::*;
 mod layer_browser_helpers;
 use layer_browser_helpers::{load_layer_browser_directory, load_layer_browser_preview};
 mod clipboard;
+mod environment_profile_session;
 mod errors_retained_escape;
 mod gitui_native_workspace;
 mod image_artifact_refresh;

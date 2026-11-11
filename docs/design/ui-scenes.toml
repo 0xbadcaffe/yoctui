@@ -20,7 +20,7 @@ required_features = [
   { id = "resource-state", description = "Typed telemetry and unavailable cache state", fixture_anchors = ["Resource Telemetry", "CPU Usage", "18%"] },
   { id = "discoverability", description = "Navigator and application-menu routes remain visible", fixture_anchors = ["Enter open", "F12 Menu"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/media/screenshots/07-idle-dashboard.png", sha256 = "3ec8f705d192b4d87c77528ce1ea554ca77d7d94470ab6b59ef99623859f7353", source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells", source_sha256 = "ab9daee98d88c39b9cca35f4fb8a217ef6ee66806cec1442b6de5245ccc33b2d", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/media/screenshots/07-idle-dashboard.png", sha256 = "0472c1efa581df9eb894d689cd823b01178169999233f6fb6207d93ecf16c061", source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells", source_sha256 = "25d533d522e95ac7857be1f1e14183bfc14fdbf1cad72a225d3c0b84a27856c5", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 
 [[scenario]]
@@ -37,7 +37,7 @@ required_features = [
   { id = "job-history", description = "Retained work remains visible", fixture_anchors = ["Job History", "Recent complete 4"] },
   { id = "context-actions", description = "Task actions expose availability", fixture_anchors = ["Actions", "Cancel active build"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/media/screenshots/01-active-build-tasks.png", sha256 = "76510541aeec152f12c9689ea839bf9517ca8656340aed9230b1498b4dac57d3", source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells", source_sha256 = "d45c5abce72e585e23cb030cbb5bbf88cb0dd30537e3358080dfe83951e8d212", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/media/screenshots/01-active-build-tasks.png", sha256 = "d0df642fad000f5ae4d6a44d23e32d3f6d6a3c91eb24b3f9ac63fffedc32acb9", source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells", source_sha256 = "08503e3770ec91eb4fae676e5d97e043655cce233a5eecceb0814138cd38f78d", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 
 [[scenario]]
@@ -54,7 +54,7 @@ required_features = [
   { id = "textual-filters", description = "Warning, error, and related-context filters expose accessible checkbox state", fixture_anchors = ["Errors (checked)", "Warnings (checked)", "Related task context (indeterminate)"] },
   { id = "recovery-actions", description = "Recovery actions and confirmation requirements are visible", fixture_anchors = ["Recovery actions", "[Enter] Open matching log", "Alt+b rebuild options", "confirmation required"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/media/screenshots/08-failed-build-errors.png", sha256 = "bc900ded6da02a533ae58c2d6e120259b6f9317eb2fb704c5463cd551aa216db", source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells", source_sha256 = "77d2405b1b91aba2015b1d5722287c213ed0deea6c30eedd621ff01578a91cb0", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/media/screenshots/08-failed-build-errors.png", sha256 = "17f066d54a53b45f48c78b284ba46d74c7006174142a6d4588699c2c7fa6e6b2", source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells", source_sha256 = "ec3d1485ce922fe3825acf5c6264ace7e44d784416773e991c2b9d45405e2838", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 
 [[scenario]]
@@ -71,7 +71,7 @@ required_features = [
   { id = "accessible-selection", description = "Package selection and authority rows expose checked, unchecked, indeterminate, and disabled meaning", fixture_anchors = ["base system group · 90 packages (indeterminate)", "base-system-000 · 520000 B · 3 files (checked)", "base-system-001 · 520000 B · 4 files (unchecked)", "Filesystem ownership (disabled)"] },
   { id = "filesystem-drilldown", description = "Filesystem tree and textual position remain visible", fixture_anchors = ["Filesystem tree: partial", "2-4/9", "/bin/busybox", "Tab drill-down"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/media/screenshots/06-rootfs-composition.png", sha256 = "e42f6ac8b199c62058691c3202bd7550b6f3d70f77d1ff629c14baeb411c5105", source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells", source_sha256 = "0042b356752d1670de70e57d8c265719b45008bc7bda099536f6892838d74d91", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/media/screenshots/06-rootfs-composition.png", sha256 = "bb0479fc1e7d0d0ea99fc3b13189e11f70187d8023ea407d2bdea9f66abf01e4", source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells", source_sha256 = "59399bade6d8ca650c083d5f1e6e86b4f6c240cf31c52e5d8f5186956802727e", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 
 [[scenario]]
@@ -88,7 +88,7 @@ required_features = [
   { id = "validation-diff", description = "Diff preview and the structural-validation boundary remain visible", fixture_anchors = ["Structural diagnostics only;", "Diff preview: loaded → buffer", "+  10 BROKEN_OVERRIDE =", "BitBake/compiler output remains authoritative"] },
   { id = "editor-actions", description = "Save, exact-recipe build, search, and file-focus actions remain discoverable", fixture_anchors = ["Ctrl+S save", "Ctrl+B build", "Ctrl+F file", "Alt+f workspace", "/ global", "Tab files"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/media/screenshots/09-editor-application-menu.png", sha256 = "ba7f2858e0b9b8c5f8e51ef0681ea2902571c9b8232fd591fe50da6da44ff810", source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells", source_sha256 = "39f17b7f74468b37ce0dda8d220ec253a6151088c3d73cbb93687d6c1ca92933", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/media/screenshots/09-editor-application-menu.png", sha256 = "31ee4e3a47696373d7c0d2aa925fb737747fbc146ee2853a904676b5304d5ceb", source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells", source_sha256 = "055b7f251af451c8d9f480606856975b07450a2c3e073c39611318d487eaaf88", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
 
 [[scenario]]
@@ -105,5 +105,5 @@ required_features = [
   { id = "scrollback-search", description = "Focused-pane search reports visible matches; the second pane retains its history accounting", fixture_anchors = ["search: busybox · 0 visible match(es)", "history 312 · dropped ≥14"] },
   { id = "prefix-help", description = "Writer shortcuts expose session return, output search, help, copy and rename", fixture_anchors = ["Alt+o sessions", "Alt+/ find output", "Ctrl+B ? shortcuts", "Ctrl+B [ copy", "Ctrl+B r rename"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/media/screenshots/10-terminal-sessions.png", sha256 = "329f48e2363a09f3b22445777f95f22a517a07b93b6b883a328711f078316b7d", source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells", source_sha256 = "9e5e9de9e7d1af1b6dbe96933888865a8cda71f36677c2d49c261518874fd22f", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
+raster_evidence = { status = "verified", artifact = "docs/media/screenshots/10-terminal-sessions.png", sha256 = "89f18880fdc79ca579e7b636435930b7e7e4386ef5342965f2fbca577dde8ea3", source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells", source_sha256 = "bdd12db6ca9c7fc9c48a1e62b295ea253f1658a92b15b53603b74ac4fdd632d6", provenance = "docs/design/screenshots/manifest.toml", renderer = "yoctui-cairo-cell-raster-v4" }
 live_evidence = { status = "not-retained" }
