@@ -13,7 +13,7 @@ from pathlib import Path
 
 model = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-model/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
 protocol = Path("crates/yoctui-protocol/src/daemon.rs").read_text(encoding="utf-8")
-pty = Path("crates/yoctui-model/src/pty_session.rs").read_text(encoding="utf-8")
+pty = Path("crates/yoctui-model/src/pty_session/types.rs").read_text(encoding="utf-8")
 for value in ("MAX_ACTIVE_TASKS: usize = 4_096", "MAX_COMPLETED_TASKS: usize = 1_024", "HOST_TELEMETRY_HISTORY_SAMPLES: usize = 60"):
     if value not in model:
         raise SystemExit(f"model retention contract missing: {value}")

@@ -101,7 +101,17 @@ cleanup() {
     "$repo_root/target/debug/yoctui" daemon stop >/dev/null 2>&1 || true
   rm -rf -- "$matrix_root"
 }
-trap cleanup EXIT
+on_exit() {
+  local status=$?
+  trap - EXIT
+  if ((status != 0)); then
+    printf 'live compatibility matrix failed: role=%s exit=%s\n' "$role" "$status" \
+      >"$artifact_dir/failure.txt"
+  fi
+  cleanup
+  exit "$status"
+}
+trap on_exit EXIT
 
 fetch_exact() {
   local repository="$1"
@@ -159,6 +169,10 @@ PY
 fi
 
 [[ -x "$init_script" ]] || { printf 'live compatibility matrix: init script missing: %s\n' "$init_script" >&2; exit 1; }
+# Daemon startup runs in a detached process and cannot rely on the environment
+# modified by sourcing oe-init-build-env in this shell. Pass the exact source
+# root so its explicit build-directory lookup can reconstruct the profile.
+export YOCTUI_SOURCE_DIR="$(dirname "$init_script")"
 unset PYENV_DIR PYENV_HOOK_PATH PYENV_VERSION
 export PATH="/usr/bin:/bin:$PATH"
 set +u
