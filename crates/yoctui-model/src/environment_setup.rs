@@ -12,6 +12,7 @@ pub const ENVIRONMENT_PATH_LIMIT: usize = 4096;
 pub struct EnvironmentDirectory {
     pub path: PathBuf,
     pub children: Vec<PathBuf>,
+    pub files: Vec<PathBuf>,
     pub init_script: Option<PathBuf>,
     pub notice: Option<String>,
 }
@@ -81,6 +82,7 @@ fn request_directory(app: &mut App, path: PathBuf, initial: bool) -> Option<Effe
         request,
         path,
         initial,
+        include_files: setup.field == 2,
     })
 }
 
@@ -141,6 +143,16 @@ pub(crate) fn environment_setup_update(
                 match result {
                     Ok(mut directory) => {
                         directory.children.truncate(ENVIRONMENT_DIRECTORY_LIMIT);
+                        directory.files.truncate(
+                            ENVIRONMENT_DIRECTORY_LIMIT.saturating_sub(directory.children.len()),
+                        );
+                        if setup.field == 2 {
+                            browser.selection = directory
+                                .files
+                                .iter()
+                                .position(|file| file.to_str() == Some(setup.values[2].as_str()))
+                                .map_or(0, |index| directory.children.len() + index);
+                        }
                         browser.directory = Some(directory);
                         setup.error = None;
                     }
@@ -202,21 +214,21 @@ pub(crate) fn environment_setup_update(
             setup.error = None;
         }
         A::Browse if setup.editor.is_none() && setup.browser.is_none() => {
-            if setup.field == 2 {
-                setup.error = Some(
-                    "The script is a file: use e to enter its path, or browse Source to detect it."
-                        .into(),
-                );
-                return None;
-            }
-            let path = PathBuf::from(&setup.values[setup.field]);
+            let value = &setup.values[setup.field];
+            let path = PathBuf::from(if setup.field == 2 && value.is_empty() {
+                &setup.values[0]
+            } else {
+                value
+            });
             return request_directory(app, path, true);
         }
         A::Select(delta) => {
             if let Some(browser) = &mut setup.browser
                 && !browser.loading
             {
-                let count = browser.directory.as_ref().map_or(0, |d| d.children.len());
+                let count = browser.directory.as_ref().map_or(0, |d| {
+                    d.children.len() + if setup.field == 2 { d.files.len() } else { 0 }
+                });
                 browser.selection = browser
                     .selection
                     .saturating_add_signed(delta)
@@ -228,6 +240,18 @@ pub(crate) fn environment_setup_update(
                 && !browser.loading
                 && let Some(directory) = &browser.directory
             {
+                if matches!(action, A::EnterDirectory)
+                    && setup.field == 2
+                    && let Some(file) = browser
+                        .selection
+                        .checked_sub(directory.children.len())
+                        .and_then(|index| directory.files.get(index))
+                {
+                    setup.values[2] = file.display().to_string();
+                    setup.browser = None;
+                    setup.error = None;
+                    return None;
+                }
                 let path = if matches!(action, A::ParentDirectory) {
                     directory.path.parent().map(PathBuf::from)
                 } else {
@@ -243,6 +267,20 @@ pub(crate) fn environment_setup_update(
                 && !browser.loading
                 && let Some(directory) = &browser.directory
             {
+                if setup.field == 2 {
+                    if let Some(file) = browser
+                        .selection
+                        .checked_sub(directory.children.len())
+                        .and_then(|index| directory.files.get(index))
+                    {
+                        setup.values[2] = file.display().to_string();
+                        setup.browser = None;
+                        setup.error = None;
+                    } else {
+                        setup.error = Some("Select a script file; Enter opens directories.".into());
+                    }
+                    return None;
+                }
                 setup.values[setup.field] = directory.path.display().to_string();
                 if let Some(script) = &directory.init_script
                     && script

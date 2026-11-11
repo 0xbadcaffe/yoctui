@@ -26,6 +26,7 @@ fn environment_setup_browser_rejects_stale_results_and_keeps_selection_bounded()
             result: Ok(EnvironmentDirectory {
                 path: "/yocto".into(),
                 children: vec!["/yocto/sub".into()],
+                files: Vec::new(),
                 init_script: Some("/yocto/oe-init-build-env".into()),
                 notice: None,
             }),

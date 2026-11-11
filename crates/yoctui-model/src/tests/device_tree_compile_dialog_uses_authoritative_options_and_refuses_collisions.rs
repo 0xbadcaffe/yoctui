@@ -244,6 +244,7 @@ fn device_tree_decompile_dialog_browses_destination_and_carries_view_completion(
                 result: Ok(EnvironmentDirectory {
                     path: destination.clone(),
                     children: Vec::new(),
+                    files: Vec::new(),
                     init_script: None,
                     notice: None,
                 }),

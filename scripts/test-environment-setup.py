@@ -31,6 +31,9 @@ def main() -> None:
         script = source / "oe-init-build-env"
         script.write_text(f"#!/bin/sh\ntouch '{marker}'\nexit 23\n")
         script.chmod(0o700)
+        custom_script = source / "nested" / "custom init"
+        custom_script.write_text(f"touch '{marker}'\n")
+        custom_script.chmod(0o600)
         environment = os.environ.copy()
         for key in list(environment):
             if key.startswith("YOCTUI_") or key in {
@@ -112,6 +115,27 @@ def main() -> None:
             wait_for("No child directories", "Loading directories")
             send(b"s")
             wait_for("Configure build environment", "Browse directories")
+            send(b"\t")
+            send(b"b")
+            wait_for("Browse environment scripts", "Loading files")
+            wait_for("> oe-init-build-env", "Loading files")
+            send(b"\x1b[H")
+            send(b"\r")
+            wait_for("custom init", "Loading files")
+            send(b"\x1b")
+            wait_for("Configure build environment", "Browse environment scripts")
+            assert str(custom_script) not in screen.text(), "Cancel changed script"
+            send(b"b")
+            wait_for("> oe-init-build-env", "Loading files")
+            send(b"\x1b[H")
+            send(b"\r")
+            wait_for("> custom init", "Loading files")
+            send(b"\r")
+            wait_for(str(custom_script), "Browse environment scripts")
+            send(b"b")
+            wait_for("> custom init", "Loading files")
+            send(b"s")
+            wait_for(str(custom_script), "Browse environment scripts")
             send(b"s")
             wait_for("Load build environment", "Configure build environment")
             send(b"\x1b")
@@ -124,7 +148,7 @@ def main() -> None:
             process.wait(timeout=5)
             assert process.returncode == 0
             print(
-                "Environment setup PTY passed: manual paste, source/build browse, hierarchy, save; no initialization or daemon"
+                "Environment setup PTY passed: source/build/script browse, nested custom file, cancel/reopen/select, review; no initialization or daemon"
             )
         finally:
             if process.poll() is None:

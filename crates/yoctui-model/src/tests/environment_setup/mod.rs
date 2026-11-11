@@ -15,3 +15,4 @@ mod environment_setup_manual_save_cancel_and_validation;
 mod environment_setup_manual_unicode_bounds_and_browser_errors_preserve_draft;
 
 mod daemon_connection;
+mod script_browser;

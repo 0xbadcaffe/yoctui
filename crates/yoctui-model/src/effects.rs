@@ -23,6 +23,7 @@ pub enum Effect {
         request: u64,
         path: PathBuf,
         initial: bool,
+        include_files: bool,
     },
     PersistSettings,
     PersistOnboarding,

@@ -40,6 +40,7 @@ fn dtc_decompile_dialog_maps_form_editor_and_browser_keys() {
         directory: Some(EnvironmentDirectory {
             path: "/workspace".into(),
             children: vec!["/workspace/out".into()],
+            files: Vec::new(),
             init_script: None,
             notice: None,
         }),

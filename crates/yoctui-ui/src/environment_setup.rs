@@ -17,7 +17,11 @@ pub(super) fn environment_setup_popup(
     );
     clear_popup(frame, app, popup);
     let title = if setup.browser.is_some() {
-        "Browse directories"
+        if setup.field == 2 {
+            "Browse environment scripts"
+        } else {
+            "Browse directories"
+        }
     } else {
         "Configure build environment"
     };
@@ -45,12 +49,22 @@ pub(super) fn environment_setup_popup(
             lines.push(Line::from(directory.path.display().to_string()));
             let capacity = usize::from(rows[0].height.saturating_sub(3)).max(1);
             let start = browser.selection.saturating_sub(capacity.saturating_sub(1));
-            if directory.children.is_empty() {
-                lines.push(Line::from("No child directories. s uses this directory."));
+            let files = if setup.field == 2 {
+                directory.files.as_slice()
+            } else {
+                &[]
+            };
+            if directory.children.is_empty() && files.is_empty() {
+                lines.push(Line::from(if setup.field == 2 {
+                    "No files or directories. Left goes to parent."
+                } else {
+                    "No child directories. s uses this directory."
+                }));
             }
             for (index, path) in directory
                 .children
                 .iter()
+                .chain(files.iter())
                 .enumerate()
                 .skip(start)
                 .take(capacity)
@@ -63,8 +77,13 @@ pub(super) fn environment_setup_popup(
                 };
                 lines.push(Line::styled(
                     format!(
-                        "{} {label}/",
-                        if index == browser.selection { ">" } else { " " }
+                        "{} {label}{}",
+                        if index == browser.selection { ">" } else { " " },
+                        if index < directory.children.len() {
+                            "/"
+                        } else {
+                            ""
+                        }
                     ),
                     style,
                 ));
@@ -74,9 +93,17 @@ pub(super) fn environment_setup_popup(
             }
         }
         if browser.loading {
-            notice = Some("Loading directories... Esc cancels".into());
+            notice = Some(if setup.field == 2 {
+                "Loading files... Esc cancels".into()
+            } else {
+                "Loading directories... Esc cancels".into()
+            });
         }
-        hint = "Up/Down select  Enter/Right open  Left/Backspace parent\nPgUp/PgDn Home/End  s use this directory  Esc back";
+        hint = if setup.field == 2 {
+            "Up/Down select  Enter open folder/choose file  Left/Backspace parent\nPgUp/PgDn Home/End  s choose file  Esc back"
+        } else {
+            "Up/Down select  Enter/Right open  Left/Backspace parent\nPgUp/PgDn Home/End  s use this directory  Esc back"
+        };
     } else if let Some(editor) = &setup.editor {
         lines.push(Line::from(format!(
             "Edit {}",
@@ -141,10 +168,10 @@ pub(super) fn environment_setup_popup(
         }
         lines.push(Line::from(""));
         lines.push(Line::from(
-            "Source/Build: b browse folders or e type a path.",
+            "Source/Build: b browse folders. Script: b browse and choose a file.",
         ));
         lines.push(Line::from(
-            "Script: detected when choosing Source; e sets a custom script.",
+            "e types any path. Choosing Source also detects its default script.",
         ));
         hint = "Tab/Shift-Tab Up/Down field  Enter/e edit  b browse\ns save profile and review connection  Esc cancel";
     }

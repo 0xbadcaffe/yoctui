@@ -64,6 +64,16 @@ pub fn read_environment_directory(
     initial: bool,
     fallback: &Path,
 ) -> Result<EnvironmentDirectory, String> {
+    read_environment_directory_with_files(path, initial, fallback, false)
+}
+
+/// File picking shares the bounded directory scanner; never executes an entry.
+pub fn read_environment_directory_with_files(
+    path: &Path,
+    initial: bool,
+    fallback: &Path,
+    include_files: bool,
+) -> Result<EnvironmentDirectory, String> {
     if !usable_path(path) {
         return Err("Path is too long or contains unsupported characters.".into());
     }
@@ -97,10 +107,11 @@ pub fn read_environment_directory(
     let entries =
         fs::read_dir(&path).map_err(|error| format!("Cannot list {}: {error}", path.display()))?;
     let mut children = Vec::new();
+    let mut files = Vec::new();
     let mut limited = false;
     let mut skipped = 0usize;
     for (visited, entry) in entries.enumerate() {
-        if visited >= 4096 || children.len() >= ENVIRONMENT_DIRECTORY_LIMIT {
+        if visited >= 4096 || children.len() + files.len() >= ENVIRONMENT_DIRECTORY_LIMIT {
             limited = true;
             break;
         }
@@ -118,11 +129,13 @@ pub fn read_environment_directory(
         }
         match fs::metadata(&child) {
             Ok(metadata) if metadata.is_dir() => children.push(child),
+            Ok(metadata) if include_files && metadata.is_file() => files.push(child),
             Ok(_) => {}
             Err(_) => skipped += 1,
         }
     }
     children.sort();
+    files.sort();
     let init_script = [
         "init-build-env",
         "build/init-build-env",
@@ -135,7 +148,10 @@ pub fn read_environment_directory(
     .and_then(|candidate| fs::canonicalize(candidate).ok())
     .filter(|candidate| usable_path(candidate) && candidate.starts_with(&path));
     let notice = if limited {
-        Some("Listing limited to 1024 directories / 4096 entries; enter a more specific path manually.".into())
+        Some(
+            "Listing limited to 1024 items / 4096 entries; enter a more specific path manually."
+                .into(),
+        )
     } else if skipped > 0 {
         Some(format!(
             "Skipped {skipped} unreadable or unsupported entries."
@@ -146,6 +162,7 @@ pub fn read_environment_directory(
     Ok(EnvironmentDirectory {
         path,
         children,
+        files,
         init_script,
         notice,
     })

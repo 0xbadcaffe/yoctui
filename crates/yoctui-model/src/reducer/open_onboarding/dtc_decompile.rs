@@ -18,6 +18,7 @@ fn request_dtc_directory(app: &mut App, path: PathBuf, initial: bool) -> Option<
         request,
         path,
         initial,
+        include_files: false,
     })
 }
 

@@ -119,6 +119,9 @@ terminal window. Quit returns to your shell; daemon-owned work keeps running.
 
 Without an initialized shell, open **Build Environment**, press `e`, and select
 Source/Build/Script. `b` browses and `s` opens a daemon connection review.
+On Script, `b` lists folders and files: `Enter` opens a folder or selects a file,
+`s` selects the highlighted file, and `Left` goes to the parent. Custom scripts
+need no filename extension or executable bit; they are sourced after confirmation.
 Confirm with `Enter` to source the selected script, start/reload the daemon and
 refresh recipes, images and configuration. `Esc` cancels. `Alt+v` repeats this
 connection/refresh flow. A replacement is refused while jobs or terminals are

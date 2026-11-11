@@ -34,6 +34,7 @@ fn dtc_decompile_dialog_renders_destination_checkbox_and_browser() {
         directory: Some(yoctui_model::EnvironmentDirectory {
             path: "/workspace/output".into(),
             children: vec!["/workspace/output/nested".into()],
+            files: Vec::new(),
             init_script: None,
             notice: None,
         }),

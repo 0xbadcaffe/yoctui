@@ -4,7 +4,7 @@ use yoctui_model::{
     Action, App, Dialog, DtcDecompileAction, Effect, EnvironmentDirectory, EnvironmentSetupAction,
 };
 
-type Scan = (u64, PathBuf, bool);
+type Scan = (u64, PathBuf, bool, bool);
 type ScanResult = (u64, Result<EnvironmentDirectory, String>);
 
 #[derive(Default)]
@@ -20,9 +20,10 @@ impl EnvironmentBrowserIo {
             request,
             path,
             initial,
+            include_files,
         } = effect
         {
-            self.queued = Some((request, path, initial));
+            self.queued = Some((request, path, initial, include_files));
             self.start();
         }
     }
@@ -31,13 +32,18 @@ impl EnvironmentBrowserIo {
         if self.worker.is_some() {
             return;
         }
-        if let Some((request, path, initial)) = self.queued.take() {
+        if let Some((request, path, initial, include_files)) = self.queued.take() {
             self.active_request = request;
             let fallback = yoctui_app::environment_browser_fallback();
             self.worker = Some(tokio::task::spawn_blocking(move || {
                 (
                     request,
-                    yoctui_app::read_environment_directory(&path, initial, &fallback),
+                    yoctui_app::read_environment_directory_with_files(
+                        &path,
+                        initial,
+                        &fallback,
+                        include_files,
+                    ),
                 )
             }));
         }
