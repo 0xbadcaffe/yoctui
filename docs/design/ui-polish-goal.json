@@ -1,0 +1,552 @@
+{
+  "schema_version": 1,
+  "id": "yoctui-ui-polish-v1",
+  "status": "active",
+  "objective": "Polish existing Yoctui screens with consistent focus, hierarchy, navigation feedback and honest loading states, without replacing GitUI or changing daemon ownership.",
+  "reference_revision": "251779c907cf3418ba748d8732c99bed02b1bcae",
+  "reference_is_not_a_baseline": "At execution, record the actual branch, HEAD, dirty paths, binary identity and relevant existing tests. Reuse completed behavior; do not assume this revision remains current.",
+  "implementation_authorized_by_this_document": false,
+  "scope": {
+    "included": [
+      "Shared focus and semantic colors",
+      "Compact header and contextual footer",
+      "Connection and metadata loading presentation",
+      "Build Environment path forms and discovery feedback",
+      "Consistent existing browser navigation and scrolling feedback",
+      "Existing Dashboard and Performance telemetry presentation"
+    ],
+    "excluded": [
+      "Replacing GitUI with Lazygit",
+      "Copying third-party source, themes, icons or artwork",
+      "New daemon transports, build schedulers or metadata sources",
+      "New editors, PDF or schematic engines",
+      "New telemetry collection or history pipelines",
+      "Changing existing shortcuts or requiring uppercase-letter shortcuts",
+      "Unrelated bugs, full image builds, QEMU/kernel debugging validation",
+      "Publishing, pushing, installing binaries or restarting user services without a separate instruction"
+    ]
+  },
+  "invariants": [
+    "The TUI owns presentation; the daemon owns persistent work; BitBake owns metadata and outcomes.",
+    "Preserve user configuration, active builds, PTYs, writer ownership, review/confirmation and detach behavior.",
+    "Retain GitUI and the current embedded-terminal architecture.",
+    "Reuse existing typed state, command catalog, widgets, themes and test harnesses; do not introduce a second state authority.",
+    "Do not create or modify AGENTS.md or additional task-control documents.",
+    "Any commits must use Roy Cohen <roy@0xbadcaffe.dev> as author and committer."
+  ],
+  "dependency_policy": {
+    "default": "Use existing dependencies; zero new dependencies is the acceptance target.",
+    "if_a_dependency_is_needed": "Admit only if needed for a named acceptance check and all license/package checks pass within the existing milestone attempt and time budget; otherwise defer the proposal outside this scope.",
+    "allowed_integration": "Black-box API usage only; do not copy or port implementation code into Yoctui.",
+    "license_requirements": [
+      "Check the exact pinned release and applicable transitive licenses.",
+      "Retain original license text, copyrights and required notices under licenses/.",
+      "Include applicable licenses/ files in affected published crates and binary distribution archives; verify archive contents.",
+      "Do not overwrite or remove existing compliance notices."
+    ],
+    "verification": "If no dependency is added, compare Cargo manifests and lockfile dependency graph with the execution baseline; only coherent internal version changes are allowed."
+  },
+  "execution_limits": {
+    "overall_elapsed_limit_seconds": 57600,
+    "limit_includes": "Implementation, compilation, validation, prerequisite work and waiting during this execution; it is a hard ceiling, not a target.",
+    "milestone_implementation_attempts_max": 3,
+    "same_verification_invocations_per_revision_max": 1,
+    "infrastructure_only_retry_max": 1,
+    "same_test_after_fix": "Run again only after a relevant change, or the single documented infrastructure retry. Count it against the milestone attempt limit.",
+    "full_workspace_test_runs_max": 2,
+    "expensive_performance_runs_max": 3,
+    "golden_regeneration_passes_max": 2,
+    "shell_command_timeout_seconds": 1800,
+    "pty_action_wait_seconds": 15,
+    "real_metadata_wait_seconds": 720,
+    "unbounded_polling_allowed": false,
+    "cargo_environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "RUST_TEST_THREADS": "2"
+    },
+    "cargo_environment_applies_to": "Every Cargo invocation, including commands started by scripts.",
+    "prohibited_loops": [
+      "Repeated full test suites without a relevant change",
+      "Repeated visual redesign after acceptance criteria pass",
+      "Automatically increasing timeouts or performance thresholds until a test passes",
+      "Updating snapshots merely to hide unexpected differences",
+      "Repeated prerequisite installation or CI retries without new evidence",
+      "Inventing additional milestones during execution"
+    ]
+  },
+  "state_machine": {
+    "milestone_states": [
+      "pending",
+      "in_progress",
+      "passed",
+      "blocked",
+      "failed",
+      "budget_exhausted"
+    ],
+    "success": "Every required milestone passed, every required check has evidence from the final applicable revision, and no introduced defect is open.",
+    "blocked": "Name the exact missing prerequisite or unresolved dependency. Never count blocked or untested work as passed.",
+    "stop": "On budget/attempt exhaustion, stop the affected milestone. Continue independent work only if its prerequisites passed and the overall budget remains. End the execution when no eligible work remains.",
+    "reopening_passed_work": "Only for a reproducible regression caused by a later scoped change. Record the failing check and charge repair to the responsible later milestone; do not restart the whole plan.",
+    "scope_changes": "Require a separate user instruction; do not silently expand this document."
+  },
+  "evidence": {
+    "directory": "artifacts/ui-polish/<baseline-short-sha>/",
+    "tracked_product_document": "docs/design/ui-polish-goal.json",
+    "record": [
+      "Source and tested binary revisions/version/hash",
+      "Test commands, relevant environment, exit codes and duration",
+      "Fixture/live distinction and available prerequisites",
+      "Named acceptance checks with pass/fail/blocked results",
+      "Current-frame text/cell captures and before/after rasters for changed layouts",
+      "Actual attempt counts, remaining budget and terminal stop reason"
+    ],
+    "result_file": "results.json",
+    "check_result_fields": [
+      "id",
+      "status",
+      "source_revision",
+      "command_or_procedure",
+      "exit_code_or_assertion",
+      "evidence_paths"
+    ],
+    "rule": "Keep transient evidence under ignored artifacts/. A successful command that selected zero tests does not satisfy a test requirement."
+  },
+  "deterministic_test_contract": {
+    "sizes": [
+      [
+        80,
+        24
+      ],
+      [
+        100,
+        30
+      ],
+      [
+        160,
+        48
+      ]
+    ],
+    "render_modes": [
+      "default color",
+      "no color",
+      "ASCII",
+      "high contrast"
+    ],
+    "fixture_inputs": {
+      "clock_unix_ms": 1700000000000,
+      "list_items": 200,
+      "initial_selected_index": 75,
+      "seed": 0
+    },
+    "required_states": [
+      "empty",
+      "loading with unknown total",
+      "partial results",
+      "ready",
+      "failure",
+      "cancelled",
+      "disconnected"
+    ],
+    "rules": [
+      "Use the existing TestBackend and PTY harnesses; inject clocks and measurements for cell assertions.",
+      "Assert the current composed terminal frame after each action; do not search accumulated ANSI history.",
+      "Use bounded polling with fixed deadlines, not long fixed sleeps.",
+      "Check selection, viewport and mouse geometry against the same model state.",
+      "Every acceptance test must fail against the relevant broken behavior or demonstrate an explicit contract.",
+      "Existing tests satisfying a check are reused, with their exact test names recorded.",
+      "Live performance measurements are observations unless an existing repository threshold applies.",
+      "Never manufacture build percentages, task totals, PSI values or loading stages."
+    ]
+  },
+  "milestones": [
+    {
+      "id": "M0",
+      "title": "Baseline and reuse audit",
+      "status": "passed",
+      "required": true,
+      "depends_on": [],
+      "implementation_attempts_used": 1,
+      "deliverables": [
+        "Record the actual revision, branch, binary, dirty tree, relevant tests and available tools.",
+        "Map each acceptance check to existing behavior or one concrete gap. Freeze the selected layouts before implementation."
+      ],
+      "acceptance_checks": [
+        {
+          "id": "M0-C1",
+          "assertion": "No existing user changes are lost or included in commits accidentally."
+        },
+        {
+          "id": "M0-C2",
+          "assertion": "Every later check is classified existing-pass, demonstrated-gap or prerequisite-blocked."
+        },
+        {
+          "id": "M0-C3",
+          "assertion": "Capture Dashboard, Tasks, Build Environment, Layers, Recipes, Images and Terminal Sessions before changes."
+        },
+        {
+          "id": "M0-C4",
+          "assertion": "Record existing documented performance thresholds and the host used for comparisons."
+        }
+      ],
+      "verification": [
+        "Read docs/interface-behavior.md, docs/widgets-and-dependencies.md, docs/testing.md and relevant source.",
+        "Run the existing focused UI/PTY checks once for affected behavior. Do not run a baseline full workspace suite.",
+        "Run scripts/verify-performance-ci-fast.sh once and retain its existing thresholds and evidence for final comparison."
+      ]
+    },
+    {
+      "id": "M1",
+      "title": "Focus and semantic colors",
+      "status": "pending",
+      "required": true,
+      "depends_on": [
+        "M0"
+      ],
+      "implementation_attempts_used": 0,
+      "deliverables": [
+        "Use one shared style mapping for focus, inactive borders, selection, muted metadata and status.",
+        "Retain existing themes and accessibility fallbacks."
+      ],
+      "acceptance_checks": [
+        {
+          "id": "M1-C1",
+          "assertion": "Exactly one active input owner has the focus treatment in each tested layout."
+        },
+        {
+          "id": "M1-C2",
+          "assertion": "An inactive pane may retain its selection without looking focused."
+        },
+        {
+          "id": "M1-C3",
+          "assertion": "Success, attention and failure retain readable text or symbols with color disabled."
+        },
+        {
+          "id": "M1-C4",
+          "assertion": "Tab and Shift+Tab visit only visible panes; modal input stays trapped."
+        },
+        {
+          "id": "M1-C5",
+          "assertion": "No changed screen loses a keyboard action or a mouse hit target."
+        }
+      ],
+      "verification": [
+        "Add or reuse ui_polish_focus and ui_polish_colors tests under existing crate test folders.",
+        "Exercise the three sizes and four render modes with fixed fixtures."
+      ]
+    },
+    {
+      "id": "M2",
+      "title": "Header and contextual footer",
+      "status": "pending",
+      "required": true,
+      "depends_on": [
+        "M1"
+      ],
+      "implementation_attempts_used": 0,
+      "deliverables": [
+        "Prioritize project, MACHINE, target and daemon connection in the header.",
+        "Keep detailed Git/backend information accessible in existing details/help.",
+        "Show at most six immediate footer actions plus an existing Help/Menu entry; prefix mode expands its own commands."
+      ],
+      "acceptance_checks": [
+        {
+          "id": "M2-C1",
+          "assertion": "At 80x24, important values use explicit truncation and never overlap or split a grapheme."
+        },
+        {
+          "id": "M2-C2",
+          "assertion": "Full truncated values remain accessible through an existing detail/help surface."
+        },
+        {
+          "id": "M2-C3",
+          "assertion": "Footer actions match current focus and ownership; disabled actions explain their reason."
+        },
+        {
+          "id": "M2-C4",
+          "assertion": "Terminal footer distinguishes Yoctui controls, terminal writer input and read-only state using words."
+        },
+        {
+          "id": "M2-C5",
+          "assertion": "Existing key bindings remain unchanged, including Ctrl+B and writer release."
+        }
+      ],
+      "verification": [
+        "Add or reuse ui_polish_header and ui_polish_footer TestBackend tests.",
+        "Use PTY assertions for navigator, modal, terminal viewer and terminal writer contexts."
+      ]
+    },
+    {
+      "id": "M3",
+      "title": "Honest connection and loading presentation",
+      "status": "pending",
+      "required": true,
+      "depends_on": [
+        "M2"
+      ],
+      "implementation_attempts_used": 0,
+      "deliverables": [
+        "Present only stages supported by existing events: path validation, initialization, daemon connection and metadata loading.",
+        "Distinguish daemon connection from recipe inventory readiness."
+      ],
+      "acceptance_checks": [
+        {
+          "id": "M3-C1",
+          "assertion": "A responsive daemon with metadata pending is labeled connected/loading, not metadata ready."
+        },
+        {
+          "id": "M3-C2",
+          "assertion": "Unknown totals produce no invented percentage; empty and loading states differ."
+        },
+        {
+          "id": "M3-C3",
+          "assertion": "Partial results stay usable and cannot reset selection as more results arrive."
+        },
+        {
+          "id": "M3-C4",
+          "assertion": "Failure shows the actual reason and an applicable retry/edit action."
+        },
+        {
+          "id": "M3-C5",
+          "assertion": "Navigation and cancel remain responsive while a delayed fixture scan is pending."
+        },
+        {
+          "id": "M3-C6",
+          "assertion": "Stale results from a previous generation cannot change the current workspace."
+        }
+      ],
+      "verification": [
+        "Use delayed, partial, failed and stale-result fixtures; no live build required.",
+        "Add or reuse ui_polish_loading tests and extend the existing environment reconnect PTY test only for uncovered cases."
+      ]
+    },
+    {
+      "id": "M4",
+      "title": "Environment path form polish",
+      "status": "pending",
+      "required": true,
+      "depends_on": [
+        "M3"
+      ],
+      "implementation_attempts_used": 0,
+      "deliverables": [
+        "Give Source, Build and Script consistent labels, browse affordances and discovery feedback.",
+        "Reuse existing initializer discovery and reviewed connection flow; add only missing presentation or routing."
+      ],
+      "acceptance_checks": [
+        {
+          "id": "M4-C1",
+          "assertion": "Typed paths, bracketed paste and paths containing spaces preserve the exact accepted value."
+        },
+        {
+          "id": "M4-C2",
+          "assertion": "Script browsing lists files and folders; Enter chooses a file or enters a folder; Esc preserves the previous draft."
+        },
+        {
+          "id": "M4-C3",
+          "assertion": "Source-folder selection detects an existing initializer; no match shows an actionable explanation and preserves manual editing."
+        },
+        {
+          "id": "M4-C4",
+          "assertion": "Relative paths, missing source/script, source pointing to a file and unreadable entries identify the affected path."
+        },
+        {
+          "id": "M4-C5",
+          "assertion": "A missing build directory with an existing writable parent remains valid for reviewed creation."
+        },
+        {
+          "id": "M4-C6",
+          "assertion": "Discovery, browsing and review never source the initializer; only confirmation initializes."
+        },
+        {
+          "id": "M4-C7",
+          "assertion": "Failed initialization preserves the preceding daemon and user configuration."
+        }
+      ],
+      "verification": [
+        "Reuse scripts/test-environment-setup.py and scripts/test-environment-reconnect-pty.py; extend assertions only for demonstrated gaps.",
+        "Test actual Ctrl+V if a desktop clipboard is available, restoring its prior content; otherwise report that live check blocked and retain bracketed-paste coverage."
+      ]
+    },
+    {
+      "id": "M5",
+      "title": "Browser and scrolling consistency",
+      "status": "pending",
+      "required": true,
+      "depends_on": [
+        "M1",
+        "M2"
+      ],
+      "implementation_attempts_used": 0,
+      "deliverables": [
+        "Apply shared breadcrumb, selection, position and scroll presentation to existing Layers, rootfs Files, Build Directory and Workbench file views.",
+        "Preserve each view's established filesystem authority and actions."
+      ],
+      "acceptance_checks": [
+        {
+          "id": "M5-C1",
+          "assertion": "For 200 filtered rows, position text matches the visible range and the filtered count."
+        },
+        {
+          "id": "M5-C2",
+          "assertion": "Home, End, PageUp, PageDown and wheel reach the final row and can move upward again."
+        },
+        {
+          "id": "M5-C3",
+          "assertion": "Scrollbar thumb position is monotonic during downward navigation and reaches the bottom at the final viewport."
+        },
+        {
+          "id": "M5-C4",
+          "assertion": "Returning from a file preview restores the same selection and viewport."
+        },
+        {
+          "id": "M5-C5",
+          "assertion": "Selection survives resize and background refresh when the selected stable identity still exists."
+        },
+        {
+          "id": "M5-C6",
+          "assertion": "Empty and single-row collections have correct counts and no division-by-zero or invalid selection."
+        }
+      ],
+      "verification": [
+        "Add or reuse ui_polish_scroll tests with fixed 200-row trees/lists.",
+        "Exercise each of the four named browsers at all three sizes; test mouse hit geometry after resize."
+      ]
+    },
+    {
+      "id": "M6",
+      "title": "Existing telemetry readability",
+      "status": "pending",
+      "required": true,
+      "depends_on": [
+        "M1",
+        "M2"
+      ],
+      "implementation_attempts_used": 0,
+      "deliverables": [
+        "Refine existing CPU, memory, disk and pressure readings in Dashboard and Performance.",
+        "Use existing history only where already available; defer new history collection outside this scope."
+      ],
+      "acceptance_checks": [
+        {
+          "id": "M6-C1",
+          "assertion": "Every displayed meter retains a numeric value and unit, or explicit unavailable state."
+        },
+        {
+          "id": "M6-C2",
+          "assertion": "Zero is distinct from unavailable; values outside expected bounds do not break layout."
+        },
+        {
+          "id": "M6-C3",
+          "assertion": "Pressure/warning colors use existing configured thresholds and textual labels."
+        },
+        {
+          "id": "M6-C4",
+          "assertion": "Compact layouts retain the measurements already guaranteed by current tests."
+        },
+        {
+          "id": "M6-C5",
+          "assertion": "No new per-frame filesystem/network probes, unbounded history or background sampler is introduced."
+        }
+      ],
+      "verification": [
+        "Reuse compact-resource-meter tests and add ui_polish_telemetry fixture cases for zero, unknown, normal and high pressure.",
+        "Inspect render paths and dependency diff; record whether existing history was available."
+      ]
+    },
+    {
+      "id": "M7",
+      "title": "Final acceptance and stop",
+      "status": "pending",
+      "required": true,
+      "depends_on": [
+        "M3",
+        "M4",
+        "M5",
+        "M6"
+      ],
+      "implementation_attempts_used": 0,
+      "deliverables": [
+        "Validate the fixed scope, update only intentionally changed golden references and relevant user help.",
+        "Produce the final result inventory and stop; do not start another polish cycle."
+      ],
+      "acceptance_checks": [
+        {
+          "id": "M7-C1",
+          "assertion": "All named milestone checks pass at the final applicable revision; any blocked required check prevents complete status."
+        },
+        {
+          "id": "M7-C2",
+          "assertion": "GitUI still opens in the embedded terminal and receives input only with writer ownership."
+        },
+        {
+          "id": "M7-C3",
+          "assertion": "Terminal detach/reconnect, search, resize and clean exit retain their existing contracts."
+        },
+        {
+          "id": "M7-C4",
+          "assertion": "Every changed golden has an explained intentional difference; tests also pass with golden-update variables unset."
+        },
+        {
+          "id": "M7-C5",
+          "assertion": "Existing performance gates pass without relaxed thresholds or added sampling/render work."
+        },
+        {
+          "id": "M7-C6",
+          "assertion": "No third-party code/assets were copied; any admitted dependency has license/notice files under licenses/ and verified package inclusion."
+        },
+        {
+          "id": "M7-C7",
+          "assertion": "No introduced regression remains open and no release/push/install occurred without separate authorization."
+        }
+      ],
+      "verification": [
+        "Run focused regression tests and scripts/test-tui-snapshots.sh, scripts/test-tui-keymap.sh and scripts/test-tui-flow.sh where applicable.",
+        "Run cargo fmt --all --check; cargo clippy --locked --workspace --all-targets --all-features -- -D warnings.",
+        "Run cargo test --locked --workspace --all-features once; permit one repair run only for a concrete relevant failure.",
+        "Run scripts/check-library-layout.py, scripts/check-version-bump.py against the recorded execution baseline, and relevant documentation/golden/raster checks.",
+        "Run scripts/verify-performance-ci-fast.sh once at acceptance and compare with M0; permit one diagnostic rerun, within the global three-run cap.",
+        "Record real GitUI/session smoke results separately from fixture coverage. Missing prerequisites are blocked, never passes."
+      ]
+    }
+  ],
+  "completion_report": {
+    "required": [
+      "What changed and why",
+      "Passed checks and evidence locations",
+      "Fixture versus actual runtime results",
+      "Remaining failures, missing prerequisites and pre-existing failures",
+      "Attempt/budget consumption and terminal stop reason",
+      "One next practical milestone, or explicitly none for this scope"
+    ],
+    "complete_means": "M0 through M7 all passed. A polished screenshot alone is not acceptance."
+  },
+  "development_build_tool": {
+    "requested_tool": "Blaze",
+    "pinned_version": "0.20261122.0",
+    "integration": "External executable only; no RUSTC_WRAPPER, Cargo override or runtime dependency.",
+    "status": "deferred",
+    "probe_command": "blaze check crates/yoctui-utils --workers 2",
+    "probe_exit_code": 1,
+    "probe_limits": {
+      "memory_bytes": 4294967296,
+      "cpu_quota_percent": 200,
+      "runtime_seconds": 300
+    },
+    "evidence": "artifacts/blaze-evaluation/check.log",
+    "licenses": "licenses/blaze/",
+    "blocks_ui_development": false,
+    "deferred_reason": "User requested putting Blaze on hold for later; it is not an acceptance prerequisite or blocker.",
+    "previous_probe_limitation": "Release requires toolchain manifest 187c11dc57908faed50beacf02d982fbd188ecb17f2e0c8b5c7571b4393d5793; archive omits it and the pinned blaze-toolchain helper is an empty main(). The released CLI also has no build/export command.",
+    "active_build_tool": "Cargo, using the existing two-job/resource settings and repository toolchain.",
+    "resume_policy": "Revisit Blaze only when the user asks; no installation attempts or compatibility probes during UI polish."
+  },
+  "execution": {
+    "baseline_revision": "251779c907cf3418ba748d8732c99bed02b1bcae",
+    "started_unix": 1795673696.1913054,
+    "authorized_by": "User instruction: start",
+    "evidence_directory": "artifacts/ui-polish/251779c9"
+  }
+}

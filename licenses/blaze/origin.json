@@ -1,0 +1,9 @@
+{
+  "project": "Blaze",
+  "version": "0.20261122.0",
+  "repository": "https://github.com/indexable-inc/blaze",
+  "license_expression": "MIT OR Apache-2.0",
+  "usage": "External optional development build tool; not linked into or bundled with Yoctui. No implementation code copied.",
+  "archive": "blaze-v0.20261122.0-x86_64-unknown-linux-gnu.tar.xz",
+  "archive_sha256": "c5e2437ab2b6aa40bb4528a290b257547fa632be64ab2a2d3914c2ea2c8e6f31"
+}
