@@ -71,3 +71,54 @@ fn header_status_local_clock_has_no_seconds_or_utc_label() {
     assert_eq!(label.matches(':').count(), 1, "{label}");
     assert!(!label.contains("UTC"), "{label}");
 }
+
+#[test]
+fn pending_recipe_metadata_is_distinct_from_empty_and_failed() {
+    use yoctui_model::ClientMetadataStatus as Metadata;
+
+    let mut app = App::new(32, 8192);
+    app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+    app.screen = Screen::Recipes;
+    app.focus = FocusTarget::Workspace;
+    for (stage, message) in [
+        (Metadata::Connecting, "Connecting to BitBake"),
+        (Metadata::Loading, "Loading recipes"),
+        (Metadata::Ready, "No recipes supplied"),
+        (
+            Metadata::Failed("BitBake metadata probe timed out".into()),
+            "BitBake metadata probe timed out",
+        ),
+    ] {
+        app.daemon.metadata = stage;
+        let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+        terminal
+            .draw(|frame| package_render::recipes(frame, &app, frame.area()))
+            .unwrap();
+        let output: String = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect();
+        assert!(output.contains(message), "{message}: {output}");
+        if app.daemon.metadata != Metadata::Ready {
+            assert!(!output.contains("No recipes supplied"), "{output}");
+        }
+        if matches!(app.daemon.metadata, Metadata::Failed(_)) {
+            assert!(output.contains("retry verification"), "{output}");
+        }
+    }
+
+    app.daemon.metadata = Metadata::Loading;
+    let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+    terminal
+        .draw(|frame| render_at(frame, &app, UNIX_EPOCH))
+        .unwrap();
+    let status = row(terminal.backend().buffer(), 80, 2);
+    assert!(
+        status.contains("Daemon connected · Loading recipes"),
+        "{status}"
+    );
+    assert!(!status.contains('%'), "{status}");
+}

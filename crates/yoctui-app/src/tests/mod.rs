@@ -4,6 +4,7 @@ use super::*;
 mod build_performance_telemetry;
 mod environment_profile_refresh;
 mod gitui_native_workspace;
+mod metadata_startup;
 mod raw_flow;
 mod rootfs_browser;
 mod terminal_incremental_projection;

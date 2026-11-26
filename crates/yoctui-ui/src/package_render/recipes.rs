@@ -97,7 +97,14 @@ pub(crate) fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         list[1],
     );
     let detail = selected.map_or_else(
-        || "No recipes supplied by the backend.".into(),
+        || match &app.daemon.metadata {
+            yoctui_model::ClientMetadataStatus::Connecting => "Connecting to BitBake…".into(),
+            yoctui_model::ClientMetadataStatus::Loading => "Loading recipes…".into(),
+            yoctui_model::ClientMetadataStatus::Failed(reason) => {
+                format!("{reason}\nOpen Build Environment to edit the paths or retry verification.")
+            }
+            _ => "No recipes supplied by the backend.".into(),
+        },
         |recipe| recipe_inspector(app, recipe),
     );
     frame.render_widget(

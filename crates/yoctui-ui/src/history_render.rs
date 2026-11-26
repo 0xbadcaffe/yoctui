@@ -35,15 +35,40 @@ pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Re
     }
     if app.saved_builds.environment.loading {
         status.push_str("\nInitializing environment and refreshing daemon metadata...");
+    } else {
+        match &app.daemon.metadata {
+            yoctui_model::ClientMetadataStatus::Connecting => {
+                status.push_str("\nDaemon connected. Connecting to BitBake…");
+            }
+            yoctui_model::ClientMetadataStatus::Loading => {
+                status.push_str("\nDaemon connected. Loading recipes and layers…");
+            }
+            yoctui_model::ClientMetadataStatus::Failed(reason) => {
+                status.push_str("\n");
+                status.push_str(reason);
+                status.push_str("\nEdit the paths with e, or retry with Alt+v.");
+            }
+            _ => {}
+        }
     }
     let draft = app.build_environment_draft.as_ref().map(|draft| format!(
         "\n\nEdit profile (field: {:?})\nsource: {}\nbuild: {}\nscript: {}\n\nType path, ↑/↓ select field, s save, Esc cancel.",
         draft.field, draft.source, draft.build, draft.script
     )).unwrap_or_default();
-    let images = if app.build_environment.connected() && !app.available_images.is_empty() {
-        format!("\navailable images:\n{}", app.available_images.join("\n"))
-    } else {
-        "\navailable images: locked until BitBake verification succeeds.".into()
+    let images = match (&app.daemon.metadata, app.build_environment.connected()) {
+        (_, true) if !app.available_images.is_empty() => {
+            format!("\navailable images:\n{}", app.available_images.join("\n"))
+        }
+        (yoctui_model::ClientMetadataStatus::Loading, _) => {
+            "\navailable images: waiting for recipe inventory.".into()
+        }
+        (yoctui_model::ClientMetadataStatus::Failed(_), _) => {
+            "\navailable images: metadata unavailable.".into()
+        }
+        (yoctui_model::ClientMetadataStatus::Ready, true) => {
+            "\navailable images: no image targets supplied by BitBake.".into()
+        }
+        _ => "\navailable images: locked until BitBake verification succeeds.".into(),
     };
     let profile = match &app.project_profile {
         yoctui_model::ProjectProfileState::NotLoaded => "Project profile: not inspected".to_owned(),

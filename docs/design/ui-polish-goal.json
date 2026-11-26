@@ -281,12 +281,12 @@
     {
       "id": "M3",
       "title": "Honest connection and loading presentation",
-      "status": "pending",
+      "status": "passed",
       "required": true,
       "depends_on": [
         "M2"
       ],
-      "implementation_attempts_used": 0,
+      "implementation_attempts_used": 1,
       "deliverables": [
         "Present only stages supported by existing events: path validation, initialization, daemon connection and metadata loading.",
         "Distinguish daemon connection from recipe inventory readiness."

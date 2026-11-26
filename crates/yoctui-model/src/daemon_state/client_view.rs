@@ -152,6 +152,16 @@ pub struct ClientDaemonPressureCounters {
     pub slow_client_disconnects: u64,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum ClientMetadataStatus {
+    #[default]
+    Unknown,
+    Connecting,
+    Loading,
+    Ready,
+    Failed(String),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClientDaemonView {
     pub status: ClientReplicaStatus,
@@ -160,6 +170,7 @@ pub struct ClientDaemonView {
     pub sequence: u64,
     pub generation: u64,
     pub bitbake: ClientDaemonLifecycle,
+    pub metadata: ClientMetadataStatus,
     pub jobs: Vec<ClientDaemonJobSummary>,
     pub pty_sessions: Vec<ClientDaemonPtySummary>,
     pub pty_details: Vec<ClientDaemonPtyDetails>,
@@ -179,6 +190,7 @@ impl Default for ClientDaemonView {
             sequence: 0,
             generation: 0,
             bitbake: ClientDaemonLifecycle::Disconnected,
+            metadata: ClientMetadataStatus::Unknown,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
             pty_details: Vec::new(),

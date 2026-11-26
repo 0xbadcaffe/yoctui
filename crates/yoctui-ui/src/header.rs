@@ -374,6 +374,21 @@ fn render_header_status(frame: &mut Frame, app: &App, area: Rect, palette: &Them
         return;
     }
 
+    let metadata_label = match app.daemon.metadata {
+        yoctui_model::ClientMetadataStatus::Connecting => Some("Connecting to BitBake"),
+        yoctui_model::ClientMetadataStatus::Loading => Some("Loading recipes"),
+        _ => None,
+    };
+    if let Some(label) = metadata_label {
+        let line = format!("{} Daemon connected · {label}", task_activity(app, None));
+        frame.render_widget(
+            Paragraph::new(bounded_cell_text(&line, area.width))
+                .style(palette.role(palette.informational, Modifier::BOLD)),
+            area,
+        );
+        return;
+    }
+
     let daemon_tone = daemon_status_tone(app.daemon.status);
     let (bitbake, bitbake_tone) = header_bitbake_status(app);
     let spans = vec![

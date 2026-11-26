@@ -66,6 +66,7 @@ def main():
         marker = source / "initialized"
         selection = source / "recipe"
         selection.write_text("core-image-loaded")
+        release_scan = root / "release-scan"
         script = source / "custom-init.sh"
         script.write_text(
             'export BUILDDIR="$1"\nmkdir -p "$1/conf"\n'
@@ -84,8 +85,20 @@ def main():
         recipe = '{"name": os.environ.get("YOCTUI_TEST_RECIPE", "core-image-old"), "version": "1.0", "layer": "fixture"}'
         text = text.replace('"recipes": []', f'"recipes": [{recipe}]')
         text = text.replace('"variables": {}', '"variables": {"MACHINE": "fixture-machine"}')
+        text = text.replace(
+            '    elif kind == "inspect_workspace":\n',
+            '    elif kind == "inspect_workspace":\n'
+            '        release_scan = os.environ.get("YOCTUI_TEST_RELEASE_SCAN")\n'
+            '        if release_scan:\n'
+            '            deadline = time.monotonic() + 25\n'
+            '            while not os.path.exists(release_scan):\n'
+            '                if time.monotonic() >= deadline:\n'
+            '                    raise TimeoutError("fixture scan was not released")\n'
+            '                time.sleep(0.02)\n',
+        )
         bridge.write_text(text)
         environment["YOCTUI_BRIDGE_PATH"] = str(bridge)
+        environment["YOCTUI_TEST_RELEASE_SCAN"] = str(release_scan)
         binary = binary_path(ROOT)
         prefix = [binary, "--backend", "process", "--build-dir", str(old_build), "daemon"]
         subprocess.run(prefix + ["start"], env=environment, check=True, capture_output=True)
@@ -94,6 +107,20 @@ def main():
         try:
             terminal = start_terminal(ROOT, environment, 180, 52, "attach")
             terminal.dismiss_onboarding()
+            send(terminal, b"\x1b[18~")  # F7 recipes
+            terminal.wait_for("Daemon connected · Loading recipes")
+            terminal.wait_for("Loading recipes…", absent="No recipes supplied")
+            if args.capture_dir:
+                args.capture_dir.mkdir(parents=True, exist_ok=True)
+                (args.capture_dir / "loading-recipes.txt").write_text(terminal.screen.text())
+            send(terminal, b"\x1b")
+            terminal.wait_for("h/l groups")
+            send(terminal, b"\x1b[19~")  # F8 images
+            terminal.wait_for("Artifacts")
+            send(terminal, b"\x1b[18~")
+            terminal.wait_for("Loading recipes…", absent="No recipes supplied")
+            release_scan.touch()
+            terminal.wait_for("core-image-old")
             set_paths(terminal, [source, new_build, script])
             assert not marker.exists(), "Save/review sourced the script before confirmation"
             assert not new_build.exists(), "Review created the build directory"

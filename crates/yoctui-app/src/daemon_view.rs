@@ -29,6 +29,7 @@ pub(crate) fn daemon_client_view(
         sequence: snapshot.sequence,
         generation: snapshot.generation,
         bitbake: client_daemon_lifecycle(snapshot.bitbake.lifecycle),
+        metadata: client_metadata_status(status, snapshot),
         jobs: snapshot
             .jobs
             .iter()
@@ -131,6 +132,51 @@ pub(crate) fn daemon_client_view(
                 }
             },
         }),
+    }
+}
+
+fn client_metadata_status(
+    status: yoctui_model::ClientReplicaStatus,
+    snapshot: &yoctui_protocol::daemon::DaemonSnapshot,
+) -> yoctui_model::ClientMetadataStatus {
+    use yoctui_model::{ClientMetadataStatus as Metadata, ClientReplicaStatus};
+    use yoctui_protocol::daemon::{DaemonBuildEvent, LogSeverity};
+
+    if status != ClientReplicaStatus::Current {
+        return Metadata::Unknown;
+    }
+    if let Some(record) = snapshot
+        .recent_logs
+        .iter()
+        .rev()
+        .find(|record| record.source == "daemon-metadata")
+    {
+        if record.severity == LogSeverity::Error {
+            return Metadata::Failed(record.message.clone());
+        }
+        match record.message.as_str() {
+            "Initial workspace and recipe inventory ready" => return Metadata::Ready,
+            "Loading initial workspace and recipe inventory" => return Metadata::Loading,
+            "Loading initial compatibility authority"
+            | "Waiting for BitBake API discovery; retrying the backend probe" => {
+                return Metadata::Connecting;
+            }
+            "Waiting for BitBake API discovery; automatic recovery is disabled for an explicit bridge override" =>
+            {
+                return Metadata::Failed(record.message.clone());
+            }
+            _ => {}
+        }
+    }
+    // Older daemons and bounded log retention can leave only the inventory event.
+    if snapshot
+        .build_events
+        .iter()
+        .any(|event| matches!(event, DaemonBuildEvent::Workspace { .. }))
+    {
+        Metadata::Ready
+    } else {
+        Metadata::Unknown
     }
 }
 
