@@ -147,3 +147,20 @@ fn help_scroll_reaches_the_last_shortcut_when_identity_wraps() {
         .unwrap();
     assert!(!row(terminal.backend().buffer(), 80, 22).contains(last.label));
 }
+
+#[test]
+fn terminal_tree_footer_follows_the_focused_pane() {
+    let mut app = App::new(32, 8192);
+    app.screen = Screen::TerminalSessions;
+    app.terminal.browser_open = true;
+    app.focus = FocusTarget::Navigator;
+    let navigator = crate::footer::footer_rail_shortcuts(&app, 120);
+    assert!(navigator.contains("Tab Focus"), "{navigator}");
+    assert!(!navigator.contains("Up/Down sessions"), "{navigator}");
+    app.focus = FocusTarget::Workspace;
+    let tree = crate::footer::footer_rail_shortcuts(&app, 120);
+    assert!(
+        tree.contains("Up/Down sessions") && tree.contains("Enter open"),
+        "{tree}"
+    );
+}

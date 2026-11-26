@@ -177,7 +177,6 @@ fn literal_shell_uses_reference_geometry_palette_and_command_rail() {
         "Enter open",
         "Ctrl+B prefix",
         "F1 Help",
-        "F3 History",
         "F12 Menu",
         "q Quit",
     ] {
@@ -185,7 +184,7 @@ fn literal_shell_uses_reference_geometry_palette_and_command_rail() {
     }
     assert!(row(2).contains("Build running · 1 active"), "{}", row(2));
     assert!(!rail.contains("Build running"), "status must remain in Header");
-    for false_label in ["F3 Jobs", "F4 Terminal", "F9 Search"] {
+    for false_label in ["F3 History", "F3 Jobs", "F4 Terminal", "F9 Search"] {
         assert!(
             !rail.contains(false_label),
             "dishonest {false_label}: {rail}"

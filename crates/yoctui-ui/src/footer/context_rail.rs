@@ -61,7 +61,8 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
             || matches!(app.raw_mode.view, yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview)) {
         return raw_mode_shortcuts(app).split(" | ").map(str::to_owned).collect();
     }
-    if app.terminal_browser_visible() && app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
+    if app.terminal_browser_visible() && app.focus == FocusTarget::Workspace
+        && app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
         && app.active_dialog().is_none() && !app.menu.is_open() && !app.command_palette_open {
         return ["Up/Down sessions", "PgUp/PgDn", "Home/End", "Enter open", "/ global search", "n new shell", "Esc navigator"].into_iter().map(str::to_owned).collect();
     }

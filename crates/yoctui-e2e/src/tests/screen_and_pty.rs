@@ -226,7 +226,9 @@
             "output must be in the selected right pane"
         );
         assert!((0..2).any(|row| row_text(row).to_ascii_lowercase().contains("yoctui")));
-        assert!((28..30).any(|row| row_text(row).contains("F1 Help")));
+        let footer = row_text(28);
+        assert!(footer.contains("Read only") && footer.contains("o type in terminal"), "{footer}");
+        assert!(!footer.contains("q Quit"), "{footer}");
         assert!(row_text(output_row).contains("real-pty-ready"));
         assert!((1..29).any(|row| row_text(row).contains("left-session-only")));
 
