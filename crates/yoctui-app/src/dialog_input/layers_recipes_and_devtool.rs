@@ -39,9 +39,7 @@ pub fn file_browser_preview_action(key: Input) -> Option<Action> {
         Input::Down => Some(Action::ScrollLayerBrowserPreview { delta: 1 }),
         Input::PageUp => Some(Action::ScrollLayerBrowserPreview { delta: -10 }),
         Input::PageDown => Some(Action::ScrollLayerBrowserPreview { delta: 10 }),
-        Input::Home => Some(Action::ScrollLayerBrowserPreview { delta: isize::MIN }),
-        Input::End => Some(Action::ScrollLayerBrowserPreview { delta: isize::MAX }),
-        Input::Left | Input::Char('h') | Input::Esc => Some(Action::FocusLayerBrowserTree),
+        Input::Left => Some(Action::FocusLayerBrowserTree),
         _ => None,
     }
 }
@@ -54,8 +52,13 @@ pub fn rootfs_browser_action(app: &yoctui_model::App, key: Input) -> Option<Acti
     if matches!(key, Input::Tab | Input::BackTab | Input::Char('1'..='6')) {
         return images_workspace_action_for_view(false, app.images_view, key);
     }
-    if browser.preview_focused && let Some(action) = file_browser_preview_action(key) {
-        return Some(action);
+    if browser.preview_focused {
+        if key == Input::Char('h') {
+            return Some(Action::FocusLayerBrowserTree);
+        }
+        if let Some(action) = file_browser_preview_action(key) {
+            return Some(action);
+        }
     }
     layer_tree_action(false, key)
 }

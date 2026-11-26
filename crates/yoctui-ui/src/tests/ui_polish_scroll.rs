@@ -301,7 +301,7 @@ fn file_browser_preview_and_inventory_refresh_keep_stable_selection() {
             assert!(rendered_text(&app, 160, 48).contains("retained preview"));
             update(
                 &mut app,
-                yoctui_app::file_browser_preview_action(Input::Esc).unwrap(),
+                yoctui_app::file_browser_preview_action(Input::Left).unwrap(),
             );
             assert!(!tree(&app).preview_focused);
         }

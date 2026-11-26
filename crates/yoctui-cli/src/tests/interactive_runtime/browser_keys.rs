@@ -16,7 +16,11 @@ fn browser_global_keys_fall_through_and_edges_use_shared_mapping() {
         Some(Action::ScrollLayerBrowserPreview { delta: isize::MIN })
     );
     assert_eq!(
-        browser_workspace_action(&app, true, Input::Esc),
+        browser_workspace_action(&app, true, Input::Left),
         Some(Action::FocusLayerBrowserTree)
+    );
+    assert_eq!(
+        browser_workspace_action(&app, true, Input::Esc),
+        Some(Action::CloseLayerBrowser)
     );
 }

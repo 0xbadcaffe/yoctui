@@ -213,7 +213,7 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
             .block(
                 Block::default()
                     .title(if browser.preview_focused {
-                        "File preview focused · ↑/↓ scroll · Esc tree · e edit"
+                        "File preview focused · ↑/↓ scroll · ← tree · e edit"
                     } else {
                         "File preview · → focus · e edit"
                     })
