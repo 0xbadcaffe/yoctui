@@ -48,6 +48,14 @@ daemon/configuration when initialization fails. `python3 scripts/test-environmen
 checks browsing and cancelling the review without sourcing a script. These do not
 certify a real BitBake build; use native Yocto metadata/build checks separately.
 
+For an explicitly selected, configured build with an idle local daemon, run
+`python3 scripts/test-environment-live-pty.py --source /absolute/poky --build /absolute/build --capture-dir artifacts/environment-live`.
+This reloads the selected daemon environment through the real UI, checks typing,
+bracketed paste, invalid-path errors and source-folder initializer discovery, then
+waits for real recipe metadata and image targets. It does not clean files or build
+an image. Cold metadata parsing may take longer than a minute; captures distinguish
+connection readiness from completed recipe discovery.
+
 ## Sstate cache boundary checks
 
 `python3 scripts/test-sstate-cache-pty.py --capture-dir artifacts/sstate-cache`
