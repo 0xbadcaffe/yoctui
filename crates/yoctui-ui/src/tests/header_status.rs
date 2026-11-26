@@ -122,3 +122,28 @@ fn pending_recipe_metadata_is_distinct_from_empty_and_failed() {
     );
     assert!(!status.contains('%'), "{status}");
 }
+
+#[test]
+fn help_scroll_reaches_the_last_shortcut_when_identity_wraps() {
+    let mut app = App::new(32, 8192);
+    app.screen = Screen::Help;
+    app.build.target = Some("target".repeat(60));
+    app.help_visible_rows = 22;
+    app.help_extra_rows = crate::help_workspace_extra_rows(&app, 80, 24);
+    assert!(app.help_extra_rows > 0);
+    update(&mut app, Action::ScrollHelp { delta: isize::MAX });
+    let last = yoctui_model::global_operator_action_definitions()
+        .into_iter()
+        .rfind(|action| action.shortcut != "none")
+        .unwrap();
+    let mut terminal = Terminal::new(TestBackend::new(80, 24)).unwrap();
+    terminal
+        .draw(|frame| crate::maintenance_dialog_render::help(frame, &app, frame.area()))
+        .unwrap();
+    assert!(row(terminal.backend().buffer(), 80, 22).contains(last.label));
+    update(&mut app, Action::ScrollHelp { delta: -1 });
+    terminal
+        .draw(|frame| crate::maintenance_dialog_render::help(frame, &app, frame.area()))
+        .unwrap();
+    assert!(!row(terminal.backend().buffer(), 80, 22).contains(last.label));
+}

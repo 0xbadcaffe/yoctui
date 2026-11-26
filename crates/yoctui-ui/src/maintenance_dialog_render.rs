@@ -341,6 +341,46 @@ pub(crate) fn help(frame: &mut Frame, app: &App, area: Rect) {
         })
         .collect::<Vec<_>>()
         .join("\n");
+    let identity = help_identity_text(app, area.width);
+    let text = format!(
+        "Keyboard and action reference\n{identity}\nOperator guide: press g or F12 > Help > Operator guide for the interactive workflow.\nAbout Yoctui: F12 > Help > About Yoctui shows the logo, version and project information.\n\nGlobal shortcuts\n{function_keys}\n\nNavigation: arrows move, Enter opens, Esc returns, F12 opens the application menu, ?/F1 opens this screen, q quits.\nSearch: / opens global search; Alt+n switches content and filename search.\nTerminal writers and editors retain literal keys; terminal search is Ctrl+B /.\nDestructive and publishing operations show an exact confirmation before execution.\n\nGlobal action shortcuts\n{catalog_actions}"
+    );
+    let maximum = text
+        .lines()
+        .count()
+        .saturating_sub(usize::from(area.height.saturating_sub(2)));
+    frame.render_widget(
+        Paragraph::new(text)
+            .scroll((app.help_scroll.min(maximum) as u16, 0))
+            .style(ThemePalette::for_app(app).base())
+            .block(Block::default().title("Help").borders(Borders::ALL)),
+        area,
+    )
+}
+
+pub fn help_workspace_extra_rows(app: &App, width: u16, height: u16) -> usize {
+    let workspace_width = if app.zoomed_pane.is_some() {
+        width
+    } else if width >= WIDE_WORKBENCH_MIN_WIDTH {
+        yoctui_app::workbench_pane_widths(app, width, height)[1]
+    } else if width >= 100 {
+        width.saturating_sub(
+            if app.preferences.density == yoctui_model::UiDensity::Compact {
+                18
+            } else {
+                22
+            },
+        )
+    } else {
+        width
+    };
+    help_identity_text(app, workspace_width)
+        .lines()
+        .count()
+        .saturating_sub(4)
+}
+
+fn help_identity_text(app: &App, width: u16) -> String {
     let project = crate::header::header_project_identity(app);
     let machine = app
         .workspace
@@ -358,7 +398,7 @@ pub(crate) fn help(frame: &mut Frame, app: &App, area: Rect) {
         format!("Target: {target}"),
         git,
     ];
-    let width = usize::from(area.width.saturating_sub(2)).max(2);
+    let width = usize::from(width.saturating_sub(2)).max(2);
     let mut identity = String::new();
     for detail in details {
         let mut used = 0;
@@ -373,21 +413,5 @@ pub(crate) fn help(frame: &mut Frame, app: &App, area: Rect) {
         }
         identity.push('\n');
     }
-    let text = format!(
-        "Keyboard and action reference\n{identity}\nOperator guide: press g or F12 > Help > Operator guide for the interactive workflow.\nAbout Yoctui: F12 > Help > About Yoctui shows the logo, version and project information.\n\nGlobal shortcuts\n{function_keys}\n\nNavigation: arrows move, Enter opens, Esc returns, F12 opens the application menu, ?/F1 opens this screen, q quits.\nSearch: / opens global search; Alt+n switches content and filename search.\nTerminal writers and editors retain literal keys; terminal search is Ctrl+B /.\nDestructive and publishing operations show an exact confirmation before execution.\n\nGlobal action shortcuts\n{catalog_actions}"
-    );
-    frame.render_widget(
-        Paragraph::new(text.clone())
-            .scroll((
-                app.help_scroll.min(
-                    text.lines()
-                        .count()
-                        .saturating_sub(usize::from(area.height.saturating_sub(2))),
-                ) as u16,
-                0,
-            ))
-            .style(ThemePalette::for_app(app).base())
-            .block(Block::default().title("Help").borders(Borders::ALL)),
-        area,
-    )
+    identity
 }

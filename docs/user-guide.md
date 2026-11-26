@@ -27,10 +27,11 @@ It limits starting additional tasks when pressure rises; existing task, make and
 parser limits remain unchanged. It is not a hard RAM cap and does not retune a
 running build. Raw commands and CLI builds retain their own configuration.
 
-Pressure percentages are 10-second observations; the editable thresholds use
-BitBake's raw pressure units. Defaults of 15000 are starting points to measure and
-tune. Memory peaks are samples, can miss short-lived processes and can count shared
-pages more than once. Sampling continues during detached active builds; reconnect
+The report shows the 10-second PSI average next to the configured limit in
+equivalent percent. BitBake evaluates shorter intervals. The editable thresholds
+use microseconds stalled per second, so 15000 corresponds to 1.5%.
+Memory peaks can miss short-lived processes and count shared pages more than once.
+Sampling continues during detached active builds. Reconnect
 gets the daemon's retained in-memory observations. Daemon restart clears these
 samples. Cache checks report configuration, not mirror reachability or compatibility.
 See [performance measurement](performance.md#build-performance-workspace).
@@ -117,16 +118,20 @@ Yoctui runs in the terminal where you start it, including with `yoctui attach`
 over SSH or on a Linux text console. It does not automatically open another
 terminal window. Quit returns to your shell; daemon-owned work keeps running.
 
-Without an initialized shell, open **Build Environment**, press `e`, and select
-Source/Build/Script. `b` browses and `s` opens a daemon connection review.
-On Script, `b` lists folders and files: `Enter` opens a folder or selects a file,
-`s` selects the highlighted file, and `Left` goes to the parent. Custom scripts
+Without an initialized shell, open **Build Environment** and press `e`.
+Use **Tab** to move between Source directory, Build directory and Environment
+script. Press `e` to type or paste an absolute path, or `b` to browse.
+Choosing a source folder marks a discovered initializer as **detected**. Choose
+a custom script if the source does not contain an initializer.
+When browsing scripts, `Enter` opens a folder or selects a file. Press `Left` to
+go to the parent. Press `s` in the form to review the connection. Custom scripts
 need no filename extension or executable bit; they are sourced after confirmation.
 Confirm with `Enter` to source the selected script, start/reload the daemon and
 refresh recipes, images and configuration. `Esc` cancels. `Alt+v` repeats this
 connection/refresh flow. A replacement is refused while jobs or terminals are
 active; finish or close them explicitly first. The UI remains responsive during
-initialization and shows failures. The initializer may create a new build directory;
+initialization and shows failures. After attaching, the header and Recipes
+indicate when the daemon is still loading metadata. The initializer may create a new build directory;
 custom scripts stay editable. Verified paths are remembered for reattaching to
 the same daemon. The process backend
 is a fallback with fewer capabilities; see [Compatibility](compatibility.md).
@@ -294,6 +299,9 @@ Errors opens selected failure context; SSH/QEMU remain interactive terminals.
 
 Enter browses a configured layer, `e` opens the editor, and `o` uses the external
 editor. Arrows expand/collapse, `.` shows hidden files, and `r` refreshes.
+The file tree shows its current path and visible row range. Use **Home/End**,
+**Page Up/Down**, the wheel, or click a row to navigate. Press **Left** from a
+focused preview to return to the same file.
 Ctrl+S saves; conflicting disk changes block a save.
 
 F12 → Settings → Editor selects the editor used when opening source files.

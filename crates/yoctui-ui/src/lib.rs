@@ -304,6 +304,7 @@ pub use raw_dialog::render_raw_execution_preview;
 use raw_dialog::{indexed_arguments, raw_command_form_dialog, raw_recipe_picker_dialog};
 
 mod maintenance_dialog_render;
+pub use maintenance_dialog_render::help_workspace_extra_rows;
 use maintenance_dialog_render::{
     bbmask_assignment, help, maintenance_dialog, maintenance_operation_label,
 };

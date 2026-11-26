@@ -45,6 +45,8 @@ impl InteractiveRuntime {
                 self.app.build_performance.scroll = self.app.build_performance.scroll.min(maximum);
             } else {
                 self.app.help_visible_rows = usize::from(height.saturating_sub(2));
+                self.app.help_extra_rows =
+                    yoctui_ui::help_workspace_extra_rows(&self.app, size.width, size.height);
                 let _ = update(&mut self.app, Action::ScrollHelp { delta: 0 });
             }
         }

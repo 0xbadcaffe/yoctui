@@ -9,6 +9,7 @@ pub struct App {
     pub help_scroll: usize,
     pub help_about: bool,
     pub help_visible_rows: usize,
+    pub help_extra_rows: usize,
     pub saved_builds: SavedBuildState,
     pub require_daemon: bool,
     pub last_daemon_update: Option<SystemTime>,

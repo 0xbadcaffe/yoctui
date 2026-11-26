@@ -32,9 +32,13 @@ normal query. Finishing the inventory preserves the folder and selection.
 This also works for MTD artifacts with a retained build rootfs: it does **not**
 mount or unpack a flash image, or claim to inspect bytes changed inside that image.
 
-Arrows or h/j/k/l navigate; Enter expands/previews; Left returns; `.` shows hidden
-files; `/` searches; `e` edits. Rows report on-disk ownership/permissions, not fakeroot
-ownership. Saves check conflicts/containment; later BitBake tasks may replace edits.
+Use arrows or h/j/k/l to navigate and Enter to expand or preview. Left returns
+from the preview to the selected file. The tree reports the visible range and
+filtered count. Use Home/End, Page Up/Down, or the mouse wheel to scroll.
+Press `.` to show hidden files, `/` to filter, or `e` to edit. Rows show target
+permissions and ownership from available Pseudo metadata. Missing attributes are
+marked unavailable. Saves check for conflicts and stay within the rootfs. Later
+BitBake tasks may replace edits.
 
 ## Services and rules
 

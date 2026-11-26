@@ -10,6 +10,7 @@ impl App {
             help_scroll: 0,
             help_about: false,
             help_visible_rows: 20,
+            help_extra_rows: 0,
             saved_builds: SavedBuildState::default(),
             require_daemon: false,
             last_daemon_update: None,

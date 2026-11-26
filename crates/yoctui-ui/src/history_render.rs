@@ -44,7 +44,7 @@ pub(crate) fn build_environment_workspace(frame: &mut Frame, app: &App, area: Re
                 status.push_str("\nDaemon connected. Loading recipes and layers…");
             }
             yoctui_model::ClientMetadataStatus::Failed(reason) => {
-                status.push_str("\n");
+                status.push('\n');
                 status.push_str(reason);
                 status.push_str("\nEdit the paths with e, or retry with Alt+v.");
             }
