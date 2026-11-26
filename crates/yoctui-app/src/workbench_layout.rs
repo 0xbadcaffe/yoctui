@@ -1,4 +1,30 @@
 //! Shared development-pane geometry for painting, hit testing and PTY resizing.
+#[derive(Debug, Clone)]
+pub struct WorkbenchExplorerViewport {
+    pub folders: std::ops::Range<usize>,
+    pub files: yoctui_model::BoundedScroll,
+}
+
+pub fn workbench_explorer_viewport(
+    session: &yoctui_model::WorkbenchSession,
+    height: u16,
+) -> Option<WorkbenchExplorerViewport> {
+    let folder = session.folders.get(session.folder)?;
+    let inner = usize::from(height.saturating_sub(2));
+    let details = 1 + usize::from(folder.error.is_some());
+    let folder_rows = inner.saturating_sub(details + 3).max(1).min(inner);
+    let folders =
+        yoctui_model::file_browser_scroll(session.folder, folder_rows, session.folders.len())
+            .visible_range();
+    let file_rows = inner.saturating_sub(folders.len() + details);
+    let files = yoctui_model::file_browser_scroll(
+        folder.browser.selection,
+        file_rows,
+        folder.browser.entries.len(),
+    );
+    Some(WorkbenchExplorerViewport { folders, files })
+}
+
 pub fn workbench_editor_rect(app: &yoctui_model::App, width: u16, height: u16) -> Option<[u16; 4]> {
     let shell = crate::mouse::workbench_shell(app, width, height)?;
     let region = crate::mouse::workbench_mouse_region(

@@ -19,6 +19,7 @@ mod sstate_cache;
 mod startup_screen;
 mod udev_syntax;
 mod ui_polish_focus;
+mod ui_polish_scroll;
 use ratatui::{Terminal, backend::TestBackend};
 use std::{fs, path::PathBuf};
 use yoctui_model::{Action, BuildRequest, update};
@@ -67,13 +68,14 @@ use super::inspector_render::system_status_projection;
 use super::inspector_workspace::tasks_inspector;
 use super::job_history::JobHistoryColumn;
 use super::log_render::log_search_spans;
-use super::package_render::{layer_browser_left_width, layer_tree_widget_projection};
+use super::package_render::layer_tree_widget_projection;
 use super::palette_render::command_palette_rect;
 use super::security_render::security_session_status_label;
 use super::task_render::{
     TaskTableColumn, task_state_style, task_table_columns, task_table_row_style,
 };
 use super::telemetry_gauges::{render_disk_io, render_network_io};
+use yoctui_app::layer_browser_left_width;
 mod demo_config_details;
 mod demo_dashboard_cache;
 mod demo_dashboard_exit;

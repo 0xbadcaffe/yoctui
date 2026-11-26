@@ -378,17 +378,8 @@ fn browser_workspace_action(app: &App, preview_focused: bool, input: Input) -> O
     if app.screen == Screen::Images {
         return rootfs_browser_action(app, input);
     }
-    if preview_focused {
-        match input {
-            Input::Up => return Some(Action::ScrollLayerBrowserPreview { delta: -1 }),
-            Input::Down => return Some(Action::ScrollLayerBrowserPreview { delta: 1 }),
-            Input::PageUp => return Some(Action::ScrollLayerBrowserPreview { delta: -10 }),
-            Input::PageDown => return Some(Action::ScrollLayerBrowserPreview { delta: 10 }),
-            Input::Home => return Some(Action::ScrollLayerBrowserPreview { delta: isize::MIN }),
-            Input::End => return Some(Action::ScrollLayerBrowserPreview { delta: isize::MAX }),
-            Input::Left => return Some(Action::FocusLayerBrowserTree),
-            _ => {}
-        }
+    if preview_focused && let Some(action) = yoctui_app::file_browser_preview_action(input) {
+        return Some(action);
     }
     match input {
         Input::Tab => Some(Action::CycleFocus { backwards: false }),

@@ -182,6 +182,19 @@ impl LayerBrowser {
     pub fn selected_entry(&self) -> Option<&LayerBrowserEntry> {
         self.entries.get(self.selection)
     }
+    pub fn matching_entries<'a>(
+        &'a self,
+        folded_query: &'a str,
+    ) -> impl Iterator<Item = (usize, &'a LayerBrowserEntry)> + 'a {
+        self.entries.iter().enumerate().filter(move |(_, entry)| {
+            folded_query.is_empty()
+                || entry
+                    .path
+                    .to_string_lossy()
+                    .to_ascii_lowercase()
+                    .contains(folded_query)
+        })
+    }
     pub(crate) fn rebuild(&mut self, preferred: Option<&PathBuf>) {
         fn collect(
             directory: &PathBuf,

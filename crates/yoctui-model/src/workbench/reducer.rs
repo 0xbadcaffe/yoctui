@@ -144,6 +144,7 @@ pub(super) fn reduce(app: &mut App, action: WorkbenchAction) -> Option<Effect> {
             app.focus = FocusTarget::Workspace;
             if let Some(s) = app.workbench.current_mut() {
                 if let Some(f) = s.folders.get_mut(s.folder) {
+                    s.focus = WorkbenchFocus::Files;
                     f.browser.selection = index.min(f.browser.entries.len().saturating_sub(1));
                 }
             } else {

@@ -1,30 +1,19 @@
 pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rect) {
-    let area = if browser.is_build_directory() {
-        let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).split(area);
+    let rootfs = browser.is_rootfs();
+    let geometry = yoctui_app::layer_browser_layout(
+        browser, app.workspace.layers.len(), [area.x, area.y, area.width, area.height],
+    );
+    let rect = |[x, y, w, h]: [u16; 4]| Rect::new(x, y, w, h);
+    let summary = rect(geometry.summary);
+    if !summary.is_empty() {
         frame.render_widget(
             Paragraph::new(format!("Build directory: {}", browser.root.display())).bold(),
-            rows[0],
+            summary,
         );
-        rows[1]
-    } else {
-        area
-    };
-    let left_width = layer_browser_left_width(browser, area.width);
-    let rootfs = browser.is_rootfs();
-    let standalone = rootfs || browser.is_build_directory();
-    let chunks = if standalone && area.width < 120 {
-        Layout::vertical([Constraint::Percentage(55), Constraint::Percentage(45)]).split(area)
-    } else {
-        Layout::horizontal([Constraint::Length(left_width), Constraint::Min(1)]).split(area)
-    };
-    let layer_height = app.workspace.layers.len().saturating_add(2).min(8) as u16;
-    let left = if standalone {
-        Layout::vertical([Constraint::Length(0), Constraint::Min(0)]).split(chunks[0])
-    } else {
-        Layout::vertical([Constraint::Length(layer_height), Constraint::Min(3)]).split(chunks[0])
-    };
+    }
+    let configured_area = rect(geometry.configured);
     let palette = ThemePalette::for_app(app);
-    if !standalone {
+    if !configured_area.is_empty() {
         let configured = app
             .workspace
             .layers
@@ -42,7 +31,7 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
         let configured_viewport = yoctui_model::centered_viewport_range(
             configured_selection,
             configured.len(),
-            usize::from(left[0].height.saturating_sub(3)).max(1),
+            usize::from(configured_area.height.saturating_sub(3)).max(1),
         );
         let configured_rows = configured[configured_viewport].iter().map(|layer| {
             let relationship = layer_relationship(app, &layer.name);
@@ -90,34 +79,20 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
                     .style(palette.base())
                     .border_style(palette.focus()),
             ),
-            left[0],
+            configured_area,
         );
     }
 
     let query = app.metadata_query.to_ascii_lowercase();
-    let entries = browser
-        .entries
-        .iter()
-        .enumerate()
-        .filter(|(_, entry)| {
-            query.is_empty()
-                || entry
-                    .path
-                    .to_string_lossy()
-                    .to_ascii_lowercase()
-                    .contains(&query)
-        })
-        .collect::<Vec<_>>();
-    let filtered_selection = entries
-        .iter()
-        .position(|(index, _)| *index == browser.selection);
-    let tree = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(left[1]);
-    let visible_rows = usize::from(tree[1].height.saturating_sub(2));
-    let viewport = yoctui_model::variable_height_window(
-        std::iter::repeat_n(1, entries.len()),
-        filtered_selection,
-        visible_rows,
+    let entries = browser.matching_entries(&query).collect::<Vec<_>>();
+    let filtered_selection = entries.iter().position(|(index, _)| *index == browser.selection);
+    let search = rect(geometry.search);
+    let tree = rect(geometry.tree);
+    let visible_rows = usize::from(tree.height.saturating_sub(2));
+    let scroll = yoctui_model::file_browser_scroll(
+        filtered_selection.unwrap_or(0), visible_rows, entries.len(),
     );
+    let viewport = scroll.visible_range();
     frame.render_widget(
         Paragraph::new(search_line(
             app,
@@ -127,32 +102,26 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
             entries.len(),
             SearchNavigation::Results,
             SearchExit::Done,
-            tree[0].width,
+            search.width,
         )),
-        tree[0],
+        search,
+    );
+    let breadcrumb = rect(geometry.breadcrumb);
+    frame.render_widget(
+        Paragraph::new(file_browser_breadcrumb(browser, breadcrumb.width)).style(palette.base()),
+        breadcrumb,
     );
     let title = format!(
-        "{} tree | hidden {} | rows {}-{} of {}{}{}{}",
-        browser.layer,
+        "Files {} | hidden {}{}{}{}",
+        scroll.range_label(),
         if browser.show_hidden { "on" } else { "off" },
-        viewport.start.saturating_add(usize::from(viewport.end > 0)),
-        viewport.end,
-        browser.entries.len(),
         if browser.incomplete.is_empty() { "" } else { " | partial" },
-        if browser.tree_truncated {
-            " | bounded"
-        } else {
-            ""
-        },
-        if browser.cycle_entries > 0 {
-            " | cycle rejected"
-        } else {
-            ""
-        }
+        if browser.tree_truncated { " | bounded" } else { "" },
+        if browser.cycle_entries > 0 { " | cycle rejected" } else { "" },
     );
     let unicode = app.preferences.symbols == SymbolPreference::Unicode;
     let visible_entries = entries
-        .get(viewport.start..viewport.end)
+        .get(viewport)
         .unwrap_or_default();
     match layer_tree_widget_projection(browser, visible_entries, unicode, !query.is_empty())
         .and_then(|projection| {
@@ -164,7 +133,7 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
             let widget = Tree::new(&items)?
                 .block(Block::default().title(title.clone()).borders(Borders::ALL))
                 .style(palette.base())
-                .highlight_style(selected_style(app, true))
+                .highlight_style(selection_style(app, true, !browser.preview_focused && pane_has_focus(app, FocusTarget::Workspace)))
                 .highlight_symbol("")
                 .node_open_symbol(if unicode { "▾ " } else { "- " })
                 .node_closed_symbol(if unicode { "▸ " } else { "+ " })
@@ -176,16 +145,18 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
             if let Some(path) = selected {
                 state.select(path);
             }
-            frame.render_stateful_widget(widget, tree[1], &mut state);
+            frame.render_stateful_widget(widget, tree, &mut state);
             Ok(())
         }) {
         Ok(()) => {}
         Err(_) => frame.render_widget(
             Paragraph::new("Layer tree unavailable: duplicate or malformed path identity.")
                 .block(Block::default().title(title).borders(Borders::ALL)),
-            tree[1],
+            tree,
         ),
     }
+
+    render_file_browser_scrollbar(frame, app, tree, scroll);
 
     let info_open = rootfs || browser.inspector_mode != LayerInspectorMode::Preview;
     let right = Layout::vertical([
@@ -198,14 +169,14 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
         }),
         Constraint::Min(5),
     ])
-    .split(chunks[1]);
+    .split(rect(geometry.details));
     let info = if rootfs {
         Text::from(browser.selected_entry().map_or_else(
             || "Empty directory".into(),
             |entry| layer_entry_metadata(app, browser, entry),
         ))
     } else if info_open {
-        layer_inspector_text(app, browser)
+        layer_inspector_text(app, browser, browser.inspector_mode)
     } else {
         Text::from(format!(
             "{}\nPress i for file/layer information",
@@ -237,14 +208,12 @@ pub(crate) fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser
             .wrap(Wrap { trim: false }),
         right[0],
     );
-    let mut preview_browser = browser.clone();
-    preview_browser.inspector_mode = LayerInspectorMode::Preview;
     frame.render_widget(
-        Paragraph::new(layer_inspector_text(app, &preview_browser))
+        Paragraph::new(layer_inspector_text(app, browser, LayerInspectorMode::Preview))
             .block(
                 Block::default()
                     .title(if browser.preview_focused {
-                        "File preview focused · ↑/↓ scroll · ← tree · e edit"
+                        "File preview focused · ↑/↓ scroll · Esc tree · e edit"
                     } else {
                         "File preview · → focus · e edit"
                     })

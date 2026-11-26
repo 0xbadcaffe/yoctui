@@ -396,7 +396,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::SaveRecipeEditor | Action::RecipeEditorSaved | Action::BeginRecipeEditorBuild
         | Action::CloseRecipeEditor | Action::SelectLayer { .. } | Action::OpenSelectedLayer
         | Action::BeginSelectedLayerWorkspaceEditor | Action::BeginSelectedLayerBrowser | Action::LoadLayerBrowserDirectory { .. }
-        | Action::SelectLayerBrowserEntry { .. } | Action::LayerBrowserExpand | Action::LayerBrowserEnter
+        | Action::SelectLayerBrowserEntry { .. } | Action::SelectLayerBrowserEntryAt { .. }
+        | Action::LayerBrowserExpand | Action::LayerBrowserEnter
         | Action::LayerBrowserUp | Action::CloseLayerBrowser | Action::RefreshLayerBrowser
         | Action::ToggleLayerBrowserHidden => {
             open_selected_package_recipe::reduce_actions(app, action)

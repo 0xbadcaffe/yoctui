@@ -108,6 +108,12 @@ pub fn shifted_index(current: usize, delta: isize, total: usize) -> usize {
     }
 }
 
+/// Keep the first page stationary until the selection reaches its last row.
+pub fn file_browser_scroll(selection: usize, viewport: usize, total: usize) -> BoundedScroll {
+    let offset = selection.saturating_sub(viewport.saturating_sub(1));
+    BoundedScroll::new(selection, offset, viewport, total)
+}
+
 /// Reconcile a replaced inventory by stable identity before falling back to a
 /// bounded prior index. Callers remain the owners of the identity and rows.
 pub fn reconcile_selected_identity<T, K: PartialEq>(

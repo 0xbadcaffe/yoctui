@@ -165,30 +165,3 @@ pub(crate) fn layer_tree_widget_projection(
         opened: state.opened,
     })
 }
-
-pub(crate) fn layer_browser_left_width(browser: &LayerBrowser, total_width: u16) -> u16 {
-    if browser.is_rootfs() {
-        return total_width
-            .saturating_sub(38)
-            .min(total_width.saturating_mul(65) / 100);
-    }
-    let configured = browser.layer.chars().count().saturating_add(18);
-    let tree = browser
-        .entries
-        .iter()
-        .map(|entry| {
-            entry
-                .path
-                .file_name()
-                .map_or(0, |name| name.to_string_lossy().chars().count())
-                .saturating_add(entry.depth.saturating_mul(2))
-                .saturating_add(8)
-        })
-        .max()
-        .unwrap_or(0);
-    let useful = configured.max(tree).clamp(38, 54) as u16;
-    let ratio_cap = total_width.saturating_mul(42) / 100;
-    let preview_floor = if total_width >= 100 { 58 } else { 32 };
-    let preview_cap = total_width.saturating_sub(preview_floor);
-    useful.min(ratio_cap.max(1)).min(preview_cap.max(1))
-}

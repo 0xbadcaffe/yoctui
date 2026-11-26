@@ -63,7 +63,11 @@ pub(crate) fn layer_entry_metadata(
     )
 }
 
-pub(crate) fn layer_inspector_text(app: &App, browser: &LayerBrowser) -> Text<'static> {
+pub(crate) fn layer_inspector_text(
+    app: &App,
+    browser: &LayerBrowser,
+    mode: LayerInspectorMode,
+) -> Text<'static> {
     let Some(entry) = browser.selected_entry() else {
         return Text::from(if !browser.incomplete.is_empty() {
             "Directory listing is loading or incomplete; reopen or refresh to retry."
@@ -75,7 +79,7 @@ pub(crate) fn layer_inspector_text(app: &App, browser: &LayerBrowser) -> Text<'s
     };
     let metadata = layer_entry_metadata(app, browser, entry);
     let relationship = layer_relationship(app, &browser.layer);
-    match browser.inspector_mode {
+    match mode {
         LayerInspectorMode::Preview if !entry.is_dir && !entry.can_preview() => Text::from(
             format!("{metadata}\n\nSymlink or special file: content is not read."),
         ),

@@ -373,13 +373,13 @@
     {
       "id": "M5",
       "title": "Browser and scrolling consistency",
-      "status": "pending",
+      "status": "passed",
       "required": true,
       "depends_on": [
         "M1",
         "M2"
       ],
-      "implementation_attempts_used": 0,
+      "implementation_attempts_used": 1,
       "deliverables": [
         "Apply shared breadcrumb, selection, position and scroll presentation to existing Layers, rootfs Files, Build Directory and Workbench file views.",
         "Preserve each view's established filesystem authority and actions."

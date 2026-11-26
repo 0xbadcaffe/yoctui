@@ -5,7 +5,7 @@ fn incomplete_directory_is_not_presented_as_an_empty_filesystem() {
     let app = App::new(8, 1024);
     let mut browser = LayerBrowser::new("Build directory".into(), "/build".into());
     browser.incomplete.insert(browser.root.clone());
-    let text = crate::package_render::layer_inspector_text(&app, &browser);
+    let text = crate::package_render::layer_inspector_text(&app, &browser, browser.inspector_mode);
     assert_eq!(
         text,
         Text::from("Directory listing is loading or incomplete; reopen or refresh to retry.")

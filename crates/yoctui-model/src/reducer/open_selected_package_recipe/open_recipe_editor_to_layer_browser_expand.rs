@@ -366,28 +366,29 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 return Some(Effect::LoadLayerBrowserPreview(path));
             }
         }
-        Action::SelectLayerBrowserEntry { delta } => {
+        Action::SelectLayerBrowserEntry { .. } | Action::SelectLayerBrowserEntryAt { .. } => {
             let query = app.metadata_query.to_ascii_lowercase();
             let path = if let Some(browser) = app.layer_browser.as_mut() {
                 let matches = browser
-                    .entries
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, entry)| {
-                        query.is_empty()
-                            || entry
-                                .path
-                                .to_string_lossy()
-                                .to_ascii_lowercase()
-                                .contains(&query)
-                    })
+                    .matching_entries(&query)
                     .map(|(index, _)| index)
                     .collect::<Vec<_>>();
                 let position = matches
                     .iter()
                     .position(|index| *index == browser.selection)
                     .unwrap_or(0);
-                let position = shifted_index(position, delta, matches.len());
+                let position = match action {
+                    Action::SelectLayerBrowserEntry { delta } => {
+                        shifted_index(position, delta, matches.len())
+                    }
+                    Action::SelectLayerBrowserEntryAt { index } => {
+                        let position = matches.iter().position(|matched| *matched == index)?;
+                        app.focus = FocusTarget::Workspace;
+                        browser.preview_focused = false;
+                        position
+                    }
+                    _ => unreachable!("selection action was matched"),
+                };
                 if browser.is_rootfs() && matches.is_empty() {
                     browser.preview.clear();
                     browser.preview_kind = PreviewKind::Unavailable;

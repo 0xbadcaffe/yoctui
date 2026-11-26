@@ -12,6 +12,7 @@ include!("mouse/workspace_and_terminal.rs");
 include!("mouse/navigator_and_menu.rs");
 include!("mouse/file_diff.rs");
 include!("mouse/development.rs");
+include!("mouse/file_browser.rs");
 
 #[cfg(test)]
 #[path = "tests/mouse/mod.rs"]

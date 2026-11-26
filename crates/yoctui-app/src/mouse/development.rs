@@ -100,34 +100,29 @@ pub(crate) fn development_mouse_action(
                 },
             )));
         }
-        if mouse.kind != MouseKind::Down || mouse.row <= tree.y {
+        if mouse.kind != MouseKind::Down
+            || mouse.row <= tree.y
+            || mouse.row >= tree.bottom().saturating_sub(1)
+            || mouse.column <= tree.x
+            || mouse.column >= tree.right().saturating_sub(1)
+        {
             return None;
         }
-        let available = usize::from(tree.height.saturating_sub(2))
-            .saturating_sub(session.folders.len() + usize::from(folder.error.is_some()));
-        let first = folder
-            .browser
-            .selection
-            .saturating_sub(available.saturating_sub(1));
+        let explorer = crate::workbench_explorer_viewport(session, tree.height)?;
+        let viewport = explorer.files.visible_range();
         let mut row = usize::from(mouse.row - tree.y - 1);
-        for index in 0..session.folders.len() {
+        for index in explorer.folders {
             if row == 0 {
                 return Some(Action::Workbench(W::FolderAt(index)));
             }
             row -= 1;
             if index == session.folder {
-                let error_rows = usize::from(folder.error.is_some());
-                let count = folder
-                    .browser
-                    .entries
-                    .len()
-                    .saturating_sub(first)
-                    .min(available);
-                if row < error_rows {
+                let detail_rows = 1 + usize::from(folder.error.is_some());
+                if row < detail_rows {
                     return None;
                 }
-                if row - error_rows < count {
-                    let selected = first + row - error_rows;
+                if row - detail_rows < viewport.len() {
+                    let selected = viewport.start + row - detail_rows;
                     return Some(Action::Workbench(
                         if selected == folder.browser.selection && session.focus == F::Files {
                             W::Open
@@ -136,7 +131,7 @@ pub(crate) fn development_mouse_action(
                         },
                     ));
                 }
-                row = row.saturating_sub(error_rows + count);
+                row = row.saturating_sub(detail_rows + viewport.len());
             }
         }
         return None;

@@ -448,6 +448,7 @@ pub enum Action {
     OpenSelectedLayer, BeginSelectedLayerWorkspaceEditor, BeginSelectedLayerBrowser,
     LoadLayerBrowserDirectory { layer: String, root: PathBuf, directory: PathBuf, entries: Vec<LayerBrowserEntry>, },
     SelectLayerBrowserEntry { delta: isize, },
+    SelectLayerBrowserEntryAt { index: usize, },
     LayerBrowserExpand, LayerBrowserEnter, LayerBrowserUp,
     CloseLayerBrowser, RefreshLayerBrowser, ToggleLayerBrowserHidden,
     SetLayerInspectorMode(LayerInspectorMode),

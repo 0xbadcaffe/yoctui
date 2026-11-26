@@ -103,3 +103,59 @@ pub(super) fn timestamp_text(timestamp: SystemTime) -> String {
         |duration| format!("{}s since Unix epoch", duration.as_secs()),
     )
 }
+pub(super) fn file_browser_breadcrumb(browser: &LayerBrowser, width: u16) -> String {
+    let directory = browser
+        .selected_entry()
+        .and_then(|entry| entry.path.parent())
+        .unwrap_or(&browser.root);
+    let relative = directory.strip_prefix(&browser.root).unwrap_or(directory);
+    let path = if browser.is_rootfs() {
+        Path::new("/").join(relative)
+    } else {
+        browser.root.join(relative)
+    };
+    let text = path.to_string_lossy();
+    if Line::from(text.as_ref()).width() <= usize::from(width) || width == 0 {
+        return bounded_cell_text(&text, width);
+    }
+    let span = Span::raw(text.as_ref());
+    let graphemes: Vec<_> = span.styled_graphemes(Style::default()).collect();
+    let mut remaining = usize::from(width.saturating_sub(1));
+    let mut suffix_start = text.len();
+    for grapheme in graphemes.iter().rev() {
+        let cells = unicode_width::UnicodeWidthStr::width(grapheme.symbol);
+        if cells > remaining {
+            break;
+        }
+        remaining -= cells;
+        suffix_start -= grapheme.symbol.len();
+    }
+    format!("…{}", &text[suffix_start..])
+}
+
+pub(super) fn render_file_browser_scrollbar(
+    frame: &mut Frame,
+    app: &App,
+    border: Rect,
+    scroll: yoctui_model::BoundedScroll,
+) {
+    use ratatui::widgets::{Scrollbar, ScrollbarOrientation, ScrollbarState};
+
+    if scroll.viewport == 0 || scroll.total <= scroll.viewport || border.width < 2 {
+        return;
+    }
+    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
+    let mut state = ScrollbarState::new(scroll.total - scroll.viewport + 1)
+        .position(scroll.offset)
+        .viewport_content_length(scroll.viewport);
+    frame.render_stateful_widget(
+        Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(None)
+            .end_symbol(None)
+            .track_symbol(Some(if unicode { "│" } else { "|" }))
+            .thumb_symbol(if unicode { "█" } else { "#" })
+            .thumb_style(ThemePalette::for_app(app).focus()),
+        Rect::new(border.right() - 1, border.y + 1, 1, border.height - 2),
+        &mut state,
+    );
+}

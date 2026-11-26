@@ -82,6 +82,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BeginSelectedLayerBrowser
         | Action::LoadLayerBrowserDirectory { .. }
         | Action::SelectLayerBrowserEntry { .. }
+        | Action::SelectLayerBrowserEntryAt { .. }
         | Action::LayerBrowserExpand => {
             open_recipe_editor_to_layer_browser_expand::reduce_actions(app, action)
         }

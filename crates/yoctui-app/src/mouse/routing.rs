@@ -76,6 +76,8 @@ pub fn mouse_action_for_app(
     }
     if let Some(zoomed) = app.zoomed_pane
         && app.screen != Screen::DiffTool
+        && app.screen != Screen::Workbench
+        && !file_browser_is_visible(app)
         && !(app.screen == Screen::Hardware && app.hardware.viewer.is_some())
         && !((matches!(app.screen, Screen::TerminalSessions)
             || app.platform_menuconfig_visible())
@@ -171,6 +173,9 @@ pub fn mouse_action_for_app(
                 return crate::hardware_input::hardware_viewer_toolbar_action(mouse.column.saturating_sub(region.area.x));
             }
             if let Some(action) = workspace_tab_click(app, region.area, mouse) {
+                return Some(action);
+            }
+            if let Some(action) = file_browser_row_click(mouse, app, region.area) {
                 return Some(action);
             }
             if app.screen == Screen::Kernel && app.kernel_debug.visible {

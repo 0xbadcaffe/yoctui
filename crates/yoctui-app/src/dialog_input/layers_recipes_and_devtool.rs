@@ -33,6 +33,19 @@ pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+pub fn file_browser_preview_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up => Some(Action::ScrollLayerBrowserPreview { delta: -1 }),
+        Input::Down => Some(Action::ScrollLayerBrowserPreview { delta: 1 }),
+        Input::PageUp => Some(Action::ScrollLayerBrowserPreview { delta: -10 }),
+        Input::PageDown => Some(Action::ScrollLayerBrowserPreview { delta: 10 }),
+        Input::Home => Some(Action::ScrollLayerBrowserPreview { delta: isize::MIN }),
+        Input::End => Some(Action::ScrollLayerBrowserPreview { delta: isize::MAX }),
+        Input::Left | Input::Char('h') | Input::Esc => Some(Action::FocusLayerBrowserTree),
+        _ => None,
+    }
+}
+
 pub fn rootfs_browser_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
     let browser = app.rootfs_browser()?;
     if app.metadata_searching {
@@ -41,15 +54,8 @@ pub fn rootfs_browser_action(app: &yoctui_model::App, key: Input) -> Option<Acti
     if matches!(key, Input::Tab | Input::BackTab | Input::Char('1'..='6')) {
         return images_workspace_action_for_view(false, app.images_view, key);
     }
-    if browser.preview_focused {
-        match key {
-            Input::Up => return Some(Action::ScrollLayerBrowserPreview { delta: -1 }),
-            Input::Down => return Some(Action::ScrollLayerBrowserPreview { delta: 1 }),
-            Input::PageUp => return Some(Action::ScrollLayerBrowserPreview { delta: -10 }),
-            Input::PageDown => return Some(Action::ScrollLayerBrowserPreview { delta: 10 }),
-            Input::Left | Input::Char('h') => return Some(Action::FocusLayerBrowserTree),
-            _ => {}
-        }
+    if browser.preview_focused && let Some(action) = file_browser_preview_action(key) {
+        return Some(action);
     }
     layer_tree_action(false, key)
 }
