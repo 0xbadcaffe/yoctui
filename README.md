@@ -4,9 +4,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master&amp;event=push&amp;refresh=0.1.366" alt="CI workflow status for master pushes"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master&amp;event=push&amp;refresh=0.1.368" alt="CI workflow status for master pushes"></a>
   <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/testing.md#completion-gate"><img src="https://img.shields.io/badge/coverage-gates-orange?style=flat-square" alt="Coverage verification gates"></a>
-  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.366" alt="Latest published crates.io version"></a>
+  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.368" alt="Latest published crates.io version"></a>
   <a href="#install"><img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&amp;logo=rust" alt="Rust stable toolchain"></a>
   <br>
   <a href="#license"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license"></a>
@@ -39,13 +39,22 @@ A persistent daemon keeps builds and development terminals available when you
 close the UI and reconnect later.
 
 <p align="center">
-  <a href="https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/yoctui-poky-workflow.gif"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/yoctui-poky-workflow.gif" width="1000" alt="Live Poky image build in Yoctui: Dashboard, task progress, rootfs package pie chart and file browsing"></a>
+  <a href="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/yoctui-screen-tour.mp4"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/07-idle-dashboard.png" width="1000" alt="Yoctui Dashboard with recent builds and CPU, RAM and filesystem meters. Opens the screen tour video."></a>
 </p>
 
-Real Poky `core-image-base` / `qemux86-64` build using existing sstate;
-time-compressed, not simulated.
-[Static dashboard](https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/07-idle-dashboard.png) ·
-[Capture details](https://github.com/0xbadcaffe/yoctui/blob/master/docs/media/yoctui-poky-workflow.json)
+[Watch the 17-second screen tour (MP4)](https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/yoctui-screen-tour.mp4) ·
+[Watch a real Poky build (GIF)](https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/yoctui-poky-workflow.gif) ·
+[Screenshot gallery](https://github.com/0xbadcaffe/yoctui/blob/master/docs/screenshots.md)
+
+The tour shows the Dashboard, task history, Layers, Recipes, and the Performance
+report in a running Yoctui session.
+
+<table>
+  <tr>
+    <td width="50%"><a href="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/01-active-build-tasks.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/01-active-build-tasks.png" alt="Active BitBake tasks, progress bars and correlated logs"></a><br><strong>Tasks</strong> · Follow progress and inspect task logs.</td>
+    <td width="50%"><a href="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/06-rootfs-composition.png"><img src="https://raw.githubusercontent.com/0xbadcaffe/yoctui/master/docs/media/screenshots/06-rootfs-composition.png" alt="Root filesystem composition with a package-size pie chart and table"></a><br><strong>Rootfs composition</strong> · See which packages occupy space in the image.</td>
+  </tr>
+</table>
 
 ## Features
 
