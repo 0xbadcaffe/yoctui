@@ -20,6 +20,7 @@ mod startup_screen;
 mod udev_syntax;
 mod ui_polish_focus;
 mod ui_polish_scroll;
+mod ui_polish_telemetry;
 use ratatui::{Terminal, backend::TestBackend};
 use std::{fs, path::PathBuf};
 use yoctui_model::{Action, BuildRequest, update};

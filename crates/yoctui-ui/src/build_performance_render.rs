@@ -16,7 +16,10 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
             .style(palette.base()),
         regions[0],
     );
-    let rows = app.build_performance_rows();
+    let yoctui_model::BuildPerformanceReport {
+        rows,
+        pressure_warnings,
+    } = app.build_performance_report();
     let visible = usize::from(regions[1].height.saturating_sub(2)).max(1);
     let offset = app
         .build_performance
@@ -25,24 +28,27 @@ pub(crate) fn workspace(frame: &mut Frame, app: &App, area: Rect) {
     let total = rows.len();
     let lines: Vec<Line> = rows
         .into_iter()
+        .enumerate()
         .skip(offset)
         .take(visible)
-        .map(|s| {
-            let color = if s.starts_with("HOST ")
+        .map(|(index, s)| {
+            let style = if pressure_warnings.contains(&index) {
+                palette.role(palette.warning, Modifier::BOLD)
+            } else if s.starts_with("HOST ")
                 || s.starts_with("PRESSURE ")
                 || s.starts_with("CACHE ")
                 || s.starts_with("MEMORY-")
                 || s == "NEXT CONFIRMED BUILD"
             {
-                palette.accent
+                palette.role(palette.accent, Modifier::BOLD)
             } else if s.starts_with('>') {
-                palette.success
+                palette.role(palette.success, Modifier::BOLD)
             } else if s.contains("unavailable") || s.starts_with("Partial ") {
-                palette.warning
+                palette.role(palette.muted, Modifier::DIM)
             } else {
-                palette.primary_foreground
+                palette.base()
             };
-            Line::styled(s, Style::default().fg(color))
+            Line::styled(s, style)
         })
         .collect();
     frame.render_widget(

@@ -38,6 +38,7 @@ pub(crate) struct DenseTelemetryMeter<'a> {
     pub(crate) percent: u8,
     pub(crate) detail: &'a str,
     pub(crate) active_style: Style,
+    pub(crate) warning_percent: u8,
     pub(crate) history: &'a [u64],
 }
 
@@ -56,13 +57,14 @@ pub(crate) fn render_dense_telemetry_meter(
         percent,
         detail,
         active_style,
+        warning_percent,
         history,
     } = meter;
     let percent = percent.min(100);
     let percent_text = format!("{percent:>3}%");
     let title_width = area.width.saturating_sub(5);
     frame.render_widget(
-        Paragraph::new(title).style(palette.role(palette.informational, Modifier::BOLD)),
+        Paragraph::new(resource_meter_label(title.into(), percent, warning_percent, title_width)).style(palette.role(palette.informational, Modifier::BOLD)),
         Rect::new(area.x, area.y, title_width, 1),
     );
     frame.render_widget(
@@ -79,55 +81,29 @@ pub(crate) fn render_dense_telemetry_meter(
     if graph_height > 0 {
         let graph_width = usize::from(area.width.saturating_sub(2));
         let retained = history.len().min(graph_width);
-        let mut points = vec![0; graph_width.saturating_sub(retained)];
-        points.extend_from_slice(&history[history.len().saturating_sub(retained)..]);
-        if points.last().copied().unwrap_or_default() != u64::from(percent) {
-            if points.len() == graph_width && !points.is_empty() {
-                points.remove(0);
-            }
-            points.push(u64::from(percent));
+        if retained > 0 {
+            frame.render_widget(
+                Sparkline::default()
+                    .data(&history[history.len() - retained..])
+                    .max(100)
+                    .style(active_style),
+                Rect::new(
+                    area.x.saturating_add(1 + (graph_width - retained) as u16),
+                    graph_top,
+                    retained as u16,
+                    graph_height,
+                ),
+            );
         }
-        frame.render_widget(
-            Sparkline::default()
-                .data(&points)
-                .max(100)
-                .style(active_style),
-            Rect::new(
-                area.x.saturating_add(1),
-                graph_top,
-                area.width.saturating_sub(2),
-                graph_height,
-            ),
-        );
     }
 
-    let meter_width = usize::from(area.width.saturating_sub(2));
-    let filled = (usize::from(percent) * meter_width).div_ceil(100);
-    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
-    let muted_style = palette.role(palette.muted, Modifier::DIM);
-    for index in 0..meter_width {
-        let Some(cell) = frame
-            .buffer_mut()
-            .cell_mut((area.x.saturating_add(1 + index as u16), meter_y))
-        else {
-            continue;
-        };
-        if index < filled {
-            let segment_percent = ((index + 1) * 100) / meter_width.max(1);
-            let segment_style = if segment_percent >= 90 {
-                palette.role(palette.error, Modifier::BOLD)
-            } else if segment_percent >= 70 {
-                palette.role(palette.warning, Modifier::BOLD)
-            } else {
-                palette.role(palette.success, Modifier::BOLD)
-            };
-            cell.set_symbol(if unicode { "▪" } else { "#" })
-                .set_style(segment_style);
-        } else {
-            cell.set_symbol(if unicode { "▫" } else { "." })
-                .set_style(muted_style);
-        }
-    }
+    render_resource_track(
+        frame,
+        app,
+        Rect::new(area.x.saturating_add(1), meter_y, area.width.saturating_sub(2), 1),
+        percent,
+        warning_percent,
+    );
 
     if detail_y > area.y {
         frame.render_widget(
@@ -143,7 +119,9 @@ pub(crate) fn dense_telemetry_meter_supported(area: Rect) -> bool {
     area.width >= 12 && area.height >= 3
 }
 
-pub(crate) fn render_cpu_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
+pub(crate) fn render_cpu_telemetry_cell(
+    frame: &mut Frame, app: &App, projection: &yoctui_model::HostTelemetryProjection, area: Rect,
+) {
     let Some(percent) = app
         .host_telemetry
         .cpu_utilization_percent
@@ -160,7 +138,6 @@ pub(crate) fn render_cpu_telemetry_cell(frame: &mut Frame, app: &App, area: Rect
         .host_telemetry
         .logical_cpu_count
         .map_or_else(|| "utilization".into(), |cores| format!("{cores} cores"));
-    let projection = app.host_telemetry_projection();
     render_dense_telemetry_meter(
         frame,
         app,
@@ -170,6 +147,7 @@ pub(crate) fn render_cpu_telemetry_cell(frame: &mut Frame, app: &App, area: Rect
             percent,
             detail: &detail,
             active_style: cpu_meter_style(app, percent),
+            warning_percent: RESOURCE_WARNING_PERCENT,
             history: &projection
                 .series(TelemetryMetric::HostCpuUtilization)
                 .history
@@ -178,7 +156,9 @@ pub(crate) fn render_cpu_telemetry_cell(frame: &mut Frame, app: &App, area: Rect
     );
 }
 
-pub(crate) fn render_ram_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
+pub(crate) fn render_ram_telemetry_cell(
+    frame: &mut Frame, app: &App, projection: &yoctui_model::HostTelemetryProjection, area: Rect,
+) {
     let total = app.host_telemetry.memory_total_bytes;
     let available = app.host_telemetry.memory_available_bytes;
     let (Some(percent), Some(total), Some(available)) =
@@ -192,7 +172,6 @@ pub(crate) fn render_ram_telemetry_cell(frame: &mut Frame, app: &App, area: Rect
         return;
     }
     let detail = format_bytes_pair(total - available, total);
-    let projection = app.host_telemetry_projection();
     render_dense_telemetry_meter(
         frame,
         app,
@@ -202,6 +181,7 @@ pub(crate) fn render_ram_telemetry_cell(frame: &mut Frame, app: &App, area: Rect
             percent,
             detail: &detail,
             active_style: memory_meter_style(app, percent),
+            warning_percent: MEMORY_WARNING_PERCENT,
             history: &projection
                 .series(TelemetryMetric::HostMemoryCapacity)
                 .history
@@ -210,7 +190,9 @@ pub(crate) fn render_ram_telemetry_cell(frame: &mut Frame, app: &App, area: Rect
     );
 }
 
-pub(crate) fn render_build_filesystem_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
+pub(crate) fn render_build_filesystem_telemetry_cell(
+    frame: &mut Frame, app: &App, projection: &yoctui_model::HostTelemetryProjection, area: Rect,
+) {
     let total = app.host_telemetry.disk_total_bytes;
     let available = app.host_telemetry.disk_available_bytes;
     let (Some(percent), Some(_total), Some(available), Some(_build_dir)) = (
@@ -227,7 +209,6 @@ pub(crate) fn render_build_filesystem_telemetry_cell(frame: &mut Frame, app: &Ap
         return;
     }
     let detail = format!("{} free", format_bytes(available));
-    let projection = app.host_telemetry_projection();
     render_dense_telemetry_meter(
         frame,
         app,
@@ -237,6 +218,7 @@ pub(crate) fn render_build_filesystem_telemetry_cell(frame: &mut Frame, app: &Ap
             percent,
             detail: &detail,
             active_style: telemetry_meter_style(app, percent),
+            warning_percent: RESOURCE_WARNING_PERCENT,
             history: &projection
                 .series(TelemetryMetric::BuildFilesystemCapacity)
                 .history

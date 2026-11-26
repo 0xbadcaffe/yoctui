@@ -1,6 +1,7 @@
 //! Opt-in build policy and daemon-host observations. No host I/O in the model.
 use crate::{App, Effect, FocusTarget, Screen};
 mod report;
+pub use report::BuildPerformanceReport;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

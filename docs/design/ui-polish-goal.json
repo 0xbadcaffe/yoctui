@@ -418,13 +418,13 @@
     {
       "id": "M6",
       "title": "Existing telemetry readability",
-      "status": "pending",
+      "status": "passed",
       "required": true,
       "depends_on": [
         "M1",
         "M2"
       ],
-      "implementation_attempts_used": 0,
+      "implementation_attempts_used": 1,
       "deliverables": [
         "Refine existing CPU, memory, disk and pressure readings in Dashboard and Performance.",
         "Use existing history only where already available; defer new history collection outside this scope."

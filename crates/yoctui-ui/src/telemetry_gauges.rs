@@ -51,7 +51,6 @@ pub(crate) fn render_ram_gauge(frame: &mut Frame, app: &App, area: Rect) {
     if area.is_empty() {
         return;
     }
-    let palette = ThemePalette::for_app(app);
     let total = app.host_telemetry.memory_total_bytes;
     let available = app.host_telemetry.memory_available_bytes;
     if let (Some(percent), Some(total), Some(available)) =
@@ -63,15 +62,17 @@ pub(crate) fn render_ram_gauge(frame: &mut Frame, app: &App, area: Rect) {
             app,
             area,
             percent,
-            ram_gauge_label(percent, used, total, area.width),
+            resource_meter_label(
+                ram_gauge_label(percent, used, total, area.width),
+                percent,
+                MEMORY_WARNING_PERCENT,
+                area.width,
+            ),
             memory_meter_style(app, percent),
+            MEMORY_WARNING_PERCENT,
         );
     } else {
-        frame.render_widget(
-            Paragraph::new("RAM ! unavailable")
-                .style(palette.role(palette.disabled, Modifier::DIM)),
-            area,
-        );
+        render_unavailable_meter(frame, app, area, "RAM", "RAM");
     }
 }
 
@@ -104,7 +105,6 @@ pub(crate) fn render_disk_gauge(frame: &mut Frame, app: &App, area: Rect) {
     if area.is_empty() {
         return;
     }
-    let palette = ThemePalette::for_app(app);
     let total = app.host_telemetry.disk_total_bytes;
     let available = app.host_telemetry.disk_available_bytes;
     let build_dir = app.workspace.build_dir.as_deref();
@@ -119,15 +119,17 @@ pub(crate) fn render_disk_gauge(frame: &mut Frame, app: &App, area: Rect) {
             app,
             area,
             percent,
-            disk_gauge_label(percent, available, total, build_dir, area.width),
+            resource_meter_label(
+                disk_gauge_label(percent, available, total, build_dir, area.width),
+                percent,
+                RESOURCE_WARNING_PERCENT,
+                area.width,
+            ),
             telemetry_meter_style(app, percent),
+            RESOURCE_WARNING_PERCENT,
         );
     } else {
-        frame.render_widget(
-            Paragraph::new("BUILD FS ! unavailable")
-                .style(palette.role(palette.disabled, Modifier::DIM)),
-            area,
-        );
+        render_unavailable_meter(frame, app, area, "BUILD FS", "FS");
     }
 }
 

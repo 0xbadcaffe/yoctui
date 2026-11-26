@@ -27,10 +27,10 @@ pub(crate) fn render_telemetry_cell(
     let inner = block.inner(area);
     frame.render_widget(block, area);
     match cell {
-        TelemetryCell::Cpu => render_cpu_telemetry_cell(frame, app, inner),
-        TelemetryCell::Ram => render_ram_telemetry_cell(frame, app, inner),
+        TelemetryCell::Cpu => render_cpu_telemetry_cell(frame, app, projection, inner),
+        TelemetryCell::Ram => render_ram_telemetry_cell(frame, app, projection, inner),
         TelemetryCell::BuildFilesystem => {
-            render_build_filesystem_telemetry_cell(frame, app, inner);
+            render_build_filesystem_telemetry_cell(frame, app, projection, inner);
         }
         TelemetryCell::Sstate => {
             let palette = ThemePalette::for_app(app);
@@ -96,56 +96,33 @@ pub(crate) fn render_compact_telemetry_strip(frame: &mut Frame, app: &App, area:
         ),
     ];
     let cells = Layout::horizontal([Constraint::Ratio(1, 3); 3]).split(inner);
-    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
-    for ((label, percent), cell) in values.into_iter().zip(cells.iter()) {
-        let text = percent.map_or_else(
-            || format!("{label} --"),
-            |value| format!("{label} {value}%"),
+    for ((label, sample), cell) in values.into_iter().zip(cells.iter()) {
+        let warning = if label == "RAM" { MEMORY_WARNING_PERCENT } else { RESOURCE_WARNING_PERCENT };
+        let text = sample.map_or_else(
+            || format!("{label} {}", if cell.height > 1 { "--" } else { "n/a" }),
+            |value| resource_meter_label(format!("{label} {value}%"), value, warning, cell.width),
         );
+        let style = match (label, sample) {
+            ("RAM", Some(percent)) => memory_meter_style(app, percent),
+            ("CPU", Some(percent)) => cpu_meter_style(app, percent),
+            (_, Some(percent)) => telemetry_meter_style(app, percent),
+            (_, None) => palette.role(palette.disabled, Modifier::DIM),
+        };
         frame.render_widget(
-            Paragraph::new(text).style(palette.role(palette.informational, Modifier::BOLD)),
+            Paragraph::new(text).style(style),
             Rect::new(cell.x, cell.y, cell.width, 1),
         );
         if cell.height < 2 {
             continue;
         }
         let bar = Rect::new(cell.x, cell.y + 1, cell.width.saturating_sub(1), 1);
-        let Some(percent) = percent else {
+        if let Some(percent) = sample {
+            render_resource_track(frame, app, bar, percent, warning);
+        } else {
             frame.render_widget(
                 Paragraph::new("unavailable").style(palette.role(palette.muted, Modifier::DIM)),
                 bar,
             );
-            continue;
-        };
-        let filled = (u32::from(percent) * u32::from(bar.width)).div_ceil(100);
-        for index in 0..bar.width {
-            let active = u32::from(index) < filled;
-            let segment = u32::from(index + 1) * 100 / u32::from(bar.width.max(1));
-            let color = if !active {
-                palette.muted
-            } else if segment >= 90 {
-                palette.error
-            } else if segment >= 70 {
-                palette.warning
-            } else {
-                palette.success
-            };
-            let symbol = match (unicode, active) {
-                (true, true) => "▪",
-                (true, false) => "▫",
-                (false, true) => "#",
-                (false, false) => ".",
-            };
-            if let Some(cell) = frame.buffer_mut().cell_mut((bar.x + index, bar.y)) {
-                cell.set_symbol(symbol).set_style(palette.role(
-                    color,
-                    if active {
-                        Modifier::BOLD
-                    } else {
-                        Modifier::DIM
-                    },
-                ));
-            }
         }
     }
 }

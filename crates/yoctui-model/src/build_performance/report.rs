@@ -19,9 +19,20 @@ fn pressure(value: Option<PressureSample>) -> String {
         },
     )
 }
+
+pub struct BuildPerformanceReport {
+    pub rows: Vec<String>,
+    pub pressure_warnings: Vec<usize>,
+}
+
 impl App {
     pub fn build_performance_rows(&self) -> Vec<String> {
+        self.build_performance_report().rows
+    }
+
+    pub fn build_performance_report(&self) -> BuildPerformanceReport {
         let mut rows = vec!["HOST RESOURCES · sampled on the daemon".into()];
+        let mut pressure_warnings = Vec::new();
         let resources = self
             .daemon
             .telemetry
@@ -38,7 +49,7 @@ impl App {
                 size(r.host.memory_available_bytes)
             ));
             rows.push(format!(
-                "Filesystem cache {} · reusable cache is not a leak",
+                "Reusable filesystem cache {}",
                 size(r.cached_bytes)
             ));
             rows.push(format!(
@@ -61,16 +72,55 @@ impl App {
                 "CPU {} · disk free {}",
                 r.host
                     .cpu_utilization_percent
-                    .map_or_else(|| "unavailable".into(), |v| format!("{v}%")),
+                    .map_or_else(|| "unavailable".into(), |v| format!("{}%", v.min(100))),
                 size(r.host.disk_available_bytes)
             ));
             rows.push("PRESSURE · time stalled, 10-second average".into());
-            rows.push(format!("CPU: {}", pressure(r.cpu_pressure)));
-            rows.push(format!("I/O: {}", pressure(r.io_pressure)));
-            rows.push(format!("Memory: {}", pressure(r.memory_pressure)));
-            rows.push(
-                "PSI percentages above are observations, not the raw scheduler thresholds.".into(),
-            );
+            let active = r.active_profile;
+            for (label, variable, measured, configured) in [
+                (
+                    "CPU",
+                    "BB_PRESSURE_MAX_CPU",
+                    r.cpu_pressure,
+                    active.map(|p| p.cpu),
+                ),
+                (
+                    "I/O",
+                    "BB_PRESSURE_MAX_IO",
+                    r.io_pressure,
+                    active.map(|p| p.io),
+                ),
+                (
+                    "Memory",
+                    "BB_PRESSURE_MAX_MEMORY",
+                    r.memory_pressure,
+                    active.map(|p| p.memory),
+                ),
+            ] {
+                let limit = configured
+                    .or_else(|| self.workspace.variables.get(variable)?.parse::<u32>().ok())
+                    .filter(|limit| *limit > 0);
+                let state = match (measured, limit) {
+                    (Some(sample), Some(limit)) => {
+                        // BitBake limits are microseconds stalled per second. The
+                        // observed hundredths of a percent use a 10-second average.
+                        let above = u32::from(sample.some_hundredths) * 100 > limit;
+                        if above {
+                            pressure_warnings.push(rows.len());
+                        }
+                        let bound = format!("{:.4}", f64::from(limit) / 10_000.0);
+                        let bound = bound.trim_end_matches('0').trim_end_matches('.');
+                        format!(
+                            " · {} {bound}% limit",
+                            if above { "above" } else { "within" }
+                        )
+                    }
+                    (Some(_), None) => " · limit unavailable".into(),
+                    (None, _) => String::new(),
+                };
+                rows.push(format!("{label}: {}{state}", pressure(measured)));
+            }
+            rows.push("Limits shown as percentages. BitBake evaluates shorter intervals.".into());
             rows.push(format!(
                 "Current/last job requested policy: {}",
                 r.active_profile.map_or_else(
@@ -201,6 +251,9 @@ impl App {
             "Use these observations to reduce PARALLEL_MAKE for expensive recipes.".into(),
             "Cache checks show configuration, not mirror reachability or compatibility.".into(),
         ]);
-        rows
+        BuildPerformanceReport {
+            rows,
+            pressure_warnings,
+        }
     }
 }
