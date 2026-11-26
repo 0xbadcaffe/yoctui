@@ -85,10 +85,14 @@ def main() -> None:
         def send(value: bytes) -> None:
             os.write(master, value)
 
-        def edit(value: Path) -> None:
+        def edit(value: Path | str, typed_prefix: int = 0) -> None:
             send(b"e")
             wait_for("Enter accept value")
-            send(b"\x1b[200~" + str(value).encode() + b"\x1b[201~\r")
+            data = str(value).encode()
+            if typed_prefix:
+                send(data[:typed_prefix])
+                wait_for(data[:typed_prefix].decode())
+            send(b"\x1b[200~" + data[typed_prefix:] + b"\x1b[201~\r")
             wait_for("s save profile", "Enter accept value")
 
         try:
@@ -100,7 +104,11 @@ def main() -> None:
             wait_for("Build environment")
             send(b"e")
             wait_for("Configure build environment")
-            edit(source)
+            edit("relative/source", typed_prefix=8)
+            send(b"s")
+            wait_for("Source directory must be an absolute path")
+            wait_for("relative/source")
+            edit(source, typed_prefix=5)
             send(b"b")
             wait_for("nested/", "Loading directories")
             send(b"\r")
@@ -109,6 +117,7 @@ def main() -> None:
             wait_for("nested/", "Loading directories")
             send(b"s")
             wait_for("oe-init-build-env", "Browse directories")
+            wait_for("Environment script (detected)")
             send(b"\t")
             edit(build)
             send(b"b")
@@ -136,6 +145,16 @@ def main() -> None:
             wait_for("> custom init", "Loading files")
             send(b"s")
             wait_for(str(custom_script), "Browse environment scripts")
+            send(b"\t")  # Source
+            send(b"b")
+            wait_for("Browse directories")
+            wait_for("> nested/", "Loading directories")
+            send(b"\r")
+            wait_for("No child directories", "Loading directories")
+            send(b"s")
+            wait_for("No initializer found here", "Browse directories")
+            wait_for(str(custom_script))
+            edit(source)
             send(b"s")
             wait_for("Load build environment", "Configure build environment")
             send(b"\x1b")
@@ -148,7 +167,7 @@ def main() -> None:
             process.wait(timeout=5)
             assert process.returncode == 0
             print(
-                "Environment setup PTY passed: source/build/script browse, nested custom file, cancel/reopen/select, review; no initialization or daemon"
+                "Environment setup PTY passed: typed/pasted paths, field errors, initializer discovery, nested custom script/cancel, review without initialization"
             )
         finally:
             if process.poll() is None:

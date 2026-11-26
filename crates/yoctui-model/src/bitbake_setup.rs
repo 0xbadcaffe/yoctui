@@ -155,7 +155,7 @@ pub(crate) fn reduce(app: &mut App, action: BitBakeSetupAction) -> Option<Effect
                 let profile = entry.profile.clone();
                 open_dialog(app, Dialog::EnvironmentSetup(Box::new(EnvironmentSetup {
                     values: [profile.source_dir.display().to_string(), profile.build_dir.display().to_string(),
-                        profile.init_script.display().to_string()], field: 0, editor: None,
+                        profile.init_script.display().to_string()], field: 0, script_detected: false, editor: None,
                     browser: None, error: Some("Review paths, s saves. Verification/daemon switching is separate; no build starts.".into()),
                 })));
             }

@@ -103,21 +103,29 @@ impl BuildEnvironmentCloneRequest {
 
 impl BuildEnvironmentProfile {
     pub fn validate(&self) -> Result<(), AppError> {
-        let valid = |path: &Path| {
-            path.is_absolute()
-                && !path
+        for (label, path) in crate::EnvironmentSetup::LABELS.into_iter().zip([
+            &self.source_dir,
+            &self.build_dir,
+            &self.init_script,
+        ]) {
+            if !path.is_absolute()
+                || path
                     .components()
                     .any(|part| matches!(part, Component::ParentDir))
-        };
-        if valid(&self.source_dir) && valid(&self.build_dir) && valid(&self.init_script) {
-            Ok(())
-        } else {
-            Err(AppError::new(
-                "Build environment",
-                "source, build directory, and environment script must be absolute normal paths",
-                "choose absolute paths in Build environment settings",
-            ))
+            {
+                let value = if path.as_os_str().is_empty() {
+                    "(not set)".into()
+                } else {
+                    format!("‘{}’", path.display())
+                };
+                return Err(AppError::new(
+                    "Build environment",
+                    format!("{label} must be an absolute path without '..': {value}"),
+                    "Edit the field or browse for a path",
+                ));
+            }
         }
+        Ok(())
     }
 }
 

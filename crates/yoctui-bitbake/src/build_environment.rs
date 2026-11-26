@@ -32,10 +32,19 @@ pub struct BuildEnvironmentClonePreview {
 
 #[derive(Debug, Error)]
 pub enum BuildEnvironmentAdapterError {
+    #[error(transparent)]
+    InvalidProfile(#[from] yoctui_model::AppError),
     #[error("unsafe build environment path: {0}")]
     UnsafePath(PathBuf),
     #[error("missing build environment path: {0}")]
     MissingPath(PathBuf),
+    #[error("expected a directory: {0}")]
+    NotDirectory(PathBuf),
+    #[error("cannot read {path}: {source}")]
+    UnreadablePath {
+        path: PathBuf,
+        source: std::io::Error,
+    },
     #[error("environment script is not executable: {0}")]
     NotExecutable(PathBuf),
     #[error("environment setup requires interactive input")]
@@ -225,9 +234,7 @@ impl BuildEnvironmentAdapter {
         &self,
         profile: &BuildEnvironmentProfile,
     ) -> Result<BuildEnvironmentProfile, BuildEnvironmentAdapterError> {
-        profile
-            .validate()
-            .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(profile.build_dir.clone()))?;
+        profile.validate()?;
         for (path, may_create) in [(&profile.source_dir, false), (&profile.build_dir, true)] {
             if may_create
                 && !path_entry_exists(path)
@@ -240,11 +247,23 @@ impl BuildEnvironmentAdapter {
                 }
                 return Err(BuildEnvironmentAdapterError::MissingPath(path.clone()));
             }
-            if !path.is_dir() {
-                return Err(BuildEnvironmentAdapterError::MissingPath(path.clone()));
-            }
             if path.is_symlink() {
                 return Err(BuildEnvironmentAdapterError::UnsafePath(path.clone()));
+            }
+            match std::fs::read_dir(path) {
+                Ok(_) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    return Err(BuildEnvironmentAdapterError::MissingPath(path.clone()));
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::NotADirectory => {
+                    return Err(BuildEnvironmentAdapterError::NotDirectory(path.clone()));
+                }
+                Err(source) => {
+                    return Err(BuildEnvironmentAdapterError::UnreadablePath {
+                        path: path.clone(),
+                        source,
+                    });
+                }
             }
         }
         let script = &profile.init_script;
@@ -256,8 +275,12 @@ impl BuildEnvironmentAdapter {
         }
         // Environment initializers are sourced, not executed. In particular,
         // bitbake-setup generates a readable, non-executable init-build-env.
-        std::fs::File::open(script)
-            .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(script.clone()))?;
+        std::fs::File::open(script).map_err(|source| {
+            BuildEnvironmentAdapterError::UnreadablePath {
+                path: script.clone(),
+                source,
+            }
+        })?;
         Ok(profile.clone())
     }
 

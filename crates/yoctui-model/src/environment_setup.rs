@@ -29,6 +29,7 @@ pub struct EnvironmentBrowser {
 pub struct EnvironmentSetup {
     pub values: [String; 3],
     pub field: usize,
+    pub script_detected: bool,
     pub editor: Option<TextAreaState>,
     pub browser: Option<EnvironmentBrowser>,
     pub error: Option<String>,
@@ -111,6 +112,7 @@ pub(crate) fn environment_setup_update(
             Dialog::EnvironmentSetup(Box::new(EnvironmentSetup {
                 values,
                 field: 0,
+                script_detected: false,
                 editor: None,
                 browser: None,
                 error: None,
@@ -201,6 +203,9 @@ pub(crate) fn environment_setup_update(
         A::AcceptEdit => {
             if let Some(editor) = setup.editor.take() {
                 setup.values[setup.field] = editor.text;
+                if matches!(setup.field, 0 | 2) {
+                    setup.script_detected = false;
+                }
                 setup.error = None;
             }
         }
@@ -248,6 +253,7 @@ pub(crate) fn environment_setup_update(
                         .and_then(|index| directory.files.get(index))
                 {
                     setup.values[2] = file.display().to_string();
+                    setup.script_detected = false;
                     setup.browser = None;
                     setup.error = None;
                     return None;
@@ -274,6 +280,7 @@ pub(crate) fn environment_setup_update(
                         .and_then(|index| directory.files.get(index))
                     {
                         setup.values[2] = file.display().to_string();
+                        setup.script_detected = false;
                         setup.browser = None;
                         setup.error = None;
                     } else {
@@ -291,13 +298,22 @@ pub(crate) fn environment_setup_update(
                     setup.values[0] = directory.path.display().to_string();
                     setup.values[1] = build.display().to_string();
                     setup.values[2] = script.display().to_string();
+                    setup.script_detected = true;
                     setup.error = None;
                 } else if setup.field == 0 {
-                    setup.values[2] = directory
-                        .init_script
-                        .as_ref()
-                        .map_or_else(String::new, |p| p.display().to_string());
-                    setup.error = directory.init_script.is_none().then(|| "No oe-init-build-env found. Choose a Yocto source directory or enter a custom script path.".into());
+                    if let Some(script) = &directory.init_script {
+                        setup.values[2] = script.display().to_string();
+                        setup.script_detected = true;
+                        setup.error = None;
+                    } else {
+                        if setup.script_detected {
+                            setup.values[2].clear();
+                            setup.script_detected = false;
+                        }
+                        setup.error = Some(
+                            "No initializer found here. Edit or browse Environment script.".into(),
+                        );
+                    }
                 } else {
                     setup.error = None;
                 }

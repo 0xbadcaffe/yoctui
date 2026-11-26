@@ -6,6 +6,7 @@ fn environment_setup_popup_keeps_bottom_selection_and_controls_visible() {
     let mut setup = EnvironmentSetup {
         values: Default::default(),
         field: 0,
+        script_detected: false,
         editor: None,
         error: None,
         browser: Some(yoctui_model::EnvironmentBrowser {
@@ -62,6 +63,7 @@ fn environment_setup_script_popup_distinguishes_files_and_folders() {
     let setup = EnvironmentSetup {
         values: Default::default(),
         field: 2,
+        script_detected: false,
         editor: None,
         error: None,
         browser: Some(yoctui_model::EnvironmentBrowser {

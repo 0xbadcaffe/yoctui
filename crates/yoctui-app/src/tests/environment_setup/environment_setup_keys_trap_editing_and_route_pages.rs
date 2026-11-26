@@ -5,6 +5,7 @@ fn environment_setup_keys_trap_editing_and_route_pages() {
     let mut setup = EnvironmentSetup {
         values: Default::default(),
         field: 0,
+        script_detected: false,
         editor: None,
         browser: None,
         error: None,

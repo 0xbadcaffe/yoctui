@@ -82,7 +82,10 @@ pub fn read_environment_directory_with_files(
     } else if path.is_absolute() {
         path.to_path_buf()
     } else {
-        return Err("Enter an absolute directory path before browsing.".into());
+        return Err(format!(
+            "Enter an absolute path before browsing: {}",
+            path.display()
+        ));
     };
     if initial {
         // Missing build paths start at their existing parent. Permission errors

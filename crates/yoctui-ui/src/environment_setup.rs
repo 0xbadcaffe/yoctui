@@ -140,12 +140,7 @@ pub(super) fn environment_setup_popup(
         ]));
         hint = "Type/paste path  Left/Right Home/End  Ctrl-U clear\nEnter accept value  Esc discard edit";
     } else {
-        lines.push(Line::from(
-            "Save opens a daemon connection review; confirm to initialize and refresh.",
-        ));
-        lines.push(Line::from(
-            "No daemon or initialized build environment is needed to browse.",
-        ));
+        lines.push(Line::from("Confirm the connection review to initialize."));
         lines.push(Line::from(""));
         for (index, label) in EnvironmentSetup::LABELS.iter().enumerate() {
             let style = if index == setup.field {
@@ -153,25 +148,23 @@ pub(super) fn environment_setup_popup(
             } else {
                 palette.base()
             };
-            lines.push(Line::styled(
-                format!(
-                    "{} {label}: {}",
-                    if index == setup.field { ">" } else { " " },
-                    if setup.values[index].is_empty() {
-                        "(not set)"
-                    } else {
-                        &setup.values[index]
-                    }
-                ),
-                style,
-            ));
+            let marker = if index == setup.field { ">" } else { " " };
+            let detected = if index == 2 && setup.script_detected {
+                " (detected)"
+            } else {
+                ""
+            };
+            let value = if setup.values[index].is_empty() {
+                "(not set)"
+            } else {
+                &setup.values[index]
+            };
+            let text = format!("{marker} {label}{detected}: {value}");
+            lines.push(Line::styled(bounded_cell_text(&text, rows[0].width), style));
         }
         lines.push(Line::from(""));
         lines.push(Line::from(
-            "Source/Build: b browse folders. Script: b browse and choose a file.",
-        ));
-        lines.push(Line::from(
-            "e types any path. Choosing Source also detects its default script.",
+            "Browse folders for Source and Build. Browse for a file for Script.",
         ));
         hint = "Tab/Shift-Tab Up/Down field  Enter/e edit  b browse\ns save profile and review connection  Esc cancel";
     }

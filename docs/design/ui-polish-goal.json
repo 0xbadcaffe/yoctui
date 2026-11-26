@@ -325,12 +325,12 @@
     {
       "id": "M4",
       "title": "Environment path form polish",
-      "status": "pending",
+      "status": "passed",
       "required": true,
       "depends_on": [
         "M3"
       ],
-      "implementation_attempts_used": 0,
+      "implementation_attempts_used": 1,
       "deliverables": [
         "Give Source, Build and Script consistent labels, browse affordances and discovery feedback.",
         "Reuse existing initializer discovery and reviewed connection flow; add only missing presentation or routing."
