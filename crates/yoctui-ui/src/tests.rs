@@ -18,6 +18,7 @@ mod saved_environment;
 mod sstate_cache;
 mod startup_screen;
 mod udev_syntax;
+mod ui_polish_focus;
 use ratatui::{Terminal, backend::TestBackend};
 use std::{fs, path::PathBuf};
 use yoctui_model::{Action, BuildRequest, update};

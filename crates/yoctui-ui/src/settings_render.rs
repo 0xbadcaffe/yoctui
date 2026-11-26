@@ -173,7 +173,7 @@ pub(crate) fn keymap_preferences_overlay(frame: &mut Frame, app: &App, area: Rec
                     if row.critical { " · critical" } else { "" }
                 ),
             ])
-            .style(selected_style(app, index == selected))
+            .style(dialog_selected_style(app, index == selected))
         });
     frame.render_widget(
         Table::new(
@@ -291,7 +291,7 @@ pub(crate) fn onboarding_overlay(frame: &mut Frame, app: &App, area: Rect) {
             row.destination.to_owned(),
         ])
         .style(if selected {
-            selected_style(app, true)
+            dialog_selected_style(app, true)
         } else {
             match row.status {
                 yoctui_model::OnboardingStepStatus::Completed => {

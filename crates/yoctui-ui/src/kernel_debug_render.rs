@@ -198,7 +198,7 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
                             index == dialog.selection,
                             rows[1].width,
                         ),
-                        selected_style(app, index == dialog.selection),
+                        dialog_selected_style(app, index == dialog.selection),
                     )
                 })
                 .collect::<Vec<_>>();
@@ -367,14 +367,14 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, area: Rect) -> bool {
         Paragraph::new(vec![
             Line::styled(
                 "Embedded in Yoctui (daemon-owned PTY)",
-                selected_style(
+                dialog_selected_style(
                     app,
                     dialog.destination == TerminalLaunchDestination::Embedded,
                 ),
             ),
             Line::styled(
                 format!("Detached terminal · {detached}"),
-                selected_style(
+                dialog_selected_style(
                     app,
                     dialog.destination == TerminalLaunchDestination::Detached,
                 ),

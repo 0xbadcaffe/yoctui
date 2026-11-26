@@ -265,7 +265,7 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     } else if regions[1].width >= 88 {
         let rows = (0..total).skip(start).take(visible_count).map(|index| {
             let row_style = if index == selection {
-                selected_style(app, true)
+                dialog_selected_style(app, true)
             } else {
                 palette.base()
             };
@@ -333,7 +333,7 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
                     command.shortcut,
                 );
                 Row::new([bounded_cell_text(&value, row_width)]).style(if index == selection {
-                    selected_style(app, true)
+                    dialog_selected_style(app, true)
                 } else {
                     state_style
                 })
@@ -347,7 +347,7 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
                     hit.line
                 );
                 Row::new([bounded_cell_text(&value, row_width)]).style(if index == selection {
-                    selected_style(app, true)
+                    dialog_selected_style(app, true)
                 } else {
                     palette.base()
                 })

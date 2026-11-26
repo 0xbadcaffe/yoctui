@@ -373,7 +373,7 @@ fn overlay(frame: &mut Frame, app: &App, area: Rect) {
                 Line::styled(
                     format!("{} {label}", if i == selection { "▶" } else { " " }),
                     if i == selection {
-                        selected_style(app, true)
+                        dialog_selected_style(app, true)
                     } else {
                         Style::default()
                     },
@@ -458,7 +458,7 @@ fn folder_dialog(frame: &mut Frame, app: &App, area: Rect) {
                     }
                 ),
                 if index == browser.selection && !browser.editing_path {
-                    selected_style(app, true)
+                    dialog_selected_style(app, true)
                 } else {
                     Style::default()
                 },

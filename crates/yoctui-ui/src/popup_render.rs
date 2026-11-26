@@ -111,7 +111,7 @@ pub(crate) fn theme_picker(frame: &mut Frame, app: &App, selection: usize, area:
                 if index == selection { "▶" } else { " " },
                 theme.display_name()
             )])
-            .style(selected_style(app, index == selection))
+            .style(dialog_selected_style(app, index == selection))
         });
     frame.render_widget(
         Table::new(rows, [Constraint::Min(1)])

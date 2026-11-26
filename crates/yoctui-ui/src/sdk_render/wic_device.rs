@@ -11,7 +11,7 @@ pub(crate) fn wic_device_lines(
     let viewport = yoctui_model::centered_viewport_range(selection, devices.len(), capacity);
     for device in &devices[viewport] {
         let selected = app.wic_device_selection.as_ref() == Some(&device.identity);
-        let style = selected_style(app, selected);
+        let style = dialog_selected_style(app, selected);
         let mounts = if device.descendant_mounts.is_empty() {
             "none".into()
         } else {

@@ -1,4 +1,15 @@
 impl App {
+    /// Input ownership includes overlays that preserve the underlying pane focus.
+    pub fn input_owner(&self) -> crate::FocusTarget {
+        if let Some(owner) = crate::modal_focus(self) {
+            owner
+        } else if self.screen == crate::Screen::Workbench && self.workbench.modal_open() {
+            crate::FocusTarget::Dialog
+        } else {
+            self.focus
+        }
+    }
+
     pub fn active_dialog(&self) -> Option<&Dialog> {
         self.dialogs.front()
     }

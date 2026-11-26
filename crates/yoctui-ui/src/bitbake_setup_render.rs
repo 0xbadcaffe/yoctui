@@ -112,7 +112,7 @@ pub(crate) fn wizard(frame: &mut Frame, app: &App, wizard: &BitBakeSetupWizard, 
             .take(available)
             .collect();
         let style = if editor.selection.is_some() {
-            selected_style(app, true)
+            dialog_selected_style(app, true)
         } else {
             ThemePalette::for_app(app).base()
         };
@@ -175,7 +175,7 @@ pub(crate) fn wizard(frame: &mut Frame, app: &App, wizard: &BitBakeSetupWizard, 
             lines.push(Line::styled(
                 format!("{} {label}", if i == wizard.field { ">" } else { " " }),
                 if i == wizard.field {
-                    selected_style(app, true)
+                    dialog_selected_style(app, true)
                 } else {
                     ThemePalette::for_app(app).base()
                 },

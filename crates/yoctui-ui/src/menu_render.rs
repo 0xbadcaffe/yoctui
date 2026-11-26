@@ -112,7 +112,7 @@ pub(crate) fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
                 availability.to_owned(),
             ])
             .style(if index == selected {
-                selected_style(app, true)
+                dialog_selected_style(app, true)
             } else if item.enabled() {
                 palette.base()
             } else {

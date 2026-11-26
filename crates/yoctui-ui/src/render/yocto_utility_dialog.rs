@@ -5,7 +5,11 @@ fn render_yocto_utility_dialog(frame: &mut Frame, app: &App, area: Rect) -> bool
     let fields = dialog.fields();
     let content_height = fields.len() as u16
         + 8
-        + if dialog.validation_error.is_some() { 2 } else { 0 };
+        + if dialog.validation_error.is_some() {
+            2
+        } else {
+            0
+        };
     let width = area.width.saturating_sub(8).clamp(52, 96);
     let height = content_height.min(area.height.saturating_sub(4)).max(10);
     let popup = Rect::new(
@@ -50,7 +54,7 @@ fn render_yocto_utility_dialog(frame: &mut Frame, app: &App, area: Rect) -> bool
                     value,
                     suffix
                 ),
-                selected_style(app, index == dialog.selected_field),
+                dialog_selected_style(app, index == dialog.selected_field),
             ));
         }
     }
@@ -70,7 +74,11 @@ fn render_yocto_utility_dialog(frame: &mut Frame, app: &App, area: Rect) -> bool
     ));
     frame.render_widget(
         Paragraph::new(lines)
-            .block(dialog_block(app, dialog.command.label(), DialogTone::Standard))
+            .block(dialog_block(
+                app,
+                dialog.command.label(),
+                DialogTone::Standard,
+            ))
             .wrap(Wrap { trim: false }),
         popup,
     );

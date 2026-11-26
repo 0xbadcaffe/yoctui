@@ -71,7 +71,7 @@ pub(super) fn environment_setup_popup(
             {
                 let label = path.file_name().unwrap_or_default().to_string_lossy();
                 let style = if index == browser.selection {
-                    selected_style(app, true)
+                    dialog_selected_style(app, true)
                 } else {
                     palette.base()
                 };
@@ -129,7 +129,7 @@ pub(super) fn environment_setup_popup(
             .take(available / 2)
             .collect();
         let style = if editor.selection.is_some() {
-            selected_style(app, true)
+            dialog_selected_style(app, true)
         } else {
             palette.base()
         };
@@ -149,7 +149,7 @@ pub(super) fn environment_setup_popup(
         lines.push(Line::from(""));
         for (index, label) in EnvironmentSetup::LABELS.iter().enumerate() {
             let style = if index == setup.field {
-                selected_style(app, true)
+                dialog_selected_style(app, true)
             } else {
                 palette.base()
             };

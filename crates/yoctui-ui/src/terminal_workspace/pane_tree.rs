@@ -71,8 +71,16 @@ pub(crate) fn pane_switcher(frame: &mut Frame, app: &App, area: Rect) {
 
 pub(crate) fn pane_block<'a>(app: &App, title: &'a str, focused: bool) -> Block<'a> {
     let palette = ThemePalette::for_app(app);
+    let focused = focused && !background_input_suspended(app);
     PaneShell::new(
-        Line::styled(title, palette.role(palette.informational, Modifier::BOLD)),
+        Line::styled(
+            title,
+            if focused {
+                palette.focus().add_modifier(Modifier::BOLD)
+            } else {
+                palette.role(palette.secondary_foreground, Modifier::empty())
+            },
+        ),
         focused,
         pane_styles(app),
     )
@@ -89,7 +97,9 @@ pub(crate) fn pane_styles(app: &App) -> PaneStyles {
         inactive_selected: if palette.attribute_only {
             Style::default().add_modifier(Modifier::UNDERLINED)
         } else {
-            Style::default().fg(palette.selection_foreground)
+            Style::default()
+                .fg(palette.secondary_foreground)
+                .add_modifier(Modifier::UNDERLINED)
         },
         table_header: palette.role(palette.table_header, Modifier::BOLD),
         muted: palette.role(palette.muted, Modifier::DIM),

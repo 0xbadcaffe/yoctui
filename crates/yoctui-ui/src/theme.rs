@@ -2,18 +2,41 @@
 
 use super::*;
 
-pub(super) fn selected_style(app: &App, active: bool) -> Style {
-    if active {
-        PaneShell::new("", false, pane_styles(app)).row_style(true, true)
+/// A selection is retained when focus moves; only its input owner gets a fill.
+pub(super) fn selection_style(app: &App, selected: bool, focused: bool) -> Style {
+    if selected {
+        PaneShell::new("", false, pane_styles(app)).row_style(true, focused)
     } else {
         Style::default()
     }
 }
 
+pub(super) fn background_input_suspended(app: &App) -> bool {
+    matches!(
+        app.input_owner(),
+        FocusTarget::Dialog | FocusTarget::CommandPalette
+    )
+}
+
+pub(super) fn pane_has_focus(app: &App, owner: FocusTarget) -> bool {
+    app.input_owner() == owner
+}
+
+pub(super) fn selected_style(app: &App, selected: bool) -> Style {
+    selection_style(app, selected, pane_has_focus(app, FocusTarget::Workspace))
+}
+
+/// Called only by the visible dialog/palette that owns the input route.
+pub(super) fn dialog_selected_style(app: &App, selected: bool) -> Style {
+    selection_style(app, selected, true)
+}
+
 pub(super) fn selected_log_style(app: &App, severity: Severity) -> Style {
     let palette = ThemePalette::for_app(app);
     let style = severity_style(app, severity);
-    if palette.attribute_only {
+    if !pane_has_focus(app, FocusTarget::Workspace) {
+        style.add_modifier(Modifier::UNDERLINED)
+    } else if palette.attribute_only {
         style.add_modifier(Modifier::REVERSED | Modifier::BOLD)
     } else {
         style

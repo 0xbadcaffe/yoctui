@@ -200,12 +200,12 @@
     {
       "id": "M1",
       "title": "Focus and semantic colors",
-      "status": "pending",
+      "status": "passed",
       "required": true,
       "depends_on": [
         "M0"
       ],
-      "implementation_attempts_used": 0,
+      "implementation_attempts_used": 1,
       "deliverables": [
         "Use one shared style mapping for focus, inactive borders, selection, muted metadata and status.",
         "Retain existing themes and accessibility fallbacks."

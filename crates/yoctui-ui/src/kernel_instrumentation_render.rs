@@ -35,7 +35,7 @@ pub(crate) fn dialog(frame: &mut Frame, app: &App, dialog: &KernelDebugDialog, a
                         i == dialog.selection,
                         rows[1].width,
                     ),
-                    selected_style(app, i == dialog.selection),
+                    dialog_selected_style(app, i == dialog.selection),
                 )
             })
             .collect::<Vec<_>>();

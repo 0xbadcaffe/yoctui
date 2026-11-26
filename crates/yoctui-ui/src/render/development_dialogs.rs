@@ -32,7 +32,7 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
                     option.label(),
                     dialog.option_value(option),
                 ),
-                selected_style(app, index == dialog.selection),
+                dialog_selected_style(app, index == dialog.selection),
             ));
         }
         lines.extend([
@@ -97,7 +97,7 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
                             "Embedded in Yoctui (daemon-owned PTY)"
                         }
                     ),
-                    selected_style(
+                    dialog_selected_style(
                         app,
                         dialog.destination == yoctui_model::TerminalLaunchDestination::Embedded,
                     ),
@@ -111,7 +111,7 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
                             " "
                         }
                     ),
-                    selected_style(
+                    dialog_selected_style(
                         app,
                         dialog.destination == yoctui_model::TerminalLaunchDestination::Detached,
                     ),
@@ -281,7 +281,7 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
                             ),
                             layer.path.display().to_string(),
                         ])
-                        .style(selected_style(app, index == picker.selection))
+                        .style(dialog_selected_style(app, index == picker.selection))
                     }),
                 [Constraint::Length(24), Constraint::Min(20)],
             )
@@ -360,7 +360,7 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
                             ),
                             layer.path.display().to_string(),
                         ])
-                        .style(selected_style(app, index == picker.selection))
+                        .style(dialog_selected_style(app, index == picker.selection))
                     }),
                 [Constraint::Length(24), Constraint::Min(20)],
             )

@@ -106,7 +106,7 @@ pub(crate) fn wic_create_dialog(
             format!("{} {label}{marker}", if selected { "▶" } else { " " }),
             wic_field_value(dialog, field),
         ])
-        .style(selected_style(app, selected))
+        .style(dialog_selected_style(app, selected))
     });
     frame.render_widget(
         Table::new(rows, [Constraint::Length(27), Constraint::Min(1)]).header(

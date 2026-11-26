@@ -101,7 +101,7 @@ pub(crate) fn image_console_dialog(
             ),
             image_console_field_value(dialog, field),
         ])
-        .style(selected_style(app, selected))
+        .style(dialog_selected_style(app, selected))
     });
     frame.render_widget(
         Table::new(rows, [Constraint::Length(26), Constraint::Min(1)])
@@ -227,7 +227,7 @@ pub(crate) fn qemu_launch_dialog(
             ),
             qemu_launch_field_value(dialog, field),
         ])
-        .style(selected_style(app, selected))
+        .style(dialog_selected_style(app, selected))
     });
     frame.render_widget(
         Table::new(rows, [Constraint::Length(23), Constraint::Min(1)]).header(

@@ -166,7 +166,7 @@ pub(crate) fn navigator(
                         width = width.saturating_sub(2)
                     ),
                     if selected {
-                        palette.selected()
+                        selection_style(app, true, pane_has_focus(app, FocusTarget::Navigator))
                     } else {
                         palette.role(palette.warning, Modifier::BOLD)
                     },
@@ -197,7 +197,7 @@ pub(crate) fn navigator(
                 Line::from(Span::styled(
                     format!("  {marker} {label:<label_width$}{badge}"),
                     if selected {
-                        palette.selected()
+                        selection_style(app, true, pane_has_focus(app, FocusTarget::Navigator))
                     } else {
                         compatibility_workspace_state_style(app, availability.state)
                     },
@@ -243,6 +243,7 @@ pub(crate) fn navigator_badge(app: &App, destination: WorkspaceDestination) -> S
 }
 
 pub(crate) fn project_tree_child(
+    app: &App,
     label: &str,
     marker: &str,
     width: usize,
@@ -253,7 +254,10 @@ pub(crate) fn project_tree_child(
     let label = label.chars().take(content_width).collect::<String>();
     let row = format!("  {marker} {label:<content_width$}");
     if selected {
-        Line::styled(row, palette.selected())
+        Line::styled(
+            row,
+            selection_style(app, true, pane_has_focus(app, FocusTarget::Navigator)),
+        )
     } else {
         Line::from(vec![
             Span::styled(
@@ -297,6 +301,7 @@ pub(crate) fn literal_project_navigator(
     lines.push(project_tree_group("Layers", width, palette));
     if app.workspace.layers.is_empty() {
         lines.push(project_tree_child(
+            app,
             "discovering…",
             "▱",
             width,
@@ -306,6 +311,7 @@ pub(crate) fn literal_project_navigator(
     } else {
         for (index, layer) in app.workspace.layers.iter().take(7).enumerate() {
             lines.push(project_tree_child(
+                app,
                 &layer.name,
                 "▱",
                 width,
@@ -318,6 +324,7 @@ pub(crate) fn literal_project_navigator(
     lines.push(project_tree_group("Recipes", width, palette));
     if app.workspace.recipes.is_empty() {
         lines.push(project_tree_child(
+            app,
             "discovering…",
             "▸",
             width,
@@ -327,6 +334,7 @@ pub(crate) fn literal_project_navigator(
     } else {
         for (index, recipe) in app.workspace.recipes.iter().take(3).enumerate() {
             lines.push(project_tree_child(
+                app,
                 &recipe.name,
                 "▸",
                 width,
@@ -339,6 +347,7 @@ pub(crate) fn literal_project_navigator(
     lines.push(project_tree_group("Images", width, palette));
     if app.available_images.is_empty() {
         lines.push(project_tree_child(
+            app,
             "none discovered",
             "▱",
             width,
@@ -348,6 +357,7 @@ pub(crate) fn literal_project_navigator(
     } else {
         for image in app.available_images.iter().take(2) {
             lines.push(project_tree_child(
+                app,
                 image,
                 "▱",
                 width,
@@ -372,6 +382,7 @@ pub(crate) fn literal_project_navigator(
         ("Utility", Screen::Maintenance),
     ] {
         lines.push(project_tree_child(
+            app,
             label,
             "▱",
             width,
@@ -382,6 +393,7 @@ pub(crate) fn literal_project_navigator(
 
     lines.push(project_tree_group("Tools", width, palette));
     lines.push(project_tree_child(
+        app,
         "Diff tool",
         "▱",
         width,
@@ -389,6 +401,7 @@ pub(crate) fn literal_project_navigator(
         palette,
     ));
     lines.push(project_tree_child(
+        app,
         "GitUI",
         "▱",
         width,
@@ -401,7 +414,7 @@ pub(crate) fn literal_project_navigator(
         .variables
         .get("MACHINE")
         .map_or("unknown", String::as_str);
-    lines.push(project_tree_child(machine, "▱", width, false, palette));
+    lines.push(project_tree_child(app, machine, "▱", width, false, palette));
     frame.render_widget(
         Paragraph::new(lines).wrap(Wrap { trim: false }),
         sections[0],

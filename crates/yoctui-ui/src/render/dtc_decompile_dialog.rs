@@ -27,9 +27,13 @@ fn render_dtc_decompile_dialog(frame: &mut Frame, app: &App, area: Rect) -> bool
                 lines.push(Line::styled(
                     format!(
                         "{} {label}/",
-                        if index == browser.selection { "▶" } else { " " }
+                        if index == browser.selection {
+                            "▶"
+                        } else {
+                            " "
+                        }
                     ),
-                    selected_style(app, index == browser.selection),
+                    dialog_selected_style(app, index == browser.selection),
                 ));
             }
         }
@@ -44,10 +48,7 @@ fn render_dtc_decompile_dialog(frame: &mut Frame, app: &App, area: Rect) -> bool
         }
         hint = "↑/↓ select · Enter/→ open · ←/Backspace parent · s use folder · Esc back";
     } else if let Some(editor) = &dialog.editor {
-        lines.extend([
-            Line::from("Edit absolute DTS destination:"),
-            Line::from(""),
-        ]);
+        lines.extend([Line::from("Edit absolute DTS destination:"), Line::from("")]);
         let before = &editor.text[..editor.cursor];
         let available = usize::from(popup.width.saturating_sub(8)).max(1);
         let suffix: String = before
@@ -79,7 +80,7 @@ fn render_dtc_decompile_dialog(frame: &mut Frame, app: &App, area: Rect) -> bool
                     if destination_selected { "▶" } else { " " },
                     dialog.output
                 ),
-                selected_style(app, destination_selected),
+                dialog_selected_style(app, destination_selected),
             ),
             Line::styled(
                 format!(
@@ -87,7 +88,7 @@ fn render_dtc_decompile_dialog(frame: &mut Frame, app: &App, area: Rect) -> bool
                     if view_selected { "▶" } else { " " },
                     if dialog.view_after { "x" } else { " " }
                 ),
-                selected_style(app, view_selected),
+                dialog_selected_style(app, view_selected),
             ),
             Line::from(""),
             Line::from("The generated DTS opens only after dtc exits successfully."),
@@ -106,7 +107,11 @@ fn render_dtc_decompile_dialog(frame: &mut Frame, app: &App, area: Rect) -> bool
     frame.render_widget(
         Paragraph::new(lines)
             .style(palette.base())
-            .block(dialog_block(app, "Decompile device tree", DialogTone::Standard))
+            .block(dialog_block(
+                app,
+                "Decompile device tree",
+                DialogTone::Standard,
+            ))
             .wrap(Wrap { trim: false }),
         popup,
     );

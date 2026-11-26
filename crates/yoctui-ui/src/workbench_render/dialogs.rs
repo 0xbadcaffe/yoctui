@@ -29,7 +29,7 @@ pub(super) fn render(frame: &mut Frame, app: &App, area: Rect) -> bool {
             lines.push(Line::styled(
                 text,
                 if index == d.field {
-                    selected_style(app, true)
+                    dialog_selected_style(app, true)
                 } else {
                     Style::default()
                 },
@@ -90,7 +90,7 @@ pub(super) fn render(frame: &mut Frame, app: &App, area: Rect) -> bool {
                             t.path.display()
                         ),
                         if index == selection {
-                            selected_style(app, true)
+                            dialog_selected_style(app, true)
                         } else {
                             Style::default()
                         },
