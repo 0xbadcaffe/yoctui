@@ -26,8 +26,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::EditorSettings(action) => return crate::editor_preferences::reduce(app, action),
         Action::ScrollHelp { delta } => {
             if app.help_about { return None; }
-            // Twelve fixed reference lines plus the function-key and action rows.
-            let lines = 12 + FUNCTION_SHORTCUTS.len().div_ceil(5)
+            // The Help view adds four workspace identity lines to the reference.
+            let lines = 16 + FUNCTION_SHORTCUTS.len().div_ceil(5)
                 + global_operator_action_definitions().iter().filter(|action| action.shortcut != "none").count();
             let maximum = lines.saturating_sub(app.help_visible_rows);
             app.help_scroll = shifted_index(app.help_scroll, delta, maximum + 1);

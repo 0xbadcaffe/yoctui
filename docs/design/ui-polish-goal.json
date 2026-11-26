@@ -240,12 +240,12 @@
     {
       "id": "M2",
       "title": "Header and contextual footer",
-      "status": "pending",
+      "status": "passed",
       "required": true,
       "depends_on": [
         "M1"
       ],
-      "implementation_attempts_used": 0,
+      "implementation_attempts_used": 3,
       "deliverables": [
         "Prioritize project, MACHINE, target and daemon connection in the header.",
         "Keep detailed Git/backend information accessible in existing details/help.",

@@ -25,12 +25,12 @@ fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively
         assert!(header.contains(notice), "{width}: {header}");
         assert!(!header.contains(&format!("i {notice}")), "{width}: {header}");
         assert!(!footer.contains(notice), "{footer}");
-        if width >= 130 {
+        if width > 100 {
             assert!(footer.contains("F1 Help"), "{width}: {footer}");
             assert!(footer.contains("F12 Menu"), "{width}: {footer}");
         } else {
             assert!(footer.contains("? Help"), "{width}: {footer}");
-            assert!(footer.contains("Ctrl+P Menu"), "{width}: {footer}");
+            assert!(footer.contains("F12 Menu"), "{width}: {footer}");
         }
         assert!(footer.contains("q Quit"), "{width}: {footer}");
         assert!(header.contains("Local 00:00"), "{width}: {header}");
@@ -42,14 +42,14 @@ fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively
     assert!(!narrow_header.contains("i Profile saved"), "{narrow_header}");
     assert!(!narrow.contains("Profile saved"), "{narrow}");
     assert!(narrow.contains("? Help"), "{narrow}");
-    assert!(narrow.contains("Ctrl+P Menu"), "{narrow}");
+    assert!(narrow.contains("F12 Menu"), "{narrow}");
     assert!(narrow.contains("q Quit"), "{narrow}");
     assert!(!narrow.contains("UTC 00:00:00"), "{narrow}");
 
     app.notification = None;
     let (_, idle) = render_chrome(&app, 160);
     assert!(!idle.contains("Profile saved"), "{idle}");
-    assert!(idle.contains("F3 History"), "{idle}");
+    assert!(idle.contains("F1 Help") && idle.contains("F12 Menu"), "{idle}");
 }
 
 #[test]

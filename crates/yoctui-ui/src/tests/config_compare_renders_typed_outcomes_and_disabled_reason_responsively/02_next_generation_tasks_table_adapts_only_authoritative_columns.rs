@@ -395,6 +395,6 @@ fn workbench_responsive_keeps_semantics_in_every_theme_and_no_color() {
             .buffer()
             .content
             .iter()
-            .any(|cell| cell.modifier.contains(Modifier::REVERSED))
+            .any(|cell| cell.modifier.contains(Modifier::UNDERLINED))
     );
 }

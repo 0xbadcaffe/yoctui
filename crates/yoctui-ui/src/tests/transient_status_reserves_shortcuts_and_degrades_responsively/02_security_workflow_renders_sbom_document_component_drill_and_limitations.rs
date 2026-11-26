@@ -254,7 +254,7 @@ fn semantic_theme_no_color_resets_colors_and_preserves_attributes() {
     }
     assert!(palette.focus().add_modifier.contains(Modifier::BOLD));
     assert!(
-        selected_style(&app, true)
+        selection_style(&app, true, true)
             .add_modifier
             .contains(Modifier::REVERSED)
     );

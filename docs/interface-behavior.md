@@ -6,7 +6,10 @@ this guide defines shared behavior.
 ## Layout and focus
 
 Header shows identity/status/telemetry; Navigator chooses destinations; the main
-pane shows content; Footer shows controls. Inspector defaults off: Alt+i toggles
+pane shows content; Footer shows a short set of controls for the current input owner. The header prioritizes
+project, machine, target and daemon connection. Open Help for full workspace
+identity and Git status. Terminal consoles label writer and read-only states,
+and Ctrl+B exposes terminal prefix commands. Inspector defaults off: Alt+i toggles
 this session; Preferences saves startup visibility. Hidden panes cannot take focus.
 
 One pane/dialog/editor/terminal owns input. Tab visits visible targets; Esc closes

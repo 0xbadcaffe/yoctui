@@ -358,8 +358,8 @@ fn sdk_workflow_renders_every_inventory_state_and_responsive_selection() {
             .any(|cell| cell.modifier.contains(Modifier::REVERSED))
     );
     let narrow = rendered_text(&app, 80, 24);
-    assert!(narrow.contains("s/Alt+e:SDK"), "{narrow}");
-    assert!(narrow.contains("c:cancel"), "{narrow}");
+    assert!(narrow.contains("Type query"), "{narrow}");
+    assert!(!narrow.contains("c cancel"), "{narrow}");
 }
 
 #[test]

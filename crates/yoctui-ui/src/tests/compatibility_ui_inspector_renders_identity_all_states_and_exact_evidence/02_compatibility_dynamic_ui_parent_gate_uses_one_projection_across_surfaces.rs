@@ -105,7 +105,7 @@ fn client_runtime_daemon_health_remains_visible_during_navigation() {
             "{screen:?}: {output}"
         );
         assert!(
-            output.contains("BB:… Connecting"),
+            output.contains("BitBake connecting"),
             "{screen:?}: {output}"
         );
     }
@@ -127,7 +127,7 @@ fn workbench_shell_keeps_daemon_health_compact() {
     });
     let output = rendered_text(&app, 160, 40);
     assert!(output.contains("D:✓ Connected/Local"), "{output}");
-    assert!(output.contains("BB:– Disconnected"), "{output}");
+    assert!(output.contains("BitBake: – Disconnected"), "{output}");
     assert!(!output.contains("Telemetry --"), "{output}");
 }
 
@@ -156,7 +156,6 @@ fn workbench_shell_renders_project_context_and_reference_command_rail() {
         "Daemon: ✓ Connected",
         "BitBake: ✓ Running",
         "F1 Help",
-        "F2 Tasks",
         "F12 Menu",
     ] {
         assert!(output.contains(expected), "missing {expected}: {output}");
@@ -207,7 +206,6 @@ fn next_generation_header_projects_authoritative_context_by_width() {
         "Machine: qemux86-64",
         "Distro: poky",
         "Daemon: ✓ Connected",
-        "BitBake: ✓ Running",
     ] {
         assert!(full.contains(expected), "missing {expected}: {full}");
     }
@@ -223,7 +221,6 @@ fn next_generation_header_projects_authoritative_context_by_width() {
         "T:core-image-minimal",
         "Machine: qemux86-64",
         "D:✓ Connected/Local",
-        "BB:✓ Running",
     ] {
         assert!(wide.contains(expected), "missing {expected}: {wide}");
     }
@@ -240,7 +237,6 @@ fn next_generation_header_projects_authoritative_context_by_width() {
         "T:core-image-minimal",
         "Machine: qemux86-64",
         "D:✓ Connected",
-        "BB:✓ Running",
     ] {
         assert!(
             compact_wide.contains(expected),
@@ -254,11 +250,10 @@ fn next_generation_header_projects_authoritative_context_by_width() {
         "missing {versioned_brand}: {medium}"
     );
     for expected in [
-        "Project: poky",
+        "P:poky",
         "Build running",
         "T:core-image-minimal",
         "D:✓ Connected",
-        "BB:✓ Running",
     ] {
         assert!(medium.contains(expected), "missing {expected}: {medium}");
     }
@@ -272,6 +267,8 @@ fn next_generation_header_projects_authoritative_context_by_width() {
     );
     for expected in [
         "yoctui",
+        "P:poky",
+        "M:qemux86-64",
         "Build running",
         "T:core-image-minimal",
         "D:✓ Connected",
@@ -317,8 +314,8 @@ fn next_generation_header_handles_missing_stale_and_accessible_states() {
     assert!(wide.contains("T:not selected"), "{wide}");
     assert!(wide.contains("D:! Stale/Local"), "{wide}");
     assert!(wide.contains("BB:– Unavailable"), "{wide}");
-    assert!(!wide.contains("BB:✓ Running"), "{wide}");
-    assert!(!wide.contains("Machine:"), "{wide}");
+    assert!(!wide.contains("BitBake: ✓ Running"), "{wide}");
+    assert!(wide.contains("Machine: --"), "{wide}");
     assert!(!wide.contains("Distro:"), "{wide}");
 
     let minimum = render(80);
@@ -351,7 +348,6 @@ fn next_generation_footer_is_contextual_bounded_and_keymap_truthful() {
         "f state",
         "Alt+f field",
         "/ edit filter",
-        "c cancel",
         "Tab Focus",
         "F1 Help",
         "F12 Menu",
@@ -367,7 +363,7 @@ fn next_generation_footer_is_contextual_bounded_and_keymap_truthful() {
     let compact = footer_rail_shortcuts(&dashboard, 80);
     assert!(compact.contains("h/l groups"), "{compact}");
     assert!(compact.contains("? Help"), "{compact}");
-    assert!(compact.contains("Ctrl+P Menu"), "{compact}");
+    assert!(compact.contains("F12 Menu"), "{compact}");
     assert!(compact.contains("q Quit"), "{compact}");
     assert!(footer_item_width(&compact) <= 80, "{compact}");
 }

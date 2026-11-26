@@ -1,5 +1,5 @@
 #[test]
-fn git_status_is_global_and_visible_at_supported_widths() {
+fn git_status_is_visible_when_it_fits_and_in_help_at_minimum_width() {
     let mut app = App::new(10, 1024);
     app.source_git_status = yoctui_model::SourceGitStatus::Ready(yoctui_model::SourceGitSummary {
         branch: "master".into(),
@@ -19,11 +19,13 @@ fn git_status_is_global_and_visible_at_supported_widths() {
             .iter()
             .map(|c| c.symbol())
             .collect::<String>();
-        assert!(text.contains("Git: master 2 modified"), "{width}: {text}");
         if width >= 160 {
             assert!(text.contains("Git: master 2 modified files synced*"), "{width}: {text}");
         }
     }
+    update(&mut app, Action::Open(Screen::Help));
+    let help = rendered_text(&app, 80, 24);
+    assert!(help.contains("Git: master 2 modified files synced*"), "{help}");
 }
 
 #[test]

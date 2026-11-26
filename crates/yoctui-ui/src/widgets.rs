@@ -83,12 +83,15 @@ pub(super) fn bounded_cell_text(value: &str, width: u16) -> String {
     }
     let budget = usize::from(width.saturating_sub(1));
     let mut output = String::new();
-    for character in value.chars() {
-        output.push(character);
-        if Line::from(output.as_str()).width() > budget {
-            output.pop();
+    let mut remaining = budget;
+    let span = Span::raw(value);
+    for grapheme in span.styled_graphemes(Style::default()) {
+        let cells = unicode_width::UnicodeWidthStr::width(grapheme.symbol);
+        if cells > remaining {
             break;
         }
+        remaining -= cells;
+        output.push_str(grapheme.symbol);
     }
     output.push('…');
     output

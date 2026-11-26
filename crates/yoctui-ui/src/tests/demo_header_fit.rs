@@ -15,6 +15,14 @@ fn identity_row(buffer: &ratatui::buffer::Buffer) -> String {
 }
 
 #[test]
+fn ui_polish_header_truncates_whole_graphemes() {
+    let text = "abc👩‍💻decoration";
+    assert_eq!(bounded_cell_text(text, 5), "abc…");
+    assert_eq!(bounded_cell_text(text, 6), "abc👩‍💻…");
+    assert_eq!(bounded_cell_text("ab e\u{301} xyz", 5), "ab e\u{301}…");
+}
+
+#[test]
 fn header_omits_complete_optional_metadata_before_it_clips_into_health() {
     let mut app = App::new(32, 8192);
     app.workspace.source_dir = Some("/workspace/openbmc".into());
@@ -35,7 +43,9 @@ fn header_omits_complete_optional_metadata_before_it_clips_into_health() {
             "{width}: {row}"
         );
         assert!(row.contains("Connected/Local"), "{row}");
-        assert!(row.contains("19:28"), "{row}");
+        if width >= 100 {
+            assert!(row.contains("19:28"), "{row}");
+        }
         if width < 180 {
             assert!(!row.contains("Distro:"), "{row}");
         }
@@ -79,7 +89,9 @@ fn long_unicode_primary_context_is_explicitly_bounded_without_losing_version_or_
                 "{row}"
             );
             assert!(row.contains("Disconnected/Local"), "{row}");
-            assert!(row.contains("19:28"), "{row}");
+            if width >= 100 {
+                assert!(row.contains("19:28"), "{row}");
+            }
             assert!(row.contains('…'), "unmarked primary clipping: {row}");
             assert!(!row.contains('�'), "{row}");
             let ellipsis = (0..width)

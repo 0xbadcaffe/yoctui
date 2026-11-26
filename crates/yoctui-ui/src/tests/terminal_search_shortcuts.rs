@@ -82,3 +82,20 @@ fn terminal_modal_footer_only_advertises_modal_controls() {
         assert!(!footer.contains("F12 Menu"), "{mode:?}: {footer}");
     }
 }
+
+#[test]
+fn ui_polish_footer_labels_terminal_input_and_read_only_ownership() {
+    let mut app = super::demo_terminal_pane_binding::terminal_binding_fixture();
+    for width in [78, 98, 158] {
+        let writer = footer_rail_shortcuts(&app, width);
+        assert!(writer.starts_with("Terminal input | "));
+        assert!(!writer.contains("q Quit"));
+        assert!(writer.split(" | ").count() <= 7);
+    }
+    app.daemon.pty_details.last_mut().unwrap().writer = Some([99; 16]);
+    let reader = footer_rail_shortcuts(&app, 78);
+    assert!(reader.starts_with("Read only | Writer in use"));
+    assert!(!reader.contains("o type in terminal"));
+    app.daemon.pty_details.last_mut().unwrap().writer = None;
+    assert!(footer_rail_shortcuts(&app, 78).contains("o type in terminal"));
+}

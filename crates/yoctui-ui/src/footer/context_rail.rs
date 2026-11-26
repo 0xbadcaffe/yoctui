@@ -50,6 +50,12 @@ pub(crate) fn current_search_state(app: &App) -> Option<(bool, bool)> {
 }
 
 pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
+    if app.editor_settings.draft.is_some() {
+        return footer_shortcuts(app).split(" | ").map(str::to_owned).collect();
+    }
+    if app.menu.is_open() {
+        return ["↑/↓ select", "Enter open", "Esc close"].into_iter().map(str::to_owned).collect();
+    }
     if app.screen == Screen::RawMode && !app.menu.is_open() && !app.command_palette_open
         && (app.focus == FocusTarget::Workspace || app.raw_mode.modal_active()
             || matches!(app.raw_mode.view, yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview)) {
@@ -149,12 +155,10 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
         return footer_shortcuts(app).split(" | ").map(str::to_owned).collect();
     }
 
-    let responsive_override = (app.screen == Screen::Images && width <= 129)
-        || (matches!(
-            app.screen,
-            Screen::Sdk | Screen::Testing | Screen::Security | Screen::Qa
-        ) && width <= 90);
-    let source = if width < WIDE_WORKBENCH_MIN_WIDTH {
+    let responsive_override = app.focus == FocusTarget::Workspace
+        && app.screen == Screen::Images
+        && width <= 129;
+    let source = if responsive_override {
         responsive_footer_shortcuts(app, width)
     } else {
         footer_shortcuts(app)
@@ -163,7 +167,7 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
     if current_search_state(app).is_some_and(|(_, filtered)| filtered) {
         items.insert(0, "Ctrl+U clear".into());
     }
-    if !responsive_override && width >= 100 {
+    if !responsive_override {
         let focus_prefix_len = pane_focus_shortcuts(app)
             .map(|shortcuts| shortcuts.split(" | ").count())
             .unwrap_or_default();
@@ -177,7 +181,6 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
             "?" | "q" | "Ctrl+P"
         )
     });
-    items.truncate(6);
     let focus = (yoctui_model::pane_focus_targets(app).count() > 1).then_some("Tab Focus");
     if let Some(focus) = focus {
         items.insert(0, focus.into());
@@ -220,83 +223,54 @@ pub(crate) fn push_footer_items_that_fit(
 }
 
 pub(crate) fn footer_rail_shortcuts(app: &App, width: u16) -> String {
-    if app.screen == Screen::RawMode && !app.menu.is_open() && !app.command_palette_open
-        && (app.raw_mode.modal_active() || app.raw_mode.search.editing || app.raw_mode.output.searching
-            || matches!(app.raw_mode.view, yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview)) {
-        let mut visible = Vec::new();
-        push_footer_items_that_fit(&mut visible, &footer_context_items(app, width), usize::from(width));
-        return visible.join(" | ");
+    use yoctui_model::TerminalWorkbenchMode as Mode;
+
+    let owner = app.input_owner();
+    let modal = matches!(owner, FocusTarget::Dialog | FocusTarget::CommandPalette);
+    let console = !modal && owner == FocusTarget::Workspace
+        && (app.terminal_console_fullscreen() || app.platform_menuconfig_visible());
+    let terminal_mode = !modal && yoctui_app::terminal_owns_input(app);
+    let mut items = footer_context_items(app, width);
+    let mut essentials = Vec::new();
+
+    if console && app.terminal.mode == Mode::Live {
+        let label = if app.selected_terminal_is_writer() {
+            "Terminal input"
+        } else {
+            "Read only"
+        };
+        if !app.selected_terminal_is_writer()
+            && app.selected_terminal_details().is_some_and(|details| details.writer.is_some())
+        {
+            items.retain(|item| item != "o type in terminal");
+            items.insert(0, "Writer in use".into());
+        }
+        items.insert(0, label.into());
+    } else if !modal && !terminal_mode && app.editor_settings.draft.is_none() {
+        if width < 100 {
+            essentials.push("q Quit".into());
+            essentials.push("? Help · F12 Menu".into());
+        } else {
+            essentials.push("q Quit".into());
+            essentials.push(format!(
+                "{} · {}",
+                function_footer_item(FunctionKey::F1),
+                function_footer_item(FunctionKey::F12),
+            ));
+        }
     }
-    // Keep the writer rail focused on common terminal controls; global hints
-    // such as Tab focus and q quit would actually send input to the PTY.
-    if app.screen == Screen::TerminalSessions && yoctui_app::terminal_owns_input(app)
-        && app.active_dialog().is_none() && !app.menu.is_open() && !app.command_palette_open
-    {
-        let mut visible = Vec::new();
-        push_footer_items_that_fit(&mut visible, &footer_context_items(app, width), usize::from(width));
-        return visible.join(" | ");
-    }
-    if app.editor_settings.draft.is_some() {
-        let items = footer_shortcuts(app).split(" | ").map(str::to_owned).collect::<Vec<_>>();
-        let mut visible = Vec::new();
-        push_footer_items_that_fit(&mut visible, &items, usize::from(width));
-        return visible.join(" | ");
-    }
+
+    items.retain(|item| !essentials.iter().any(|entry| entry == item)
+        && (essentials.is_empty() || !item.to_ascii_lowercase().starts_with("f12 menu")));
     let budget = usize::from(width);
-    let compact = width < 100;
-    if compact
-        && matches!(
-            app.screen,
-            Screen::Sdk | Screen::Testing | Screen::Security | Screen::Qa
-        )
-        && app.active_dialog().is_none()
-        && !app.command_palette_open
-        && (app.screen != Screen::Sdk || app.focus == FocusTarget::Workspace)
-    {
-        return responsive_footer_shortcuts(app, width);
-    }
-    let essentials = if compact {
-        vec!["? Help".into(), "Ctrl+P Menu".into(), "q Quit".into()]
-    } else {
-        vec![
-            function_footer_item(FunctionKey::F1),
-            function_footer_item(FunctionKey::F12),
-            "q Quit".into(),
-        ]
-    };
-    let essentials_width = footer_items_width(&essentials);
-    if essentials_width >= budget {
-        let mut output = Vec::new();
-        push_footer_items_that_fit(&mut output, &essentials, budget);
-        return output.join(" | ");
-    }
-
-    let prefix_budget = budget.saturating_sub(essentials_width + 3);
-    let mut prefix = Vec::new();
+    let reserved = footer_items_width(&essentials);
+    let mut visible = Vec::new();
+    items.truncate(7_usize.saturating_sub(essentials.len()).min(6));
     push_footer_items_that_fit(
-        &mut prefix,
-        &footer_context_items(app, width),
-        prefix_budget,
+        &mut visible,
+        &items,
+        budget.saturating_sub(reserved + if essentials.is_empty() { 0 } else { 3 }),
     );
-
-    if !compact && app.screen != Screen::RawMode {
-        let optional = FUNCTION_SHORTCUTS
-            .iter()
-            .filter(|shortcut| !(app.screen == Screen::DiffTool && app.focus == FocusTarget::Workspace && shortcut.key == FunctionKey::F5))
-            .filter(|shortcut| {
-                !matches!(shortcut.key, FunctionKey::F1 | FunctionKey::F9 | FunctionKey::F12)
-                    && !matches!(shortcut.route, FunctionShortcutRoute::Open(screen) if screen == app.screen)
-                    && !prefix.iter().any(|item| {
-                        item.split_once(' ')
-                            .map_or(item.as_str(), |(key, _)| key)
-                            == shortcut.key_label
-                    })
-            })
-            .map(|shortcut| format!("{} {}", shortcut.key_label, shortcut.action_label))
-            .collect::<Vec<_>>();
-        push_footer_items_that_fit(&mut prefix, &optional, prefix_budget);
-    }
-
-    prefix.extend(essentials);
-    prefix.join(" | ")
+    push_footer_items_that_fit(&mut visible, &essentials, budget);
+    visible.join(" | ")
 }

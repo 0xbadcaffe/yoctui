@@ -341,8 +341,40 @@ pub(crate) fn help(frame: &mut Frame, app: &App, area: Rect) {
         })
         .collect::<Vec<_>>()
         .join("\n");
+    let project = crate::header::header_project_identity(app);
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .map_or("--", String::as_str);
+    let target = app.build.target.as_deref().unwrap_or("not selected");
+    let git = app
+        .source_git_status
+        .label()
+        .unwrap_or_else(|| "Git: unavailable".into());
+    let details = [
+        format!("Project: {project}"),
+        format!("Machine: {machine}"),
+        format!("Target: {target}"),
+        git,
+    ];
+    let width = usize::from(area.width.saturating_sub(2)).max(2);
+    let mut identity = String::new();
+    for detail in details {
+        let mut used = 0;
+        for grapheme in Span::raw(detail).styled_graphemes(Style::default()) {
+            let cells = unicode_width::UnicodeWidthStr::width(grapheme.symbol);
+            if used + cells > width {
+                identity.push('\n');
+                used = 0;
+            }
+            identity.push_str(grapheme.symbol);
+            used += cells;
+        }
+        identity.push('\n');
+    }
     let text = format!(
-        "Keyboard and action reference\nOperator guide: press g or F12 > Help > Operator guide for the interactive workflow.\nAbout Yoctui: F12 > Help > About Yoctui shows the logo, version and project information.\n\nGlobal shortcuts\n{function_keys}\n\nNavigation: arrows move, Enter opens, Esc returns, F12 opens the application menu, ?/F1 opens this screen, q quits.\nSearch: / opens global search; Alt+n switches content and filename search.\nTerminal writers and editors retain literal keys; terminal search is Ctrl+B /.\nDestructive and publishing operations show an exact confirmation before execution.\n\nGlobal action shortcuts\n{catalog_actions}"
+        "Keyboard and action reference\n{identity}\nOperator guide: press g or F12 > Help > Operator guide for the interactive workflow.\nAbout Yoctui: F12 > Help > About Yoctui shows the logo, version and project information.\n\nGlobal shortcuts\n{function_keys}\n\nNavigation: arrows move, Enter opens, Esc returns, F12 opens the application menu, ?/F1 opens this screen, q quits.\nSearch: / opens global search; Alt+n switches content and filename search.\nTerminal writers and editors retain literal keys; terminal search is Ctrl+B /.\nDestructive and publishing operations show an exact confirmation before execution.\n\nGlobal action shortcuts\n{catalog_actions}"
     );
     frame.render_widget(
         Paragraph::new(text.clone())

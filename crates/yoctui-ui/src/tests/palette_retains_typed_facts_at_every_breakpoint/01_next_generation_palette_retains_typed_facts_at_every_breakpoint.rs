@@ -184,7 +184,7 @@ fn no_color_selection_uses_reverse_video() {
     let mut app = App::new(10, 1_000);
     app.color_enabled = false;
     assert!(
-        selected_style(&app, true)
+        selection_style(&app, true, true)
             .add_modifier
             .contains(Modifier::REVERSED)
     );

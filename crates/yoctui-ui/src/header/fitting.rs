@@ -25,3 +25,24 @@ pub(super) fn fit_header_spans(spans: Vec<Span<'static>>, width: u16) -> Vec<Spa
     fitted.push(Span::raw("…"));
     fitted
 }
+
+// Share available cells across the identity values, returning unused short-field
+// space to longer fields. The separators and labels are budgeted separately.
+pub(super) fn header_value_widths(fields: &[(&str, &str, String); 3], budget: usize) -> [u16; 3] {
+    let requested = fields.each_ref().map(|(_, _, value)| Line::from(value.as_str()).width());
+    let mut widths = [0; 3];
+    let mut remaining = budget;
+    while remaining > 0 {
+        let before = remaining;
+        for (width, requested) in widths.iter_mut().zip(requested) {
+            if *width < requested && remaining > 0 {
+                *width += 1;
+                remaining -= 1;
+            }
+        }
+        if remaining == before {
+            break;
+        }
+    }
+    widths.map(|width| width as u16)
+}

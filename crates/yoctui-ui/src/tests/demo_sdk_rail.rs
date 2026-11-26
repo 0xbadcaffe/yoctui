@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn demo_sdk_rail_keeps_all_modifier_routes_and_cancel_as_complete_tokens() {
+fn demo_sdk_rail_preserves_primary_actions_without_overflow() {
     let mut app = App::new(32, 8192);
     app.screen = Screen::Sdk;
     app.focus = FocusTarget::Workspace;
@@ -14,22 +14,11 @@ fn demo_sdk_rail_keeps_all_modifier_routes_and_cancel_as_complete_tokens() {
             .map(|x| terminal.backend().buffer()[(x, 22)].symbol())
             .collect();
         assert!(
-            row.contains(if width < 102 { "c:cancel" } else { "c cancel" }),
+            row.contains("c cancel") && row.contains("i image"),
             "{width}: {row}"
         );
-        if width < 102 {
-            for token in [
-                "i:img",
-                "s/Alt+e:SDK",
-                "t/Alt+t:tst",
-                "Alt+r:scan",
-                "Alt+p:pub",
-                "n:native",
-                "o:open",
-            ] {
-                assert!(row.contains(token), "{width} lost {token}: {row}");
-            }
-        }
+        assert!(row.contains("F12 Menu"), "{width}: {row}");
+        assert!(footer_rail_shortcuts(&app, width - 2).split(" | ").count() <= 7);
     }
     for width in 0..100 {
         let rail = responsive_footer_shortcuts(&app, width);
@@ -66,7 +55,7 @@ fn demo_sdk_rail_respects_navigator_and_dialog_focus() {
     assert!(!output.contains("s/Alt+e:SDK"), "{output}");
     assert!(!output.contains("c:cancel"), "{output}");
     assert!(output.contains("Tab Focus"), "{output}");
-    assert!(output.contains("Ctrl+P Menu"), "{output}");
+    assert!(output.contains("F12 Menu"), "{output}");
     app.dialogs.push_back(Dialog::BuildOptions);
     app.focus = FocusTarget::Dialog;
     let output = rendered_text(&app, 80, 24);

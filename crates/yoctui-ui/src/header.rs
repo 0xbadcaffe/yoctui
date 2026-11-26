@@ -81,20 +81,6 @@ pub(crate) fn header_project_identity(app: &App) -> String {
         .unwrap_or_else(|| "unavailable".into())
 }
 
-pub(crate) fn build_status_tone(status: BuildStatus) -> StatusTone {
-    match status {
-        BuildStatus::Completed => StatusTone::Success,
-        BuildStatus::Cancelled => StatusTone::Warning,
-        BuildStatus::Failed => StatusTone::Error,
-        BuildStatus::Lost => StatusTone::Warning,
-        BuildStatus::LoadingWorkspace
-        | BuildStatus::Parsing
-        | BuildStatus::Running
-        | BuildStatus::Cancelling => StatusTone::Running,
-        BuildStatus::Idle => StatusTone::Disabled,
-    }
-}
-
 pub(crate) fn header_separator(palette: &ThemePalette, compact: bool) -> Span<'static> {
     Span::styled(
         if compact { " • " } else { "  •  " },
@@ -137,155 +123,136 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
 
     let mode = header_mode(area.width);
     let compact = mode != HeaderMode::Full;
-    let project = bounded_status_line(header_project_identity(app), 20);
-    let target = bounded_status_line(
-        app.build
-            .target
-            .clone()
-            .unwrap_or_else(|| "not selected".into()),
-        if mode == HeaderMode::Full { 30 } else { 22 },
-    );
-    let machine = app.workspace.variables.get("MACHINE");
-    let distro = app.workspace.variables.get("DISTRO");
-    let release = app.workspace.release.as_deref();
-    let build_tone = build_status_tone(app.build.status);
-    let mut optional_context_starts = Vec::new();
-    let mut left = vec![Span::styled(
+    let version = Span::styled(
         format!("yoctui v{}", env!("CARGO_PKG_VERSION")),
         palette.role(palette.progress, Modifier::BOLD),
-    )];
-    if let Some(mut git) = app.source_git_status.label() {
-        if matches!(
-            app.source_git_status,
-            yoctui_model::SourceGitStatus::Scanning
-        ) {
-            git = format!("{} {git}", task_activity(app, None));
-        }
-        left.push(header_separator(&palette, true));
-        left.push(Span::styled(
-            git,
+    );
+    let daemon_tone = daemon_status_tone(app.daemon.status);
+    let mut right = vec![
+        Span::raw(if compact { "D:" } else { "Daemon: " }),
+        status_label(
+            daemon_tone,
+            daemon_status_label(app.daemon.status),
+            status_tone_style(&palette, daemon_tone),
+        ),
+        Span::styled(
+            format!("/{}", app.client_access_origin.label()),
             palette.role(palette.informational, Modifier::BOLD),
-        ));
-    }
-    if mode != HeaderMode::Narrow {
-        left.push(header_separator(&palette, compact));
-        left.extend(header_identity_spans(
-            &palette,
-            "Project: ",
-            "Project: ",
-            project,
-            compact,
-        ));
-    }
-    if !concept_geometry {
-        left.push(header_separator(&palette, compact));
-        left.push(status_label(
-            build_tone,
-            if app.is_offline() {
-                "Offline".into()
-            } else {
-                app.build.status.to_string()
-            },
-            status_tone_style(&palette, build_tone),
-        ));
-    }
-    left.push(header_separator(&palette, compact));
-    left.extend(header_identity_spans(
-        &palette, "Target: ", "T:", target, compact,
-    ));
-    if matches!(mode, HeaderMode::Full | HeaderMode::Wide)
-        && let Some(machine) = machine
-    {
-        optional_context_starts.push(left.len());
-        left.push(header_separator(&palette, false));
-        left.extend(header_identity_spans(
-            &palette,
+        ),
+    ];
+    let fields = [
+        ("Project: ", "P:", header_project_identity(app)),
+        (
             "Machine: ",
             "M:",
-            machine.clone(),
+            app.workspace
+                .variables
+                .get("MACHINE")
+                .cloned()
+                .unwrap_or_else(|| "--".into()),
+        ),
+        (
+            "Target: ",
+            "T:",
+            app.build
+                .target
+                .clone()
+                .unwrap_or_else(|| "not selected".into()),
+        ),
+    ];
+    let wide_labels = matches!(mode, HeaderMode::Full | HeaderMode::Wide);
+    let label_cost = fields
+        .iter()
+        .enumerate()
+        .map(|(index, (full, short, _))| {
+            3 + if wide_labels && (index < 2 || !compact) {
+                full.len()
+            } else {
+                short.len()
+            }
+        })
+        .sum::<usize>();
+    let primary_width = version.width()
+        + label_cost
+        + fields
+            .iter()
+            .map(|(_, _, value)| Span::raw(value.as_str()).width())
+            .sum::<usize>();
+    let right_budget = usize::from(inner.width).saturating_sub(primary_width + 1);
+    let clock = if mode == HeaderMode::Narrow {
+        local_clock_text(now)
+    } else {
+        clock_label(now)
+    };
+    let daemon_width = right.iter().map(Span::width).sum::<usize>();
+    if daemon_width + 3 + clock.len() <= right_budget || mode != HeaderMode::Narrow {
+        right.push(header_separator(&palette, true));
+        right.push(Span::raw(clock));
+    }
+    let git = app.source_git_status.label();
+    let git_width = git
+        .as_deref()
+        .map_or(0, |label| 3 + Span::raw(label).width());
+    let secondary_budget =
+        if right.iter().map(Span::width).sum::<usize>() + git_width <= right_budget {
+            right_budget - git_width
+        } else {
+            right_budget
+        };
+    let (bitbake, tone) = header_bitbake_status(app);
+    let bitbake = status_label(tone, bitbake, status_tone_style(&palette, tone));
+    let bitbake_prefix = if compact { "BB:" } else { "BitBake: " };
+    if wide_labels
+        && right.iter().map(Span::width).sum::<usize>() + 3 + bitbake_prefix.len() + bitbake.width()
+            <= secondary_budget
+    {
+        right.push(header_separator(&palette, true));
+        right.push(Span::raw(bitbake_prefix));
+        right.push(bitbake);
+    }
+    let right = Line::from(right);
+    let right_width = u16::try_from(right.width())
+        .unwrap_or(u16::MAX)
+        .min(inner.width.saturating_sub(12));
+    let left_budget = usize::from(inner.width.saturating_sub(right_width + 1));
+    let value_budget = left_budget.saturating_sub(version.width() + label_cost);
+    let mut left = vec![version];
+    let widths = header_value_widths(&fields, value_budget);
+    for (index, ((full, short, value), width)) in fields.into_iter().zip(widths).enumerate() {
+        left.push(header_separator(&palette, true));
+        left.extend(header_identity_spans(
+            &palette,
+            full,
+            short,
+            bounded_cell_text(&value, width),
+            !(wide_labels && (index < 2 || !compact)),
+        ));
+    }
+    if mode == HeaderMode::Full
+        && let Some(distro) = app.workspace.variables.get("DISTRO")
+        && left.iter().map(Span::width).sum::<usize>() + 11 + Span::raw(distro.as_str()).width()
+            <= left_budget
+    {
+        left.push(header_separator(&palette, true));
+        left.extend(header_identity_spans(
+            &palette,
+            "Distro: ",
+            "D:",
+            distro.clone(),
             false,
         ));
     }
-    if mode == HeaderMode::Full {
-        if let Some(distro) = distro {
-            optional_context_starts.push(left.len());
-            left.push(header_separator(&palette, false));
-            left.extend(header_identity_spans(
-                &palette,
-                "Distro: ",
-                "D:",
-                distro.clone(),
-                false,
-            ));
-        }
-        if let Some(release) = release.filter(|_| !concept_geometry) {
-            left.push(Span::raw(format!(" ({release})")));
-        }
-    }
-
-    let daemon_tone = daemon_status_tone(app.daemon.status);
-    let (bitbake_label, bitbake_tone) =
-        if app.daemon.status == yoctui_model::ClientReplicaStatus::Current {
-            (
-                daemon_lifecycle_label(app.daemon.bitbake),
-                daemon_lifecycle_tone(app.daemon.bitbake),
-            )
-        } else {
-            ("Unavailable", StatusTone::Disabled)
-        };
-    let mut right = vec![Span::raw(if compact { "D:" } else { "Daemon: " })];
-    right.push(status_label(
-        daemon_tone,
-        daemon_status_label(app.daemon.status),
-        status_tone_style(&palette, daemon_tone),
-    ));
-    right.push(Span::styled(
-        format!("/{}", app.client_access_origin.label()),
-        palette.role(palette.informational, Modifier::BOLD),
-    ));
-    if mode != HeaderMode::Narrow {
-        right.push(header_separator(&palette, compact));
-        right.push(Span::raw(if compact { "BB:" } else { "BitBake: " }));
-        right.push(status_label(
-            bitbake_tone,
-            bitbake_label,
-            status_tone_style(&palette, bitbake_tone),
+    if let Some(git) = git
+        && left.iter().map(Span::width).sum::<usize>() + 3 + Line::from(git.as_str()).width()
+            <= left_budget
+    {
+        left.push(header_separator(&palette, true));
+        left.push(Span::styled(
+            git,
+            palette.role(palette.muted, Modifier::DIM),
         ));
     }
-    right.push(header_separator(&palette, true));
-    right.push(Span::styled(
-        if mode == HeaderMode::Narrow {
-            local_clock_text(now)
-        } else {
-            clock_label(now)
-        },
-        palette.role(palette.primary_foreground, Modifier::BOLD),
-    ));
-    let right = Line::from(right);
-    let right_width = u16::try_from(right.width()).unwrap_or(inner.width).min(
-        inner.width.saturating_sub(
-            u16::try_from(left[0].width())
-                .unwrap_or(inner.width)
-                .saturating_add(1),
-        ),
-    );
-    // Compact separators before clipping identity values when the release label
-    // or backend context grows. Width tiers alone do not guarantee the text fits.
-    let left_width = left.iter().map(Span::width).sum::<usize>();
-    if left_width + usize::from(right_width) > usize::from(inner.width) {
-        for span in &mut left {
-            if span.content == "  •  " {
-                span.content = " • ".into();
-            }
-        }
-    }
-    let left_budget = inner.width.saturating_sub(right_width);
-    for start in optional_context_starts.into_iter().rev() {
-        if left.iter().map(Span::width).sum::<usize>() > usize::from(left_budget) {
-            left.truncate(start);
-        }
-    }
-    let left = fit_header_spans(left, left_budget);
+    let left = fit_header_spans(left, left_budget as u16);
     if !concept_geometry {
         let columns =
             Layout::horizontal([Constraint::Min(12), Constraint::Length(right_width)]).split(inner);
@@ -408,15 +375,7 @@ fn render_header_status(frame: &mut Frame, app: &App, area: Rect, palette: &Them
     }
 
     let daemon_tone = daemon_status_tone(app.daemon.status);
-    let (bitbake, bitbake_tone) = if app.daemon.status == yoctui_model::ClientReplicaStatus::Current
-    {
-        (
-            daemon_lifecycle_label(app.daemon.bitbake),
-            daemon_lifecycle_tone(app.daemon.bitbake),
-        )
-    } else {
-        ("Unavailable", StatusTone::Disabled)
-    };
+    let (bitbake, bitbake_tone) = header_bitbake_status(app);
     let spans = vec![
         Span::styled(
             "Daemon health: ",
@@ -450,5 +409,16 @@ pub(crate) fn transient_status_tone(kind: TransientStatusKind) -> StatusTone {
         TransientStatusKind::Notification => StatusTone::Info,
         TransientStatusKind::Reconnecting => StatusTone::Pending,
         TransientStatusKind::Activity => StatusTone::Running,
+    }
+}
+
+fn header_bitbake_status(app: &App) -> (&'static str, StatusTone) {
+    if app.daemon.status == yoctui_model::ClientReplicaStatus::Current {
+        (
+            daemon_lifecycle_label(app.daemon.bitbake),
+            daemon_lifecycle_tone(app.daemon.bitbake),
+        )
+    } else {
+        ("Unavailable", StatusTone::Disabled)
     }
 }
