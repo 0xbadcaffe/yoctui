@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "id": "yoctui-ui-polish-v1",
-  "status": "active",
+  "status": "complete",
   "objective": "Polish existing Yoctui screens with consistent focus, hierarchy, navigation feedback and honest loading states, without replacing GitUI or changing daemon ownership.",
   "reference_revision": "251779c907cf3418ba748d8732c99bed02b1bcae",
   "reference_is_not_a_baseline": "At execution, record the actual branch, HEAD, dirty paths, binary identity and relevant existing tests. Reuse completed behavior; do not assume this revision remains current.",
@@ -459,7 +459,7 @@
     {
       "id": "M7",
       "title": "Final acceptance and stop",
-      "status": "pending",
+      "status": "passed",
       "required": true,
       "depends_on": [
         "M3",
@@ -467,7 +467,7 @@
         "M5",
         "M6"
       ],
-      "implementation_attempts_used": 0,
+      "implementation_attempts_used": 2,
       "deliverables": [
         "Validate the fixed scope, update only intentionally changed golden references and relevant user help.",
         "Produce the final result inventory and stop; do not start another polish cycle."
@@ -547,6 +547,8 @@
     "baseline_revision": "251779c907cf3418ba748d8732c99bed02b1bcae",
     "started_unix": 1795673696.1913054,
     "authorized_by": "User instruction: start",
-    "evidence_directory": "artifacts/ui-polish/251779c9"
+    "evidence_directory": "artifacts/ui-polish/251779c9",
+    "tested_revision": "06ed6f38d6c78ea649f13357a84ef22d181e0059",
+    "completed_unix": 1795678978.0829742
   }
 }
